@@ -90,7 +90,7 @@ export default async function EarningsPage() {
     .filter(record => record.planName === activePlan?.plan?.name && !record.isHistorical)
     .reduce((sum, record) => sum + record.dailyEstimateUsd, 0)
   const estimatedTotalUsd =
-    activePlan && dailyActiveUsd > 0 ? dailyActiveUsd * activePlan.selectedDurationDays : 0
+    activePlan && dailyActiveUsd > 0 ? dailyActiveUsd * (activePlan.selectedDurationDays ?? 0) : 0
   const minWithdrawalUsd = estimatedTotalUsd > 0 && estimatedTotalUsd < 100 ? estimatedTotalUsd : 100
 
   const payouts = user.withdrawals.map(item => ({
