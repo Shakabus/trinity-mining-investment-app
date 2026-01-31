@@ -117,10 +117,8 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
   }, [data.totalEarnedCrypto])
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     setNowMs(Date.now())
     const interval = setInterval(() => setNowMs(Date.now()), 60 * 1000)
-    /* eslint-enable react-hooks/set-state-in-effect */
     return () => clearInterval(interval)
   }, [])
 
@@ -176,7 +174,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
     }, 20000)
 
     return () => clearInterval(interval)
-  }, [data.assignedHashrate, data.assetStats])
+  }, [data.assignedHashrate, data.assetStats, data.isMiningActive])
 
   const shareTotals = useMemo(() => {
     const total = data.validShares + data.staleShares + data.invalidShares

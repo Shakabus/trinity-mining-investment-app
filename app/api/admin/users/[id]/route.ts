@@ -11,14 +11,15 @@ async function requireAdmin() {
   return adminUser
 }
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const adminUser = await requireAdmin()
     if (!adminUser) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const userId = Number(params.id)
+    const { id } = await params
+    const userId = Number(id)
     if (Number.isNaN(userId)) {
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 })
     }
@@ -242,14 +243,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const adminUser = await requireAdmin()
     if (!adminUser) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const userId = Number(params.id)
+    const { id } = await params
+    const userId = Number(id)
     if (Number.isNaN(userId)) {
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 })
     }
