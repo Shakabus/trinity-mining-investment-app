@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db'
 import WithdrawalApproval from '@/components/admin/WithdrawalApproval'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminWithdrawalsPage() {
   const withdrawals = await prisma.withdrawal.findMany({
     include: {

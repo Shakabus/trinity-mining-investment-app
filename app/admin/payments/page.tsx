@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db'
 import PaymentApproval from '@/components/admin/PaymentApproval'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminPaymentsPage() {
   const pendingPlans = await prisma.userPlan.findMany({
     where: {

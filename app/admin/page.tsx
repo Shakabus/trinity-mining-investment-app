@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { Users, CreditCard, TrendingUp, Activity, Banknote } from 'lucide-react'
 import AdminAnalytics from '@/components/admin/AdminAnalytics'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminPage() {
   // Get statistics
   const totalUsers = await prisma.user.count()

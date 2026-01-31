@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db'
 import SupportInboxClient from '@/components/admin/SupportInboxClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SupportInboxPage() {
   const tickets = await prisma.supportTicket.findMany({
     include: {

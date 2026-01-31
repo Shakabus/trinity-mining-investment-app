@@ -2,6 +2,8 @@ import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 const DEFAULT_PAGE_SIZE = 50
 
 export default async function AdminUsersPage({

@@ -2,6 +2,8 @@ import { prisma } from '@/lib/db'
 import ReferralSettingsPanel from '@/components/admin/ReferralSettingsPanel'
 import ReferralWithdrawalApproval from '@/components/admin/ReferralWithdrawalApproval'
 
+export const dynamic = 'force-dynamic'
+
 const DEFAULT_REFERRAL_SETTINGS = {
   isEnabled: true,
   bonusPercent: 5,
