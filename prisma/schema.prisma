@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int           @id @default(autoincrement())
+  clerkUserId   String        @unique @map("clerk_user_id")
+  email         String        @unique
+  fullName      String?       @map("full_name")
+  phone         String?
+  walletAddress String?       @map("wallet_address")
+  btcWalletAddress String?    @map("btc_wallet_address")
+  ethWalletAddress String?    @map("eth_wallet_address")
+  ltcWalletAddress String?    @map("ltc_wallet_address")
+  referralCode  String?       @unique @map("referral_code")
+  referredById  Int?          @map("referred_by_id")
+  role          String        @default("user")
+  accountStatus String        @default("inactive") @map("account_status")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  earnings      Earnings[]
+  miningStats   MiningStats[]
+  payments      Payment[]
+  withdrawals   Withdrawal[] @relation("UserWithdrawals")
+  processedWithdrawals Withdrawal[] @relation("AdminProcessedWithdrawals")
+  referralBonuses ReferralBonus[] @relation("ReferrerBonuses")
+  referralAsReferee ReferralBonus[] @relation("RefereeBonuses")
+  referralWithdrawals ReferralWithdrawal[] @relation("UserReferralWithdrawals")
+  processedReferralWithdrawals ReferralWithdrawal[] @relation("AdminProcessedReferralWithdrawals")
+  userPlans     UserPlan[]
+  referrals     User[] @relation("UserReferrals")
+  referredBy    User?  @relation("UserReferrals", fields: [referredById], references: [id])
+  adminActivityAsActor  AdminActivityLog[] @relation("AdminActivityActor")
+  adminActivityAsTarget AdminActivityLog[] @relation("AdminActivityTarget")
+  userActivityLogs      UserActivityLog[]
+  supportTickets        SupportTicket[]
+  supportMessages       SupportMessage[] @relation("SupportMessageSender")
+
+  @@map("users")
+}
+
+model Withdrawal {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  coinType          String   @map("coin_type")
+  amountUsd         Decimal  @map("amount_usd") @db.Decimal(12, 2)
+  amountCrypto      Decimal  @map("amount_crypto") @db.Decimal(20, 8)
+  walletAddress     String   @map("wallet_address")
+  status            String   @default("pending") // pending, approved, processed, rejected
+  requestedAt       DateTime @default(now()) @map("requested_at")
+  processedAt       DateTime? @map("processed_at")
+  processedByAdminId Int?    @map("processed_by_admin_id")
+  transactionId     String?  @map("transaction_id")
+  adminNotes        String?  @map("admin_notes") @db.Text
+
+  user              User     @relation("UserWithdrawals", fields: [userId], references: [id], onDelete: Cascade)
+  processedBy       User?    @relation("AdminProcessedWithdrawals", fields: [processedByAdminId], references: [id])
+
+  @@index([userId], map: "withdrawals_user_id_fkey")
+  @@map("withdrawals")
+}
+
+model AdminActivityLog {
+  id           Int      @id @default(autoincrement())
+  actorAdminId Int      @map("actor_admin_id")
+  targetUserId Int      @map("target_user_id")
+  action       String
+  detail       String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  actorAdmin   User     @relation("AdminActivityActor", fields: [actorAdminId], references: [id], onDelete: Cascade)
+  targetUser   User     @relation("AdminActivityTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([actorAdminId], map: "admin_activity_logs_actor_admin_id_fkey")
+  @@index([targetUserId], map: "admin_activity_logs_target_user_id_fkey")
+  @@map("admin_activity_logs")
+}
+
+model UserActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  action    String
+  detail    String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "user_activity_logs_user_id_fkey")
+  @@map("user_activity_logs")
+}
+
+model SupportTicket {
+  id             Int              @id @default(autoincrement())
+  userId         Int              @map("user_id")
+  subject        String           @db.Text
+  status         String           @default("open")
+  lastMessageAt  DateTime?        @map("last_message_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages       SupportMessage[]
+
+  @@index([userId], map: "support_tickets_user_id_fkey")
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id            Int       @id @default(autoincrement())
+  ticketId      Int       @map("ticket_id")
+  senderUserId  Int?      @map("sender_user_id")
+  senderRole    String    @map("sender_role")
+  body          String    @db.Text
+  attachmentUrl String?   @map("attachment_url")
+  attachmentName String?  @map("attachment_name")
+  attachmentType String?  @map("attachment_type")
+  attachmentSize Int?     @map("attachment_size")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  ticket        SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderUser    User?     @relation("SupportMessageSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId], map: "support_messages_ticket_id_fkey")
+  @@index([senderUserId], map: "support_messages_sender_user_id_fkey")
+  @@map("support_messages")
+}
+
+model ReferralSettings {
+  id               Int      @id @default(autoincrement())
+  isEnabled        Boolean  @default(true) @map("is_enabled")
+  bonusPercent     Decimal  @default(5.00) @map("bonus_percent") @db.Decimal(5, 2)
+  minPaymentUsd    Decimal  @default(100.00) @map("min_payment_usd") @db.Decimal(10, 2)
+  minWithdrawalUsd Decimal  @default(50.00) @map("min_withdrawal_usd") @db.Decimal(10, 2)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("referral_settings")
+}
+
+model ReferralBonus {
+  id         Int      @id @default(autoincrement())
+  referrerId Int      @map("referrer_id")
+  refereeId  Int      @map("referee_id")
+  paymentId  Int?     @map("payment_id")
+  amountUsd  Decimal  @map("amount_usd") @db.Decimal(10, 2)
+  status     String   @default("available")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  referrer   User     @relation("ReferrerBonuses", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee    User     @relation("RefereeBonuses", fields: [refereeId], references: [id], onDelete: Cascade)
+  payment    Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId], map: "referral_bonuses_referrer_id_fkey")
+  @@index([refereeId], map: "referral_bonuses_referee_id_fkey")
+  @@map("referral_bonuses")
+}
+
+model ReferralWithdrawal {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  coinType          String   @map("coin_type")
+  amountUsd         Decimal  @map("amount_usd") @db.Decimal(12, 2)
+  amountCrypto      Decimal  @map("amount_crypto") @db.Decimal(20, 8)
+  walletAddress     String   @map("wallet_address")
+  status            String   @default("pending")
+  requestedAt       DateTime @default(now()) @map("requested_at")
+  processedAt       DateTime? @map("processed_at")
+  processedByAdminId Int?    @map("processed_by_admin_id")
+  transactionId     String?  @map("transaction_id")
+  adminNotes        String?  @map("admin_notes") @db.Text
+
+  user              User     @relation("UserReferralWithdrawals", fields: [userId], references: [id], onDelete: Cascade)
+  processedBy       User?    @relation("AdminProcessedReferralWithdrawals", fields: [processedByAdminId], references: [id])
+
+  @@index([userId], map: "referral_withdrawals_user_id_fkey")
+  @@map("referral_withdrawals")
+}
+
+model Plan {
+  id                        Int                  @id @default(autoincrement())
+  name                      String
+  slug                      String               @unique
+  basePrice                 Decimal              @map("base_price") @db.Decimal(10, 2)
+  coinType                  String               @map("coin_type")
+  baseHashrate              Decimal              @map("base_hashrate") @db.Decimal(15, 8)
+  hashrateUnit              String               @map("hashrate_unit")
+  algorithm                 String
+  hardwareModel             String               @map("hardware_model")
+  powerEfficiency           String               @map("power_efficiency")
+  maintenanceFeePerUnitDay  Decimal              @map("maintenance_fee_per_unit_day") @db.Decimal(10, 6)
+  electricityCostPerUnitDay Decimal              @map("electricity_cost_per_unit_day") @db.Decimal(10, 6)
+  uptimeGuarantee           String               @map("uptime_guarantee")
+  status                    String               @default("active")
+  createdAt                 DateTime             @default(now()) @map("created_at")
+  durationOptions           PlanDurationOption[]
+  features                  PlanFeature[]
+  userPlans                 UserPlan[]
+
+  @@map("plans")
+}
+
+model PlanDurationOption {
+  id              Int      @id @default(autoincrement())
+  planId          Int      @map("plan_id")
+  durationDays    Int      @map("duration_days")
+  durationLabel   String   @map("duration_label")
+  priceMultiplier Decimal  @map("price_multiplier") @db.Decimal(5, 2)
+  isDefault       Boolean  @default(false) @map("is_default")
+  createdAt       DateTime @default(now()) @map("created_at")
+  plan            Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId], map: "plan_duration_options_plan_id_fkey")
+  @@map("plan_duration_options")
+}
+
+model PlanFeature {
+  id           Int      @id @default(autoincrement())
+  planId       Int      @map("plan_id")
+  featureText  String   @map("feature_text") @db.Text
+  featureOrder Int      @default(0) @map("feature_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  plan         Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId], map: "plan_features_plan_id_fkey")
+  @@map("plan_features")
+}
+
+model UserPlan {
+  id                    Int                    @id @default(autoincrement())
+  userId                Int                    @map("user_id")
+  planId                Int                    @map("plan_id")
+  selectedDurationDays  Int                    @map("selected_duration_days")
+  finalPrice            Decimal                @map("final_price") @db.Decimal(10, 2)
+  upgradeFromPlanId     Int?                   @map("upgrade_from_plan_id")
+  upgradeCredit         Decimal?               @map("upgrade_credit") @db.Decimal(10, 2)
+  status                String                 @default("selected")
+  paymentStatus         String                 @default("pending") @map("payment_status")
+  startDate             DateTime?              @map("start_date")
+  endDate               DateTime?              @map("end_date")
+  autoRenew             Boolean                @default(false) @map("auto_renew")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  earnings              Earnings[]
+  miningStats           MiningStats[]
+  multiAssetAllocations MultiAssetAllocation[]
+  payments              Payment[]
+  plan                  Plan                   @relation(fields: [planId], references: [id])
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  upgradeFromPlan        UserPlan?              @relation("PlanUpgrade", fields: [upgradeFromPlanId], references: [id])
+  upgradeToPlans         UserPlan[]             @relation("PlanUpgrade")
+
+  @@index([planId], map: "user_plans_plan_id_fkey")
+  @@index([userId], map: "user_plans_user_id_fkey")
+  @@map("user_plans")
+}
+
+model Payment {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @map("user_id")
+  userPlanId         Int       @map("user_plan_id")
+  amountUsd          Decimal   @map("amount_usd") @db.Decimal(10, 2)
+  amountCrypto       Decimal?  @map("amount_crypto") @db.Decimal(20, 8)
+  cryptoType         String    @map("crypto_type")
+  walletAddress      String    @map("wallet_address")
+  transactionId      String?   @map("transaction_id")
+  paymentProofUrl    String?   @map("payment_proof_url")
+  status             String    @default("pending")
+  confirmations      Int       @default(0)
+  adminNotes         String?   @map("admin_notes") @db.Text
+  confirmedByAdminId Int?      @map("confirmed_by_admin_id")
+  confirmedAt        DateTime? @map("confirmed_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  referralBonuses    ReferralBonus[]
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPlan           UserPlan  @relation(fields: [userPlanId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "payments_user_id_fkey")
+  @@index([userPlanId], map: "payments_user_plan_id_fkey")
+  @@map("payments")
+}
+
+model MiningStats {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @map("user_id")
+  userPlanId         Int      @map("user_plan_id")
+  assignedHashrate   Decimal  @map("assigned_hashrate") @db.Decimal(15, 8)
+  hashrateUnit       String   @map("hashrate_unit")
+  counterSpeed       Decimal  @default(0.001000) @map("counter_speed") @db.Decimal(10, 6)
+  algorithm          String
+  miningPool         String   @map("mining_pool")
+  dataCenterLocation String   @map("data_center_location")
+  machineModel       String   @map("machine_model")
+  uptimePercentage   Decimal  @default(99.90) @map("uptime_percentage") @db.Decimal(5, 2)
+  isActive           Boolean  @default(true) @map("is_active")
+  lastCounterValue   Decimal  @default(0.0000000000) @map("last_counter_value") @db.Decimal(20, 10)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPlan           UserPlan @relation(fields: [userPlanId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "mining_stats_user_id_fkey")
+  @@index([userPlanId], map: "mining_stats_user_plan_id_fkey")
+  @@map("mining_stats")
+}
+
+model Earnings {
+  id                  Int       @id @default(autoincrement())
+  userId              Int       @map("user_id")
+  userPlanId          Int       @map("user_plan_id")
+  coinType            String    @map("coin_type")
+  dailyEstimateUsd    Decimal   @default(0.00) @map("daily_estimate_usd") @db.Decimal(10, 2)
+  dailyEstimateCrypto Decimal   @default(0.00000000) @map("daily_estimate_crypto") @db.Decimal(20, 8)
+  totalEarnedUsd      Decimal   @default(0.00) @map("total_earned_usd") @db.Decimal(12, 2)
+  totalEarnedCrypto   Decimal   @default(0.00000000) @map("total_earned_crypto") @db.Decimal(20, 8)
+  lastCalculatedAt    DateTime? @map("last_calculated_at")
+  lastEstimateUpdateAt DateTime? @map("last_estimate_update_at")
+  lastUsdUpdateAt     DateTime? @map("last_usd_update_at")
+  isAdminOverride     Boolean  @default(false) @map("is_admin_override")
+  isHistorical        Boolean  @default(false) @map("is_historical")
+  isWithdrawable      Boolean  @default(true) @map("is_withdrawable")
+  isActive            Boolean   @default(true) @map("is_active")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPlan            UserPlan  @relation(fields: [userPlanId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "earnings_user_id_fkey")
+  @@index([userPlanId], map: "earnings_user_plan_id_fkey")
+  @@map("earnings")
+}
+
+model MultiAssetAllocation {
+  id              Int      @id @default(autoincrement())
+  userPlanId      Int      @map("user_plan_id")
+  coinType        String   @map("coin_type")
+  hashrate        Decimal  @db.Decimal(15, 8)
+  hashrateUnit    String   @map("hashrate_unit")
+  algorithm       String
+  hardwareModel   String   @map("hardware_model")
+  maintenanceFee  Decimal  @map("maintenance_fee") @db.Decimal(10, 6)
+  electricityCost Decimal  @map("electricity_cost") @db.Decimal(10, 6)
+  createdAt       DateTime @default(now()) @map("created_at")
+  userPlan        UserPlan @relation(fields: [userPlanId], references: [id], onDelete: Cascade)
+
+  @@index([userPlanId], map: "multi_asset_allocations_user_plan_id_fkey")
+  @@map("multi_asset_allocations")
+}
