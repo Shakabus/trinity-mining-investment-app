@@ -7,10 +7,11 @@ const DEFAULT_PAGE_SIZE = 50
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams?: { page?: string; size?: string }
+  searchParams?: Promise<{ page?: string; size?: string }>
 }) {
-  const page = Math.max(1, Number(searchParams?.page) || 1)
-  const size = Math.min(100, Math.max(10, Number(searchParams?.size) || DEFAULT_PAGE_SIZE))
+  const resolvedParams = searchParams ? await searchParams : undefined
+  const page = Math.max(1, Number(resolvedParams?.page) || 1)
+  const size = Math.min(100, Math.max(10, Number(resolvedParams?.size) || DEFAULT_PAGE_SIZE))
   const skip = (page - 1) * size
 
   const [totalUsers, users] = await Promise.all([
