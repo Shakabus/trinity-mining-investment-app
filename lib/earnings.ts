@@ -77,6 +77,7 @@ export async function autoUpdateEarnings({
     isWithdrawable: boolean
     userPlan: {
       status: string
+      selectedDurationDays?: number
       plan: { coinType: string; baseHashrate: any; hashrateUnit: string }
       multiAssetAllocations: Array<{ coinType: string; hashrate: any; hashrateUnit: string }>
     }
