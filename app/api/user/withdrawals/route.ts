@@ -84,7 +84,9 @@ export async function POST(req: Request) {
       .filter(record => record.userPlan.status === 'active' && !record.isHistorical)
       .reduce((sum, record) => sum + Number(record.dailyEstimateUsd), 0)
     const estimatedTotalUsd =
-      activePlan && dailyActiveUsd > 0 ? dailyActiveUsd * activePlan.selectedDurationDays : 0
+      activePlan && dailyActiveUsd > 0
+        ? dailyActiveUsd * (activePlan.selectedDurationDays ?? 0)
+        : 0
     const minWithdrawalUsd = estimatedTotalUsd > 0 && estimatedTotalUsd < 100 ? estimatedTotalUsd : 100
 
     if (amountUsd < minWithdrawalUsd) {
