@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
@@ -26,14 +26,10 @@ interface AdminLayoutClientProps {
 export default function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
   const pathname = usePathname()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
-
-  useEffect(() => {
-    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('admin_sidebar_collapsed') : null
-    if (stored === 'true') {
-      setIsCollapsed(true)
-    }
-  }, [])
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem('admin_sidebar_collapsed') === 'true'
+  })
 
   const toggleCollapsed = () => {
     setIsCollapsed(prev => {

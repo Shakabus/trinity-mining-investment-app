@@ -36,9 +36,11 @@ export default function NavigationOverlay() {
     return () => clearTimeout(timeout)
   }, [isVisible])
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setIsVisible(false)
   }, [pathname])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div

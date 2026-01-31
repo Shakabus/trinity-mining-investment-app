@@ -37,8 +37,6 @@ export default function AdminAnalytics() {
 
   useEffect(() => {
     let mounted = true
-    setLoading(true)
-    setError(null)
     fetch(`/api/admin/analytics?range=${range}`, { cache: 'no-store' })
       .then(async res => {
         const payload = await res.json().catch(() => ({}))
@@ -82,7 +80,11 @@ export default function AdminAnalytics() {
           {RANGE_OPTIONS.map(option => (
             <button
               key={option}
-              onClick={() => setRange(option)}
+              onClick={() => {
+                setError(null)
+                setLoading(true)
+                setRange(option)
+              }}
               className="px-3 py-2 rounded-full text-xs font-semibold transition-all"
               style={{
                 background: option === range ? 'rgba(88,45,255,0.35)' : 'rgba(255,255,255,0.08)',

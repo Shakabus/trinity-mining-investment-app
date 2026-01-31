@@ -275,7 +275,7 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
               <h3 className="text-white font-semibold mb-2">After sending payment:</h3>
               <p className="text-sm text-white/70">
                 Your payment will be verified and your account activated within 24 hours. 
-                You'll receive an email confirmation once your mining plan is active.
+                You will receive an email confirmation once your mining plan is active.
               </p>
             </div>
           </div>

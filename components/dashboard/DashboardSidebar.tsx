@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { LayoutDashboard, Gem, Package, Pickaxe, DollarSign, Settings, History, Link2, X, ChevronsLeft, ChevronsRight, LifeBuoy } from 'lucide-react'
 
 const menuItems = [
@@ -24,14 +24,10 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const [isCollapsed, setIsCollapsed] = useState(false)
-
-  useEffect(() => {
-    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('dashboard_sidebar_collapsed') : null
-    if (stored === 'true') {
-      setIsCollapsed(true)
-    }
-  }, [])
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.localStorage.getItem('dashboard_sidebar_collapsed') === 'true'
+  })
 
   const toggleCollapsed = () => {
     setIsCollapsed(prev => {

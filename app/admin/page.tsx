@@ -58,7 +58,7 @@ export default async function AdminPage() {
           Admin Overview
         </h1>
         <p className="text-white/70">
-          Monitor your platform's performance and manage operations
+          Monitor platform performance and manage operations
         </p>
       </div>
 

@@ -16,6 +16,7 @@ export default function RouteProgress() {
       return
     }
 
+    /* eslint-disable react-hooks/set-state-in-effect */
     setIsVisible(true)
     setProgress(20)
     const start = setTimeout(() => setProgress(75), 120)
@@ -28,6 +29,7 @@ export default function RouteProgress() {
       if (timerRef.current) clearTimeout(timerRef.current)
       timerRef.current = hide
     }, 500)
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     return () => {
       clearTimeout(start)

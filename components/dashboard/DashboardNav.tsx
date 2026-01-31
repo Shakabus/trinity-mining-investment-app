@@ -3,7 +3,7 @@
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { Menu } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 interface DashboardNavProps {
   user: {
@@ -15,11 +15,7 @@ interface DashboardNavProps {
 }
 
 export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
+  const [isMounted] = useState(true)
 
   return (
     <nav

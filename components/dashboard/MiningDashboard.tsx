@@ -76,7 +76,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
   const [displayHashrate, setDisplayHashrate] = useState(mining.currentHashrate)
   const [displayShares, setDisplayShares] = useState(mining.validShares)
   const [displayEarned, setDisplayEarned] = useState(mining.totalEarnedCrypto)
-  const [nowMs, setNowMs] = useState(Date.now())
+  const [nowMs, setNowMs] = useState(0)
 
   useEffect(() => {
     setData(mining)
@@ -117,7 +117,10 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
   }, [data.totalEarnedCrypto])
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setNowMs(Date.now())
     const interval = setInterval(() => setNowMs(Date.now()), 60 * 1000)
+    /* eslint-enable react-hooks/set-state-in-effect */
     return () => clearInterval(interval)
   }, [])
 
