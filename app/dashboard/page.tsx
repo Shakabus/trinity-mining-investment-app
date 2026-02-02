@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
-import { Gem, Pickaxe, DollarSign, Settings } from 'lucide-react'
+import { Gem, Pickaxe, DollarSign, Settings, TrendingUp } from 'lucide-react'
 import { autoUpdateEarnings } from '@/lib/earnings'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 
@@ -50,6 +50,11 @@ export default async function DashboardPage() {
     },
   })
 
+  const tradingEarnings = user ? await prisma.tradingEarning.findMany({
+    where: { userId: user.id, isActive: true },
+    orderBy: { createdAt: 'desc' },
+  }) : []
+
   const currentPlan = user?.userPlans[0]
   const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
   const now = new Date()
@@ -78,6 +83,9 @@ export default async function DashboardPage() {
     (sum, record) => sum + (record.isHistorical ? 0 : Number(record.dailyEstimateUsd || 0)),
     0
   )
+  const tradingTotalUsd = tradingEarnings
+    ? tradingEarnings.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
+    : 0
   const daysActiveStart = currentPlan?.startDate ?? activeMining?.createdAt ?? currentPlan?.createdAt ?? null
   const daysActive =
     user?.accountStatus === 'active' && daysActiveStart
@@ -204,7 +212,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
           <div
             className="p-4 md:p-6 rounded-3xl"
             style={{
@@ -248,6 +256,20 @@ export default async function DashboardPage() {
               border: '1px solid rgba(255, 255, 255, 0.18)',
             }}
           >
+            <div className="text-xs md:text-sm text-white/60 mb-2">Trading Earned</div>
+            <div className="text-lg md:text-2xl font-bold text-white">
+              ${tradingTotalUsd.toFixed(2)}
+            </div>
+          </div>
+
+          <div
+            className="p-4 md:p-6 rounded-3xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
             <div className="text-xs md:text-sm text-white/60 mb-2">Days Active</div>
             <div className="text-lg md:text-2xl font-bold text-white">
               {daysActive}
@@ -280,7 +302,7 @@ export default async function DashboardPage() {
           }}
         >
           <h2 className="text-lg md:text-xl font-semibold text-white mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <Link
               href="/dashboard/plans"
               className="p-4 rounded-2xl text-center transition-all hover:scale-[1.02]"
@@ -308,6 +330,20 @@ export default async function DashboardPage() {
                 <Pickaxe size={28} className="text-white float-soft" />
               </div>
               <div className="text-xs md:text-sm text-white/80">Mining</div>
+            </Link>
+            <Link
+              href="/dashboard/investment-trading"
+              className="p-4 rounded-2xl text-center transition-all hover:scale-[1.02]"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="mb-2 flex justify-center">
+                <TrendingUp size={28} className="text-white float-soft" />
+              </div>
+              <div className="text-xs md:text-sm text-white/80">Trading</div>
             </Link>
             <Link
               href="/dashboard/earnings"
@@ -365,3 +401,8 @@ export default async function DashboardPage() {
     </div>
   )
 }
+
+
+
+
+

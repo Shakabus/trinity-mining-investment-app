@@ -2,11 +2,20 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+
+const ensurePlan = async (slug: string, createData: any) => {
+  const existing = await prisma.plan.findUnique({ where: { slug } })
+  if (existing) {
+    return existing
+  }
+  return prisma.plan.create(createData)
+}
+
 async function main() {
   console.log('🌱 Starting database seed...')
 
   // 1. STARTER PLAN
-  const starterPlan = await prisma.plan.create({
+  const starterPlan = await ensurePlan('starter-plan', {
     data: {
       name: 'Starter Plan',
       slug: 'starter-plan',
@@ -41,7 +50,7 @@ async function main() {
   })
 
   // 2. GROWTH PLAN
-  const growthPlan = await prisma.plan.create({
+  const growthPlan = await ensurePlan('growth-plan', {
     data: {
       name: 'Growth Plan',
       slug: 'growth-plan',
@@ -75,7 +84,7 @@ async function main() {
   })
 
   // 3. STANDARD PLAN
-  const standardPlan = await prisma.plan.create({
+  const standardPlan = await ensurePlan('standard-plan', {
     data: {
       name: 'Standard Plan',
       slug: 'standard-plan',
@@ -109,7 +118,7 @@ async function main() {
   })
 
   // 4. PRO PLAN
-  const proPlan = await prisma.plan.create({
+  const proPlan = await ensurePlan('pro-plan', {
     data: {
       name: 'Pro Plan',
       slug: 'pro-plan',
@@ -144,7 +153,7 @@ async function main() {
   })
 
   // 5. VIP PLAN
-  const vipPlan = await prisma.plan.create({
+  const vipPlan = await ensurePlan('vip-plan', {
     data: {
       name: 'VIP Plan',
       slug: 'vip-plan',
@@ -179,7 +188,7 @@ async function main() {
   })
 
   // 6. ELITE MULTI-ASSET PLAN
-  const elitePlan = await prisma.plan.create({
+  const elitePlan = await ensurePlan('elite-multi-asset-plan', {
     data: {
       name: 'Elite Multi-Asset Plan',
       slug: 'elite-multi-asset-plan',
@@ -213,7 +222,47 @@ async function main() {
     },
   })
 
+
+  const tradingPlans = await prisma.tradingPlan.createMany({
+    data: [
+      {
+        name: 'Mega Cloud Pack',
+        slug: 'mega-cloud-pack',
+        minInvestmentUsd: 2000,
+        maxInvestmentUsd: 9999,
+        minDurationHours: 35,
+        maxDurationHours: 48,
+        minReturnMultiplier: 2.12,
+        maxReturnMultiplier: 2.78,
+        status: 'active',
+      },
+      {
+        name: 'Top Premium Package',
+        slug: 'top-premium-package',
+        minInvestmentUsd: 10000,
+        maxInvestmentUsd: 49999,
+        minDurationHours: 48,
+        maxDurationHours: 72,
+        minReturnMultiplier: 2.25,
+        maxReturnMultiplier: 2.75,
+        status: 'active',
+      },
+      {
+        name: 'VIP Promo Pack',
+        slug: 'vip-promo-pack',
+        minInvestmentUsd: 50000,
+        maxInvestmentUsd: 9999999,
+        minDurationHours: 72,
+        maxDurationHours: 96,
+        minReturnMultiplier: 2.35,
+        maxReturnMultiplier: 2.8,
+        status: 'active',
+      },
+    ],
+    skipDuplicates: true,
+  })
   console.log('✅ Created 6 plans successfully!')
+  console.log('✅ Created trading plans:', tradingPlans.count)
   console.log('✅ Starter Plan ID:', starterPlan.id)
   console.log('✅ Growth Plan ID:', growthPlan.id)
   console.log('✅ Standard Plan ID:', standardPlan.id)
@@ -230,3 +279,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+

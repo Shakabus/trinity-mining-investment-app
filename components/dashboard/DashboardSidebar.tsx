@@ -2,8 +2,25 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
-import { LayoutDashboard, Gem, Package, Pickaxe, DollarSign, Settings, History, Link2, X, ChevronsLeft, ChevronsRight, LifeBuoy } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import {
+  LayoutDashboard,
+  Gem,
+  Package,
+  Pickaxe,
+  DollarSign,
+  Settings,
+  History,
+  Link2,
+  X,
+  ChevronsLeft,
+  ChevronsRight,
+  LifeBuoy,
+  LineChart,
+  Bot,
+  Wallet,
+  Layers,
+} from 'lucide-react'
 
 const menuItems = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -11,6 +28,18 @@ const menuItems = [
   { name: 'My Plan', href: '/dashboard/my-plan', icon: Package },
   { name: 'Mining', href: '/dashboard/mining', icon: Pickaxe },
   { name: 'Earnings', href: '/dashboard/earnings', icon: DollarSign },
+  {
+    name: 'Investment Trading',
+    href: '/dashboard/investment-trading',
+    icon: Layers,
+    children: [
+      { name: 'Intro', href: '/dashboard/investment-trading', icon: Layers },
+      { name: 'Plans', href: '/dashboard/investment-trading#plans', icon: Package },
+      { name: 'Bot Activity', href: '/dashboard/investment-trading/bot', icon: Bot },
+      { name: 'Earnings', href: '/dashboard/investment-trading/earnings', icon: LineChart },
+      { name: 'Withdrawals', href: '/dashboard/investment-trading/withdrawals', icon: Wallet },
+    ],
+  },
   { name: 'Referrals', href: '/dashboard/referrals', icon: Link2 },
   { name: 'Activity', href: '/dashboard/activity', icon: History },
   { name: 'Support', href: '/dashboard/support', icon: LifeBuoy },
@@ -24,10 +53,19 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const [hash, setHash] = useState('')
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.localStorage.getItem('dashboard_sidebar_collapsed') === 'true'
   })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const updateHash = () => setHash(window.location.hash || '')
+    updateHash()
+    window.addEventListener('hashchange', updateHash)
+    return () => window.removeEventListener('hashchange', updateHash)
+  }, [pathname])
 
   const toggleCollapsed = () => {
     setIsCollapsed(prev => {
@@ -80,6 +118,79 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
               (item.href !== '/dashboard' && pathname?.startsWith(item.href))
 
             const Icon = item.icon
+
+            if ('children' in item) {
+              return (
+                <div key={item.href} className="space-y-1">
+                  <Link
+                    href={item.href}
+                    className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-3 rounded-lg transition-all group`}
+                    style={{
+                      background: isActive
+                        ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))'
+                        : 'transparent',
+                      color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
+                      border: isActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
+                    }}
+                    title={isCollapsed ? item.name : undefined}
+                  >
+                    <div
+                      className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
+                      style={{
+                        background: isActive
+                          ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
+                          : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                      }}
+                    >
+                      <Icon size={18} strokeWidth={2} />
+                    </div>
+                    {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                  </Link>
+                  {!isCollapsed && (
+                    <div className="ml-10 space-y-1">
+                      {item.children.map(child => {
+                        const childActive =
+                          pathname === child.href ||
+                          (child.href.includes('#') &&
+                            pathname === '/dashboard/investment-trading' &&
+                            hash === '#plans')
+                        const ChildIcon = child.icon
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+                            style={{
+                              background: childActive
+                                ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04))'
+                                : 'transparent',
+                              color: childActive ? '#ffffff' : 'rgba(255, 255, 255, 0.6)',
+                              border: childActive ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid transparent',
+                            }}
+                          >
+                            <div
+                              className="p-1.5 rounded-lg"
+                              style={{
+                                background: childActive
+                                  ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
+                                  : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
+                                backdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                              }}
+                            >
+                              <ChildIcon size={16} strokeWidth={2} />
+                            </div>
+                            <span className="font-medium">{child.name}</span>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
 
             return (
               <Link
@@ -144,6 +255,78 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
               (item.href !== '/dashboard' && pathname?.startsWith(item.href))
 
             const Icon = item.icon
+
+            if ('children' in item) {
+              return (
+                <div key={item.href} className="space-y-1">
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
+                    style={{
+                      background: isActive
+                        ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))'
+                        : 'transparent',
+                      color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
+                      border: isActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
+                    }}
+                  >
+                    <div
+                      className="p-1.5 rounded-lg transition-all"
+                      style={{
+                        background: isActive
+                          ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
+                          : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                      }}
+                    >
+                      <Icon size={18} strokeWidth={2} />
+                    </div>
+                    <span className="font-medium">{item.name}</span>
+                  </Link>
+                  <div className="ml-10 space-y-1">
+                    {item.children.map(child => {
+                      const childActive =
+                        pathname === child.href ||
+                        (child.href.includes('#') &&
+                          pathname === '/dashboard/investment-trading' &&
+                          hash === '#plans')
+                      const ChildIcon = child.icon
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={onClose}
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all"
+                          style={{
+                            background: childActive
+                              ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04))'
+                              : 'transparent',
+                            color: childActive ? '#ffffff' : 'rgba(255, 255, 255, 0.6)',
+                            border: childActive ? '1px solid rgba(255, 255, 255, 0.18)' : '1px solid transparent',
+                          }}
+                        >
+                          <div
+                            className="p-1.5 rounded-lg"
+                            style={{
+                              background: childActive
+                                ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
+                                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
+                              backdropFilter: 'blur(10px)',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                            }}
+                          >
+                            <ChildIcon size={16} strokeWidth={2} />
+                          </div>
+                          <span className="font-medium">{child.name}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            }
 
             return (
               <Link

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import WithdrawalApproval from '@/components/admin/WithdrawalApproval'
+import TradingWithdrawalApproval from '@/components/admin/TradingWithdrawalApproval'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,3 +53,4 @@ export default async function AdminWithdrawalsPage() {
     </div>
   )
 }
+
