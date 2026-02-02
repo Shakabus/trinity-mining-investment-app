@@ -28,11 +28,13 @@ export default async function TradingBotPage() {
   const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? user?.tradingPlans[0] ?? null
   const activeStats = user?.tradingStats.find(stat => stat.isActive) ?? user?.tradingStats[0] ?? null
   const seed = (user?.id || 1) * 17
+  const now = new Date()
+  const baseTime = now.getTime()
 
   const priceSeries = Array.from({ length: 18 }, (_, index) => {
     const value = 120 + Math.sin(seed + index * 0.6) * 18 + index * 1.1
     return {
-      time: new Date(Date.now() - (17 - index) * 600000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      time: new Date(baseTime - (17 - index) * 600000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       value: Math.round(value * 100) / 100,
     }
   })
@@ -40,13 +42,13 @@ export default async function TradingBotPage() {
   const pnlSeries = Array.from({ length: 18 }, (_, index) => {
     const value = Math.sin(seed * 0.3 + index * 0.5) * 120 + index * 8
     return {
-      time: new Date(Date.now() - (17 - index) * 600000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      time: new Date(baseTime - (17 - index) * 600000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       value: Math.round(value * 100) / 100,
     }
   })
 
   const volumeSeries = Array.from({ length: 12 }, (_, index) => ({
-    time: new Date(Date.now() - (11 - index) * 3600000).toLocaleTimeString('en-US', { hour: '2-digit' }),
+    time: new Date(baseTime - (11 - index) * 3600000).toLocaleTimeString('en-US', { hour: '2-digit' }),
     value: Math.round(40 + Math.abs(Math.sin(seed + index) * 60)),
   }))
 

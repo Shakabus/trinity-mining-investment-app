@@ -24,6 +24,7 @@ export default async function TradingWithdrawalsPage() {
   const totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
   const totalWithdrawn = user?.tradingWithdrawals.reduce((sum, w) => sum + Number(w.amountUsd), 0) ?? 0
   const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
+  const now = new Date()
   const minWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
 
   const historySeries = user?.tradingWithdrawals.slice(0, 8).map(withdrawal => ({
@@ -41,7 +42,7 @@ export default async function TradingWithdrawalsPage() {
   const balanceSeries = Array.from({ length: 8 }, (_, index) => {
     const value = Math.max(0, availableUsd - index * (availableUsd * 0.08))
     return {
-      time: new Date(Date.now() - (7 - index) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      time: new Date(now.getTime() - (7 - index) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       value: Math.round(value * 100) / 100,
     }
   })

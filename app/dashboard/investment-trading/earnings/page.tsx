@@ -76,7 +76,7 @@ export default async function TradingEarningsPage() {
     {
       label: 'Daily',
       estimated: activeEarning ? Number(activeEarning.dailyEstimateUsd) : 0,
-      actual: series.length > 0 ? series[series.length - 1].value / Math.max(1, Math.ceil((Date.now() - startDate.getTime()) / 86400000)) : 0,
+      actual: series.length > 0 ? series[series.length - 1].value / Math.max(1, Math.ceil((now.getTime() - startDate.getTime()) / 86400000)) : 0,
     },
   ]
 
