@@ -150,7 +150,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                   </Link>
                   {!isCollapsed && (
                     <div className="ml-10 space-y-1">
-                      {item.children.map(child => {
+                      {item.children?.map(child => {
                         const childActive =
                           pathname === child.href ||
                           (child.href.includes('#') &&
@@ -286,7 +286,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                     <span className="font-medium">{item.name}</span>
                   </Link>
                   <div className="ml-10 space-y-1">
-                    {item.children.map(child => {
+                    {item.children?.map(child => {
                       const childActive =
                         pathname === child.href ||
                         (child.href.includes('#') &&
