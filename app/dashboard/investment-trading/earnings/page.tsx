@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import TradingEarningsCharts from '@/components/trading/TradingEarningsCharts'
+import TradingLiveEarningsCards from '@/components/trading/TradingLiveEarningsCards'
 import { buildTradingSeries, simulateTradingProgress } from '@/lib/trading'
 import EmptyState from '@/components/ui/EmptyState'
 import Link from 'next/link'
@@ -114,41 +115,15 @@ export default async function TradingEarningsPage() {
         <p className="text-white/70">Track trading profit, estimates, and momentum.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div
-          className="p-4 rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-xs text-white/60">Total Earned</div>
-          <div className="text-lg font-semibold text-white mt-2">${displayTotalEarned.toFixed(2)}</div>
-        </div>
-        <div
-          className="p-4 rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-xs text-white/60">Daily Estimate</div>
-          <div className="text-lg font-semibold text-white mt-2">${displayDailyEstimate.toFixed(2)}</div>
-        </div>
-        <div
-          className="p-4 rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-xs text-white/60">Expected Return</div>
-          <div className="text-lg font-semibold text-white mt-2">${activePlan ? Number(activePlan.expectedReturnUsd).toFixed(2) : '0.00'}</div>
-        </div>
-      </div>
+      <TradingLiveEarningsCards
+        isActive={isActive}
+        investmentUsd={activePlan ? Number(activePlan.investmentUsd) : 0}
+        expectedReturnUsd={activePlan ? Number(activePlan.expectedReturnUsd) : 0}
+        totalEarnedUsd={displayTotalEarned}
+        dailyEstimateUsd={displayDailyEstimate}
+        startDate={startDate}
+        endDate={endDate}
+      />
 
       {activePlan ? (
         <TradingEarningsCharts

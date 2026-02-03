@@ -8,6 +8,7 @@ import { buildAllocationSeries, buildTradingSeries, simulateTradingProgress } fr
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import EmptyState from '@/components/ui/EmptyState'
+import TradingLiveOverviewCards from '@/components/trading/TradingLiveOverviewCards'
 
 export const dynamic = 'force-dynamic'
 
@@ -179,59 +180,32 @@ export default async function TradingInvestmentPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div
-          className="p-4 rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-xs text-white/60">Current Plan</div>
-          <div className="text-lg font-semibold text-white mt-2">{planLabel}</div>
-          <div className="text-xs text-white/50 mt-1">{statusLabel}</div>
-        </div>
-        <div
-          className="p-4 rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-xs text-white/60">Portfolio Equity</div>
-          <div className="text-lg font-semibold text-white mt-2">
-            ${snapshot ? snapshot.equityUsd.toFixed(2) : '0.00'}
+      {activePlan ? (
+        <TradingLiveOverviewCards
+          planLabel={planLabel}
+          statusLabel={statusLabel}
+          investmentUsd={Number(activePlan.investmentUsd)}
+          expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
+          durationHours={activePlan.durationHours}
+          startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
+          seed={(user?.id || 1) * 11}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-xs text-white/60">Current Plan</div>
+            <div className="text-lg font-semibold text-white mt-2">{planLabel}</div>
+            <div className="text-xs text-white/50 mt-1">{statusLabel}</div>
           </div>
         </div>
-        <div
-          className="p-4 rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-xs text-white/60">Realized P/L</div>
-          <div className="text-lg font-semibold text-white mt-2">
-            ${snapshot ? snapshot.pnlUsd.toFixed(2) : '0.00'}
-          </div>
-        </div>
-        <div
-          className="p-4 rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-xs text-white/60">Open Positions</div>
-          <div className="text-lg font-semibold text-white mt-2">
-            {snapshot ? snapshot.openPositions : 0}
-          </div>
-        </div>
-      </div>
+      )}
 
       {activePlan ? (
         <TradingOverviewCharts
