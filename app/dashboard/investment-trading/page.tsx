@@ -234,8 +234,19 @@ export default async function TradingInvestmentPage() {
         <EmptyState
           title="Activate a trading plan to view portfolio analytics"
           description="Select a trading investment plan to unlock managed portfolio charts and performance insights."
-          actionLabel="View trading plans"
-          actionHref="/dashboard/investment-trading#plans"
+          action={
+            <Link
+              href="/dashboard/investment-trading#plans"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                color: '#ffffff',
+              }}
+            >
+              View trading plans
+              <ArrowUpRight size={14} />
+            </Link>
+          }
         />
       )}
 

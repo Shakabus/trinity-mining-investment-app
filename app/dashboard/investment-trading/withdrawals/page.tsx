@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import TradingWithdrawalsCharts from '@/components/trading/TradingWithdrawalsCharts'
 import TradingWithdrawalForm from '@/components/trading/TradingWithdrawalForm'
 import EmptyState from '@/components/ui/EmptyState'
+import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,8 +89,19 @@ export default async function TradingWithdrawalsPage() {
         <EmptyState
           title="Activate a trading plan to request withdrawals"
           description="Once your investment plan is active, you can request withdrawals and view payout history."
-          actionLabel="Activate a plan"
-          actionHref="/dashboard/investment-trading#plans"
+          action={
+            <Link
+              href="/dashboard/investment-trading#plans"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                color: '#ffffff',
+              }}
+            >
+              Activate a plan
+              <ArrowUpRight size={14} />
+            </Link>
+          }
         />
       )}
 

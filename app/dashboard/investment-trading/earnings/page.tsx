@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import TradingEarningsCharts from '@/components/trading/TradingEarningsCharts'
 import { buildTradingSeries, simulateTradingProgress } from '@/lib/trading'
 import EmptyState from '@/components/ui/EmptyState'
+import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -147,8 +149,19 @@ export default async function TradingEarningsPage() {
         <EmptyState
           title="Activate a trading plan to view earnings"
           description="Trading earnings, drawdowns, and comparisons appear once your portfolio is active."
-          actionLabel="Activate a plan"
-          actionHref="/dashboard/investment-trading#plans"
+          action={
+            <Link
+              href="/dashboard/investment-trading#plans"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                color: '#ffffff',
+              }}
+            >
+              Activate a plan
+              <ArrowUpRight size={14} />
+            </Link>
+          }
         />
       )}
     </div>
