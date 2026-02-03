@@ -53,8 +53,8 @@ export default async function TradingInvestmentPage() {
     openPositions: number
   }
 
-  if (activePlan && activePlan.startDate) {
-    const startDate = activePlan.startDate
+  if (activePlan) {
+    const startDate = activePlan.startDate ?? activePlan.createdAt ?? now
     const endDate = activePlan.endDate ?? new Date(startDate.getTime() + activePlan.durationHours * 60 * 60 * 1000)
     const seed = user ? user.id * 13 + activePlan.id * 7 : 42
 
@@ -66,6 +66,16 @@ export default async function TradingInvestmentPage() {
       now,
       seed,
     })
+
+    if (!activePlan.startDate || !activePlan.endDate) {
+      await prisma.tradingUserPlan.update({
+        where: { id: activePlan.id },
+        data: {
+          startDate,
+          endDate,
+        },
+      })
+    }
 
     if (activeEarnings && !activeEarnings.isAdminOverride) {
       await prisma.tradingEarning.update({

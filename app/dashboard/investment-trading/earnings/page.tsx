@@ -33,8 +33,9 @@ export default async function TradingEarningsPage() {
   const now = new Date()
 
   let snapshot = null as null | { dailyEstimateUsd: number; earnedUsd: number }
-  if (activePlan && activePlan.startDate) {
-    const startDate = activePlan.startDate
+  if (activePlan) {
+    const startDate = activePlan.startDate ?? activePlan.createdAt ?? now
+    const endDate = activePlan.endDate ?? new Date(startDate.getTime() + activePlan.durationHours * 60 * 60 * 1000)
     const seed = (user?.id || 1) * 13 + activePlan.id * 7
     snapshot = simulateTradingProgress({
       investmentUsd: Number(activePlan.investmentUsd),
@@ -44,6 +45,16 @@ export default async function TradingEarningsPage() {
       now,
       seed,
     })
+
+    if (!activePlan.startDate || !activePlan.endDate) {
+      await prisma.tradingUserPlan.update({
+        where: { id: activePlan.id },
+        data: {
+          startDate,
+          endDate,
+        },
+      })
+    }
 
     if (activeEarning && !activeEarning.isAdminOverride) {
       await prisma.tradingEarning.update({
