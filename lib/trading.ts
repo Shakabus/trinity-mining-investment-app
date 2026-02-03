@@ -29,55 +29,111 @@ const mulberry32 = (seed: number) => {
   }
 }
 
-const buildStepwiseProgress = ({
+const buildJumpSchedule = ({
   durationMs,
-  elapsedMs,
   seed,
   expectedReturnUsd,
-  durationHours,
+  investmentUsd,
 }: {
   durationMs: number
-  elapsedMs: number
   seed: number
   expectedReturnUsd: number
-  durationHours: number
+  investmentUsd: number
 }) => {
-  if (durationMs <= 0) return 1
-  const elapsedRatio = clamp(elapsedMs / durationMs, 0, 1)
-  const stepCount = Math.round(clamp(durationHours / 3, 6, 22))
+  const rng = mulberry32(Math.floor(seed * 100000 + durationMs % 997))
+  const minIntervalMs = 60 * 1000
+  const maxIntervalMs = 2 * 60 * 60 * 1000
   const payoutScale = clamp(expectedReturnUsd / 10000, 0.6, 2.2)
-  const rng = mulberry32(Math.floor(seed * 100000 + stepCount * 97))
+  const schedule: { timeMs: number; earnedUsd: number }[] = []
+  let timeMs = 0
+  let earnedUsd = 0
+  let steps = 0
 
-  const rawIntervals = Array.from({ length: stepCount }, () => 0.6 + rng() * 1.8)
-  const intervalSum = rawIntervals.reduce((sum, value) => sum + value, 0)
-  const normalizedIntervals = rawIntervals.map(value => value / intervalSum)
-  const times: number[] = []
-  normalizedIntervals.reduce((acc, value, index) => {
-    const next = acc + value
-    times[index] = next
-    return next
-  }, 0)
-
-  const rawWeights = Array.from({ length: stepCount }, () => Math.pow(rng(), 1 / payoutScale))
-  const weightSum = rawWeights.reduce((sum, value) => sum + value, 0)
-  const weights = rawWeights.map(value => value / weightSum)
-
-  let progress = 0
-  for (let i = 0; i < stepCount; i += 1) {
-    const prev = i === 0 ? 0 : times[i - 1]
-    const current = times[i]
-    if (elapsedRatio >= current) {
-      progress += weights[i]
-      continue
-    }
-    if (elapsedRatio > prev) {
-      const localT = (elapsedRatio - prev) / (current - prev)
-      progress += weights[i] * localT
-    }
-    break
+  while (timeMs < durationMs) {
+    const interval = minIntervalMs + rng() * (maxIntervalMs - minIntervalMs)
+    timeMs = Math.min(durationMs, timeMs + interval)
+    schedule.push({ timeMs, earnedUsd })
+    steps += 1
+    if (timeMs === durationMs) break
   }
 
-  return clamp(progress, 0, 1)
+  if (steps === 0) {
+    return [{ timeMs: durationMs, earnedUsd: expectedReturnUsd }]
+  }
+
+  const minEquity = investmentUsd * 0.2
+  let remaining = expectedReturnUsd
+  for (let i = 0; i < schedule.length; i += 1) {
+    const stepsLeft = schedule.length - i
+    const base = remaining / stepsLeft
+    const volatility = clamp(0.35 + (1 - Math.min(1, payoutScale / 2.2)) * 0.25, 0.25, 0.6)
+    const direction = rng() < 0.35 ? -1 : 1
+    const noise = base * (rng() * volatility)
+    let delta = base + direction * noise
+
+    if (i === schedule.length - 1) {
+      delta = remaining
+    } else {
+      const maxDelta = base * (2.5 * payoutScale)
+      const minDelta = -base * (1.4 * payoutScale)
+      delta = clamp(delta, minDelta, maxDelta)
+    }
+
+    earnedUsd = clamp(earnedUsd + delta, minEquity - investmentUsd, expectedReturnUsd)
+    remaining = expectedReturnUsd - earnedUsd
+    schedule[i] = { timeMs: schedule[i].timeMs, earnedUsd }
+  }
+
+  return schedule
+}
+
+const getSchedulePoint = (
+  schedule: { timeMs: number; earnedUsd: number }[],
+  elapsedMs: number
+) => {
+  if (schedule.length === 0) {
+    return { earnedUsd: 0, stepIndex: 0 }
+  }
+  if (elapsedMs <= schedule[0].timeMs) {
+    const first = schedule[0]
+    const earnedUsd = first.timeMs === 0 ? first.earnedUsd : (first.earnedUsd * elapsedMs) / first.timeMs
+    return { earnedUsd, stepIndex: 0 }
+  }
+  for (let i = 1; i < schedule.length; i += 1) {
+    if (elapsedMs <= schedule[i].timeMs) {
+      const prev = schedule[i - 1]
+      const current = schedule[i]
+      const span = current.timeMs - prev.timeMs
+      const t = span === 0 ? 1 : (elapsedMs - prev.timeMs) / span
+      const earnedUsd = prev.earnedUsd + (current.earnedUsd - prev.earnedUsd) * t
+      return { earnedUsd, stepIndex: i }
+    }
+  }
+  return { earnedUsd: schedule[schedule.length - 1].earnedUsd, stepIndex: schedule.length - 1 }
+}
+
+const computePnlNoise = ({
+  seed,
+  stepIndex,
+  progress,
+  expectedReturnUsd,
+  investmentUsd,
+}: {
+  seed: number
+  stepIndex: number
+  progress: number
+  expectedReturnUsd: number
+  investmentUsd: number
+}) => {
+  const rng = mulberry32(Math.floor(seed * 100000 + stepIndex * 37 + 11))
+  const scaleBase = clamp(expectedReturnUsd * 0.12, 35, expectedReturnUsd * 0.35)
+  const volatility = 0.25 + rng() * 0.55
+  const signed = rng() * 2 - 1
+  const intensity = scaleBase * volatility * (0.25 + 0.75 * progress)
+  const noise = signed * intensity
+  const minPnl = -0.6 * investmentUsd
+  const maxPnl = expectedReturnUsd - investmentUsd
+  return clamp(noise, minPnl - (expectedReturnUsd * 0.2), maxPnl * 0.35)
 }
 
 export function pickTradingPlanReturn(config: TradingPlanConfig, investmentUsd: number, seed: number) {
@@ -106,15 +162,23 @@ export function simulateTradingProgress({
 }: TradingSimulationInput) {
   const durationMs = durationHours * 60 * 60 * 1000
   const elapsedMs = clamp(now.getTime() - startDate.getTime(), 0, durationMs)
-  const progress = buildStepwiseProgress({
+  const schedule = buildJumpSchedule({
     durationMs,
-    elapsedMs,
     seed,
     expectedReturnUsd,
-    durationHours,
+    investmentUsd,
   })
-  const earnedUsd = expectedReturnUsd * progress
-  const pnlUsd = earnedUsd - investmentUsd
+  const { earnedUsd, stepIndex } = getSchedulePoint(schedule, elapsedMs)
+  const progress = expectedReturnUsd === 0 ? 0 : clamp(earnedUsd / expectedReturnUsd, 0, 1)
+  const pnlBase = earnedUsd - investmentUsd
+  const pnlNoise = computePnlNoise({
+    seed,
+    stepIndex,
+    progress,
+    expectedReturnUsd,
+    investmentUsd,
+  })
+  const pnlUsd = clamp(pnlBase + pnlNoise, -0.6 * investmentUsd, expectedReturnUsd - investmentUsd)
   const equityUsd = investmentUsd + pnlUsd
   const dailyEstimateUsd = durationHours > 0 ? (expectedReturnUsd / (durationHours / 24)) : 0
   const winRate = clamp(55 + Math.sin(seed + progress * 2.4) * 12, 40, 78)
@@ -148,21 +212,30 @@ export function buildTradingSeries({
 }) {
   const durationMs = Math.max(1, endDate.getTime() - startDate.getTime())
   const interval = durationMs / Math.max(1, points - 1)
+  const schedule = buildJumpSchedule({
+    durationMs,
+    seed: seed + 13,
+    expectedReturnUsd,
+    investmentUsd,
+  })
   return Array.from({ length: points }, (_, index) => {
     const timestamp = new Date(startDate.getTime() + interval * index)
     const elapsedMs = clamp(timestamp.getTime() - startDate.getTime(), 0, durationMs)
-    const progress = buildStepwiseProgress({
-      durationMs,
-      elapsedMs,
+    const { earnedUsd, stepIndex } = getSchedulePoint(schedule, elapsedMs)
+    const progress = expectedReturnUsd === 0 ? 0 : clamp(earnedUsd / expectedReturnUsd, 0, 1)
+    const pnlBase = earnedUsd - investmentUsd
+    const pnlNoise = computePnlNoise({
       seed: seed + 13,
+      stepIndex,
+      progress,
       expectedReturnUsd,
-      durationHours: Math.max(1, durationMs / (60 * 60 * 1000)),
+      investmentUsd,
     })
-    const value = expectedReturnUsd * progress
+    const pnl = clamp(pnlBase + pnlNoise, -0.6 * investmentUsd, expectedReturnUsd - investmentUsd)
     return {
       time: timestamp,
-      value: Math.round(value * 100) / 100,
-      pnl: Math.round((value - investmentUsd) * 100) / 100,
+      value: Math.round(earnedUsd * 100) / 100,
+      pnl: Math.round(pnl * 100) / 100,
     }
   })
 }
