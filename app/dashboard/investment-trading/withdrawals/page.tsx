@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import TradingWithdrawalsCharts from '@/components/trading/TradingWithdrawalsCharts'
 import TradingWithdrawalForm from '@/components/trading/TradingWithdrawalForm'
+import EmptyState from '@/components/ui/EmptyState'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,12 +16,14 @@ export default async function TradingWithdrawalsPage() {
   const user = await prisma.user.findUnique({
     where: { clerkUserId: userId },
     include: {
+      tradingPlans: { orderBy: { createdAt: 'desc' } },
       tradingEarnings: { orderBy: { createdAt: 'desc' } },
       tradingWithdrawals: { orderBy: { requestedAt: 'desc' } },
     },
   })
 
-  const activeEarning = user?.tradingEarnings.find(earning => earning.isActive) ?? user?.tradingEarnings[0] ?? null
+  const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
+  const activeEarning = user?.tradingEarnings.find(earning => earning.isActive) ?? null
   const totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
   const totalWithdrawn = user?.tradingWithdrawals.reduce((sum, w) => sum + Number(w.amountUsd), 0) ?? 0
   const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
@@ -54,29 +57,40 @@ export default async function TradingWithdrawalsPage() {
         <p className="text-white/70">Request withdrawals from your trading earnings.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <TradingWithdrawalForm availableUsd={availableUsd} minWithdrawalUsd={minWithdrawalUsd} />
-        </div>
-        <div
-          className="p-6 rounded-3xl space-y-3"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-xs text-white/60">Available Balance</div>
-          <div className="text-2xl font-semibold text-white">${availableUsd.toFixed(2)}</div>
-          <div className="text-xs text-white/50">Minimum withdrawal: ${minWithdrawalUsd.toFixed(2)}</div>
-        </div>
-      </div>
+      {activePlan ? (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <TradingWithdrawalForm availableUsd={availableUsd} minWithdrawalUsd={minWithdrawalUsd} />
+            </div>
+            <div
+              className="p-6 rounded-3xl space-y-3"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
+              }}
+            >
+              <div className="text-xs text-white/60">Available Balance</div>
+              <div className="text-2xl font-semibold text-white">${availableUsd.toFixed(2)}</div>
+              <div className="text-xs text-white/50">Minimum withdrawal: ${minWithdrawalUsd.toFixed(2)}</div>
+            </div>
+          </div>
 
-      <TradingWithdrawalsCharts
-        historySeries={historySeries}
-        statusSeries={statusSeries.length ? statusSeries : [{ name: 'pending', value: 0 }]}
-        balanceSeries={balanceSeries}
-      />
+          <TradingWithdrawalsCharts
+            historySeries={historySeries}
+            statusSeries={statusSeries.length ? statusSeries : [{ name: 'pending', value: 0 }]}
+            balanceSeries={balanceSeries}
+          />
+        </>
+      ) : (
+        <EmptyState
+          title="Activate a trading plan to request withdrawals"
+          description="Once your investment plan is active, you can request withdrawals and view payout history."
+          actionLabel="Activate a plan"
+          actionHref="/dashboard/investment-trading#plans"
+        />
+      )}
 
       <div
         className="p-6 rounded-3xl"

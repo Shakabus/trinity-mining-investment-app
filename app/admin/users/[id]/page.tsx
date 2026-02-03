@@ -39,6 +39,19 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
         },
         orderBy: { createdAt: 'desc' },
       },
+      tradingPlans: {
+        include: { plan: true, payments: true },
+        orderBy: { createdAt: 'desc' },
+      },
+      tradingStats: {
+        orderBy: { createdAt: 'desc' },
+      },
+      tradingEarnings: {
+        include: {
+          tradingUserPlan: { include: { plan: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      },
       payments: {
         orderBy: { createdAt: 'desc' },
       },
@@ -52,6 +65,9 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
   const currentPlan = user.userPlans.find(plan => plan.status === 'active') ?? user.userPlans[0]
   const activeMining = user.miningStats.find(stat => stat.isActive) ?? user.miningStats[0]
   const activeEarnings = user.earnings.filter(record => record.isActive)
+  const activeTradingPlan = user.tradingPlans.find(plan => plan.status === 'active') ?? user.tradingPlans[0]
+  const activeTradingStats = user.tradingStats.find(stat => stat.isActive) ?? user.tradingStats[0]
+  const activeTradingEarnings = user.tradingEarnings.filter(record => record.isActive)
 
   const allocationMap = new Map<string, { hashrate: number; hashrateUnit: string; ratio: number | null }>()
   for (const plan of user.userPlans) {
@@ -90,6 +106,18 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
       title: 'Payment',
       detail: `${payment.cryptoType} ${payment.amountUsd.toString()} - ${payment.status}`,
       timestamp: payment.createdAt.toISOString(),
+    })),
+    ...user.tradingPlans.map(plan => ({
+      id: `trading-plan-${plan.id}`,
+      title: 'Trading Plan',
+      detail: `${plan.plan.name} - ${plan.status}`,
+      timestamp: plan.updatedAt.toISOString(),
+    })),
+    ...user.tradingEarnings.map(record => ({
+      id: `trading-earning-${record.id}`,
+      title: 'Trading Earnings',
+      detail: `Total earned $${Number(record.totalEarnedUsd).toFixed(2)}`,
+      timestamp: record.updatedAt.toISOString(),
     })),
     ...adminLogs.map(log => ({
       id: `admin-${log.id}`,
@@ -174,6 +202,39 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
             planName,
           }
         })}
+        tradingPlan={
+          activeTradingPlan
+            ? {
+                id: activeTradingPlan.id,
+                name: activeTradingPlan.plan.name,
+                status: activeTradingPlan.status,
+                investmentUsd: Number(activeTradingPlan.investmentUsd),
+                expectedReturnUsd: Number(activeTradingPlan.expectedReturnUsd),
+                durationHours: activeTradingPlan.durationHours,
+                startDate: activeTradingPlan.startDate ? activeTradingPlan.startDate.toISOString() : null,
+                endDate: activeTradingPlan.endDate ? activeTradingPlan.endDate.toISOString() : null,
+              }
+            : undefined
+        }
+        tradingStats={
+          activeTradingStats
+            ? {
+                id: activeTradingStats.id,
+                botSpeed: Number(activeTradingStats.botSpeed),
+                strategy: activeTradingStats.strategy,
+                riskLevel: activeTradingStats.riskLevel,
+                isActive: activeTradingStats.isActive,
+              }
+            : undefined
+        }
+        tradingEarnings={activeTradingEarnings.map(record => ({
+          id: record.id,
+          dailyEstimateUsd: Number(record.dailyEstimateUsd),
+          totalEarnedUsd: Number(record.totalEarnedUsd),
+          isActive: record.isActive,
+          isAdminOverride: record.isAdminOverride,
+          planName: record.tradingUserPlan?.plan?.name ?? 'Unknown Plan',
+        }))}
         activity={activityLog}
       />
     </div>

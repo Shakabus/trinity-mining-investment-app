@@ -17,7 +17,6 @@ import {
   ChevronsRight,
   LifeBuoy,
   LineChart,
-  Bot,
   Wallet,
   Layers,
 } from 'lucide-react'
@@ -35,7 +34,7 @@ const menuItems = [
     children: [
       { name: 'Intro', href: '/dashboard/investment-trading', icon: Layers },
       { name: 'Plans', href: '/dashboard/investment-trading#plans', icon: Package },
-      { name: 'Bot Activity', href: '/dashboard/investment-trading/bot', icon: Bot },
+      { name: 'Portfolio Activity', href: '/dashboard/investment-trading/bot', icon: LineChart },
       { name: 'Earnings', href: '/dashboard/investment-trading/earnings', icon: LineChart },
       { name: 'Withdrawals', href: '/dashboard/investment-trading/withdrawals', icon: Wallet },
     ],

@@ -38,8 +38,8 @@ export default function TradingPlanCard({ plan }: TradingPlanCardProps) {
         const data = await response.json().catch(() => null)
         showToast(data?.error || 'Unable to start trading plan.', 'error')
       } else {
-        showToast('Trading plan activated. Bot is starting.', 'success')
-        router.refresh()
+        showToast('Payment instructions ready. Submit proof to activate.', 'success')
+        router.push('/dashboard/investment-trading/payment')
       }
     } finally {
       setIsSubmitting(false)
@@ -112,14 +112,14 @@ export default function TradingPlanCard({ plan }: TradingPlanCardProps) {
       <LoadingButton
         onClick={handleSubmit}
         isLoading={isSubmitting}
-        loadingText="Activating..."
+        loadingText="Preparing..."
         className="w-full px-4 py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
         style={{
           background: 'linear-gradient(135deg, #582dff, #3a137a)',
           color: '#ffffff',
         }}
       >
-        Start Trading
+        Proceed to Payment
         <ArrowUpRight size={16} />
       </LoadingButton>
     </div>

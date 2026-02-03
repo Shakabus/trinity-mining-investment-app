@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import TradingEarningsCharts from '@/components/trading/TradingEarningsCharts'
 import { buildTradingSeries, simulateTradingProgress } from '@/lib/trading'
+import EmptyState from '@/components/ui/EmptyState'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,8 +26,8 @@ export default async function TradingEarningsPage() {
     },
   })
 
-  const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? user?.tradingPlans[0] ?? null
-  const activeEarning = user?.tradingEarnings.find(earning => earning.isActive) ?? user?.tradingEarnings[0] ?? null
+  const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
+  const activeEarning = user?.tradingEarnings.find(earning => earning.isActive) ?? null
   const now = new Date()
 
   let snapshot = null as null | { dailyEstimateUsd: number; earnedUsd: number }
@@ -80,8 +81,13 @@ export default async function TradingEarningsPage() {
     },
   ]
 
-  const displayTotalEarned = snapshot ? snapshot.earnedUsd : (activeEarning ? Number(activeEarning.totalEarnedUsd) : 0)
-  const displayDailyEstimate = snapshot ? snapshot.dailyEstimateUsd : (activeEarning ? Number(activeEarning.dailyEstimateUsd) : 0)
+  const isActive = Boolean(activePlan)
+  const displayTotalEarned = isActive
+    ? (snapshot ? snapshot.earnedUsd : (activeEarning ? Number(activeEarning.totalEarnedUsd) : 0))
+    : 0
+  const displayDailyEstimate = isActive
+    ? (snapshot ? snapshot.dailyEstimateUsd : (activeEarning ? Number(activeEarning.dailyEstimateUsd) : 0))
+    : 0
 
   const drawdownSeries = series.map(point => ({
     time: point.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
@@ -131,11 +137,20 @@ export default async function TradingEarningsPage() {
         </div>
       </div>
 
-      <TradingEarningsCharts
-        earningsSeries={earningsSeries}
-        estimateSeries={estimateSeries}
-        drawdownSeries={drawdownSeries}
-      />
+      {activePlan ? (
+        <TradingEarningsCharts
+          earningsSeries={earningsSeries}
+          estimateSeries={estimateSeries}
+          drawdownSeries={drawdownSeries}
+        />
+      ) : (
+        <EmptyState
+          title="Activate a trading plan to view earnings"
+          description="Trading earnings, drawdowns, and comparisons appear once your portfolio is active."
+          actionLabel="Activate a plan"
+          actionHref="/dashboard/investment-trading#plans"
+        />
+      )}
     </div>
   )
 }

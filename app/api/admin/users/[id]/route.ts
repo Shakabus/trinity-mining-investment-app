@@ -176,6 +176,116 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ success: true })
     }
 
+    if (action === 'updateTrading') {
+      const activeTrading = await prisma.tradingStat.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      if (!activeTrading) {
+        return NextResponse.json({ error: 'Trading stats not found' }, { status: 404 })
+      }
+
+      const botSpeed = Number(body.botSpeed)
+      if (!Number.isFinite(botSpeed) || botSpeed < 0.5 || botSpeed > 2.5) {
+        return NextResponse.json({ error: 'Portfolio cadence must be between 0.5x and 2.5x.' }, { status: 400 })
+      }
+
+      const allowedStrategies = ['Portfolio Balance', 'Macro Rotation', 'Yield Capture', 'Risk Parity', 'Momentum Blend']
+      const allowedRisk = ['conservative', 'balanced', 'growth', 'aggressive']
+
+      if (body.strategy && !allowedStrategies.includes(body.strategy)) {
+        return NextResponse.json({ error: 'Invalid strategy selection.' }, { status: 400 })
+      }
+
+      if (body.riskLevel && !allowedRisk.includes(body.riskLevel)) {
+        return NextResponse.json({ error: 'Invalid risk level selection.' }, { status: 400 })
+      }
+
+      await prisma.tradingStat.update({
+        where: { id: activeTrading.id },
+        data: {
+          botSpeed,
+          strategy: body.strategy,
+          riskLevel: body.riskLevel,
+        },
+      })
+
+      await prisma.adminActivityLog.create({
+        data: {
+          actorAdminId: adminUser.id,
+          targetUserId: userId,
+          action: 'updateTrading',
+          detail: `Portfolio cadence ${botSpeed}x, strategy ${body.strategy}, risk ${body.riskLevel}.`,
+        },
+      })
+
+      return NextResponse.json({ success: true })
+    }
+
+    if (action === 'toggleTrading') {
+      const activeTrading = await prisma.tradingStat.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      if (!activeTrading) {
+        return NextResponse.json({ error: 'Trading stats not found' }, { status: 404 })
+      }
+
+      await prisma.tradingStat.update({
+        where: { id: activeTrading.id },
+        data: { isActive: Boolean(body.isActive) },
+      })
+
+      await prisma.adminActivityLog.create({
+        data: {
+          actorAdminId: adminUser.id,
+          targetUserId: userId,
+          action: 'toggleTrading',
+          detail: `Trading ${body.isActive ? 'resumed' : 'paused'}.`,
+        },
+      })
+
+      return NextResponse.json({ success: true })
+    }
+
+    if (action === 'updateTradingEarnings') {
+      const earningsId = Number(body.earningsId)
+      if (Number.isNaN(earningsId)) {
+        return NextResponse.json({ error: 'Invalid earnings id' }, { status: 400 })
+      }
+
+      const tradingEarning = await prisma.tradingEarning.findFirst({
+        where: { id: earningsId, userId },
+      })
+
+      if (!tradingEarning) {
+        return NextResponse.json({ error: 'Trading earnings not found' }, { status: 404 })
+      }
+
+      await prisma.tradingEarning.update({
+        where: { id: tradingEarning.id },
+        data: {
+          dailyEstimateUsd: body.dailyEstimateUsd,
+          totalEarnedUsd: body.totalEarnedUsd,
+          isAdminOverride: Number(body.dailyEstimateUsd || 0) > 0 || Number(body.totalEarnedUsd || 0) > 0,
+          lastCalculatedAt: null,
+        },
+      })
+
+      await prisma.adminActivityLog.create({
+        data: {
+          actorAdminId: adminUser.id,
+          targetUserId: userId,
+          action: 'updateTradingEarnings',
+          detail: 'Trading earnings updated.',
+        },
+      })
+
+      return NextResponse.json({ success: true })
+    }
+
     if (action === 'unlockHistorical') {
       const earningsId = Number(body.earningsId)
       if (Number.isNaN(earningsId)) {

@@ -4,6 +4,9 @@ import { prisma } from '@/lib/db'
 import { pickTradingPlanReturn } from '@/lib/trading'
 import { logUserActivity } from '@/lib/user-activity'
 
+const DEFAULT_CRYPTO = 'USDT'
+const DEFAULT_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+
 export async function POST(req: Request) {
   try {
     const { userId } = await auth()
@@ -33,6 +36,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Trading plan not found.' }, { status: 404 })
     }
 
+    const existingPlan = await prisma.tradingUserPlan.findFirst({
+      where: {
+        userId: user.id,
+        status: { in: ['active', 'awaiting_payment'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    if (existingPlan?.status === 'awaiting_payment') {
+      return NextResponse.json({ error: 'You already have a pending trading payment.' }, { status: 409 })
+    }
+
+    if (existingPlan?.status === 'active') {
+      return NextResponse.json({ error: 'You already have an active trading plan.' }, { status: 409 })
+    }
+
     const minInvestment = Number(plan.minInvestmentUsd)
     const maxInvestment = Number(plan.maxInvestmentUsd)
 
@@ -53,9 +72,6 @@ export async function POST(req: Request) {
       maxReturnMultiplier: Number(plan.maxReturnMultiplier),
     }, investmentUsd, selectionSeed)
 
-    const startDate = new Date()
-    const endDate = new Date(startDate.getTime() + expected.durationHours * 60 * 60 * 1000)
-
     const tradingUserPlan = await prisma.tradingUserPlan.create({
       data: {
         userId: user.id,
@@ -63,41 +79,29 @@ export async function POST(req: Request) {
         investmentUsd,
         expectedReturnUsd: expected.expectedReturnUsd,
         durationHours: expected.durationHours,
-        status: 'active',
-        paymentStatus: 'confirmed',
-        startDate,
-        endDate,
+        status: 'awaiting_payment',
+        paymentStatus: 'pending',
       },
     })
 
-    await prisma.tradingStat.create({
+    await prisma.tradingPayment.create({
       data: {
         userId: user.id,
         tradingUserPlanId: tradingUserPlan.id,
-        isActive: true,
-        botSpeed: 1.0,
-        strategy: 'Adaptive Momentum',
-        riskLevel: 'balanced',
-      },
-    })
-
-    await prisma.tradingEarning.create({
-      data: {
-        userId: user.id,
-        tradingUserPlanId: tradingUserPlan.id,
-        totalEarnedUsd: 0,
-        dailyEstimateUsd: expected.expectedReturnUsd / (expected.durationHours / 24),
-        isActive: true,
+        amountUsd: investmentUsd,
+        cryptoType: DEFAULT_CRYPTO,
+        walletAddress: DEFAULT_WALLET,
+        status: 'pending',
       },
     })
 
     await logUserActivity({
       userId: user.id,
-      action: 'TradingPlanActivated',
-      detail: `Trading plan ${plan.name} activated with $${investmentUsd.toLocaleString()}.`,
+      action: 'TradingPlanSelected',
+      detail: `Trading plan ${plan.name} selected for $${investmentUsd.toLocaleString()}. Awaiting payment.`,
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, tradingUserPlanId: tradingUserPlan.id })
   } catch (error) {
     console.error('Trading plan selection error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

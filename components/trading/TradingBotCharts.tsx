@@ -12,7 +12,7 @@ import {
   BarChart,
   Bar,
 } from 'recharts'
-import { Bot, Activity, TrendingUp } from 'lucide-react'
+import { Activity, TrendingUp, PieChart } from 'lucide-react'
 
 interface TradingBotChartsProps {
   priceSeries: { time: string; value: number }[]
@@ -32,8 +32,8 @@ export default function TradingBotCharts({ priceSeries, pnlSeries, volumeSeries 
         }}
       >
         <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
-          <Bot size={16} />
-          Bot price sweep
+          <PieChart size={16} />
+          Portfolio momentum (USD)
         </div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={priceSeries}>
@@ -62,7 +62,7 @@ export default function TradingBotCharts({ priceSeries, pnlSeries, volumeSeries 
       >
         <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
           <Activity size={16} />
-          Live P/L curve
+          Risk-adjusted performance
         </div>
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={pnlSeries}>
@@ -91,7 +91,7 @@ export default function TradingBotCharts({ priceSeries, pnlSeries, volumeSeries 
       >
         <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
           <TrendingUp size={16} />
-          Execution volume
+          Liquidity & turnover
         </div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={volumeSeries}>

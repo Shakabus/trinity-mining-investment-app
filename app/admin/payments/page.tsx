@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import PaymentApproval from '@/components/admin/PaymentApproval'
+import TradingPaymentApproval from '@/components/admin/TradingPaymentApproval'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +45,42 @@ export default async function AdminPaymentsPage() {
       : null,
   }))
 
+  const pendingTradingPlans = await prisma.tradingUserPlan.findMany({
+    where: {
+      status: 'awaiting_payment',
+      paymentStatus: 'pending',
+    },
+    include: {
+      user: true,
+      plan: true,
+      payments: {
+        where: { status: 'pending' },
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const tradingPayments = pendingTradingPlans.map(plan => ({
+    id: plan.id,
+    userId: plan.userId,
+    userName: plan.user.fullName || plan.user.email,
+    userEmail: plan.user.email,
+    planName: plan.plan.name,
+    investmentUsd: Number(plan.investmentUsd),
+    durationHours: plan.durationHours,
+    createdAt: plan.createdAt,
+    proof: plan.payments[0]
+      ? {
+          paymentProofUrl: plan.payments[0].paymentProofUrl,
+          transactionId: plan.payments[0].transactionId,
+          cryptoType: plan.payments[0].cryptoType,
+          createdAt: plan.payments[0].createdAt,
+        }
+      : null,
+  }))
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -52,11 +89,11 @@ export default async function AdminPaymentsPage() {
           Payment Approvals
         </h1>
         <p className="text-white/70">
-          Review and approve pending payment requests ({payments.length} pending)
+          Review and approve pending payment requests ({payments.length + tradingPayments.length} pending)
         </p>
       </div>
 
-      {/* Payments List */}
+      {/* Mining Payments */}
       {payments.length === 0 ? (
         <div 
           className="p-12 md:p-16 rounded-3xl text-center"
@@ -79,6 +116,31 @@ export default async function AdminPaymentsPage() {
           ))}
         </div>
       )}
+
+      {/* Trading Payments */}
+      <div className="pt-8">
+        <h2 className="text-2xl font-semibold text-white mb-4">Trading Investment Payments</h2>
+        {tradingPayments.length === 0 ? (
+          <div
+            className="p-10 rounded-3xl text-center"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-4xl mb-4">✅</div>
+            <h3 className="text-xl font-bold text-white mb-2">No trading payments pending</h3>
+            <p className="text-white/70">New trading payment requests will appear here.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {tradingPayments.map((payment) => (
+              <TradingPaymentApproval key={`trading-${payment.id}`} payment={payment} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

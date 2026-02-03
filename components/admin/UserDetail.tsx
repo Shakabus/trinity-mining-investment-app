@@ -58,6 +58,31 @@ interface UserDetailProps {
     detail: string
     timestamp: string
   }[]
+  tradingPlan?: {
+    id: number
+    name: string
+    status: string
+    investmentUsd: number
+    expectedReturnUsd: number
+    durationHours: number
+    startDate: string | null
+    endDate: string | null
+  }
+  tradingStats?: {
+    id: number
+    botSpeed: number
+    strategy: string
+    riskLevel: string
+    isActive: boolean
+  }
+  tradingEarnings?: {
+    id: number
+    dailyEstimateUsd: number
+    totalEarnedUsd: number
+    isActive: boolean
+    isAdminOverride?: boolean
+    planName: string
+  }[]
 }
 
 function formatDate(value: string | null) {
@@ -66,7 +91,16 @@ function formatDate(value: string | null) {
   return date.toLocaleString()
 }
 
-export default function UserDetail({ user, currentPlan, miningStats, earnings, activity }: UserDetailProps) {
+export default function UserDetail({
+  user,
+  currentPlan,
+  miningStats,
+  earnings,
+  activity,
+  tradingPlan,
+  tradingStats,
+  tradingEarnings = [],
+}: UserDetailProps) {
   const router = useRouter()
   const { showToast } = useToast()
   const [assignedHashrate, setAssignedHashrate] = useState(miningStats?.assignedHashrate ?? 0)
@@ -74,6 +108,9 @@ export default function UserDetail({ user, currentPlan, miningStats, earnings, a
   const [miningPool, setMiningPool] = useState(miningStats?.miningPool ?? '')
   const [dataCenterLocation, setDataCenterLocation] = useState(miningStats?.dataCenterLocation ?? '')
   const [isBusy, setIsBusy] = useState(false)
+  const [portfolioCadence, setPortfolioCadence] = useState(tradingStats?.botSpeed ?? 1)
+  const [portfolioStrategy, setPortfolioStrategy] = useState(tradingStats?.strategy ?? 'Portfolio Balance')
+  const [portfolioRisk, setPortfolioRisk] = useState(tradingStats?.riskLevel ?? 'balanced')
 
   const poolOptions = ['AntPool', 'Foundry USA', 'ViaBTC', 'F2Pool', 'Luxor']
   const locationOptions = [
@@ -83,6 +120,8 @@ export default function UserDetail({ user, currentPlan, miningStats, earnings, a
     'Iceland (Geothermal)',
     'Germany (Grid)',
   ]
+  const strategyOptions = ['Portfolio Balance', 'Macro Rotation', 'Yield Capture', 'Risk Parity', 'Momentum Blend']
+  const riskOptions = ['conservative', 'balanced', 'growth', 'aggressive']
 
   const earningsState = useMemo(
     () =>
@@ -96,6 +135,16 @@ export default function UserDetail({ user, currentPlan, miningStats, earnings, a
     [earnings]
   )
   const [earningsInputs, setEarningsInputs] = useState(earningsState)
+  const tradingEarningsState = useMemo(
+    () =>
+      tradingEarnings.map(record => ({
+        ...record,
+        dailyEstimateUsd: record.dailyEstimateUsd.toString(),
+        totalEarnedUsd: record.totalEarnedUsd.toString(),
+      })),
+    [tradingEarnings]
+  )
+  const [tradingEarningsInputs, setTradingEarningsInputs] = useState(tradingEarningsState)
 
   const handleMiningUpdate = async () => {
     if (!miningStats) return
@@ -196,6 +245,80 @@ export default function UserDetail({ user, currentPlan, miningStats, earnings, a
     }
   }
 
+  const handleTradingUpdate = async () => {
+    if (!tradingStats) return
+    setIsBusy(true)
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateTrading',
+          botSpeed: Number(portfolioCadence),
+          strategy: portfolioStrategy,
+          riskLevel: portfolioRisk,
+        }),
+      })
+      if (!response.ok) {
+        showToast('Failed to update trading settings.', 'error')
+      } else {
+        showToast('Trading settings updated.', 'success')
+        router.refresh()
+      }
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  const handleToggleTrading = async (nextActive: boolean) => {
+    if (!tradingStats) return
+    setIsBusy(true)
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggleTrading',
+          isActive: nextActive,
+        }),
+      })
+      if (!response.ok) {
+        showToast('Failed to update trading status.', 'error')
+      } else {
+        showToast(nextActive ? 'Trading resumed.' : 'Trading paused.', 'success')
+        router.refresh()
+      }
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  const handleTradingEarningsUpdate = async (recordId: number) => {
+    const record = tradingEarningsInputs.find(item => item.id === recordId)
+    if (!record) return
+    setIsBusy(true)
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'updateTradingEarnings',
+          earningsId: recordId,
+          dailyEstimateUsd: Number(record.dailyEstimateUsd || 0),
+          totalEarnedUsd: Number(record.totalEarnedUsd || 0),
+        }),
+      })
+      if (!response.ok) {
+        showToast('Failed to update trading earnings.', 'error')
+      } else {
+        showToast('Trading earnings updated.', 'success')
+        router.refresh()
+      }
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
   const handleAccountStatus = async (status: string) => {
     setIsBusy(true)
     try {
@@ -270,6 +393,228 @@ export default function UserDetail({ user, currentPlan, miningStats, earnings, a
           <p className="text-white/70">Manage account settings, mining controls, and earnings overrides.</p>
         </div>
         <div className="text-white/50 text-sm">Joined {formatDate(user.createdAt)}</div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div
+          className="p-6 rounded-3xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <h2 className="text-white font-semibold text-lg mb-4">Trading Plan</h2>
+          {tradingPlan ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-white/80">
+              <div>
+                <div className="text-white/50 mb-1">Plan</div>
+                <div className="text-white font-semibold">{tradingPlan.name}</div>
+              </div>
+              <div>
+                <div className="text-white/50 mb-1">Status</div>
+                <div className="text-white font-semibold">{tradingPlan.status}</div>
+              </div>
+              <div>
+                <div className="text-white/50 mb-1">Investment</div>
+                <div className="text-white font-semibold">${tradingPlan.investmentUsd.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-white/50 mb-1">Expected Return</div>
+                <div className="text-white font-semibold">${tradingPlan.expectedReturnUsd.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-white/50 mb-1">Duration</div>
+                <div className="text-white font-semibold">{tradingPlan.durationHours} hours</div>
+              </div>
+              <div>
+                <div className="text-white/50 mb-1">Start</div>
+                <div className="text-white font-semibold">{formatDate(tradingPlan.startDate)}</div>
+              </div>
+              <div>
+                <div className="text-white/50 mb-1">End</div>
+                <div className="text-white font-semibold">{formatDate(tradingPlan.endDate)}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-white/60 text-sm">No trading plan found.</div>
+          )}
+        </div>
+
+        <div
+          className="p-6 rounded-3xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <h2 className="text-white font-semibold text-lg mb-4">Portfolio Controls</h2>
+          {tradingStats ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-white/60 text-xs">Portfolio Cadence</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={portfolioCadence}
+                    onChange={event => setPortfolioCadence(Number(event.target.value))}
+                    className="w-full mt-1 px-3 py-2 rounded-lg text-sm"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                    }}
+                  />
+                  <div className="text-xs text-white/40 mt-1">0.5x - 2.5x</div>
+                </div>
+                <div>
+                  <label className="text-white/60 text-xs">Strategy</label>
+                  <select
+                    value={portfolioStrategy}
+                    onChange={event => setPortfolioStrategy(event.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-lg text-sm"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                    }}
+                  >
+                    {strategyOptions.map(option => (
+                      <option key={option} value={option} style={{ color: '#000000' }}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-white/60 text-xs">Risk Level</label>
+                  <select
+                    value={portfolioRisk}
+                    onChange={event => setPortfolioRisk(event.target.value)}
+                    className="w-full mt-1 px-3 py-2 rounded-lg text-sm"
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                    }}
+                  >
+                    {riskOptions.map(option => (
+                      <option key={option} value={option} style={{ color: '#000000' }}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className="px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+                  style={{ background: 'rgba(88, 45, 255, 0.2)', border: '1px solid rgba(88,45,255,0.4)', color: '#c4b5fd' }}
+                  disabled={isBusy}
+                  onClick={handleTradingUpdate}
+                >
+                  Save Portfolio Settings
+                </button>
+                <button
+                  className="px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105 flex items-center gap-2"
+                  style={{
+                    background: tradingStats.isActive ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                    color: tradingStats.isActive ? '#fecaca' : '#6ee7b7',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                  }}
+                  disabled={isBusy}
+                  onClick={() => handleToggleTrading(!tradingStats.isActive)}
+                >
+                  <ShieldCheck size={16} />
+                  {tradingStats.isActive ? 'Pause Portfolio' : 'Resume Portfolio'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-white/60 text-sm">No trading stats found.</div>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="p-6 rounded-3xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+        }}
+      >
+        <h2 className="text-white font-semibold text-lg mb-4">Trading Earnings Overrides</h2>
+        {tradingEarningsInputs.length === 0 ? (
+          <div className="text-white/60 text-sm">No trading earnings records found.</div>
+        ) : (
+          <div className="space-y-4">
+            {tradingEarningsInputs.map(record => (
+              <div key={record.id} className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                <div className="text-white font-semibold">{record.planName}</div>
+                {record.isAdminOverride && (
+                  <div className="mt-1 text-xs text-amber-300">Override active (auto updates paused)</div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <label className="text-white/60 text-xs">Daily Estimate (USD)</label>
+                    <input
+                      type="number"
+                      value={record.dailyEstimateUsd}
+                      onChange={event =>
+                        setTradingEarningsInputs(prev =>
+                          prev.map(item =>
+                            item.id === record.id ? { ...item, dailyEstimateUsd: event.target.value } : item
+                          )
+                        )
+                      }
+                      className="w-full mt-1 px-3 py-2 rounded-lg text-sm"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: '#ffffff',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white/60 text-xs">Total Earned (USD)</label>
+                    <input
+                      type="number"
+                      value={record.totalEarnedUsd}
+                      onChange={event =>
+                        setTradingEarningsInputs(prev =>
+                          prev.map(item =>
+                            item.id === record.id ? { ...item, totalEarnedUsd: event.target.value } : item
+                          )
+                        )
+                      }
+                      className="w-full mt-1 px-3 py-2 rounded-lg text-sm"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        color: '#ffffff',
+                      }}
+                    />
+                  </div>
+                </div>
+                <button
+                  className="px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-105"
+                  style={{
+                    background: 'rgba(88, 45, 255, 0.2)',
+                    border: '1px solid rgba(88,45,255,0.4)',
+                    color: '#c4b5fd',
+                  }}
+                  disabled={isBusy}
+                  onClick={() => handleTradingEarningsUpdate(record.id)}
+                >
+                  Save Trading Earnings
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div
