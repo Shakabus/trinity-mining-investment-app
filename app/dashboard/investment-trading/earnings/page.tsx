@@ -115,21 +115,13 @@ export default async function TradingEarningsPage() {
         <p className="text-white/70">Track trading profit, estimates, and momentum.</p>
       </div>
 
-      <TradingLiveEarningsCards
-        isActive={isActive}
-        investmentUsd={activePlan ? Number(activePlan.investmentUsd) : 0}
-        expectedReturnUsd={activePlan ? Number(activePlan.expectedReturnUsd) : 0}
-        totalEarnedUsd={displayTotalEarned}
-        dailyEstimateUsd={displayDailyEstimate}
-        startDate={startDate}
-        endDate={endDate}
-      />
-
       {activePlan ? (
-        <TradingEarningsCharts
-          earningsSeries={earningsSeries}
-          estimateSeries={estimateSeries}
-          drawdownSeries={drawdownSeries}
+        <TradingLiveEarningsCards
+          investmentUsd={Number(activePlan.investmentUsd)}
+          expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
+          durationHours={activePlan.durationHours}
+          startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
+          seed={(user?.id || 1) * 13}
         />
       ) : (
         <EmptyState
@@ -148,6 +140,14 @@ export default async function TradingEarningsPage() {
               <ArrowUpRight size={14} />
             </Link>
           }
+        />
+      )}
+
+      {activePlan && (
+        <TradingEarningsCharts
+          earningsSeries={earningsSeries}
+          estimateSeries={estimateSeries}
+          drawdownSeries={drawdownSeries}
         />
       )}
     </div>
