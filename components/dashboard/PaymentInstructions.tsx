@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Copy, Check, AlertCircle } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
@@ -33,6 +34,7 @@ const WALLET_ADDRESSES = {
 
 export default function PaymentInstructions({ plan }: PaymentInstructionsProps) {
   const { showToast } = useToast()
+  const searchParams = useSearchParams()
   const [copied, setCopied] = useState(false)
   const [selectedCrypto, setSelectedCrypto] = useState<keyof typeof WALLET_ADDRESSES>(
     plan.coinType === 'MULTI' ? 'BTC' : (plan.coinType as keyof typeof WALLET_ADDRESSES)
@@ -54,6 +56,12 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
   const cryptoOptions = plan.coinType === 'MULTI' 
     ? ['BTC', 'ETH', 'LTC', 'USDT'] 
     : [plan.coinType]
+
+  useEffect(() => {
+    if (searchParams?.get('verify') === '1') {
+      setShowVerify(true)
+    }
+  }, [searchParams])
 
   const validateTxid = (value: string) => {
     const trimmed = value.trim()

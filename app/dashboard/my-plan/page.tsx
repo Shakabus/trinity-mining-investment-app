@@ -142,7 +142,7 @@ export default async function MyPlanPage() {
                   Your current plan remains active until the upgrade payment is confirmed.
                 </p>
                 <Link
-                  href="/dashboard/payment"
+                  href="/dashboard/payment?verify=1"
                   className="inline-block px-6 py-2 rounded-full text-sm font-semibold transition-all"
                   style={{
                     background: 'rgba(59, 130, 246, 0.2)',
@@ -150,7 +150,7 @@ export default async function MyPlanPage() {
                     color: '#bfdbfe',
                   }}
                 >
-                  Complete Upgrade Payment {'>'}
+                  Upload Upgrade Payment Proof {'>'}
                 </Link>
               </div>
             </div>
@@ -173,7 +173,7 @@ export default async function MyPlanPage() {
                   Your plan is awaiting payment confirmation. Complete your payment to activate mining.
                 </p>
                 <Link
-                  href="/dashboard/payment"
+                  href="/dashboard/payment?verify=1"
                   className="inline-block px-6 py-2 rounded-full text-sm font-semibold transition-all"
                   style={{
                     background: 'rgba(234, 179, 8, 0.2)',
@@ -181,7 +181,7 @@ export default async function MyPlanPage() {
                     color: '#fde047',
                   }}
                 >
-                  Complete Payment →
+                  Upload Payment Proof →
                 </Link>
               </div>
             </div>
