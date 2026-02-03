@@ -19,6 +19,67 @@ export type TradingSimulationInput = {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
+const mulberry32 = (seed: number) => {
+  let t = seed >>> 0
+  return () => {
+    t += 0x6d2b79f5
+    let r = Math.imul(t ^ (t >>> 15), 1 | t)
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r)
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+const buildStepwiseProgress = ({
+  durationMs,
+  elapsedMs,
+  seed,
+  expectedReturnUsd,
+  durationHours,
+}: {
+  durationMs: number
+  elapsedMs: number
+  seed: number
+  expectedReturnUsd: number
+  durationHours: number
+}) => {
+  if (durationMs <= 0) return 1
+  const elapsedRatio = clamp(elapsedMs / durationMs, 0, 1)
+  const stepCount = Math.round(clamp(durationHours / 3, 6, 22))
+  const payoutScale = clamp(expectedReturnUsd / 10000, 0.6, 2.2)
+  const rng = mulberry32(Math.floor(seed * 100000 + stepCount * 97))
+
+  const rawIntervals = Array.from({ length: stepCount }, () => 0.6 + rng() * 1.8)
+  const intervalSum = rawIntervals.reduce((sum, value) => sum + value, 0)
+  const normalizedIntervals = rawIntervals.map(value => value / intervalSum)
+  const times: number[] = []
+  normalizedIntervals.reduce((acc, value, index) => {
+    const next = acc + value
+    times[index] = next
+    return next
+  }, 0)
+
+  const rawWeights = Array.from({ length: stepCount }, () => Math.pow(rng(), 1 / payoutScale))
+  const weightSum = rawWeights.reduce((sum, value) => sum + value, 0)
+  const weights = rawWeights.map(value => value / weightSum)
+
+  let progress = 0
+  for (let i = 0; i < stepCount; i += 1) {
+    const prev = i === 0 ? 0 : times[i - 1]
+    const current = times[i]
+    if (elapsedRatio >= current) {
+      progress += weights[i]
+      continue
+    }
+    if (elapsedRatio > prev) {
+      const localT = (elapsedRatio - prev) / (current - prev)
+      progress += weights[i] * localT
+    }
+    break
+  }
+
+  return clamp(progress, 0, 1)
+}
+
 export function pickTradingPlanReturn(config: TradingPlanConfig, investmentUsd: number, seed: number) {
   const normalizedSeed = Math.abs(Math.sin(seed))
   const range = config.maxReturnMultiplier - config.minReturnMultiplier
@@ -45,16 +106,19 @@ export function simulateTradingProgress({
 }: TradingSimulationInput) {
   const durationMs = durationHours * 60 * 60 * 1000
   const elapsedMs = clamp(now.getTime() - startDate.getTime(), 0, durationMs)
-  const baseProgress = durationMs === 0 ? 1 : elapsedMs / durationMs
-  const wave = Math.sin(seed + baseProgress * Math.PI * 6) * 0.04
-  const jitter = Math.cos(seed * 0.9 + baseProgress * Math.PI * 2) * 0.02
-  const progress = clamp(baseProgress + wave + jitter, 0, 1)
+  const progress = buildStepwiseProgress({
+    durationMs,
+    elapsedMs,
+    seed,
+    expectedReturnUsd,
+    durationHours,
+  })
   const earnedUsd = expectedReturnUsd * progress
   const pnlUsd = earnedUsd - investmentUsd
   const equityUsd = investmentUsd + pnlUsd
   const dailyEstimateUsd = durationHours > 0 ? (expectedReturnUsd / (durationHours / 24)) : 0
-  const winRate = clamp(55 + Math.sin(seed + baseProgress * 2.4) * 12, 40, 78)
-  const openPositions = Math.max(1, Math.round(3 + Math.sin(seed + baseProgress * 5) * 2))
+  const winRate = clamp(55 + Math.sin(seed + progress * 2.4) * 12, 40, 78)
+  const openPositions = Math.max(1, Math.round(3 + Math.sin(seed + progress * 5) * 2))
 
   return {
     progress,
@@ -86,9 +150,15 @@ export function buildTradingSeries({
   const interval = durationMs / Math.max(1, points - 1)
   return Array.from({ length: points }, (_, index) => {
     const timestamp = new Date(startDate.getTime() + interval * index)
-    const progress = clamp((timestamp.getTime() - startDate.getTime()) / durationMs, 0, 1)
-    const wave = Math.sin(seed + progress * Math.PI * 5) * 0.04
-    const value = expectedReturnUsd * clamp(progress + wave, 0, 1)
+    const elapsedMs = clamp(timestamp.getTime() - startDate.getTime(), 0, durationMs)
+    const progress = buildStepwiseProgress({
+      durationMs,
+      elapsedMs,
+      seed: seed + 13,
+      expectedReturnUsd,
+      durationHours: Math.max(1, durationMs / (60 * 60 * 1000)),
+    })
+    const value = expectedReturnUsd * progress
     return {
       time: timestamp,
       value: Math.round(value * 100) / 100,
