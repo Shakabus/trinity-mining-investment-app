@@ -3,8 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { randomUUID } from 'crypto'
-import { mkdir, writeFile } from 'fs/promises'
-import path from 'path'
+import { put } from '@vercel/blob'
 
 export const runtime = 'nodejs'
 
@@ -96,12 +95,11 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const extension = file.type === 'application/pdf' ? 'pdf' : file.type.split('/')[1] || 'bin'
     const filename = `trading_payment_${user.id}_${tradingPlan.id}_${randomUUID()}.${extension}`
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payment-proofs')
-    await mkdir(uploadDir, { recursive: true })
-    const filePath = path.join(uploadDir, filename)
-    await writeFile(filePath, buffer)
-
-    const paymentProofUrl = `/uploads/payment-proofs/${filename}`
+    const blob = await put(`payment-proofs/${filename}`, buffer, {
+      access: 'public',
+      contentType: file.type,
+    })
+    const paymentProofUrl = blob.url
     const walletAddress = WALLET_MAP[coinType] || WALLET_MAP.USDT
 
     const existingPayment = tradingPlan.payments[0]
