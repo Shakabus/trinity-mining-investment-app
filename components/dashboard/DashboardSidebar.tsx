@@ -68,11 +68,8 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
     return () => window.removeEventListener('hashchange', updateHash)
   }, [pathname])
 
-  useEffect(() => {
-    if (pathname?.startsWith('/dashboard/investment-trading')) {
-      setIsTradingOpen(true)
-    }
-  }, [pathname])
+  const isTradingRoute = pathname?.startsWith('/dashboard/investment-trading')
+  const tradingOpen = isTradingRoute ? true : isTradingOpen
 
   const toggleCollapsed = () => {
     setIsCollapsed(prev => {
@@ -169,8 +166,8 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       </button>
                     )}
                   </div>
-                  {!isCollapsed && isTradingOpen && (
-                    <div className="ml-10 space-y-1">
+                    {!isCollapsed && tradingOpen && (
+                      <div className="ml-10 space-y-1">
                       {item.children?.map(child => {
                         const childActive =
                           pathname === child.href ||
@@ -318,7 +315,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       {isTradingOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </button>
                   </div>
-                  {isTradingOpen && (
+                  {tradingOpen && (
                     <div className="ml-10 space-y-1">
                       {item.children?.map(child => {
                         const childActive =
