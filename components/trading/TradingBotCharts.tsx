@@ -124,7 +124,7 @@ export default function TradingBotCharts({
               stroke="#ffffff40"
               style={{ fontSize: '11px' }}
             />
-            <YAxis width={34} tickMargin={6} stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
                 background: 'rgba(0, 0, 0, 0.8)',
@@ -165,7 +165,7 @@ export default function TradingBotCharts({
               stroke="#ffffff40"
               style={{ fontSize: '11px' }}
             />
-            <YAxis width={34} tickMargin={6} stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
                 background: 'rgba(0, 0, 0, 0.8)',
@@ -207,7 +207,7 @@ export default function TradingBotCharts({
               stroke="#ffffff40"
               style={{ fontSize: '11px' }}
             />
-            <YAxis width={34} tickMargin={6} stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
                 background: 'rgba(0, 0, 0, 0.8)',

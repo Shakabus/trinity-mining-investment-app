@@ -133,7 +133,7 @@ export default function TradingEarningsCharts({
               stroke="#ffffff40"
               style={{ fontSize: '11px' }}
             />
-            <YAxis width={34} tickMargin={6} stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
                 background: 'rgba(0, 0, 0, 0.8)',
@@ -164,7 +164,7 @@ export default function TradingEarningsCharts({
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={estimateSeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
             <XAxis dataKey="label" stroke="#ffffff40" style={{ fontSize: '11px' }} />
-            <YAxis width={34} tickMargin={6} stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
                 background: 'rgba(0, 0, 0, 0.8)',
@@ -205,7 +205,7 @@ export default function TradingEarningsCharts({
               stroke="#ffffff40"
               style={{ fontSize: '11px' }}
             />
-            <YAxis width={34} tickMargin={6} stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
                 background: 'rgba(0, 0, 0, 0.8)',
