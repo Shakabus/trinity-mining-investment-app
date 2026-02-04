@@ -37,13 +37,12 @@ export default function TradingBotCharts({
   const [priceSeries, setPriceSeries] = useState<{ time: number; value: number }[]>([])
   const [pnlSeries, setPnlSeries] = useState<{ time: number; value: number }[]>([])
   const [volumeSeries, setVolumeSeries] = useState<{ time: number; value: number }[]>([])
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const nextTickRef = useRef<number | null>(null)
 
   const startDate = useMemo(() => (startDateIso ? new Date(startDateIso) : new Date()), [startDateIso])
 
   useEffect(() => {
-    const updateSeries = () => {
-      const now = new Date()
+    const addPoint = (now: Date) => {
       const snapshot = simulateTradingProgress({
         investmentUsd,
         expectedReturnUsd,
@@ -64,17 +63,33 @@ export default function TradingBotCharts({
       setPriceSeries(prev => [...prev, { time, value: momentumValue }].slice(-24))
       setPnlSeries(prev => [...prev, { time, value: pnlValue }].slice(-24))
       setVolumeSeries(prev => [...prev, { time, value: volumeValue }].slice(-24))
-
-      const nextDelay = 2 * 60 * 1000 + Math.floor(Math.random() * 3 * 60 * 1000)
-      timeoutRef.current = setTimeout(updateSeries, nextDelay)
     }
 
-    updateSeries()
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+    const randomDelay = () => 2 * 60 * 1000 + Math.floor(Math.random() * 3 * 60 * 1000)
+
+    const seedInitial = () => {
+      const now = new Date()
+      const points: Date[] = []
+      let cursor = now.getTime() - 30 * 60 * 1000
+      while (cursor <= now.getTime()) {
+        points.push(new Date(cursor))
+        cursor += randomDelay()
       }
+      points.forEach(point => addPoint(point))
     }
+
+    seedInitial()
+    nextTickRef.current = Date.now() + randomDelay()
+
+    const interval = setInterval(() => {
+      const nowMs = Date.now()
+      if (!nextTickRef.current || nowMs >= nextTickRef.current) {
+        addPoint(new Date(nowMs))
+        nextTickRef.current = nowMs + randomDelay()
+      }
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
 
   const lastPnl = pnlSeries.length > 0 ? pnlSeries[pnlSeries.length - 1].value : 0
