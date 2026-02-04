@@ -118,12 +118,12 @@ export default function TradingOverviewCharts({
       if (lastPoint) {
         lastTickRef.current = lastPoint.time.getTime()
       }
-      const nowMs = Date.now()
+      const nowMsWindow = Date.now()
       setEquitySeries(prev =>
-        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))], nowMs)
+        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))], nowMsWindow)
       )
       setPnlSeries(prev =>
-        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))], nowMs)
+        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))], nowMsWindow)
       )
 
       const focusSeed = seed + lastIndex * 17
