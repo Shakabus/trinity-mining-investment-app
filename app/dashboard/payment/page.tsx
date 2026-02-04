@@ -15,8 +15,8 @@ export default async function PaymentPage() {
     include: {
       userPlans: {
         where: {
-          status: 'awaiting_payment',
-          paymentStatus: 'pending'
+          status: { in: ['selected', 'awaiting_payment'] },
+          paymentStatus: 'pending',
         },
         include: {
           plan: true,

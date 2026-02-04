@@ -39,12 +39,12 @@ export async function POST(req: Request) {
     const existingPlan = await prisma.tradingUserPlan.findFirst({
       where: {
         userId: user.id,
-        status: { in: ['active', 'awaiting_payment'] },
+        status: { in: ['active', 'awaiting_payment', 'selected'] },
       },
       orderBy: { createdAt: 'desc' },
     })
 
-    if (existingPlan?.status === 'awaiting_payment') {
+    if (existingPlan?.status === 'awaiting_payment' || existingPlan?.status === 'selected') {
       return NextResponse.json({ error: 'You already have a pending trading payment.' }, { status: 409 })
     }
 
@@ -79,26 +79,15 @@ export async function POST(req: Request) {
         investmentUsd,
         expectedReturnUsd: expected.expectedReturnUsd,
         durationHours: expected.durationHours,
-        status: 'awaiting_payment',
+        status: 'selected',
         paymentStatus: 'pending',
-      },
-    })
-
-    await prisma.tradingPayment.create({
-      data: {
-        userId: user.id,
-        tradingUserPlanId: tradingUserPlan.id,
-        amountUsd: investmentUsd,
-        cryptoType: DEFAULT_CRYPTO,
-        walletAddress: DEFAULT_WALLET,
-        status: 'pending',
       },
     })
 
     await logUserActivity({
       userId: user.id,
       action: 'TradingPlanSelected',
-      detail: `Trading plan ${plan.name} selected for $${investmentUsd.toLocaleString()}. Awaiting payment.`,
+      detail: `Trading plan ${plan.name} selected for $${investmentUsd.toLocaleString()}.`,
     })
 
     return NextResponse.json({ success: true, tradingUserPlanId: tradingUserPlan.id })

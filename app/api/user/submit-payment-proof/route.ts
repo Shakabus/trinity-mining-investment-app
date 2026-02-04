@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       where: {
         id: userPlanId,
         userId: user.id,
-        status: 'awaiting_payment',
+        status: { in: ['selected', 'awaiting_payment'] },
         paymentStatus: 'pending',
       },
       include: {
@@ -131,6 +131,21 @@ export async function POST(req: Request) {
         },
       })
     }
+
+    if (userPlan.status !== 'awaiting_payment') {
+      await prisma.userPlan.update({
+        where: { id: userPlan.id },
+        data: {
+          status: 'awaiting_payment',
+          paymentStatus: 'pending',
+        },
+      })
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { accountStatus: 'pending' },
+    })
 
     await logUserActivity({
       userId: user.id,

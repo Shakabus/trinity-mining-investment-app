@@ -16,7 +16,7 @@ export default async function TradingPaymentPage() {
     include: {
       tradingPlans: {
         where: {
-          status: 'awaiting_payment',
+          status: { in: ['selected', 'awaiting_payment'] },
           paymentStatus: 'pending',
         },
         include: {
