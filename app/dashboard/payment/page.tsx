@@ -43,6 +43,8 @@ export default async function PaymentPage() {
   // Convert Decimals to numbers
   const planData = {
     id: pendingPlan.id,
+    status: pendingPlan.status,
+    paymentStatus: pendingPlan.paymentStatus,
     planName: pendingPlan.plan.name,
     coinType: pendingPlan.plan.coinType,
     selectedDurationDays: pendingPlan.selectedDurationDays,

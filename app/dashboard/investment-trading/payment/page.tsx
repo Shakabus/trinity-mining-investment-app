@@ -41,6 +41,8 @@ export default async function TradingPaymentPage() {
 
   const planData = {
     id: pendingPlan.id,
+    status: pendingPlan.status,
+    paymentStatus: pendingPlan.paymentStatus,
     planName: pendingPlan.plan.name,
     investmentUsd: Number(pendingPlan.investmentUsd),
     expectedReturnUsd: Number(pendingPlan.expectedReturnUsd),

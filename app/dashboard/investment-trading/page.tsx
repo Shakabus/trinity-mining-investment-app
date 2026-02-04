@@ -42,6 +42,7 @@ export default async function TradingInvestmentPage() {
 
   const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
   const pendingPlan = user?.tradingPlans.find(plan => plan.status === 'awaiting_payment') ?? null
+  const selectedPlan = user?.tradingPlans.find(plan => plan.status === 'selected') ?? null
   const activeStats = user?.tradingStats.find(stat => stat.isActive) ?? null
   const activeEarnings = user?.tradingEarnings.find(earning => earning.isActive) ?? null
   const now = new Date()
@@ -108,8 +109,8 @@ export default async function TradingInvestmentPage() {
     label: item.name,
     value: Math.round(item.value * 0.9),
   }))
-  const planLabel = activePlan?.plan.name ?? pendingPlan?.plan.name ?? 'Not Active'
-  const statusLabel = activePlan ? 'Active' : pendingPlan ? 'Awaiting Payment' : 'Inactive'
+  const planLabel = activePlan?.plan.name ?? pendingPlan?.plan.name ?? selectedPlan?.plan.name ?? 'Not Active'
+  const statusLabel = activePlan ? 'Active' : pendingPlan ? 'Awaiting Payment' : selectedPlan ? 'Proof Not Submitted' : 'Inactive'
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
@@ -152,6 +153,31 @@ export default async function TradingInvestmentPage() {
               }}
             >
               Go to payment instructions
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {selectedPlan && !pendingPlan && (
+        <div
+          className="p-5 rounded-2xl text-white/80"
+          style={{
+            background: 'rgba(234, 179, 8, 0.1)',
+            border: '1px solid rgba(234, 179, 8, 0.3)',
+          }}
+        >
+          Payment proof has not been submitted yet. Upload proof to start verification.
+          <div className="mt-3">
+            <Link
+              href="/dashboard/investment-trading/payment"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                color: '#ffffff',
+              }}
+            >
+              Upload payment proof
               <ArrowUpRight size={14} />
             </Link>
           </div>

@@ -22,7 +22,7 @@ export default async function DashboardPage() {
     include: {
       userPlans: {
         where: {
-          status: { in: ['active', 'awaiting_payment'] },
+          status: { in: ['active', 'awaiting_payment', 'selected'] },
         },
         include: {
           plan: true,
@@ -49,7 +49,7 @@ export default async function DashboardPage() {
       },
       tradingPlans: {
         where: {
-          status: { in: ['active', 'awaiting_payment'] },
+          status: { in: ['active', 'awaiting_payment', 'selected'] },
         },
         include: {
           plan: true,
@@ -69,6 +69,10 @@ export default async function DashboardPage() {
 
   const currentPlan = user?.userPlans[0]
   const tradingPlan = user?.tradingPlans?.[0] ?? null
+  const activeMiningPlan = user?.userPlans.find(plan => plan.status === 'active') ?? null
+  const activeTradingPlan = user?.tradingPlans?.find(plan => plan.status === 'active') ?? null
+  const hasMiningSelected = currentPlan?.status === 'selected'
+  const hasTradingSelected = tradingPlan?.status === 'selected'
   const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
   const now = new Date()
 
@@ -101,9 +105,9 @@ export default async function DashboardPage() {
     : 0
   const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
   const daysActiveDates = [
-    currentPlan?.startDate ?? currentPlan?.createdAt ?? null,
+    activeMiningPlan?.startDate ?? activeMiningPlan?.createdAt ?? null,
     activeMining?.createdAt ?? null,
-    tradingPlan?.startDate ?? tradingPlan?.createdAt ?? null,
+    activeTradingPlan?.startDate ?? activeTradingPlan?.createdAt ?? null,
   ].filter(Boolean) as Date[]
   const daysActiveStart = daysActiveDates.length
     ? new Date(Math.min(...daysActiveDates.map(date => date.getTime())))
@@ -207,40 +211,97 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {(currentPlan || tradingPlan) && (
+          {(hasMiningSelected || hasTradingSelected) && user?.accountStatus !== 'pending' && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                {hasMiningSelected && (
+                  <span
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{
+                      background: 'rgba(234, 179, 8, 0.18)',
+                      border: '1px solid rgba(234, 179, 8, 0.4)',
+                      color: '#fde047',
+                    }}
+                  >
+                    Proof not submitted (Mining)
+                  </span>
+                )}
+                {hasTradingSelected && (
+                  <span
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{
+                      background: 'rgba(234, 179, 8, 0.18)',
+                      border: '1px solid rgba(234, 179, 8, 0.4)',
+                      color: '#fde047',
+                    }}
+                  >
+                    Proof not submitted (Trading)
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {hasMiningSelected && (
+                  <Link
+                    href="/dashboard/payment?verify=1"
+                    className="inline-block px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all text-sm md:text-base"
+                    style={{
+                      background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                      color: '#ffffff',
+                    }}
+                  >
+                    Upload Mining Proof ->
+                  </Link>
+                )}
+                {hasTradingSelected && (
+                  <Link
+                    href="/dashboard/investment-trading/payment"
+                    className="inline-block px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all text-sm md:text-base"
+                    style={{
+                      background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                      color: '#ffffff',
+                    }}
+                  >
+                    Upload Trading Proof ->
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(activeMiningPlan || activeTradingPlan) && (
             <div className="grid grid-cols-2 gap-4 md:gap-6">
               <div>
                 <div className="text-xs md:text-sm text-white/60 mb-1">Active Plans</div>
                 <div className="text-base md:text-lg font-semibold text-white">
-                  {currentPlan && tradingPlan
-                    ? `Mining: ${currentPlan.plan.name} · Trading: ${tradingPlan.plan.name}`
-                    : currentPlan
-                      ? `Mining: ${currentPlan.plan.name}`
-                      : `Trading: ${tradingPlan?.plan.name ?? 'N/A'}`}
+                  {activeMiningPlan && activeTradingPlan
+                    ? `Mining: ${activeMiningPlan.plan.name} · Trading: ${activeTradingPlan.plan.name}`
+                    : activeMiningPlan
+                      ? `Mining: ${activeMiningPlan.plan.name}`
+                      : `Trading: ${activeTradingPlan?.plan.name ?? 'N/A'}`}
                 </div>
               </div>
               <div>
                 <div className="text-xs md:text-sm text-white/60 mb-1">Account Status</div>
                 <div className="text-base md:text-lg font-semibold text-green-400">
-                  {currentPlan && tradingPlan
+                  {activeMiningPlan && activeTradingPlan
                     ? 'Mining + Trading Active'
-                    : currentPlan
+                    : activeMiningPlan
                       ? 'Mining Active'
                       : 'Trading Active'}
                 </div>
               </div>
-              {currentPlan && (
+              {activeMiningPlan && (
                 <>
                   <div>
                     <div className="text-xs md:text-sm text-white/60 mb-1">Hashrate</div>
                     <div className="text-lg md:text-2xl font-bold text-white">
-                      {currentPlan.plan.baseHashrate.toString()} {currentPlan.plan.hashrateUnit}
+                      {activeMiningPlan.plan.baseHashrate.toString()} {activeMiningPlan.plan.hashrateUnit}
                     </div>
                   </div>
                   <div>
                     <div className="text-xs md:text-sm text-white/60 mb-1">Duration</div>
                     <div className="text-base md:text-lg font-semibold text-white">
-                      {currentPlan.selectedDurationDays} days
+                      {activeMiningPlan.selectedDurationDays} days
                     </div>
                   </div>
                 </>
@@ -261,8 +322,8 @@ export default async function DashboardPage() {
           >
             <div className="text-xs md:text-sm text-white/60 mb-2">Total Hashrate</div>
             <div className="text-lg md:text-2xl font-bold text-white">
-              {user?.accountStatus === 'active' && currentPlan
-                ? `${currentPlan.plan.baseHashrate.toString()} ${currentPlan.plan.hashrateUnit}`
+              {user?.accountStatus === 'active' && activeMiningPlan
+                ? `${activeMiningPlan.plan.baseHashrate.toString()} ${activeMiningPlan.plan.hashrateUnit}`
                 : '0 TH/s'}
             </div>
           </div>

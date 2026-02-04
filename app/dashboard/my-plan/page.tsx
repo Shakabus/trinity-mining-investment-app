@@ -34,10 +34,11 @@ export default async function MyPlanPage() {
     : 0
 
   const activePlan = user?.userPlans.find(plan => plan.status === 'active') || null
+  const selectedPlan = user?.userPlans.find(plan => plan.status === 'selected') || null
   const pendingUpgrade = user?.userPlans.find(
     plan => plan.status === 'awaiting_payment' && plan.upgradeFromPlanId
   ) || null
-  const currentPlan = activePlan || pendingUpgrade
+  const currentPlan = activePlan || pendingUpgrade || selectedPlan
 
   if (!currentPlan) {
     return (
@@ -151,6 +152,37 @@ export default async function MyPlanPage() {
                   }}
                 >
                   Upload Upgrade Payment Proof {'>'}
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {planData.status === 'selected' && !pendingUpgrade && (
+          <div 
+            className="p-6 rounded-3xl"
+            style={{
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '1px solid rgba(234, 179, 8, 0.3)',
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <Clock size={24} className="text-yellow-300 shrink-0 mt-1" />
+              <div>
+                <h3 className="font-semibold text-yellow-300 mb-2">Proof Not Submitted</h3>
+                <p className="text-yellow-200/80 text-sm mb-4">
+                  Upload your payment proof to move this plan into verification.
+                </p>
+                <Link
+                  href="/dashboard/payment?verify=1"
+                  className="inline-block px-6 py-2 rounded-full text-sm font-semibold transition-all"
+                  style={{
+                    background: 'rgba(234, 179, 8, 0.2)',
+                    border: '1px solid rgba(234, 179, 8, 0.4)',
+                    color: '#fde047',
+                  }}
+                >
+                  Upload Payment Proof â†’
                 </Link>
               </div>
             </div>

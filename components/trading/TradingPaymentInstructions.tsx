@@ -8,6 +8,8 @@ import { useToast } from '@/components/ui/ToastProvider'
 interface TradingPaymentInstructionsProps {
   plan: {
     id: number
+    status: string
+    paymentStatus: string
     planName: string
     investmentUsd: number
     expectedReturnUsd: number
@@ -116,6 +118,19 @@ export default function TradingPaymentInstructions({ plan }: TradingPaymentInstr
         <p className="text-white/70">
           Send your payment and upload proof to activate portfolio management.
         </p>
+        {plan.status === 'selected' && (
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mt-4"
+            style={{
+              background: 'rgba(234, 179, 8, 0.18)',
+              border: '1px solid rgba(234, 179, 8, 0.4)',
+              color: '#fde047',
+            }}
+          >
+            <AlertCircle size={14} />
+            Proof not submitted yet
+          </div>
+        )}
       </div>
 
       <div

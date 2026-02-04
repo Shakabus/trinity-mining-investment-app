@@ -9,6 +9,8 @@ import { useToast } from '@/components/ui/ToastProvider'
 interface PaymentInstructionsProps {
   plan: {
     id: number
+    status: string
+    paymentStatus: string
     planName: string
     coinType: string
     selectedDurationDays: number
@@ -133,6 +135,19 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
         <p className="text-white/70">
           Follow the instructions below to activate your mining plan
         </p>
+        {plan.status === 'selected' && (
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mt-4"
+            style={{
+              background: 'rgba(234, 179, 8, 0.18)',
+              border: '1px solid rgba(234, 179, 8, 0.4)',
+              color: '#fde047',
+            }}
+          >
+            <AlertCircle size={14} />
+            Proof not submitted yet
+          </div>
+        )}
       </div>
 
       {/* Plan Summary */}
