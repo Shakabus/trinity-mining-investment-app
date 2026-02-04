@@ -95,7 +95,7 @@ export default async function TradingInvestmentPage() {
       const hasActiveTrading = await prisma.tradingUserPlan.count({
         where: { userId: user?.id ?? 0, status: 'active' },
       })
-      if (hasActiveMining === 0 && hasActiveTrading === 0) {
+      if (hasActiveMining === 0 && hasActiveTrading === 0 && user?.id) {
         await prisma.user.update({
           where: { id: user.id },
           data: { accountStatus: 'inactive' },
