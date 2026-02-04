@@ -16,7 +16,7 @@ import {
   Bar,
 } from 'recharts'
 import { TrendingUp, PieChart as PieIcon, Activity, BarChart3 } from 'lucide-react'
-import { buildTradingJumpSeries, simulateTradingProgress } from '@/lib/trading'
+import { buildAllocationSeries, buildTradingJumpSeries, simulateTradingProgress } from '@/lib/trading'
 
 interface TradingOverviewChartsProps {
   investmentUsd: number
@@ -41,6 +41,8 @@ export default function TradingOverviewCharts({
 }: TradingOverviewChartsProps) {
   const [equitySeries, setEquitySeries] = useState<{ time: number; value: number }[]>([])
   const [pnlSeries, setPnlSeries] = useState<{ time: number; value: number }[]>([])
+  const [allocationState, setAllocationState] = useState(allocationSeries)
+  const [performanceState, setPerformanceState] = useState(performanceSeries)
   const lastIndexRef = useRef<number>(-1)
   const lastTickRef = useRef<number | null>(null)
 
@@ -110,6 +112,20 @@ export default function TradingOverviewCharts({
       }
       setEquitySeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))].slice(-72))
       setPnlSeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))].slice(-72))
+
+      const focusSeed = seed + lastIndex * 17
+      const nextAllocation = buildAllocationSeries(focusSeed)
+      const pnlSignal = lastPoint ? lastPoint.pnl : 0
+      const pnlRatio = expectedReturnUsd > 0 ? pnlSignal / expectedReturnUsd : 0
+      const bias = pnlRatio >= 0 ? Math.min(0.35, pnlRatio * 0.6) : -Math.min(0.35, Math.abs(pnlRatio) * 0.6)
+      const nextPerformance = nextAllocation.map(item => {
+        const base = item.value * (0.85 + Math.abs(bias))
+        const direction = item.value === Math.max(...nextAllocation.map(x => x.value)) ? bias : bias * 0.4
+        const value = Math.round(clamp(base + base * direction, 12, 100))
+        return { label: item.name, value }
+      })
+      setAllocationState(nextAllocation)
+      setPerformanceState(nextPerformance)
     }, 15000)
 
     const microInterval = setInterval(() => {
@@ -134,6 +150,19 @@ export default function TradingOverviewCharts({
       lastTickRef.current = tickTime
       setEquitySeries(prev => [...prev, { time: tickTime, value: equityValue }].slice(-72))
       setPnlSeries(prev => [...prev, { time: tickTime, value: pnlValue }].slice(-72))
+
+      const focusSeed = seed + Math.floor(nowMs / (5 * 60 * 1000))
+      const nextAllocation = buildAllocationSeries(focusSeed)
+      const pnlRatio = expectedReturnUsd > 0 ? snapshot.pnlUsd / expectedReturnUsd : 0
+      const bias = pnlRatio >= 0 ? Math.min(0.25, pnlRatio * 0.5) : -Math.min(0.25, Math.abs(pnlRatio) * 0.5)
+      const nextPerformance = nextAllocation.map(item => {
+        const base = item.value * (0.8 + Math.abs(bias))
+        const direction = item.value === Math.max(...nextAllocation.map(x => x.value)) ? bias : bias * 0.35
+        const value = Math.round(clamp(base + base * direction, 12, 100))
+        return { label: item.name, value }
+      })
+      setAllocationState(nextAllocation)
+      setPerformanceState(nextPerformance)
     }, 60000)
 
     return () => {
@@ -237,8 +266,8 @@ export default function TradingOverviewCharts({
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
-              <Pie data={allocationSeries} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90} paddingAngle={4}>
-                {allocationSeries.map((_, index) => (
+              <Pie data={allocationState} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90} paddingAngle={4}>
+                {allocationState.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -249,6 +278,7 @@ export default function TradingOverviewCharts({
                   borderRadius: '8px',
                   color: '#fff',
                 }}
+                itemStyle={{ color: '#ffffff' }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -267,7 +297,7 @@ export default function TradingOverviewCharts({
             Strategy scorecards
           </div>
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={performanceSeries}>
+            <BarChart data={performanceState}>
               <XAxis dataKey="label" stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <Tooltip
@@ -277,6 +307,7 @@ export default function TradingOverviewCharts({
                   borderRadius: '8px',
                   color: '#fff',
                 }}
+                itemStyle={{ color: '#ffffff' }}
               />
               <Bar dataKey="value" fill="#a78bfa" radius={[6, 6, 0, 0]} />
             </BarChart>
