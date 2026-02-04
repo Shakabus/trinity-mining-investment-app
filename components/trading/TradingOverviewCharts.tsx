@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   LineChart,
   Line,
@@ -39,72 +39,57 @@ export default function TradingOverviewCharts({
   allocationSeries,
   performanceSeries,
 }: TradingOverviewChartsProps) {
-  const [equitySeries, setEquitySeries] = useState<{ time: string; value: number }[]>([])
-  const [pnlSeries, setPnlSeries] = useState<{ time: string; value: number }[]>([])
-  const lastEquityRef = useRef<number | null>(null)
-  const lastPnlRef = useRef<number | null>(null)
+  const [equitySeries, setEquitySeries] = useState<{ time: number; value: number }[]>([])
+  const [pnlSeries, setPnlSeries] = useState<{ time: number; value: number }[]>([])
 
   const startDate = useMemo(() => (startDateIso ? new Date(startDateIso) : new Date()), [startDateIso])
 
-  useEffect(() => {
-    const formatTime = (date: Date) =>
-      date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  const schedulePoints = useMemo(() => {
+    return buildTradingJumpSeries({
+      startDate,
+      endDate: new Date(startDate.getTime() + durationHours * 60 * 60 * 1000),
+      expectedReturnUsd,
+      investmentUsd,
+      seed,
+    })
+  }, [startDate, durationHours, expectedReturnUsd, investmentUsd, seed])
 
-    const buildPoint = (at: Date) => {
+  useEffect(() => {
+    const updateSeries = () => {
+      const now = new Date()
+      const filtered = schedulePoints.filter(point => point.time.getTime() <= now.getTime())
       const snapshot = simulateTradingProgress({
         investmentUsd,
         expectedReturnUsd,
         durationHours,
         startDate,
-        now: at,
+        now,
         seed,
       })
-      return {
-        time: formatTime(at),
+      const currentPoint = {
+        time: now.getTime(),
         equity: Number(snapshot.equityUsd.toFixed(2)),
         pnl: Number(snapshot.pnlUsd.toFixed(2)),
       }
+      const merged = [...filtered, { time: now, equity: currentPoint.equity, pnl: currentPoint.pnl }]
+
+      const equity = merged.map(point => ({
+        time: point.time.getTime(),
+        value: point.equity,
+      }))
+      const pnl = merged.map(point => ({
+        time: point.time.getTime(),
+        value: point.pnl,
+      }))
+
+      setEquitySeries(equity.slice(-72))
+      setPnlSeries(pnl.slice(-72))
     }
 
-    const now = new Date()
-    const endDate = now
-    const initialPoints = buildTradingJumpSeries({
-      startDate,
-      endDate,
-      expectedReturnUsd,
-      investmentUsd,
-      seed,
-    }).map(point => ({
-      time: formatTime(point.time),
-      equity: point.equity,
-      pnl: point.pnl,
-    }))
-
-    const seededEquity = initialPoints.map(point => ({ time: point.time, value: point.equity }))
-    const seededPnl = initialPoints.map(point => ({ time: point.time, value: point.pnl }))
-    const lastSeed = initialPoints[initialPoints.length - 1]
-    setEquitySeries(seededEquity)
-    setPnlSeries(seededPnl)
-    lastEquityRef.current = lastSeed?.equity ?? null
-    lastPnlRef.current = lastSeed?.pnl ?? null
-
-    const interval = setInterval(() => {
-      const point = buildPoint(new Date())
-      const lastEquity = lastEquityRef.current
-      const lastPnl = lastPnlRef.current
-      const equityChanged = lastEquity === null || Math.abs(point.equity - lastEquity) >= 0.01
-      const pnlChanged = lastPnl === null || Math.abs(point.pnl - lastPnl) >= 0.01
-
-      if (equityChanged || pnlChanged) {
-        setEquitySeries(prev => [...prev, { time: point.time, value: point.equity }].slice(-72))
-        setPnlSeries(prev => [...prev, { time: point.time, value: point.pnl }].slice(-72))
-        lastEquityRef.current = point.equity
-        lastPnlRef.current = point.pnl
-      }
-    }, 15000)
-
+    updateSeries()
+    const interval = setInterval(updateSeries, 15000)
     return () => clearInterval(interval)
-  }, [investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
+  }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
 
   return (
     <div className="space-y-6">
@@ -123,7 +108,16 @@ export default function TradingOverviewCharts({
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={equitySeries}>
-              <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
+              <XAxis
+                dataKey="time"
+                type="number"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={value =>
+                  new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                }
+                stroke="#ffffff40"
+                style={{ fontSize: '11px' }}
+              />
               <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <Tooltip
                 contentStyle={{
@@ -152,7 +146,16 @@ export default function TradingOverviewCharts({
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={pnlSeries}>
-              <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
+              <XAxis
+                dataKey="time"
+                type="number"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={value =>
+                  new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                }
+                stroke="#ffffff40"
+                style={{ fontSize: '11px' }}
+              />
               <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <Tooltip
                 contentStyle={{
