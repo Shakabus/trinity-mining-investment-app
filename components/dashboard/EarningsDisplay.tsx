@@ -249,9 +249,9 @@ export default function EarningsDisplay({
         >
           <h3 className="text-white font-semibold mb-4">Last 24 Hours Earnings (USD)</h3>
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={hourlySeries}>
-              <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#ffffff40" style={{ fontSize: '12px' }} />
+            <LineChart data={hourlySeries} margin={{ left: 5, right: 5, top: 5, bottom: 0 }}>
+              <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '12px' }} tickMargin={6} />
+              <YAxis stroke="#ffffff40" style={{ fontSize: '12px' }} width={36} tickMargin={6} />
               <Tooltip
                 contentStyle={{
                   background: 'rgba(0, 0, 0, 0.8)',
@@ -275,9 +275,9 @@ export default function EarningsDisplay({
         >
           <h3 className="text-white font-semibold mb-4">Weekly Earnings (USD)</h3>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={weeklySeries}>
-              <XAxis dataKey="day" stroke="#ffffff40" style={{ fontSize: '12px' }} />
-              <YAxis stroke="#ffffff40" style={{ fontSize: '12px' }} />
+            <BarChart data={weeklySeries} margin={{ left: 5, right: 5, top: 5, bottom: 0 }}>
+              <XAxis dataKey="day" stroke="#ffffff40" style={{ fontSize: '12px' }} tickMargin={6} />
+              <YAxis stroke="#ffffff40" style={{ fontSize: '12px' }} width={36} tickMargin={6} />
               <Tooltip
                 contentStyle={{
                   background: 'rgba(0, 0, 0, 0.8)',
