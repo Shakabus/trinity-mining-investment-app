@@ -19,6 +19,8 @@ import {
   LineChart,
   Wallet,
   Layers,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 
 const menuItems = [
@@ -32,7 +34,6 @@ const menuItems = [
     href: '/dashboard/investment-trading',
     icon: Layers,
     children: [
-      { name: 'Intro', href: '/dashboard/investment-trading', icon: Layers },
       { name: 'Plans', href: '/dashboard/investment-trading#plans', icon: Package },
       { name: 'Portfolio Activity', href: '/dashboard/investment-trading/bot', icon: LineChart },
       { name: 'Earnings', href: '/dashboard/investment-trading/earnings', icon: LineChart },
@@ -57,6 +58,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
     if (typeof window === 'undefined') return false
     return window.localStorage.getItem('dashboard_sidebar_collapsed') === 'true'
   })
+  const [isTradingOpen, setIsTradingOpen] = useState(true)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -64,6 +66,12 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
     updateHash()
     window.addEventListener('hashchange', updateHash)
     return () => window.removeEventListener('hashchange', updateHash)
+  }, [pathname])
+
+  useEffect(() => {
+    if (pathname?.startsWith('/dashboard/investment-trading')) {
+      setIsTradingOpen(true)
+    }
   }, [pathname])
 
   const toggleCollapsed = () => {
@@ -121,8 +129,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
             if ('children' in item) {
               return (
                 <div key={item.href} className="space-y-1">
-                  <Link
-                    href={item.href}
+                  <div
                     className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-3 rounded-lg transition-all group`}
                     style={{
                       background: isActive
@@ -133,21 +140,36 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                     }}
                     title={isCollapsed ? item.name : undefined}
                   >
-                    <div
-                      className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
-                      style={{
-                        background: isActive
-                          ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
-                          : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                      }}
+                    <Link
+                      href={item.href}
+                      className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} flex-1`}
                     >
-                      <Icon size={18} strokeWidth={2} />
-                    </div>
-                    {!isCollapsed && <span className="font-medium">{item.name}</span>}
-                  </Link>
-                  {!isCollapsed && (
+                      <div
+                        className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
+                        style={{
+                          background: isActive
+                            ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
+                            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                        }}
+                      >
+                        <Icon size={18} strokeWidth={2} />
+                      </div>
+                      {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                    </Link>
+                    {!isCollapsed && (
+                      <button
+                        type="button"
+                        onClick={() => setIsTradingOpen(prev => !prev)}
+                        className="ml-auto p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                        aria-label={isTradingOpen ? 'Collapse investment links' : 'Expand investment links'}
+                      >
+                        {isTradingOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                    )}
+                  </div>
+                  {!isCollapsed && isTradingOpen && (
                     <div className="ml-10 space-y-1">
                       {item.children?.map(child => {
                         const childActive =
@@ -258,9 +280,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
             if ('children' in item) {
               return (
                 <div key={item.href} className="space-y-1">
-                  <Link
-                    href={item.href}
-                    onClick={onClose}
+                  <div
                     className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
                     style={{
                       background: isActive
@@ -270,27 +290,42 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       border: isActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
                     }}
                   >
-                    <div
-                      className="p-1.5 rounded-lg transition-all"
-                      style={{
-                        background: isActive
-                          ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
-                          : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                      }}
+                    <Link
+                      href={item.href}
+                      onClick={onClose}
+                      className="flex items-center gap-3 flex-1"
                     >
-                      <Icon size={18} strokeWidth={2} />
-                    </div>
-                    <span className="font-medium">{item.name}</span>
-                  </Link>
-                  <div className="ml-10 space-y-1">
-                    {item.children?.map(child => {
-                      const childActive =
-                        pathname === child.href ||
-                        (child.href.includes('#') &&
-                          pathname === '/dashboard/investment-trading' &&
-                          hash === '#plans')
+                      <div
+                        className="p-1.5 rounded-lg transition-all"
+                        style={{
+                          background: isActive
+                            ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
+                            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                        }}
+                      >
+                        <Icon size={18} strokeWidth={2} />
+                      </div>
+                      <span className="font-medium">{item.name}</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setIsTradingOpen(prev => !prev)}
+                      className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                      aria-label={isTradingOpen ? 'Collapse investment links' : 'Expand investment links'}
+                    >
+                      {isTradingOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </button>
+                  </div>
+                  {isTradingOpen && (
+                    <div className="ml-10 space-y-1">
+                      {item.children?.map(child => {
+                        const childActive =
+                          pathname === child.href ||
+                          (child.href.includes('#') &&
+                            pathname === '/dashboard/investment-trading' &&
+                            hash === '#plans')
                       const ChildIcon = child.icon
                       return (
                         <Link
@@ -323,6 +358,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       )
                     })}
                   </div>
+                  )}
                 </div>
               )
             }
