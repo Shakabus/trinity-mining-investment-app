@@ -53,10 +53,11 @@ export default function TradingBotCharts({
         seed,
       })
 
-      const momentumBase = snapshot.equityUsd
-      const momentumNoise = Math.sin(seed + now.getTime() / 120000) * 120
-      const momentumValue = Number((momentumBase + momentumNoise).toFixed(2))
-      const pnlValue = Number(snapshot.pnlUsd.toFixed(2))
+      const wave = Math.sin(seed + now.getTime() / 90000) * 140
+      const wave2 = Math.cos(seed * 0.7 + now.getTime() / 140000) * 90
+      const momentumValue = Number((snapshot.equityUsd + wave + wave2).toFixed(2))
+      const pnlWave = Math.sin(seed * 0.6 + now.getTime() / 110000) * 45
+      const pnlValue = Number((snapshot.pnlUsd + pnlWave).toFixed(2))
       const volumeValue = Math.round(clamp(55 + Math.abs(Math.sin(seed + now.getTime() / 180000) * 90), 20, 160))
       const time = now.getTime()
 
@@ -100,6 +101,7 @@ export default function TradingBotCharts({
               dataKey="time"
               type="number"
               domain={['dataMin', 'dataMax']}
+              tickCount={5}
               tickFormatter={value =>
                 new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
               }
@@ -138,6 +140,7 @@ export default function TradingBotCharts({
               dataKey="time"
               type="number"
               domain={['dataMin', 'dataMax']}
+              tickCount={5}
               tickFormatter={value =>
                 new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
               }
@@ -177,6 +180,7 @@ export default function TradingBotCharts({
               dataKey="time"
               type="number"
               domain={['dataMin', 'dataMax']}
+              tickCount={5}
               tickFormatter={value =>
                 new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
               }
@@ -192,7 +196,7 @@ export default function TradingBotCharts({
                 color: '#fff',
               }}
             />
-            <Bar dataKey="value" fill="#a78bfa" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="value" fill="#a78bfa" radius={[6, 6, 0, 0]} barSize={18} />
           </BarChart>
         </ResponsiveContainer>
       </div>
