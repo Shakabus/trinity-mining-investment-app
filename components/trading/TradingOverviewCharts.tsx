@@ -46,6 +46,8 @@ export default function TradingOverviewCharts({
   const [performanceState, setPerformanceState] = useState(performanceSeries)
   const lastIndexRef = useRef<number>(-1)
   const lastTickRef = useRef<number | null>(null)
+  const allocationSeedRef = useRef<number>(seed * 1000)
+  const allocationTickRef = useRef<number>(0)
 
   const startDate = useMemo(() => (startDateIso ? new Date(startDateIso) : new Date()), [startDateIso])
 
@@ -111,8 +113,8 @@ export default function TradingOverviewCharts({
       if (lastPoint) {
         lastTickRef.current = lastPoint.time.getTime()
       }
-      setEquitySeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))].slice(-72))
-      setPnlSeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))].slice(-72))
+      setEquitySeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))].slice(-120))
+      setPnlSeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))].slice(-120))
 
       const focusSeed = seed + lastIndex * 17
       const nextAllocation = buildAllocationSeries(focusSeed)
@@ -149,16 +151,33 @@ export default function TradingOverviewCharts({
       const pnlValue = Number(snapshot.pnlUsd.toFixed(2))
       const tickTime = nowMs
       lastTickRef.current = tickTime
-      setEquitySeries(prev => [...prev, { time: tickTime, value: equityValue }].slice(-72))
-      setPnlSeries(prev => [...prev, { time: tickTime, value: pnlValue }].slice(-72))
+      setEquitySeries(prev => [...prev, { time: tickTime, value: equityValue }].slice(-120))
+      setPnlSeries(prev => [...prev, { time: tickTime, value: pnlValue }].slice(-120))
+    }, 60000)
 
-      const focusSeed = seed + Math.floor(nowMs / (5 * 60 * 1000))
-      const nextAllocation = buildAllocationSeries(focusSeed)
+    const allocationInterval = setInterval(() => {
+      const nowMs = Date.now()
+      const minGapMs = 2 * 60 * 1000
+      if (nowMs - allocationTickRef.current < minGapMs) {
+        return
+      }
+      allocationTickRef.current = nowMs
+      allocationSeedRef.current += 1 + Math.round(Math.sin(nowMs / 60000) * 2)
+      const nextAllocation = buildAllocationSeries(allocationSeedRef.current)
+      const snapshot = simulateTradingProgress({
+        investmentUsd,
+        expectedReturnUsd,
+        durationHours,
+        startDate,
+        now: new Date(nowMs),
+        seed,
+      })
       const pnlRatio = expectedReturnUsd > 0 ? snapshot.pnlUsd / expectedReturnUsd : 0
       const bias = pnlRatio >= 0 ? Math.min(0.25, pnlRatio * 0.5) : -Math.min(0.25, Math.abs(pnlRatio) * 0.5)
+      const maxValue = Math.max(...nextAllocation.map(x => x.value))
       const nextPerformance = nextAllocation.map(item => {
         const base = item.value * (0.8 + Math.abs(bias))
-        const direction = item.value === Math.max(...nextAllocation.map(x => x.value)) ? bias : bias * 0.35
+        const direction = item.value === maxValue ? bias : bias * 0.35
         const value = Math.round(clamp(base + base * direction, 12, 100))
         return { label: item.name, value }
       })
@@ -169,6 +188,7 @@ export default function TradingOverviewCharts({
     return () => {
       clearInterval(interval)
       clearInterval(microInterval)
+      clearInterval(allocationInterval)
     }
   }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
 
@@ -193,6 +213,9 @@ export default function TradingOverviewCharts({
                 dataKey="time"
                 type="number"
                 domain={['dataMin', 'dataMax']}
+                interval={0}
+                minTickGap={10}
+                tickCount={6}
                 tickFormatter={value =>
                   new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
                 }
@@ -231,6 +254,9 @@ export default function TradingOverviewCharts({
                 dataKey="time"
                 type="number"
                 domain={['dataMin', 'dataMax']}
+                interval={0}
+                minTickGap={10}
+                tickCount={6}
                 tickFormatter={value =>
                   new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
                 }
