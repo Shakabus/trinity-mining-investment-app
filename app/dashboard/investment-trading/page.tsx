@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import TradingOverviewCharts from '@/components/trading/TradingOverviewCharts'
 import TradingPlanCard from '@/components/trading/TradingPlanCard'
 import TradingSectionObserver from '@/components/trading/TradingSectionObserver'
-import { buildAllocationSeries, buildTradingSeries, simulateTradingProgress } from '@/lib/trading'
+import { buildAllocationSeries, simulateTradingProgress } from '@/lib/trading'
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import EmptyState from '@/components/ui/EmptyState'
@@ -103,28 +103,6 @@ export default async function TradingInvestmentPage() {
     }
   }
 
-  const startDate = activePlan?.startDate ?? activePlan?.createdAt ?? now
-  const endDate = activePlan?.endDate ?? (activePlan ? new Date(startDate.getTime() + activePlan.durationHours * 60 * 60 * 1000) : now)
-  const series = activePlan
-    ? buildTradingSeries({
-        points: 12,
-        startDate,
-        endDate,
-        expectedReturnUsd: Number(activePlan.expectedReturnUsd),
-        investmentUsd: Number(activePlan.investmentUsd),
-        seed: (user?.id || 1) * 11,
-      })
-    : []
-
-  const equitySeries = series.map(point => ({
-    time: point.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-    value: point.value + Number(activePlan?.investmentUsd || 0),
-  }))
-  const pnlSeries = series.map(point => ({
-    time: point.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-    value: point.pnl,
-  }))
-
   const allocationSeries = buildAllocationSeries((user?.id || 1) * 3)
   const performanceSeries = allocationSeries.map(item => ({
     label: item.name,
@@ -209,8 +187,11 @@ export default async function TradingInvestmentPage() {
 
       {activePlan ? (
         <TradingOverviewCharts
-          equitySeries={equitySeries}
-          pnlSeries={pnlSeries}
+          investmentUsd={Number(activePlan.investmentUsd)}
+          expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
+          durationHours={activePlan.durationHours}
+          startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
+          seed={(user?.id || 1) * 11}
           allocationSeries={allocationSeries}
           performanceSeries={performanceSeries}
         />
