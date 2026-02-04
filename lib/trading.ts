@@ -126,14 +126,14 @@ const computePnlNoise = ({
   investmentUsd: number
 }) => {
   const rng = mulberry32(Math.floor(seed * 100000 + stepIndex * 37 + 11))
-  const scaleBase = clamp(expectedReturnUsd * 0.12, 35, expectedReturnUsd * 0.35)
-  const volatility = 0.25 + rng() * 0.55
+  const scaleBase = clamp(expectedReturnUsd * 0.2, 75, expectedReturnUsd * 0.55)
+  const volatility = 0.4 + rng() * 0.7
   const signed = rng() * 2 - 1
-  const intensity = scaleBase * volatility * (0.25 + 0.75 * progress)
+  const intensity = scaleBase * volatility * (0.35 + 0.65 * progress)
   const noise = signed * intensity
-  const minPnl = -0.6 * investmentUsd
+  const minPnl = -0.8 * investmentUsd
   const maxPnl = expectedReturnUsd - investmentUsd
-  return clamp(noise, minPnl - (expectedReturnUsd * 0.2), maxPnl * 0.35)
+  return clamp(noise, minPnl - (expectedReturnUsd * 0.35), maxPnl * 0.55)
 }
 
 export function pickTradingPlanReturn(config: TradingPlanConfig, investmentUsd: number, seed: number) {
