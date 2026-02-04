@@ -249,7 +249,7 @@ export default async function DashboardPage() {
                       color: '#ffffff',
                     }}
                   >
-                    Upload Mining Proof ->
+                    Upload Mining Proof {'>'}
                   </Link>
                 )}
                 {hasTradingSelected && (
@@ -261,7 +261,7 @@ export default async function DashboardPage() {
                       color: '#ffffff',
                     }}
                   >
-                    Upload Trading Proof ->
+                    Upload Trading Proof {'>'}
                   </Link>
                 )}
               </div>
