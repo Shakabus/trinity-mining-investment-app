@@ -1,6 +1,4 @@
 import { prisma } from '@/lib/db'
-
-import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 
 const DAILY_YIELD_PER_TH: Record<string, number> = {
