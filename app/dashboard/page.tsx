@@ -47,6 +47,18 @@ export default async function DashboardPage() {
       miningStats: {
         orderBy: { createdAt: 'desc' },
       },
+      tradingPlans: {
+        where: {
+          status: { in: ['active', 'awaiting_payment'] },
+        },
+        include: {
+          plan: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 1,
+      },
     },
   })
 
@@ -56,6 +68,7 @@ export default async function DashboardPage() {
   }) : []
 
   const currentPlan = user?.userPlans[0]
+  const tradingPlan = user?.tradingPlans?.[0] ?? null
   const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
   const now = new Date()
 
@@ -74,7 +87,7 @@ export default async function DashboardPage() {
       })
     : []
 
-  const totalEarnedUsd = updatedEarnings.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
+  const miningEarnedUsd = updatedEarnings.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
   const pendingReleaseUsd = updatedEarnings.reduce(
     (sum, record) => sum + (record.isWithdrawable ? 0 : Number(record.totalEarnedUsd || 0)),
     0
@@ -86,7 +99,15 @@ export default async function DashboardPage() {
   const tradingTotalUsd = tradingEarnings
     ? tradingEarnings.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
     : 0
-  const daysActiveStart = currentPlan?.startDate ?? activeMining?.createdAt ?? currentPlan?.createdAt ?? null
+  const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
+  const daysActiveDates = [
+    currentPlan?.startDate ?? currentPlan?.createdAt ?? null,
+    activeMining?.createdAt ?? null,
+    tradingPlan?.startDate ?? tradingPlan?.createdAt ?? null,
+  ].filter(Boolean) as Date[]
+  const daysActiveStart = daysActiveDates.length
+    ? new Date(Math.min(...daysActiveDates.map(date => date.getTime())))
+    : null
   const daysActive =
     user?.accountStatus === 'active' && daysActiveStart
       ? Math.max(1, Math.floor((now.getTime() - new Date(daysActiveStart).getTime()) / (1000 * 60 * 60 * 24)) + 1)
@@ -183,36 +204,50 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {user?.accountStatus === 'active' && currentPlan && (
+          {(currentPlan || tradingPlan) && (
             <div className="grid grid-cols-2 gap-4 md:gap-6">
               <div>
-                <div className="text-xs md:text-sm text-white/60 mb-1">Current Plan</div>
-                <div className="text-lg md:text-2xl font-bold text-white">{currentPlan.plan.name}</div>
-              </div>
-              <div>
-                <div className="text-xs md:text-sm text-white/60 mb-1">Hashrate</div>
-                <div className="text-lg md:text-2xl font-bold text-white">
-                  {currentPlan.plan.baseHashrate.toString()} {currentPlan.plan.hashrateUnit}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs md:text-sm text-white/60 mb-1">Duration</div>
+                <div className="text-xs md:text-sm text-white/60 mb-1">Active Plans</div>
                 <div className="text-base md:text-lg font-semibold text-white">
-                  {currentPlan.selectedDurationDays} days
+                  {currentPlan && tradingPlan
+                    ? `Mining: ${currentPlan.plan.name} · Trading: ${tradingPlan.plan.name}`
+                    : currentPlan
+                      ? `Mining: ${currentPlan.plan.name}`
+                      : `Trading: ${tradingPlan?.plan.name ?? 'N/A'}`}
                 </div>
               </div>
               <div>
-                <div className="text-xs md:text-sm text-white/60 mb-1">Status</div>
+                <div className="text-xs md:text-sm text-white/60 mb-1">Account Status</div>
                 <div className="text-base md:text-lg font-semibold text-green-400">
-                  {activeMining?.isActive ? 'Mining Active' : 'Mining Paused'}
+                  {currentPlan && tradingPlan
+                    ? 'Mining + Trading Active'
+                    : currentPlan
+                      ? 'Mining Active'
+                      : 'Trading Active'}
                 </div>
               </div>
+              {currentPlan && (
+                <>
+                  <div>
+                    <div className="text-xs md:text-sm text-white/60 mb-1">Hashrate</div>
+                    <div className="text-lg md:text-2xl font-bold text-white">
+                      {currentPlan.plan.baseHashrate.toString()} {currentPlan.plan.hashrateUnit}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs md:text-sm text-white/60 mb-1">Duration</div>
+                    <div className="text-base md:text-lg font-semibold text-white">
+                      {currentPlan.selectedDurationDays} days
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
           <div
             className="p-4 md:p-6 rounded-3xl"
             style={{
@@ -246,6 +281,20 @@ export default async function DashboardPage() {
                 Pending system release: ${pendingReleaseUsd.toFixed(2)}
               </div>
             )}
+          </div>
+
+          <div
+            className="p-4 md:p-6 rounded-3xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-xs md:text-sm text-white/60 mb-2">Mining Earned</div>
+            <div className="text-lg md:text-2xl font-bold text-white">
+              ${miningEarnedUsd.toFixed(2)}
+            </div>
           </div>
 
           <div
