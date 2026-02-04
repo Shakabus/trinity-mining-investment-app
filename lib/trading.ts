@@ -185,7 +185,11 @@ export function simulateTradingProgress({
   const planScale = clamp(investmentUsd / 10000, 0.8, 3.2)
   const basePositions = Math.round(3 + planScale * 1.6)
   const jumpIndex = Math.round(progress * clamp(durationHours / 2, 4, 36))
-  const openPositions = Math.max(1, Math.round(basePositions + Math.sin(seed + jumpIndex * 0.9) * (2 + planScale * 0.6)))
+  const timeTick = Math.floor(elapsedMs / (5 * 60 * 1000))
+  const openPositions = Math.max(
+    1,
+    Math.round(basePositions + Math.sin(seed + jumpIndex * 0.9 + timeTick * 0.7) * (2 + planScale * 0.6))
+  )
 
   return {
     progress,
