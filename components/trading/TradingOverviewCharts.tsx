@@ -42,6 +42,7 @@ export default function TradingOverviewCharts({
   const [equitySeries, setEquitySeries] = useState<{ time: number; value: number }[]>([])
   const [pnlSeries, setPnlSeries] = useState<{ time: number; value: number }[]>([])
   const lastIndexRef = useRef<number>(-1)
+  const lastTickRef = useRef<number | null>(null)
 
   const startDate = useMemo(() => (startDateIso ? new Date(startDateIso) : new Date()), [startDateIso])
 
@@ -82,12 +83,15 @@ export default function TradingOverviewCharts({
         setEquitySeries([])
         setPnlSeries([])
         lastIndexRef.current = -1
+        lastTickRef.current = null
         return
       }
       const seedPoints = schedulePoints.slice(Math.max(0, lastIndex - 71), lastIndex + 1)
       setEquitySeries(seedPoints.map(point => ({ time: point.time.getTime(), value: point.equity })))
       setPnlSeries(seedPoints.map(point => ({ time: point.time.getTime(), value: point.pnl })))
       lastIndexRef.current = lastIndex
+      const lastSeed = seedPoints[seedPoints.length - 1]
+      lastTickRef.current = lastSeed ? lastSeed.time.getTime() : null
     }
 
     seedSeries()
@@ -100,12 +104,43 @@ export default function TradingOverviewCharts({
       }
       const newPoints = schedulePoints.slice(lastIndexRef.current + 1, lastIndex + 1)
       lastIndexRef.current = lastIndex
+      const lastPoint = newPoints[newPoints.length - 1]
+      if (lastPoint) {
+        lastTickRef.current = lastPoint.time.getTime()
+      }
       setEquitySeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))].slice(-72))
       setPnlSeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))].slice(-72))
     }, 15000)
 
-    return () => clearInterval(interval)
-  }, [schedulePoints])
+    const microInterval = setInterval(() => {
+      const now = new Date()
+      const nowMs = now.getTime()
+      const lastTickMs = lastTickRef.current ?? startDate.getTime()
+      const minGapMs = 60 * 1000
+      if (nowMs - lastTickMs < minGapMs) {
+        return
+      }
+      const snapshot = simulateTradingProgress({
+        investmentUsd,
+        expectedReturnUsd,
+        durationHours,
+        startDate,
+        now,
+        seed,
+      })
+      const equityValue = Number(snapshot.equityUsd.toFixed(2))
+      const pnlValue = Number(snapshot.pnlUsd.toFixed(2))
+      const tickTime = nowMs
+      lastTickRef.current = tickTime
+      setEquitySeries(prev => [...prev, { time: tickTime, value: equityValue }].slice(-72))
+      setPnlSeries(prev => [...prev, { time: tickTime, value: pnlValue }].slice(-72))
+    }, 60000)
+
+    return () => {
+      clearInterval(interval)
+      clearInterval(microInterval)
+    }
+  }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
 
   return (
     <div className="space-y-6">
