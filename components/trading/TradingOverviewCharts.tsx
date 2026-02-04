@@ -16,7 +16,7 @@ import {
   Bar,
 } from 'recharts'
 import { TrendingUp, PieChart as PieIcon, Activity, BarChart3 } from 'lucide-react'
-import { simulateTradingProgress } from '@/lib/trading'
+import { buildTradingJumpSeries, simulateTradingProgress } from '@/lib/trading'
 
 interface TradingOverviewChartsProps {
   investmentUsd: number
@@ -66,11 +66,27 @@ export default function TradingOverviewCharts({
       }
     }
 
-    const initial = buildPoint(new Date())
-    setEquitySeries([{ time: initial.time, value: initial.equity }])
-    setPnlSeries([{ time: initial.time, value: initial.pnl }])
-    lastEquityRef.current = initial.equity
-    lastPnlRef.current = initial.pnl
+    const now = new Date()
+    const endDate = now
+    const initialPoints = buildTradingJumpSeries({
+      startDate,
+      endDate,
+      expectedReturnUsd,
+      investmentUsd,
+      seed,
+    }).map(point => ({
+      time: formatTime(point.time),
+      equity: point.equity,
+      pnl: point.pnl,
+    }))
+
+    const seededEquity = initialPoints.map(point => ({ time: point.time, value: point.equity }))
+    const seededPnl = initialPoints.map(point => ({ time: point.time, value: point.pnl }))
+    const lastSeed = initialPoints[initialPoints.length - 1]
+    setEquitySeries(seededEquity)
+    setPnlSeries(seededPnl)
+    lastEquityRef.current = lastSeed?.equity ?? null
+    lastPnlRef.current = lastSeed?.pnl ?? null
 
     const interval = setInterval(() => {
       const point = buildPoint(new Date())
@@ -80,8 +96,8 @@ export default function TradingOverviewCharts({
       const pnlChanged = lastPnl === null || Math.abs(point.pnl - lastPnl) >= 0.01
 
       if (equityChanged || pnlChanged) {
-        setEquitySeries(prev => [...prev, { time: point.time, value: point.equity }].slice(-48))
-        setPnlSeries(prev => [...prev, { time: point.time, value: point.pnl }].slice(-48))
+        setEquitySeries(prev => [...prev, { time: point.time, value: point.equity }].slice(-72))
+        setPnlSeries(prev => [...prev, { time: point.time, value: point.pnl }].slice(-72))
         lastEquityRef.current = point.equity
         lastPnlRef.current = point.pnl
       }

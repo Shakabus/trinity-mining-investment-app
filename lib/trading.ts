@@ -240,6 +240,72 @@ export function buildTradingSeries({
   })
 }
 
+export function buildTradingJumpSeries({
+  startDate,
+  endDate,
+  expectedReturnUsd,
+  investmentUsd,
+  seed,
+}: {
+  startDate: Date
+  endDate: Date
+  expectedReturnUsd: number
+  investmentUsd: number
+  seed: number
+}) {
+  const durationMs = Math.max(1, endDate.getTime() - startDate.getTime())
+  const schedule = buildJumpSchedule({
+    durationMs,
+    seed,
+    expectedReturnUsd,
+    investmentUsd,
+  })
+
+  const points = schedule.map(point => {
+    const timestamp = new Date(startDate.getTime() + point.timeMs)
+    const { earnedUsd, stepIndex } = getSchedulePoint(schedule, point.timeMs)
+    const progress = expectedReturnUsd === 0 ? 0 : clamp(earnedUsd / expectedReturnUsd, 0, 1)
+    const pnlBase = earnedUsd - investmentUsd
+    const pnlNoise = computePnlNoise({
+      seed,
+      stepIndex,
+      progress,
+      expectedReturnUsd,
+      investmentUsd,
+    })
+    const pnl = clamp(pnlBase + pnlNoise, -0.6 * investmentUsd, expectedReturnUsd - investmentUsd)
+    return {
+      time: timestamp,
+      earnedUsd: Math.round(earnedUsd * 100) / 100,
+      pnl: Math.round(pnl * 100) / 100,
+      equity: Math.round((investmentUsd + pnl) * 100) / 100,
+    }
+  })
+
+  const finalPoint = points[points.length - 1]
+  if (!finalPoint || finalPoint.time.getTime() !== endDate.getTime()) {
+    const { earnedUsd, stepIndex } = getSchedulePoint(schedule, durationMs)
+    const progress = expectedReturnUsd === 0 ? 0 : clamp(earnedUsd / expectedReturnUsd, 0, 1)
+    const pnlBase = earnedUsd - investmentUsd
+    const pnlNoise = computePnlNoise({
+      seed,
+      stepIndex,
+      progress,
+      expectedReturnUsd,
+      investmentUsd,
+    })
+    const pnl = clamp(pnlBase + pnlNoise, -0.6 * investmentUsd, expectedReturnUsd - investmentUsd)
+    points.push({
+      time: endDate,
+      earnedUsd: Math.round(earnedUsd * 100) / 100,
+      pnl: Math.round(pnl * 100) / 100,
+      equity: Math.round((investmentUsd + pnl) * 100) / 100,
+    })
+  }
+
+  return points
+}
+
 export function buildAllocationSeries(seed: number) {
   const crypto = clamp(45 + Math.sin(seed) * 10, 32, 58)
   const stocks = clamp(30 + Math.cos(seed) * 8, 20, 42)
