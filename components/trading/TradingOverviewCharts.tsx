@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable react-hooks/set-state-in-effect */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   LineChart,
   Line,
@@ -41,6 +41,7 @@ export default function TradingOverviewCharts({
 }: TradingOverviewChartsProps) {
   const [equitySeries, setEquitySeries] = useState<{ time: number; value: number }[]>([])
   const [pnlSeries, setPnlSeries] = useState<{ time: number; value: number }[]>([])
+  const lastIndexRef = useRef<number>(-1)
 
   const startDate = useMemo(() => (startDateIso ? new Date(startDateIso) : new Date()), [startDateIso])
 
@@ -55,26 +56,54 @@ export default function TradingOverviewCharts({
   }, [startDate, durationHours, expectedReturnUsd, investmentUsd, seed])
 
   useEffect(() => {
-    const updateSeries = () => {
-      const nowMs = Date.now()
-      const filtered = schedulePoints.filter(point => point.time.getTime() <= nowMs)
-      const equity = filtered.map(point => ({
-        time: point.time.getTime(),
-        value: point.equity,
-      }))
-      const pnl = filtered.map(point => ({
-        time: point.time.getTime(),
-        value: point.pnl,
-      }))
-
-      if (equity.length > 0) {
-        setEquitySeries(equity.slice(-72))
-        setPnlSeries(pnl.slice(-72))
-      }
+    if (schedulePoints.length === 0) {
+      setEquitySeries([])
+      setPnlSeries([])
+      lastIndexRef.current = -1
+      return
     }
 
-    updateSeries()
-    const interval = setInterval(updateSeries, 15000)
+    const findLastIndex = (nowMs: number) => {
+      let idx = -1
+      for (let i = 0; i < schedulePoints.length; i += 1) {
+        if (schedulePoints[i].time.getTime() <= nowMs) {
+          idx = i
+        } else {
+          break
+        }
+      }
+      return idx
+    }
+
+    const seedSeries = () => {
+      const nowMs = Date.now()
+      const lastIndex = findLastIndex(nowMs)
+      if (lastIndex < 0) {
+        setEquitySeries([])
+        setPnlSeries([])
+        lastIndexRef.current = -1
+        return
+      }
+      const seedPoints = schedulePoints.slice(Math.max(0, lastIndex - 71), lastIndex + 1)
+      setEquitySeries(seedPoints.map(point => ({ time: point.time.getTime(), value: point.equity })))
+      setPnlSeries(seedPoints.map(point => ({ time: point.time.getTime(), value: point.pnl })))
+      lastIndexRef.current = lastIndex
+    }
+
+    seedSeries()
+
+    const interval = setInterval(() => {
+      const nowMs = Date.now()
+      const lastIndex = findLastIndex(nowMs)
+      if (lastIndex <= lastIndexRef.current || lastIndex < 0) {
+        return
+      }
+      const newPoints = schedulePoints.slice(lastIndexRef.current + 1, lastIndex + 1)
+      lastIndexRef.current = lastIndex
+      setEquitySeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))].slice(-72))
+      setPnlSeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))].slice(-72))
+    }, 15000)
+
     return () => clearInterval(interval)
   }, [schedulePoints])
 
