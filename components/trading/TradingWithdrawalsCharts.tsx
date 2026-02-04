@@ -40,9 +40,9 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
         </div>
         <div className="px-[5px]">
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={historySeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
+            <BarChart data={historySeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
             <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
-            <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <YAxis width={34} tickMargin={6} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
                 background: 'rgba(0, 0, 0, 0.8)',
@@ -104,9 +104,9 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
         </div>
         <div className="px-[5px]">
           <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={balanceSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
+          <LineChart data={balanceSeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
             <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
-            <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <YAxis width={34} tickMargin={6} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
                 background: 'rgba(0, 0, 0, 0.8)',
