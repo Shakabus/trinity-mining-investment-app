@@ -49,6 +49,7 @@ export default async function TradingInvestmentPage() {
   const now = new Date()
 
   let snapshot = null as null | {
+    progress: number
     equityUsd: number
     pnlUsd: number
     dailyEstimateUsd: number
