@@ -40,18 +40,17 @@ export async function POST(req: Request) {
       where: { id: userPlanId }
     })
 
-    if (userPlan.upgradeFromPlanId) {
-      await prisma.user.update({
-        where: { id: userPlan.userId },
-        data: { accountStatus: 'active' }
-      })
-    } else {
-      // Update user account status back to inactive
-      await prisma.user.update({
-        where: { id: userPlan.userId },
-        data: { accountStatus: 'inactive' }
-      })
-    }
+    const hasActiveMining = await prisma.userPlan.count({
+      where: { userId: userPlan.userId, status: 'active' },
+    })
+    const hasActiveTrading = await prisma.tradingUserPlan.count({
+      where: { userId: userPlan.userId, status: 'active' },
+    })
+
+    await prisma.user.update({
+      where: { id: userPlan.userId },
+      data: { accountStatus: hasActiveMining > 0 || hasActiveTrading > 0 ? 'active' : 'inactive' },
+    })
 
     await logUserActivity({
       userId: userPlan.userId,

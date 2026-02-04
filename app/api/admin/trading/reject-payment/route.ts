@@ -36,6 +36,18 @@ export async function POST(req: Request) {
       where: { id: tradingPlan.id },
     })
 
+    const hasActiveMining = await prisma.userPlan.count({
+      where: { userId: tradingPlan.userId, status: 'active' },
+    })
+    const hasActiveTrading = await prisma.tradingUserPlan.count({
+      where: { userId: tradingPlan.userId, status: 'active' },
+    })
+
+    await prisma.user.update({
+      where: { id: tradingPlan.userId },
+      data: { accountStatus: hasActiveMining > 0 || hasActiveTrading > 0 ? 'active' : 'inactive' },
+    })
+
     await logUserActivity({
       userId: tradingPlan.userId,
       action: 'TradingPaymentRejected',

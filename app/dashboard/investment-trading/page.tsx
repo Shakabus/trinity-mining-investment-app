@@ -5,6 +5,7 @@ import TradingOverviewCharts from '@/components/trading/TradingOverviewCharts'
 import TradingPlanCard from '@/components/trading/TradingPlanCard'
 import TradingSectionObserver from '@/components/trading/TradingSectionObserver'
 import { buildAllocationSeries, simulateTradingProgress } from '@/lib/trading'
+import { logUserActivity } from '@/lib/user-activity'
 import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import EmptyState from '@/components/ui/EmptyState'
@@ -40,7 +41,7 @@ export default async function TradingInvestmentPage() {
     orderBy: { minInvestmentUsd: 'asc' },
   })
 
-  const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
+  const activePlan = user?.tradingPlans.find(plan => ['active', 'completed'].includes(plan.status)) ?? null
   const pendingPlan = user?.tradingPlans.find(plan => plan.status === 'awaiting_payment') ?? null
   const selectedPlan = user?.tradingPlans.find(plan => plan.status === 'selected') ?? null
   const activeStats = user?.tradingStats.find(stat => stat.isActive) ?? null
@@ -69,6 +70,44 @@ export default async function TradingInvestmentPage() {
       seed,
     })
 
+    const isCompleted = now.getTime() >= endDate.getTime() || snapshot.progress >= 1
+
+    if (activePlan.status === 'active' && isCompleted) {
+      await prisma.tradingUserPlan.update({
+        where: { id: activePlan.id },
+        data: { status: 'completed', endDate },
+      })
+
+      await prisma.tradingStat.updateMany({
+        where: { tradingUserPlanId: activePlan.id },
+        data: { isActive: false },
+      })
+
+      await prisma.tradingEarning.updateMany({
+        where: { tradingUserPlanId: activePlan.id },
+        data: { isActive: true },
+      })
+
+      const hasActiveMining = await prisma.userPlan.count({
+        where: { userId: user.id, status: 'active' },
+      })
+      const hasActiveTrading = await prisma.tradingUserPlan.count({
+        where: { userId: user.id, status: 'active' },
+      })
+      if (hasActiveMining === 0 && hasActiveTrading === 0) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { accountStatus: 'inactive' },
+        })
+      }
+
+      await logUserActivity({
+        userId: user.id,
+        action: 'TradingPlanCompleted',
+        detail: 'Trading plan completed. Funds are now available for withdrawal.',
+      })
+    }
+
     if (!activePlan.startDate || !activePlan.endDate) {
       await prisma.tradingUserPlan.update({
         where: { id: activePlan.id },
@@ -79,7 +118,7 @@ export default async function TradingInvestmentPage() {
       })
     }
 
-    if (activeEarnings && !activeEarnings.isAdminOverride) {
+    if (activeEarnings && !activeEarnings.isAdminOverride && activePlan.status !== 'completed') {
       await prisma.tradingEarning.update({
         where: { id: activeEarnings.id },
         data: {
@@ -90,7 +129,7 @@ export default async function TradingInvestmentPage() {
       })
     }
 
-    if (activeStats) {
+    if (activeStats && activePlan.status !== 'completed') {
       await prisma.tradingStat.update({
         where: { id: activeStats.id },
         data: {
@@ -110,7 +149,15 @@ export default async function TradingInvestmentPage() {
     value: Math.round(item.value * 0.9),
   }))
   const planLabel = activePlan?.plan.name ?? pendingPlan?.plan.name ?? selectedPlan?.plan.name ?? 'Not Active'
-  const statusLabel = activePlan ? 'Active' : pendingPlan ? 'Awaiting Payment' : selectedPlan ? 'Proof Not Submitted' : 'Inactive'
+  const statusLabel = activePlan
+    ? activePlan.status === 'completed'
+      ? 'Completed'
+      : 'Active'
+    : pendingPlan
+      ? 'Awaiting Payment'
+      : selectedPlan
+        ? 'Proof Not Submitted'
+        : 'Inactive'
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">

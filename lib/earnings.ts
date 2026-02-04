@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/db'
 
+import { prisma } from '@/lib/db'
+import { logUserActivity } from '@/lib/user-activity'
+
 const DAILY_YIELD_PER_TH: Record<string, number> = {
   BTC: 0.00000022,
   ETH: 0.0000035,
@@ -64,6 +67,7 @@ export async function autoUpdateEarnings({
   userId: number
   earnings: Array<{
     id: number
+    userPlanId: number
     coinType: string
     dailyEstimateUsd: any
     dailyEstimateCrypto: any
@@ -78,6 +82,9 @@ export async function autoUpdateEarnings({
     userPlan: {
       status: string
       selectedDurationDays?: number
+      startDate?: Date | null
+      endDate?: Date | null
+      createdAt?: Date
       plan: { coinType: string; name?: string; baseHashrate: any; hashrateUnit: string }
       multiAssetAllocations: Array<{ coinType: string; hashrate: any; hashrateUnit: string }>
     }
@@ -87,6 +94,7 @@ export async function autoUpdateEarnings({
 }) {
   const prices = await getCryptoPricesUsd()
   const updates: typeof earnings = []
+  const completedPlans = new Set<number>()
 
   for (const record of earnings) {
     let dailyEstimateCrypto = Number(record.dailyEstimateCrypto)
@@ -95,6 +103,54 @@ export async function autoUpdateEarnings({
     let totalEarnedUsd = Number(record.totalEarnedUsd)
 
     if (!record.isAdminOverride) {
+      const planStart = record.userPlan.startDate ?? record.userPlan.createdAt ?? now
+      const planEnd =
+        record.userPlan.endDate ??
+        (record.userPlan.selectedDurationDays
+          ? new Date(planStart.getTime() + record.userPlan.selectedDurationDays * 24 * 60 * 60 * 1000)
+          : null)
+      const isCompleted = Boolean(planEnd && now.getTime() >= planEnd.getTime())
+
+      if (record.userPlan.status === 'active' && isCompleted && !completedPlans.has(record.userPlanId)) {
+        completedPlans.add(record.userPlanId)
+        await prisma.userPlan.update({
+          where: { id: record.userPlanId },
+          data: { status: 'completed' },
+        })
+
+        await prisma.miningStats.updateMany({
+          where: { userPlanId: record.userPlanId, isActive: true },
+          data: { isActive: false },
+        })
+
+        await prisma.earnings.updateMany({
+          where: { userPlanId: record.userPlanId },
+          data: {
+            isWithdrawable: true,
+            isHistorical: false,
+          },
+        })
+
+        const hasActiveMining = await prisma.userPlan.count({
+          where: { userId, status: 'active' },
+        })
+        const hasActiveTrading = await prisma.tradingUserPlan.count({
+          where: { userId, status: 'active' },
+        })
+
+        if (hasActiveMining === 0 && hasActiveTrading === 0) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { accountStatus: 'inactive' },
+          })
+        }
+
+        await logUserActivity({
+          userId,
+          action: 'PlanCompleted',
+          detail: `Mining plan completed. Funds are now available for withdrawal.`,
+        })
+      }
       const estimateAgeHours = record.lastEstimateUpdateAt
         ? (now.getTime() - record.lastEstimateUpdateAt.getTime()) / (1000 * 60 * 60)
         : 999
@@ -131,7 +187,7 @@ export async function autoUpdateEarnings({
         })
       }
 
-      const isActivePlan = record.userPlan.status === 'active'
+      const isActivePlan = record.userPlan.status === 'active' && !isCompleted
       if (miningStats?.isActive && isActivePlan && dailyEstimateCrypto > 0) {
         const lastCalc = record.lastCalculatedAt ?? now
         const elapsedSeconds = Math.max(0, (now.getTime() - lastCalc.getTime()) / 1000)

@@ -24,7 +24,7 @@ export default async function TradingWithdrawalsPage() {
     },
   })
 
-  const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
+  const activePlan = user?.tradingPlans.find(plan => ['active', 'completed'].includes(plan.status)) ?? null
   const activeEarning = user?.tradingEarnings.find(earning => earning.isActive) ?? null
   const totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
   const totalWithdrawn = user?.tradingWithdrawals.reduce((sum, w) => sum + Number(w.amountUsd), 0) ?? 0

@@ -104,6 +104,12 @@ export default async function DashboardPage() {
     ? tradingEarnings.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
     : 0
   const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
+  const completedMiningAvailable = updatedEarnings.some(
+    record => record.isWithdrawable && record.userPlan?.status === 'completed'
+  )
+  const completedTradingPlan = user?.tradingPlans?.find(plan => plan.status === 'completed') ?? null
+  const completedTradingAvailable = Boolean(completedTradingPlan && tradingEarnings.length > 0)
+  const hasActivePlans = Boolean(activeMiningPlan || activeTradingPlan)
   const daysActiveDates = [
     activeMiningPlan?.startDate ?? activeMiningPlan?.createdAt ?? null,
     activeMining?.createdAt ?? null,
@@ -179,7 +185,7 @@ export default async function DashboardPage() {
         >
           <h2 className="text-lg md:text-xl font-semibold text-white mb-4">Account Status</h2>
 
-          {user?.accountStatus === 'inactive' && (
+          {user?.accountStatus === 'inactive' && !hasActivePlans && (
             <div className="space-y-4">
               <p className="text-sm md:text-base text-white/80">
                 Your account is ready! Get started by selecting a mining plan.
@@ -262,6 +268,51 @@ export default async function DashboardPage() {
                     }}
                   >
                     Upload Trading Proof {'>'}
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(completedMiningAvailable || completedTradingAvailable) && (
+            <div
+              className="p-4 rounded-2xl mt-4"
+              style={{
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+              }}
+            >
+              <div className="text-sm text-emerald-100">
+                Completed plans are ready for withdrawal.
+                {!hasActivePlans && (
+                  <span className="text-emerald-200/80"> Account is inactive until a new plan starts.</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3 mt-3">
+                {completedMiningAvailable && (
+                  <Link
+                    href="/dashboard/earnings"
+                    className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      color: '#d1fae5',
+                    }}
+                  >
+                    Request Mining Withdrawal {'>'}
+                  </Link>
+                )}
+                {completedTradingAvailable && (
+                  <Link
+                    href="/dashboard/investment-trading/withdrawals"
+                    className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      color: '#d1fae5',
+                    }}
+                  >
+                    Request Trading Withdrawal {'>'}
                   </Link>
                 )}
               </div>
