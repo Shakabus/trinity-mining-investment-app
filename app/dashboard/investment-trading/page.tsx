@@ -102,11 +102,13 @@ export default async function TradingInvestmentPage() {
         })
       }
 
-      await logUserActivity({
-        userId: user.id,
-        action: 'TradingPlanCompleted',
-        detail: 'Trading plan completed. Funds are now available for withdrawal.',
-      })
+      if (user?.id) {
+        await logUserActivity({
+          userId: user.id,
+          action: 'TradingPlanCompleted',
+          detail: 'Trading plan completed. Funds are now available for withdrawal.',
+        })
+      }
     }
 
     if (!activePlan.startDate || !activePlan.endDate) {
