@@ -81,6 +81,10 @@ export default function TradingOverviewCharts({
       return idx
     }
 
+    const windowMs = 3 * 60 * 60 * 1000
+    const trimWindow = (points: { time: number; value: number }[], nowMs: number) =>
+      points.filter(point => point.time >= nowMs - windowMs)
+
     const seedSeries = () => {
       const nowMs = Date.now()
       const lastIndex = findLastIndex(nowMs)
@@ -91,7 +95,8 @@ export default function TradingOverviewCharts({
         lastTickRef.current = null
         return
       }
-      const seedPoints = schedulePoints.slice(Math.max(0, lastIndex - 71), lastIndex + 1)
+      const windowStart = nowMs - windowMs
+      const seedPoints = schedulePoints.filter(point => point.time.getTime() >= windowStart && point.time.getTime() <= nowMs)
       setEquitySeries(seedPoints.map(point => ({ time: point.time.getTime(), value: point.equity })))
       setPnlSeries(seedPoints.map(point => ({ time: point.time.getTime(), value: point.pnl })))
       lastIndexRef.current = lastIndex
@@ -113,8 +118,13 @@ export default function TradingOverviewCharts({
       if (lastPoint) {
         lastTickRef.current = lastPoint.time.getTime()
       }
-      setEquitySeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))].slice(-120))
-      setPnlSeries(prev => [...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))].slice(-120))
+      const nowMs = Date.now()
+      setEquitySeries(prev =>
+        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))], nowMs)
+      )
+      setPnlSeries(prev =>
+        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))], nowMs)
+      )
 
       const focusSeed = seed + lastIndex * 17
       const nextAllocation = buildAllocationSeries(focusSeed)
@@ -151,8 +161,8 @@ export default function TradingOverviewCharts({
       const pnlValue = Number(snapshot.pnlUsd.toFixed(2))
       const tickTime = nowMs
       lastTickRef.current = tickTime
-      setEquitySeries(prev => [...prev, { time: tickTime, value: equityValue }].slice(-120))
-      setPnlSeries(prev => [...prev, { time: tickTime, value: pnlValue }].slice(-120))
+      setEquitySeries(prev => trimWindow([...prev, { time: tickTime, value: equityValue }], nowMs))
+      setPnlSeries(prev => trimWindow([...prev, { time: tickTime, value: pnlValue }], nowMs))
     }, 60000)
 
     const allocationInterval = setInterval(() => {
@@ -213,9 +223,9 @@ export default function TradingOverviewCharts({
                 dataKey="time"
                 type="number"
                 domain={['dataMin', 'dataMax']}
-                interval={0}
-                minTickGap={10}
-                tickCount={6}
+                interval="preserveStartEnd"
+                minTickGap={22}
+                tickCount={5}
                 tickFormatter={value =>
                   new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
                 }
@@ -254,9 +264,9 @@ export default function TradingOverviewCharts({
                 dataKey="time"
                 type="number"
                 domain={['dataMin', 'dataMax']}
-                interval={0}
-                minTickGap={10}
-                tickCount={6}
+                interval="preserveStartEnd"
+                minTickGap={22}
+                tickCount={5}
                 tickFormatter={value =>
                   new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
                 }
