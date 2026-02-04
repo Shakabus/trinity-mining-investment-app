@@ -56,40 +56,27 @@ export default function TradingOverviewCharts({
 
   useEffect(() => {
     const updateSeries = () => {
-      const now = new Date()
-      const filtered = schedulePoints.filter(point => point.time.getTime() <= now.getTime())
-      const snapshot = simulateTradingProgress({
-        investmentUsd,
-        expectedReturnUsd,
-        durationHours,
-        startDate,
-        now,
-        seed,
-      })
-      const currentPoint = {
-        time: now.getTime(),
-        equity: Number(snapshot.equityUsd.toFixed(2)),
-        pnl: Number(snapshot.pnlUsd.toFixed(2)),
-      }
-      const merged = [...filtered, { time: now, equity: currentPoint.equity, pnl: currentPoint.pnl }]
-
-      const equity = merged.map(point => ({
+      const nowMs = Date.now()
+      const filtered = schedulePoints.filter(point => point.time.getTime() <= nowMs)
+      const equity = filtered.map(point => ({
         time: point.time.getTime(),
         value: point.equity,
       }))
-      const pnl = merged.map(point => ({
+      const pnl = filtered.map(point => ({
         time: point.time.getTime(),
         value: point.pnl,
       }))
 
-      setEquitySeries(equity.slice(-72))
-      setPnlSeries(pnl.slice(-72))
+      if (equity.length > 0) {
+        setEquitySeries(equity.slice(-72))
+        setPnlSeries(pnl.slice(-72))
+      }
     }
 
     updateSeries()
     const interval = setInterval(updateSeries, 15000)
     return () => clearInterval(interval)
-  }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
+  }, [schedulePoints])
 
   return (
     <div className="space-y-6">

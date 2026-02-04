@@ -279,6 +279,7 @@ export function buildTradingJumpSeries({
       earnedUsd: Math.round(earnedUsd * 100) / 100,
       pnl: Math.round(pnl * 100) / 100,
       equity: Math.round((investmentUsd + pnl) * 100) / 100,
+      stepIndex,
     }
   })
 
@@ -300,6 +301,7 @@ export function buildTradingJumpSeries({
       earnedUsd: Math.round(earnedUsd * 100) / 100,
       pnl: Math.round(pnl * 100) / 100,
       equity: Math.round((investmentUsd + pnl) * 100) / 100,
+      stepIndex,
     })
   }
 
