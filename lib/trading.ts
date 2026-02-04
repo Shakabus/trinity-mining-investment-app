@@ -182,7 +182,10 @@ export function simulateTradingProgress({
   const equityUsd = investmentUsd + pnlUsd
   const dailyEstimateUsd = durationHours > 0 ? (expectedReturnUsd / (durationHours / 24)) : 0
   const winRate = clamp(55 + Math.sin(seed + progress * 2.4) * 12, 40, 78)
-  const openPositions = Math.max(1, Math.round(3 + Math.sin(seed + progress * 5) * 2))
+  const planScale = clamp(investmentUsd / 10000, 0.8, 3.2)
+  const basePositions = Math.round(3 + planScale * 1.6)
+  const stepIndex = Math.round(progress * clamp(durationHours / 2, 4, 36))
+  const openPositions = Math.max(1, Math.round(basePositions + Math.sin(seed + stepIndex * 0.9) * (2 + planScale * 0.6)))
 
   return {
     progress,
