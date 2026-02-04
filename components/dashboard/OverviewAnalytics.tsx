@@ -42,10 +42,11 @@ export default function OverviewAnalytics({
             <TrendingUp size={16} />
             Earnings over time (USD)
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={earningsSeries}>
-              <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
-              <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
+          <div className="px-[5px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={earningsSeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+                <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
+                <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <Tooltip
                 contentStyle={{
                   background: 'rgba(0, 0, 0, 0.8)',
@@ -54,9 +55,10 @@ export default function OverviewAnalytics({
                   color: '#fff',
                 }}
               />
-              <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+                <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div
@@ -71,10 +73,11 @@ export default function OverviewAnalytics({
             <Activity size={16} />
             Hashrate stability
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={hashrateSeries}>
-              <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
-              <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
+          <div className="px-[5px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={hashrateSeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+                <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
+                <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <Tooltip
                 contentStyle={{
                   background: 'rgba(0, 0, 0, 0.8)',
@@ -83,9 +86,10 @@ export default function OverviewAnalytics({
                   color: '#fff',
                 }}
               />
-              <Line type="monotone" dataKey="value" stroke="#60a5fa" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+                <Line type="monotone" dataKey="value" stroke="#60a5fa" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
@@ -102,10 +106,11 @@ export default function OverviewAnalytics({
             <BarChart3 size={16} />
             Shares submission history
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={sharesSeries}>
-              <XAxis dataKey="day" stroke="#ffffff40" style={{ fontSize: '11px' }} />
-              <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
+          <div className="px-[5px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={sharesSeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+                <XAxis dataKey="day" stroke="#ffffff40" style={{ fontSize: '11px' }} />
+                <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <Tooltip
                 contentStyle={{
                   background: 'rgba(0, 0, 0, 0.8)',
@@ -114,9 +119,10 @@ export default function OverviewAnalytics({
                   color: '#fff',
                 }}
               />
-              <Bar dataKey="value" fill="#a78bfa" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+                <Bar dataKey="value" fill="#a78bfa" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div
@@ -131,10 +137,11 @@ export default function OverviewAnalytics({
             <Scale size={16} />
             Estimated vs actual earnings
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={estimatedVsActual}>
-              <XAxis dataKey="label" stroke="#ffffff40" style={{ fontSize: '11px' }} />
-              <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
+          <div className="px-[5px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={estimatedVsActual} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+                <XAxis dataKey="label" stroke="#ffffff40" style={{ fontSize: '11px' }} />
+                <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <Tooltip
                 contentStyle={{
                   background: 'rgba(0, 0, 0, 0.8)',
@@ -143,10 +150,11 @@ export default function OverviewAnalytics({
                   color: '#fff',
                 }}
               />
-              <Bar dataKey="estimated" fill="#60a5fa" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="actual" fill="#10b981" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+                <Bar dataKey="estimated" fill="#60a5fa" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="actual" fill="#10b981" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
           <div className="flex items-center justify-center gap-6 mt-3 text-xs text-white/60">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-blue-400" />
