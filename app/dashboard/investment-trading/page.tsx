@@ -36,6 +36,10 @@ export default async function TradingInvestmentPage() {
     },
   })
 
+  if (!user) {
+    redirect('/sign-in')
+  }
+
   const tradingPlans = await prisma.tradingPlan.findMany({
     where: { status: 'active' },
     orderBy: { minInvestmentUsd: 'asc' },
