@@ -110,8 +110,9 @@ export default function TradingBotCharts({
           <PieChart size={16} />
           Portfolio momentum (USD)
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={priceSeries}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={priceSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
             <XAxis
               dataKey="time"
               type="number"
@@ -133,8 +134,9 @@ export default function TradingBotCharts({
               }}
             />
             <Line type="monotone" dataKey="value" stroke="#60a5fa" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div
@@ -149,8 +151,9 @@ export default function TradingBotCharts({
           <Activity size={16} />
           Risk-adjusted performance
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={pnlSeries}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={pnlSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
             <XAxis
               dataKey="time"
               type="number"
@@ -173,8 +176,9 @@ export default function TradingBotCharts({
             />
             <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="4 4" />
             <Area type="monotone" dataKey="value" stroke={pnlStroke} fill={pnlFill} />
-          </AreaChart>
-        </ResponsiveContainer>
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div
@@ -189,8 +193,9 @@ export default function TradingBotCharts({
           <TrendingUp size={16} />
           Liquidity & turnover
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={volumeSeries}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={volumeSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
             <XAxis
               dataKey="time"
               type="number"
@@ -212,8 +217,9 @@ export default function TradingBotCharts({
               }}
             />
             <Bar dataKey="value" fill="#a78bfa" radius={[6, 6, 0, 0]} barSize={18} />
-          </BarChart>
-        </ResponsiveContainer>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   )

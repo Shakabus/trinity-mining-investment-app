@@ -38,8 +38,9 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
           <Wallet size={16} />
           Withdrawal history (USD)
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={historySeries}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={historySeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
             <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
@@ -51,8 +52,9 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
               }}
             />
             <Bar dataKey="value" fill="#60a5fa" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div
@@ -67,7 +69,8 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
           <PieIcon size={16} />
           Status distribution
         </div>
-        <ResponsiveContainer width="100%" height={220}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
           <PieChart>
             <Pie data={statusSeries} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90} paddingAngle={4}>
               {statusSeries.map((_, index) => (
@@ -83,7 +86,8 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
               }}
             />
           </PieChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div
@@ -98,8 +102,9 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
           <Activity size={16} />
           Available balance trend
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={balanceSeries}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={balanceSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
             <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
@@ -111,8 +116,9 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
               }}
             />
             <Line type="monotone" dataKey="value" stroke="#34d399" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   )

@@ -217,8 +217,9 @@ export default function TradingOverviewCharts({
             <TrendingUp size={16} />
             Portfolio value (USD)
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={equitySeries}>
+          <div className="px-[5px]">
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={equitySeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
               <XAxis
                 dataKey="time"
                 type="number"
@@ -242,8 +243,9 @@ export default function TradingOverviewCharts({
                 }}
               />
               <Line type="monotone" dataKey="value" stroke="#34d399" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div
@@ -258,8 +260,9 @@ export default function TradingOverviewCharts({
             <Activity size={16} />
             Realized P/L trend
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <LineChart data={pnlSeries}>
+          <div className="px-[5px]">
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={pnlSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
               <XAxis
                 dataKey="time"
                 type="number"
@@ -283,8 +286,9 @@ export default function TradingOverviewCharts({
                 }}
               />
               <Line type="monotone" dataKey="value" stroke="#60a5fa" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
@@ -301,8 +305,9 @@ export default function TradingOverviewCharts({
             <PieIcon size={16} />
             Allocation mix
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
+          <div className="px-[5px]">
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
               <Pie data={allocationState} dataKey="value" nameKey="name" innerRadius={60} outerRadius={90} paddingAngle={4}>
                 {allocationState.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -317,8 +322,9 @@ export default function TradingOverviewCharts({
                 }}
                 itemStyle={{ color: '#ffffff' }}
               />
-            </PieChart>
-          </ResponsiveContainer>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         <div
@@ -333,8 +339,9 @@ export default function TradingOverviewCharts({
             <BarChart3 size={16} />
             Strategy scorecards
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={performanceState}>
+          <div className="px-[5px]">
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={performanceState} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
               <XAxis dataKey="label" stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
               <Tooltip
@@ -347,8 +354,9 @@ export default function TradingOverviewCharts({
                 itemStyle={{ color: '#ffffff' }}
               />
               <Bar dataKey="value" fill="#a78bfa" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>

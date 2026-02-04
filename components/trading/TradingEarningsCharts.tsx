@@ -120,8 +120,9 @@ export default function TradingEarningsCharts({
           <DollarSign size={16} />
           Earnings over time
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={earningsSeries}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={earningsSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
             <XAxis
               dataKey="time"
               type="number"
@@ -142,8 +143,9 @@ export default function TradingEarningsCharts({
               }}
             />
             <Line type="monotone" dataKey="value" stroke="#34d399" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div
@@ -158,8 +160,9 @@ export default function TradingEarningsCharts({
           <Scale size={16} />
           Estimated vs actual
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={estimateSeries}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={estimateSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
             <XAxis dataKey="label" stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
@@ -172,8 +175,9 @@ export default function TradingEarningsCharts({
             />
             <Bar dataKey="estimated" fill="#60a5fa" radius={[6, 6, 0, 0]} />
             <Bar dataKey="actual" fill="#10b981" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div
@@ -188,8 +192,9 @@ export default function TradingEarningsCharts({
           <TrendingUp size={16} />
           Drawdown & recovery
         </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={drawdownSeries}>
+        <div className="px-[5px]">
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={drawdownSeries} margin={{ left: 5, right: 5, top: 10, bottom: 0 }}>
             <XAxis
               dataKey="time"
               type="number"
@@ -210,8 +215,9 @@ export default function TradingEarningsCharts({
               }}
             />
             <Line type="monotone" dataKey="value" stroke="#fbbf24" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   )
