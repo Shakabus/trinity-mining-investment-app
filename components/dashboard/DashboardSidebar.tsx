@@ -226,7 +226,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
 
       {/* Mobile/Tablet Slide-out Menu (unchanged) */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 p-6 transform transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 p-6 overflow-y-auto glass-scroll transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{

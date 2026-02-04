@@ -180,7 +180,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 
           {/* Mobile Sidebar (unchanged behavior) */}
           <aside
-            className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 p-6 transform transition-transform duration-300 ease-in-out ${
+            className={`lg:hidden fixed top-0 left-0 h-full w-72 z-50 p-6 overflow-y-auto glass-scroll transform transition-transform duration-300 ease-in-out ${
               isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
             style={{
