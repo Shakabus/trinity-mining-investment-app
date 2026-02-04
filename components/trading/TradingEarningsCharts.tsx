@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import {
   LineChart,
   Line,
@@ -11,14 +12,100 @@ import {
   Bar,
 } from 'recharts'
 import { DollarSign, TrendingUp, Scale } from 'lucide-react'
+import { buildTradingJumpSeries, simulateTradingProgress } from '@/lib/trading'
 
 interface TradingEarningsChartsProps {
-  earningsSeries: { time: string; value: number }[]
-  estimateSeries: { label: string; estimated: number; actual: number }[]
-  drawdownSeries: { time: string; value: number }[]
+  investmentUsd: number
+  expectedReturnUsd: number
+  durationHours: number
+  startDateIso?: string | null
+  seed: number
 }
 
-export default function TradingEarningsCharts({ earningsSeries, estimateSeries, drawdownSeries }: TradingEarningsChartsProps) {
+export default function TradingEarningsCharts({
+  investmentUsd,
+  expectedReturnUsd,
+  durationHours,
+  startDateIso,
+  seed,
+}: TradingEarningsChartsProps) {
+  const [earningsSeries, setEarningsSeries] = useState<{ time: number; value: number }[]>([])
+  const [drawdownSeries, setDrawdownSeries] = useState<{ time: number; value: number }[]>([])
+  const [estimateSeries, setEstimateSeries] = useState<{ label: string; estimated: number; actual: number }[]>([])
+
+  const startDate = useMemo(() => (startDateIso ? new Date(startDateIso) : new Date()), [startDateIso])
+
+  const schedulePoints = useMemo(() => {
+    return buildTradingJumpSeries({
+      startDate,
+      endDate: new Date(startDate.getTime() + durationHours * 60 * 60 * 1000),
+      expectedReturnUsd,
+      investmentUsd,
+      seed,
+    })
+  }, [startDate, durationHours, expectedReturnUsd, investmentUsd, seed])
+
+  useEffect(() => {
+    const updateSeries = () => {
+      const now = new Date()
+      const nowMs = now.getTime()
+      const filtered = schedulePoints.filter(point => point.time.getTime() <= nowMs)
+      const snapshot = simulateTradingProgress({
+        investmentUsd,
+        expectedReturnUsd,
+        durationHours,
+        startDate,
+        now,
+        seed,
+      })
+      const merged = [
+        ...filtered,
+        {
+          time: now,
+          earnedUsd: snapshot.earnedUsd,
+          pnl: snapshot.pnlUsd,
+          equity: snapshot.equityUsd,
+        },
+      ]
+
+      let peakEquity = -Infinity
+      const earnings = merged.map(point => {
+        peakEquity = Math.max(peakEquity, point.equity)
+        return {
+          time: point.time.getTime(),
+          value: Number(point.earnedUsd.toFixed(2)),
+        }
+      })
+      peakEquity = -Infinity
+      const drawdowns = merged.map(point => {
+        peakEquity = Math.max(peakEquity, point.equity)
+        const drawdown = Math.max(0, peakEquity - point.equity)
+        return {
+          time: point.time.getTime(),
+          value: Number(drawdown.toFixed(2)),
+        }
+      })
+
+      const elapsedDays = Math.max(1, Math.ceil((now.getTime() - startDate.getTime()) / 86400000))
+      const estimatedDaily = durationHours > 0 ? expectedReturnUsd / (durationHours / 24) : 0
+      const actualDaily = snapshot.earnedUsd / elapsedDays
+
+      setEarningsSeries(earnings.slice(-72))
+      setDrawdownSeries(drawdowns.slice(-72))
+      setEstimateSeries([
+        {
+          label: 'Daily',
+          estimated: Number(estimatedDaily.toFixed(2)),
+          actual: Number(actualDaily.toFixed(2)),
+        },
+      ])
+    }
+
+    updateSeries()
+    const interval = setInterval(updateSeries, 60000)
+    return () => clearInterval(interval)
+  }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div
@@ -35,7 +122,16 @@ export default function TradingEarningsCharts({ earningsSeries, estimateSeries, 
         </div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={earningsSeries}>
-            <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <XAxis
+              dataKey="time"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={value =>
+                new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              }
+              stroke="#ffffff40"
+              style={{ fontSize: '11px' }}
+            />
             <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{
@@ -94,7 +190,16 @@ export default function TradingEarningsCharts({ earningsSeries, estimateSeries, 
         </div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={drawdownSeries}>
-            <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
+            <XAxis
+              dataKey="time"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={value =>
+                new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+              }
+              stroke="#ffffff40"
+              style={{ fontSize: '11px' }}
+            />
             <YAxis stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
               contentStyle={{

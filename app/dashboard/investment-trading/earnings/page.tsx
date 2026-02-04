@@ -82,19 +82,6 @@ export default async function TradingEarningsPage() {
       })
     : []
 
-  const earningsSeries = series.map(point => ({
-    time: point.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-    value: point.value,
-  }))
-
-  const estimateSeries = [
-    {
-      label: 'Daily',
-      estimated: activeEarning ? Number(activeEarning.dailyEstimateUsd) : 0,
-      actual: series.length > 0 ? series[series.length - 1].value / Math.max(1, Math.ceil((now.getTime() - startDate.getTime()) / 86400000)) : 0,
-    },
-  ]
-
   const isActive = Boolean(activePlan)
   const displayTotalEarned = isActive
     ? (snapshot ? snapshot.earnedUsd : (activeEarning ? Number(activeEarning.totalEarnedUsd) : 0))
@@ -102,11 +89,6 @@ export default async function TradingEarningsPage() {
   const displayDailyEstimate = isActive
     ? (snapshot ? snapshot.dailyEstimateUsd : (activeEarning ? Number(activeEarning.dailyEstimateUsd) : 0))
     : 0
-
-  const drawdownSeries = series.map(point => ({
-    time: point.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-    value: Math.max(0, point.pnl * -0.2),
-  }))
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
@@ -145,9 +127,11 @@ export default async function TradingEarningsPage() {
 
       {activePlan && (
         <TradingEarningsCharts
-          earningsSeries={earningsSeries}
-          estimateSeries={estimateSeries}
-          drawdownSeries={drawdownSeries}
+          investmentUsd={Number(activePlan.investmentUsd)}
+          expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
+          durationHours={activePlan.durationHours}
+          startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
+          seed={(user?.id || 1) * 19}
         />
       )}
     </div>
