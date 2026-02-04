@@ -29,6 +29,7 @@ interface TradingOverviewChartsProps {
 }
 
 const COLORS = ['#60a5fa', '#34d399', '#f472b6', '#fbbf24']
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 export default function TradingOverviewCharts({
   investmentUsd,
