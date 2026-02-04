@@ -116,7 +116,8 @@ export default async function DashboardPage() {
 
   const earningsSeries = Array.from({ length: 24 }, (_, index) => {
     const hoursAgo = 23 - index
-    const value = Math.max(0, totalEarnedUsd - (estimatedDailyUsd / 24) * hoursAgo)
+    const combinedEstimatedDaily = estimatedDailyUsd + (tradingEarnings.length > 0 ? tradingEarnings.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0) : 0)
+    const value = Math.max(0, totalEarnedUsd - (combinedEstimatedDaily / 24) * hoursAgo)
     return { time: `${new Date(now.getTime() - hoursAgo * 3600 * 1000).getHours()}:00`, value: Math.round(value * 100) / 100 }
   })
 
@@ -140,8 +141,10 @@ export default async function DashboardPage() {
     }
   })
 
+  const combinedEstimatedDaily = estimatedDailyUsd + (tradingEarnings.length > 0 ? tradingEarnings.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0) : 0)
+  const combinedActualDaily = daysActive > 0 ? totalEarnedUsd / daysActive : 0
   const estimatedVsActual = [
-    { label: 'Daily', estimated: Math.round(estimatedDailyUsd * 100) / 100, actual: Math.round(actualDailyUsd * 100) / 100 },
+    { label: 'Daily', estimated: Math.round(combinedEstimatedDaily * 100) / 100, actual: Math.round(combinedActualDaily * 100) / 100 },
   ]
 
   return (
