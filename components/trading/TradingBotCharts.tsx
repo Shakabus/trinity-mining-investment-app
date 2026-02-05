@@ -92,7 +92,7 @@ export default function TradingBotCharts({
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
+  }, [investmentUsd, expectedReturnUsd, durationHours, seed, startDate, convert])
 
   const lastPnl = pnlSeries.length > 0 ? pnlSeries[pnlSeries.length - 1].value : 0
   const pnlStroke = lastPnl >= 0 ? '#34d399' : '#f87171'
