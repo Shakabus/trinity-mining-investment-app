@@ -75,9 +75,21 @@ export default async function DashboardLayout({
   const preferredCurrency = isSupportedCurrency(user?.preferredCurrency || '')
     ? (user?.preferredCurrency as CurrencyCode)
     : 'USD'
+  const [hasActiveMining, hasActiveTrading] = user
+    ? await Promise.all([
+        prisma.userPlan.count({ where: { userId: user.id, status: 'active' } }),
+        prisma.tradingUserPlan.count({ where: { userId: user.id, status: 'active' } }),
+      ])
+    : [0, 0]
+  const accountStatusOverride = hasActiveMining > 0 || hasActiveTrading > 0 ? 'active' : undefined
 
   return (
-    <DashboardLayoutClient user={user} preferredCurrency={preferredCurrency} rates={rates}>
+    <DashboardLayoutClient
+      user={user}
+      accountStatusOverride={accountStatusOverride}
+      preferredCurrency={preferredCurrency}
+      rates={rates}
+    >
       {children}
     </DashboardLayoutClient>
   )

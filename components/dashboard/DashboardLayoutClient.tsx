@@ -13,6 +13,7 @@ interface DashboardLayoutClientProps {
     fullName: string | null
     accountStatus: string
   } | null
+  accountStatusOverride?: string
   preferredCurrency: CurrencyCode
   rates: FxRates
 }
@@ -20,10 +21,14 @@ interface DashboardLayoutClientProps {
 export default function DashboardLayoutClient({
   children,
   user,
+  accountStatusOverride,
   preferredCurrency,
   rates,
 }: DashboardLayoutClientProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const displayUser = user
+    ? { ...user, accountStatus: accountStatusOverride ?? user.accountStatus }
+    : null
 
   return (
     <CurrencyProvider currency={preferredCurrency} rates={rates}>
@@ -38,7 +43,7 @@ export default function DashboardLayoutClient({
           {/* Main Column */}
           <div className="flex-1 min-w-0 flex flex-col">
             {/* Top Navigation (sticky) */}
-            <DashboardNav user={user} onMenuClick={() => setIsSidebarOpen(true)} />
+            <DashboardNav user={displayUser} onMenuClick={() => setIsSidebarOpen(true)} />
 
             {/* Scroll Container: ONLY this scrolls (NO padding here) */}
             <main className="flex-1 min-h-0 overflow-y-auto glass-scroll">

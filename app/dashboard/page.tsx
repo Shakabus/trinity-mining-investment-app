@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { Gem, Pickaxe, DollarSign, Settings, TrendingUp } from 'lucide-react'
 import { autoUpdateEarnings } from '@/lib/earnings'
+import { simulateTradingProgress } from '@/lib/trading'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
@@ -88,6 +89,7 @@ export default async function DashboardPage() {
   const hasTradingSelected = tradingPlan?.status === 'selected'
   const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
   const now = new Date()
+  const activeTradingEarning = tradingEarnings.find(earning => earning.isActive) ?? null
 
   const rates = await getFxRates()
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
@@ -120,6 +122,29 @@ export default async function DashboardPage() {
     (sum, record) => sum + (record.isHistorical ? 0 : Number(record.dailyEstimateUsd || 0)),
     0
   )
+  if (user && activeTradingPlan && activeTradingEarning && !activeTradingEarning.isAdminOverride) {
+    const startDate = activeTradingPlan.startDate ?? activeTradingPlan.createdAt ?? now
+    const seed = user.id * 13 + activeTradingPlan.id * 7
+    const snapshot = simulateTradingProgress({
+      investmentUsd: Number(activeTradingPlan.investmentUsd),
+      expectedReturnUsd: Number(activeTradingPlan.expectedReturnUsd),
+      durationHours: activeTradingPlan.durationHours,
+      startDate,
+      now,
+      seed,
+    })
+    await prisma.tradingEarning.update({
+      where: { id: activeTradingEarning.id },
+      data: {
+        totalEarnedUsd: snapshot.equityUsd,
+        dailyEstimateUsd: snapshot.dailyEstimateUsd,
+        lastCalculatedAt: now,
+      },
+    })
+    activeTradingEarning.totalEarnedUsd = snapshot.equityUsd
+    activeTradingEarning.dailyEstimateUsd = snapshot.dailyEstimateUsd
+  }
+
   const tradingTotalUsd = tradingEarnings
     ? tradingEarnings.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
     : 0
