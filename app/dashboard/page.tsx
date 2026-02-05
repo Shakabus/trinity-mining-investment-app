@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Gem, Pickaxe, DollarSign, Settings, TrendingUp } from 'lucide-react'
 import { autoUpdateEarnings } from '@/lib/earnings'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
+import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
 import TickerTape from '@/components/dashboard/TickerTape'
 import AdvancedChart from '@/components/dashboard/AdvancedChart'
@@ -76,6 +77,13 @@ export default async function DashboardPage() {
   const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
   const now = new Date()
 
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const formatMoney = (amountUsd: number) =>
+    formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
+
   const updatedEarnings = user
     ? await autoUpdateEarnings({
         userId: user.id,
@@ -128,7 +136,8 @@ export default async function DashboardPage() {
     const hoursAgo = 23 - index
     const combinedEstimatedDaily = estimatedDailyUsd + (tradingEarnings.length > 0 ? tradingEarnings.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0) : 0)
     const value = Math.max(0, totalEarnedUsd - (combinedEstimatedDaily / 24) * hoursAgo)
-    return { time: `${new Date(now.getTime() - hoursAgo * 3600 * 1000).getHours()}:00`, value: Math.round(value * 100) / 100 }
+    const converted = convertUsd(value, rates, preferredCurrency)
+    return { time: `${new Date(now.getTime() - hoursAgo * 3600 * 1000).getHours()}:00`, value: Math.round(converted * 100) / 100 }
   })
 
   const hashrateBase = activeMining ? Number(activeMining.assignedHashrate) : 0
@@ -153,8 +162,14 @@ export default async function DashboardPage() {
 
   const combinedEstimatedDaily = estimatedDailyUsd + (tradingEarnings.length > 0 ? tradingEarnings.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0) : 0)
   const combinedActualDaily = daysActive > 0 ? totalEarnedUsd / daysActive : 0
+  const convertedEstimatedDaily = convertUsd(combinedEstimatedDaily, rates, preferredCurrency)
+  const convertedActualDaily = convertUsd(combinedActualDaily, rates, preferredCurrency)
   const estimatedVsActual = [
-    { label: 'Daily', estimated: Math.round(combinedEstimatedDaily * 100) / 100, actual: Math.round(combinedActualDaily * 100) / 100 },
+    {
+      label: 'Daily',
+      estimated: Math.round(convertedEstimatedDaily * 100) / 100,
+      actual: Math.round(convertedActualDaily * 100) / 100,
+    },
   ]
 
   return (
@@ -389,11 +404,11 @@ export default async function DashboardPage() {
           >
             <div className="text-xs md:text-sm text-white/60 mb-2">Total Earned</div>
             <div className="text-lg md:text-2xl font-bold text-white">
-              ${totalEarnedUsd.toFixed(2)}
+              {formatMoney(totalEarnedUsd)}
             </div>
             {pendingReleaseUsd > 0 && (
               <div className="text-xs text-blue-200 mt-2">
-                Pending system release: ${pendingReleaseUsd.toFixed(2)}
+                Pending system release: {formatMoney(pendingReleaseUsd)}
               </div>
             )}
           </div>
@@ -408,7 +423,7 @@ export default async function DashboardPage() {
           >
             <div className="text-xs md:text-sm text-white/60 mb-2">Mining Earned</div>
             <div className="text-lg md:text-2xl font-bold text-white">
-              ${miningEarnedUsd.toFixed(2)}
+              {formatMoney(miningEarnedUsd)}
             </div>
           </div>
 
@@ -422,7 +437,7 @@ export default async function DashboardPage() {
           >
             <div className="text-xs md:text-sm text-white/60 mb-2">Trading Earned</div>
             <div className="text-lg md:text-2xl font-bold text-white">
-              ${tradingTotalUsd.toFixed(2)}
+              {formatMoney(tradingTotalUsd)}
             </div>
           </div>
 

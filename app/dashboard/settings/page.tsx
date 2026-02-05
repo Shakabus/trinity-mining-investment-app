@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import AccountSettingsForm from '@/components/dashboard/AccountSettingsForm'
+import { isSupportedCurrency } from '@/lib/forex'
 
 export default async function SettingsAccountPage() {
   const { userId } = await auth()
@@ -37,7 +38,11 @@ export default async function SettingsAccountPage() {
           </div>
         </div>
 
-        <AccountSettingsForm fullName={user?.fullName || ''} phone={user?.phone || ''} />
+        <AccountSettingsForm
+          fullName={user?.fullName || ''}
+          phone={user?.phone || ''}
+          preferredCurrency={isSupportedCurrency(user?.preferredCurrency || '') ? user?.preferredCurrency : 'USD'}
+        />
 
         {/* Member Since */}
         <div>

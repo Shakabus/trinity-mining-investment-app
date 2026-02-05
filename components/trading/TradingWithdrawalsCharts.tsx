@@ -14,6 +14,7 @@ import {
   Line,
 } from 'recharts'
 import { Wallet, Activity, PieChart as PieIcon } from 'lucide-react'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingWithdrawalsChartsProps {
   historySeries: { time: string; value: number }[]
@@ -24,6 +25,10 @@ interface TradingWithdrawalsChartsProps {
 const COLORS = ['#34d399', '#60a5fa', '#fbbf24', '#f472b6']
 
 export default function TradingWithdrawalsCharts({ historySeries, statusSeries, balanceSeries }: TradingWithdrawalsChartsProps) {
+  const { currency, convert } = useCurrency()
+  const convertedHistory = historySeries.map(item => ({ ...item, value: convert(item.value) }))
+  const convertedBalance = balanceSeries.map(item => ({ ...item, value: convert(item.value) }))
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div
@@ -36,11 +41,11 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
       >
         <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
           <Wallet size={16} />
-          Withdrawal history (USD)
+          Withdrawal history ({currency})
         </div>
         <div className="px-[5px]">
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={historySeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+            <BarChart data={convertedHistory} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
             <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip
@@ -104,7 +109,7 @@ export default function TradingWithdrawalsCharts({ historySeries, statusSeries, 
         </div>
         <div className="px-[5px]">
           <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={balanceSeries} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+          <LineChart data={convertedBalance} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
             <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <YAxis width={44} tickMargin={8} stroke="#ffffff40" style={{ fontSize: '11px' }} />
             <Tooltip

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingWithdrawalFormProps {
   availableUsd: number
@@ -13,16 +14,21 @@ interface TradingWithdrawalFormProps {
 export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }: TradingWithdrawalFormProps) {
   const router = useRouter()
   const { showToast } = useToast()
-  const [amountUsd, setAmountUsd] = useState(minWithdrawalUsd)
+  const { currency, rates, format, convert } = useCurrency()
+  const rate = rates[currency] || 1
+  const toUsd = (value: number) => (rate ? value / rate : value)
+  const [amountUsd, setAmountUsd] = useState(convert(minWithdrawalUsd))
   const [walletAddress, setWalletAddress] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
-    if (amountUsd < minWithdrawalUsd) {
-      showToast(`Minimum withdrawal is $${minWithdrawalUsd.toFixed(2)}`, 'error')
+    const amountInput = Number(amountUsd)
+    const amountUsdValue = toUsd(amountInput)
+    if (amountUsdValue < minWithdrawalUsd) {
+      showToast(`Minimum withdrawal is ${format(minWithdrawalUsd)}`, 'error')
       return
     }
-    if (amountUsd > availableUsd) {
+    if (amountUsdValue > availableUsd) {
       showToast('Amount exceeds available balance.', 'error')
       return
     }
@@ -36,7 +42,7 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
       const response = await fetch('/api/user/trading/withdrawals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amountUsd, walletAddress }),
+        body: JSON.stringify({ amountUsd: amountUsdValue, walletAddress }),
       })
 
       if (!response.ok) {
@@ -44,7 +50,7 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
         showToast(data?.error || 'Unable to submit withdrawal.', 'error')
       } else {
         showToast('Withdrawal request submitted.', 'success')
-        setAmountUsd(minWithdrawalUsd)
+        setAmountUsd(convert(minWithdrawalUsd))
         setWalletAddress('')
         router.refresh()
       }
@@ -63,15 +69,15 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
       }}
     >
       <div className="text-white font-semibold text-lg">Request Trading Withdrawal</div>
-      <div className="text-xs text-white/60">Available: ${availableUsd.toFixed(2)}</div>
+      <div className="text-xs text-white/60">Available: {format(availableUsd)}</div>
 
       <div>
-        <label className="text-xs text-white/60">Amount (USD)</label>
+        <label className="text-xs text-white/60">Amount ({currency})</label>
         <input
           type="number"
           value={amountUsd}
-          min={minWithdrawalUsd}
-          max={availableUsd}
+          min={convert(minWithdrawalUsd)}
+          max={convert(availableUsd)}
           onChange={event => setAmountUsd(Number(event.target.value))}
           className="w-full mt-2 px-3 py-2 rounded-lg text-sm"
           style={{

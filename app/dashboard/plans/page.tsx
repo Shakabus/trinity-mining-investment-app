@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import PlanCard from '@/components/dashboard/PlanCard'
+import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 
 export default async function PlansPage() {
   const { userId } = await auth()
@@ -48,6 +49,12 @@ export default async function PlansPage() {
   const creditRatio =
     activePlan && activePlan.selectedDurationDays > 0 ? remainingDays / activePlan.selectedDurationDays : 0
   const proratedCredit = activePlan ? Number(activePlan.finalPrice) * creditRatio : 0
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const formatMoney = (amountUsd: number) =>
+    formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
 
   const plansData = await prisma.plan.findMany({
     where: { status: 'active' },
@@ -169,8 +176,7 @@ export default async function PlansPage() {
               color: '#a7f3d0',
             }}
           >
-            Upgrade credit is based on your remaining contract time. Your estimated credit is $
-            {proratedCredit.toFixed(2)}.
+            Upgrade credit is based on your remaining contract time. Your estimated credit is {formatMoney(proratedCredit)}.
           </div>
         )}
 

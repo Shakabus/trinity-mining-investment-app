@@ -21,6 +21,7 @@ model User {
   referredById  Int?          @map("referred_by_id")
   role          String        @default("user")
   accountStatus String        @default("inactive") @map("account_status")
+  preferredCurrency String    @default("USD") @map("preferred_currency")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
   earnings      Earnings[]

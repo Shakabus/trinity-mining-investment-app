@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowUpRight, Clock, TrendingUp } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingPlanCardProps {
   plan: {
@@ -22,16 +23,22 @@ interface TradingPlanCardProps {
 export default function TradingPlanCard({ plan }: TradingPlanCardProps) {
   const router = useRouter()
   const { showToast } = useToast()
-  const [amount, setAmount] = useState(plan.minInvestmentUsd)
+  const { currency, rates, format, convert } = useCurrency()
+  const rate = rates[currency] || 1
+  const toUsd = (value: number) => (rate ? value / rate : value)
+  const minAmount = convert(plan.minInvestmentUsd)
+  const maxAmount = convert(plan.maxInvestmentUsd)
+  const [amount, setAmount] = useState(minAmount)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
+      const investmentUsd = Math.max(0, Number(toUsd(amount).toFixed(2)))
       const response = await fetch('/api/user/trading/select-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: plan.id, investmentUsd: amount }),
+        body: JSON.stringify({ planId: plan.id, investmentUsd }),
       })
 
       if (!response.ok) {
@@ -46,8 +53,9 @@ export default function TradingPlanCard({ plan }: TradingPlanCardProps) {
     }
   }
 
-  const minReturn = plan.minReturnMultiplier * amount
-  const maxReturn = plan.maxReturnMultiplier * amount
+  const amountUsd = toUsd(amount)
+  const minReturn = plan.minReturnMultiplier * amountUsd
+  const maxReturn = plan.maxReturnMultiplier * amountUsd
 
   return (
     <div
@@ -62,7 +70,7 @@ export default function TradingPlanCard({ plan }: TradingPlanCardProps) {
         <div>
           <div className="text-white font-semibold text-xl">{plan.name}</div>
           <div className="text-white/60 text-sm">
-            ${plan.minInvestmentUsd.toLocaleString()} - ${plan.maxInvestmentUsd.toLocaleString()}
+            {format(plan.minInvestmentUsd)} - {format(plan.maxInvestmentUsd)}
           </div>
         </div>
         <div
@@ -89,11 +97,11 @@ export default function TradingPlanCard({ plan }: TradingPlanCardProps) {
       </div>
 
       <div>
-        <label className="text-xs text-white/60">Investment amount (USD)</label>
+        <label className="text-xs text-white/60">Investment amount ({currency})</label>
         <input
           type="number"
-          min={plan.minInvestmentUsd}
-          max={plan.maxInvestmentUsd}
+          min={minAmount}
+          max={maxAmount}
           value={amount}
           onChange={event => setAmount(Number(event.target.value))}
           className="w-full mt-2 px-3 py-2 rounded-lg text-sm"
@@ -106,7 +114,10 @@ export default function TradingPlanCard({ plan }: TradingPlanCardProps) {
       </div>
 
       <div className="text-xs text-white/60">
-        Expected payout range: <span className="text-white font-semibold">${minReturn.toFixed(2)} - ${maxReturn.toFixed(2)}</span>
+        Expected payout range:{' '}
+        <span className="text-white font-semibold">
+          {format(minReturn)} - {format(maxReturn)}
+        </span>
       </div>
 
       <LoadingButton

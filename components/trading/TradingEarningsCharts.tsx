@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 import { DollarSign, TrendingUp, Scale } from 'lucide-react'
 import { buildTradingJumpSeries, simulateTradingProgress } from '@/lib/trading'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingEarningsChartsProps {
   investmentUsd: number
@@ -29,6 +30,7 @@ export default function TradingEarningsCharts({
   startDateIso,
   seed,
 }: TradingEarningsChartsProps) {
+  const { currency, convert } = useCurrency()
   const [earningsSeries, setEarningsSeries] = useState<{ time: number; value: number }[]>([])
   const [drawdownSeries, setDrawdownSeries] = useState<{ time: number; value: number }[]>([])
   const [estimateSeries, setEstimateSeries] = useState<{ label: string; estimated: number; actual: number }[]>([])
@@ -73,7 +75,7 @@ export default function TradingEarningsCharts({
         peakEquity = Math.max(peakEquity, point.equity)
         return {
           time: point.time.getTime(),
-          value: Number(point.earnedUsd.toFixed(2)),
+          value: Number(convert(point.earnedUsd).toFixed(2)),
         }
       })
       peakEquity = -Infinity
@@ -82,7 +84,7 @@ export default function TradingEarningsCharts({
         const drawdown = Math.max(0, peakEquity - point.equity)
         return {
           time: point.time.getTime(),
-          value: Number(drawdown.toFixed(2)),
+          value: Number(convert(drawdown).toFixed(2)),
         }
       })
 
@@ -95,8 +97,8 @@ export default function TradingEarningsCharts({
       setEstimateSeries([
         {
           label: 'Daily',
-          estimated: Number(estimatedDaily.toFixed(2)),
-          actual: Number(actualDaily.toFixed(2)),
+          estimated: Number(convert(estimatedDaily).toFixed(2)),
+          actual: Number(convert(actualDaily).toFixed(2)),
         },
       ])
     }
@@ -104,7 +106,7 @@ export default function TradingEarningsCharts({
     updateSeries()
     const interval = setInterval(updateSeries, 60000)
     return () => clearInterval(interval)
-  }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
+  }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate, convert])
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -115,10 +117,10 @@ export default function TradingEarningsCharts({
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
-      >
+        >
         <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
           <DollarSign size={16} />
-          Earnings over time
+          Earnings over time ({currency})
         </div>
         <div className="px-[5px]">
           <ResponsiveContainer width="100%" height={220}>

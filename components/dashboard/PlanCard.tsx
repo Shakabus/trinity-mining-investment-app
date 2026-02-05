@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import PlanModal from './PlanModal'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface PlanCardProps {
   plan: {
@@ -35,6 +36,7 @@ interface PlanCardProps {
 
 export default function PlanCard({ plan }: PlanCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const { format } = useCurrency()
 
   const basePrice = plan.basePrice
   const isUpgradeMode = Boolean(plan.isUpgradeMode)
@@ -80,7 +82,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
 
         {/* Price */}
         <div className="mb-6">
-          <div className="text-3xl md:text-4xl font-bold text-white">${basePrice.toLocaleString()}</div>
+          <div className="text-3xl md:text-4xl font-bold text-white">{format(basePrice)}</div>
           <div className="text-xs text-white/50 mt-1">
             {isUpgradeMode ? 'Upgrade starting price' : 'Starting price'}
           </div>

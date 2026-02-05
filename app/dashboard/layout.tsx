@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import DashboardLayoutClient from '@/components/dashboard/DashboardLayoutClient'
 import { createUniqueReferralCode, normalizeReferralCode } from '@/lib/referral'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
 export default async function DashboardLayout({
   children,
@@ -70,8 +71,13 @@ export default async function DashboardLayout({
     }
   }
 
+  const rates = await getFxRates()
+  const preferredCurrency = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+
   return (
-    <DashboardLayoutClient user={user}>
+    <DashboardLayoutClient user={user} preferredCurrency={preferredCurrency} rates={rates}>
       {children}
     </DashboardLayoutClient>
   )

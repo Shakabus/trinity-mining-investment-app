@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Copy, Check, AlertCircle } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingPaymentInstructionsProps {
   plan: {
@@ -33,6 +34,7 @@ const WALLET_ADDRESSES = {
 
 export default function TradingPaymentInstructions({ plan }: TradingPaymentInstructionsProps) {
   const { showToast } = useToast()
+  const { format } = useCurrency()
   const [copied, setCopied] = useState(false)
   const [selectedCrypto, setSelectedCrypto] = useState<keyof typeof WALLET_ADDRESSES>('USDT')
   const [showVerify, setShowVerify] = useState(false)
@@ -153,12 +155,12 @@ export default function TradingPaymentInstructions({ plan }: TradingPaymentInstr
           </div>
           <div className="flex justify-between items-center">
             <span className="text-white/70">Projected Return:</span>
-            <span className="text-white font-semibold">${plan.expectedReturnUsd.toLocaleString()}</span>
+            <span className="text-white font-semibold">{format(plan.expectedReturnUsd)}</span>
           </div>
           <div className="border-t border-white/10 pt-3 mt-3">
             <div className="flex justify-between items-center">
               <span className="text-white text-lg font-semibold">Total Amount:</span>
-              <span className="text-3xl font-bold text-white">${plan.investmentUsd.toLocaleString()}</span>
+              <span className="text-3xl font-bold text-white">{format(plan.investmentUsd)}</span>
             </div>
           </div>
         </div>
@@ -251,7 +253,7 @@ export default function TradingPaymentInstructions({ plan }: TradingPaymentInstr
               <h3 className="text-white font-semibold mb-2">Network Information:</h3>
               <div className="space-y-2 text-sm text-white/70">
                 <p>- Network: {selectedCrypto === 'USDT' ? 'ERC-20 (Ethereum)' : selectedCrypto}</p>
-                <p>- Amount: ${plan.investmentUsd.toLocaleString()} USD equivalent in {selectedCrypto}</p>
+                <p>- Amount: {format(plan.investmentUsd)} equivalent in {selectedCrypto}</p>
                 <p>- Minimum Confirmations: {selectedCrypto === 'BTC' ? '3' : selectedCrypto === 'ETH' ? '12' : '6'}</p>
               </div>
             </div>

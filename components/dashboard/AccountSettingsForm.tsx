@@ -2,15 +2,18 @@
 
 import { useState } from 'react'
 import LoadingButton from '@/components/ui/LoadingButton'
+import { SUPPORTED_CURRENCIES, type CurrencyCode } from '@/lib/forex'
 
 interface AccountSettingsFormProps {
   fullName: string
   phone: string
+  preferredCurrency: CurrencyCode
 }
 
-export default function AccountSettingsForm({ fullName, phone }: AccountSettingsFormProps) {
+export default function AccountSettingsForm({ fullName, phone, preferredCurrency }: AccountSettingsFormProps) {
   const [nameValue, setNameValue] = useState(fullName)
   const [phoneValue, setPhoneValue] = useState(phone)
+  const [currencyValue, setCurrencyValue] = useState<CurrencyCode>(preferredCurrency)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -51,6 +54,7 @@ export default function AccountSettingsForm({ fullName, phone }: AccountSettings
         body: JSON.stringify({
           fullName: trimmedName,
           phone: trimmedPhone,
+          preferredCurrency: currencyValue,
         }),
       })
 
@@ -94,6 +98,25 @@ export default function AccountSettingsForm({ fullName, phone }: AccountSettings
           className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
           placeholder="+1 (555) 000-0000"
         />
+      </div>
+
+      {/* Preferred Currency */}
+      <div>
+        <label className="block text-sm font-medium text-white/80 mb-2">Preferred Currency</label>
+        <select
+          value={currencyValue}
+          onChange={event => setCurrencyValue(event.target.value as CurrencyCode)}
+          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
+        >
+          {SUPPORTED_CURRENCIES.map(code => (
+            <option key={code} value={code} style={{ color: '#000000' }}>
+              {code}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-white/50 mt-2">
+          All user-side currency values will display in this currency.
+        </p>
       </div>
 
       {status && (

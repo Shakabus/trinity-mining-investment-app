@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DollarSign, TrendingUp, Activity } from 'lucide-react'
 import { simulateTradingProgress } from '@/lib/trading'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingLiveEarningsCardsProps {
   investmentUsd: number
@@ -19,6 +20,7 @@ export default function TradingLiveEarningsCards({
   startDateIso,
   seed,
 }: TradingLiveEarningsCardsProps) {
+  const { format } = useCurrency()
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -51,7 +53,7 @@ export default function TradingLiveEarningsCards({
           <DollarSign size={16} />
           <span>Total Earned</span>
         </div>
-        <div className="text-xl font-bold text-white">${snapshot.earnedUsd.toFixed(2)}</div>
+        <div className="text-xl font-bold text-white">{format(snapshot.earnedUsd)}</div>
       </div>
       <div
         className="p-4 rounded-2xl"
@@ -65,7 +67,7 @@ export default function TradingLiveEarningsCards({
           <Activity size={16} />
           <span>Daily Estimate</span>
         </div>
-        <div className="text-xl font-bold text-white">${snapshot.dailyEstimateUsd.toFixed(2)}</div>
+        <div className="text-xl font-bold text-white">{format(snapshot.dailyEstimateUsd)}</div>
       </div>
       <div
         className="p-4 rounded-2xl"
@@ -79,7 +81,7 @@ export default function TradingLiveEarningsCards({
           <TrendingUp size={16} />
           <span>Expected Return</span>
         </div>
-        <div className="text-xl font-bold text-white">${expectedReturnUsd.toFixed(2)}</div>
+        <div className="text-xl font-bold text-white">{format(expectedReturnUsd)}</div>
       </div>
     </div>
   )

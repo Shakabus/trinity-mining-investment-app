@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Copy, Check, AlertCircle } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface PaymentInstructionsProps {
   plan: {
@@ -36,6 +37,7 @@ const WALLET_ADDRESSES = {
 
 export default function PaymentInstructions({ plan }: PaymentInstructionsProps) {
   const { showToast } = useToast()
+  const { format } = useCurrency()
   const searchParams = useSearchParams()
   const [copied, setCopied] = useState(false)
   const [selectedCrypto, setSelectedCrypto] = useState<keyof typeof WALLET_ADDRESSES>(
@@ -172,7 +174,7 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
           <div className="border-t border-white/10 pt-3 mt-3">
             <div className="flex justify-between items-center">
               <span className="text-white text-lg font-semibold">Total Amount:</span>
-              <span className="text-3xl font-bold text-white">${plan.finalPrice.toLocaleString()}</span>
+              <span className="text-3xl font-bold text-white">{format(plan.finalPrice)}</span>
             </div>
           </div>
         </div>
@@ -276,7 +278,7 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
               <h3 className="text-white font-semibold mb-2">Network Information:</h3>
               <div className="space-y-2 text-sm text-white/70">
                 <p>• Network: {selectedCrypto === 'USDT' ? 'ERC-20 (Ethereum)' : selectedCrypto}</p>
-                <p>• Amount: ${plan.finalPrice.toLocaleString()} USD equivalent in {selectedCrypto}</p>
+                <p>• Amount: {format(plan.finalPrice)} equivalent in {selectedCrypto}</p>
                 <p>• Minimum Confirmations: {selectedCrypto === 'BTC' ? '3' : selectedCrypto === 'ETH' ? '12' : '6'}</p>
               </div>
             </div>

@@ -15,6 +15,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface MiningDashboardProps {
   mining: {
@@ -72,6 +73,7 @@ interface MiningDashboardProps {
 }
 
 export default function MiningDashboard({ mining }: MiningDashboardProps) {
+  const { format } = useCurrency()
   const [data, setData] = useState(mining)
   const [displayHashrate, setDisplayHashrate] = useState(mining.currentHashrate)
   const [displayShares, setDisplayShares] = useState(mining.validShares)
@@ -648,7 +650,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
                 <div className="text-sm text-white/80 mt-2">
                   {entry.totalEarnedCrypto.toFixed(8)} {entry.coinType}
                 </div>
-                <div className="text-sm text-white/80">${entry.totalEarnedUsd.toFixed(2)}</div>
+                <div className="text-sm text-white/80">{format(entry.totalEarnedUsd)}</div>
                 {!entry.isWithdrawable && (
                   <div className="text-xs text-blue-300 mt-2">Pending system release</div>
                 )}

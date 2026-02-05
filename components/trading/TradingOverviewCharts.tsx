@@ -17,6 +17,7 @@ import {
 } from 'recharts'
 import { TrendingUp, PieChart as PieIcon, Activity, BarChart3 } from 'lucide-react'
 import { buildAllocationSeries, buildTradingJumpSeries, simulateTradingProgress } from '@/lib/trading'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingOverviewChartsProps {
   investmentUsd: number
@@ -40,6 +41,7 @@ export default function TradingOverviewCharts({
   allocationSeries,
   performanceSeries,
 }: TradingOverviewChartsProps) {
+  const { currency, convert } = useCurrency()
   const [equitySeries, setEquitySeries] = useState<{ time: number; value: number }[]>([])
   const [pnlSeries, setPnlSeries] = useState<{ time: number; value: number }[]>([])
   const [allocationState, setAllocationState] = useState(allocationSeries)
@@ -97,8 +99,8 @@ export default function TradingOverviewCharts({
       }
       const windowStart = nowMs - windowMs
       const seedPoints = schedulePoints.filter(point => point.time.getTime() >= windowStart && point.time.getTime() <= nowMs)
-      setEquitySeries(seedPoints.map(point => ({ time: point.time.getTime(), value: point.equity })))
-      setPnlSeries(seedPoints.map(point => ({ time: point.time.getTime(), value: point.pnl })))
+      setEquitySeries(seedPoints.map(point => ({ time: point.time.getTime(), value: convert(point.equity) })))
+      setPnlSeries(seedPoints.map(point => ({ time: point.time.getTime(), value: convert(point.pnl) })))
       lastIndexRef.current = lastIndex
       const lastSeed = seedPoints[seedPoints.length - 1]
       lastTickRef.current = lastSeed ? lastSeed.time.getTime() : null
@@ -120,10 +122,10 @@ export default function TradingOverviewCharts({
       }
       const nowMsWindow = Date.now()
       setEquitySeries(prev =>
-        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.equity }))], nowMsWindow)
+        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: convert(point.equity) }))], nowMsWindow)
       )
       setPnlSeries(prev =>
-        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: point.pnl }))], nowMsWindow)
+        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: convert(point.pnl) }))], nowMsWindow)
       )
 
       const focusSeed = seed + lastIndex * 17
@@ -157,8 +159,8 @@ export default function TradingOverviewCharts({
         now,
         seed,
       })
-      const equityValue = Number(snapshot.equityUsd.toFixed(2))
-      const pnlValue = Number(snapshot.pnlUsd.toFixed(2))
+      const equityValue = Number(convert(snapshot.equityUsd).toFixed(2))
+      const pnlValue = Number(convert(snapshot.pnlUsd).toFixed(2))
       const tickTime = nowMs
       lastTickRef.current = tickTime
       setEquitySeries(prev => trimWindow([...prev, { time: tickTime, value: equityValue }], nowMs))
@@ -200,7 +202,7 @@ export default function TradingOverviewCharts({
       clearInterval(microInterval)
       clearInterval(allocationInterval)
     }
-  }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate])
+  }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate, convert])
 
   return (
     <div className="space-y-6">
@@ -215,7 +217,7 @@ export default function TradingOverviewCharts({
         >
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <TrendingUp size={16} />
-            Portfolio value (USD)
+            Portfolio value ({currency})
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={240}>
@@ -258,7 +260,7 @@ export default function TradingOverviewCharts({
         >
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <Activity size={16} />
-            Realized P/L trend
+            Realized P/L trend ({currency})
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={240}>

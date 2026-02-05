@@ -5,6 +5,7 @@ import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
 import { X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface PlanModalProps {
   plan: {
@@ -37,6 +38,7 @@ interface PlanModalProps {
 export default function PlanModal({ plan, isOpen, onClose }: PlanModalProps) {
   const router = useRouter()
   const { showToast } = useToast()
+  const { currency, format } = useCurrency()
   const eligibleOptions = useMemo(
     () => plan.durationOptions.filter(option => option.isEligible),
     [plan.durationOptions]
@@ -175,10 +177,10 @@ export default function PlanModal({ plan, isOpen, onClose }: PlanModalProps) {
                   }}
                 >
                   <div className="text-white font-semibold text-sm mb-1">{option.durationLabel}</div>
-                  <div className="text-white/60 text-xs">${priceLabel.toLocaleString()}</div>
+                  <div className="text-white/60 text-xs">{format(priceLabel)}</div>
                   {plan.isUpgradeMode && !option.isExtension && option.upgradeCredit > 0 && (
                     <div className="text-xs text-emerald-300 mt-1">
-                      Credit: ${option.upgradeCredit.toFixed(2)}
+                      Credit: {format(option.upgradeCredit)}
                     </div>
                   )}
                 </button>
@@ -196,7 +198,7 @@ export default function PlanModal({ plan, isOpen, onClose }: PlanModalProps) {
         >
           <div className="flex justify-between items-center mb-4">
             <span className="text-white/70">Base Price:</span>
-            <span className="text-white font-semibold">${basePrice.toLocaleString()}</span>
+            <span className="text-white font-semibold">{format(basePrice)}</span>
           </div>
           <div className="flex justify-between items-center mb-4">
             <span className="text-white/70">Duration:</span>
@@ -209,13 +211,13 @@ export default function PlanModal({ plan, isOpen, onClose }: PlanModalProps) {
           {plan.isUpgradeMode && !selectedDuration.isExtension && upgradeCredit > 0 && (
             <div className="flex justify-between items-center mb-4">
               <span className="text-emerald-300">Upgrade Credit:</span>
-              <span className="text-emerald-200 font-semibold">-${upgradeCredit.toFixed(2)}</span>
+              <span className="text-emerald-200 font-semibold">-{format(upgradeCredit)}</span>
             </div>
           )}
           <div className="border-t border-white/10 pt-4 mt-4">
             <div className="flex justify-between items-center">
               <span className="text-white text-lg font-semibold">Total Price:</span>
-              <span className="text-3xl font-bold text-white">${displayPrice.toLocaleString()}</span>
+              <span className="text-3xl font-bold text-white">{format(displayPrice)}</span>
             </div>
           </div>
         </div>
@@ -237,7 +239,7 @@ export default function PlanModal({ plan, isOpen, onClose }: PlanModalProps) {
             boxShadow: '0 4px 24px rgba(88, 45, 255, 0.4)',
           }}
         >
-          {`Select ${plan.name} - $${displayPrice.toLocaleString()}`}
+          {`Select ${plan.name} - ${format(displayPrice)}`}
         </LoadingButton>
 
         <p className="text-center text-xs text-white/50 mt-4">

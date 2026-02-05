@@ -5,6 +5,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContai
 import LoadingButton from '@/components/ui/LoadingButton'
 import EmptyState from '@/components/ui/EmptyState'
 import { DollarSign } from 'lucide-react'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface EarningsRecord {
   id: number
@@ -59,9 +60,12 @@ export default function EarningsDisplay({
   minWithdrawalUsd,
   walletAddresses,
 }: EarningsDisplayProps) {
+  const { currency, rates, format, convert } = useCurrency()
+  const rate = rates[currency] || 1
+  const toUsd = (value: number) => (rate ? value / rate : value)
   const [now, setNow] = useState(Date.now())
   const [withdrawCoin, setWithdrawCoin] = useState<'BTC' | 'ETH' | 'LTC'>('BTC')
-  const [withdrawAmountUsd, setWithdrawAmountUsd] = useState(minWithdrawalUsd.toFixed(2))
+  const [withdrawAmountUsd, setWithdrawAmountUsd] = useState(convert(minWithdrawalUsd).toFixed(2))
   const [withdrawStatus, setWithdrawStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
 
@@ -102,13 +106,14 @@ export default function EarningsDisplay({
   }, [lastUpdatedAt, now, totals.dailyUsd, totals.totalUsd])
 
   useEffect(() => {
-    if (Number(withdrawAmountUsd) < minWithdrawalUsd) {
-      setWithdrawAmountUsd(minWithdrawalUsd.toFixed(2))
+    if (Number(withdrawAmountUsd) < convert(minWithdrawalUsd)) {
+      setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
     }
-  }, [minWithdrawalUsd, withdrawAmountUsd])
+  }, [convert, minWithdrawalUsd, withdrawAmountUsd])
 
   const handleWithdraw = async () => {
-    const amountUsd = Number(withdrawAmountUsd)
+    const amountInput = Number(withdrawAmountUsd)
+    const amountUsd = toUsd(amountInput)
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
       setWithdrawStatus({ type: 'error', message: 'Enter a valid amount.' })
       return
@@ -116,7 +121,7 @@ export default function EarningsDisplay({
     if (amountUsd < minWithdrawalUsd) {
       setWithdrawStatus({
         type: 'error',
-        message: `Minimum withdrawal is $${minWithdrawalUsd.toFixed(2)}.`,
+        message: `Minimum withdrawal is ${format(minWithdrawalUsd)}.`,
       })
       return
     }
@@ -142,6 +147,7 @@ export default function EarningsDisplay({
         throw new Error(data?.error || 'Failed to submit withdrawal.')
       }
       setWithdrawStatus({ type: 'success', message: 'Withdrawal request submitted.' })
+      setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
     } catch (error: any) {
       setWithdrawStatus({
         type: 'error',
@@ -173,10 +179,11 @@ export default function EarningsDisplay({
       const offsetSeconds = i * 3600
       const value = Math.max(0, liveTotals.totalUsd - liveTotals.rateUsd * offsetSeconds)
       const time = new Date(now - offsetSeconds * 1000).getHours()
-      points.push({ time: `${time}:00`, value: Math.round(value * 100) / 100 })
+      const converted = convert(value)
+      points.push({ time: `${time}:00`, value: Math.round(converted * 100) / 100 })
     }
     return points
-  }, [liveTotals.rateUsd, liveTotals.totalUsd, now])
+  }, [convert, liveTotals.rateUsd, liveTotals.totalUsd, now])
 
   const weeklySeries = useMemo(() => {
     const points = []
@@ -188,10 +195,11 @@ export default function EarningsDisplay({
         points.push({ day: label, value: 0 })
         continue
       }
-      points.push({ day: label, value: Math.round(liveTotals.rateUsd * 86400 * 100) / 100 })
+      const converted = convert(liveTotals.rateUsd * 86400)
+      points.push({ day: label, value: Math.round(converted * 100) / 100 })
     }
     return points
-  }, [liveTotals.rateUsd, now, startDate])
+  }, [convert, liveTotals.rateUsd, now, startDate])
 
   return (
     <div className="space-y-6">
@@ -205,7 +213,7 @@ export default function EarningsDisplay({
           }}
         >
           <div className="text-sm text-white/60 mb-1">Estimated Daily Earnings</div>
-          <div className="text-2xl font-semibold text-white">${totals.dailyUsd.toFixed(2)}</div>
+          <div className="text-2xl font-semibold text-white">{format(totals.dailyUsd)}</div>
           <div className="text-xs text-white/50 mt-2">Based on current hashrate and plan</div>
         </div>
 
@@ -217,10 +225,10 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <div className="text-sm text-white/60 mb-1">Total Earned (USD)</div>
-          <div className="text-2xl font-semibold text-white">${liveTotals.totalUsd.toFixed(2)}</div>
+          <div className="text-sm text-white/60 mb-1">Total Earned ({currency})</div>
+          <div className="text-2xl font-semibold text-white">{format(liveTotals.totalUsd)}</div>
           <div className="text-xs text-white/50 mt-2">
-            Withdrawable: ${totals.withdrawableUsd.toFixed(2)} | Pending release: ${totals.lockedUsd.toFixed(2)}
+            Withdrawable: {format(totals.withdrawableUsd)} | Pending release: {format(totals.lockedUsd)}
           </div>
         </div>
 
@@ -247,7 +255,7 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-4">Last 24 Hours Earnings (USD)</h3>
+          <h3 className="text-white font-semibold mb-4">Last 24 Hours Earnings ({currency})</h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={hourlySeries} margin={{ left: 5, right: 5, top: 5, bottom: 0 }}>
               <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '12px' }} tickMargin={6} />
@@ -273,7 +281,7 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-4">Weekly Earnings (USD)</h3>
+          <h3 className="text-white font-semibold mb-4">Weekly Earnings ({currency})</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={weeklySeries} margin={{ left: 5, right: 5, top: 5, bottom: 0 }}>
               <XAxis dataKey="day" stroke="#ffffff40" style={{ fontSize: '12px' }} tickMargin={6} />
@@ -340,17 +348,19 @@ export default function EarningsDisplay({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <h3 className="text-white font-semibold">Withdrawals</h3>
           <div className="text-xs text-white/50">
-            Withdrawable: ${withdrawableUsd.toFixed(2)} | Pending requests: ${pendingUsd.toFixed(2)}
+            Withdrawable: {format(withdrawableUsd)} | Pending requests: {format(pendingUsd)}
           </div>
         </div>
 
         <div className="mb-5 p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
-              <label className="block text-xs text-white/60 mb-1">Amount (USD)</label>
+              <label className="block text-xs text-white/60 mb-1">Amount ({currency})</label>
               <input
                 type="number"
                 value={withdrawAmountUsd}
+                min={convert(minWithdrawalUsd)}
+                max={convert(withdrawableUsd)}
                 onChange={event => setWithdrawAmountUsd(event.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm"
                 style={{
@@ -385,7 +395,7 @@ export default function EarningsDisplay({
             </div>
           </div>
           <div className="text-xs text-white/50">
-            Minimum withdrawal: ${minWithdrawalUsd.toFixed(2)}. Wallet: {walletAddresses[withdrawCoin] || 'Not set'}
+            Minimum withdrawal: {format(minWithdrawalUsd)}. Wallet: {walletAddresses[withdrawCoin] || 'Not set'}
           </div>
           {withdrawStatus && (
             <div
@@ -421,7 +431,7 @@ export default function EarningsDisplay({
               <thead>
                 <tr className="text-white/50 text-left">
                   <th className="py-2">Date</th>
-                  <th className="py-2">Amount (USD)</th>
+                  <th className="py-2">Amount ({currency})</th>
                   <th className="py-2">Coin</th>
                   <th className="py-2">Status</th>
                 </tr>
@@ -430,7 +440,7 @@ export default function EarningsDisplay({
                 {payouts.map(row => (
                   <tr key={row.id} className="border-t border-white/10">
                     <td className="py-2 text-white/80">{formatDate(row.date)}</td>
-                    <td className="py-2 text-white/80">${row.amountUsd.toFixed(2)}</td>
+                    <td className="py-2 text-white/80">{format(row.amountUsd)}</td>
                     <td className="py-2 text-white/80">{row.method}</td>
                     <td className="py-2 text-white/80">{row.status}</td>
                   </tr>

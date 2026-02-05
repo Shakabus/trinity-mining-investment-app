@@ -16,6 +16,7 @@ import {
 } from 'recharts'
 import { Activity, TrendingUp, PieChart } from 'lucide-react'
 import { simulateTradingProgress } from '@/lib/trading'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingBotChartsProps {
   seed: number
@@ -34,6 +35,7 @@ export default function TradingBotCharts({
   durationHours,
   startDateIso,
 }: TradingBotChartsProps) {
+  const { currency, convert } = useCurrency()
   const [priceSeries, setPriceSeries] = useState<{ time: number; value: number }[]>([])
   const [pnlSeries, setPnlSeries] = useState<{ time: number; value: number }[]>([])
   const [volumeSeries, setVolumeSeries] = useState<{ time: number; value: number }[]>([])
@@ -54,9 +56,9 @@ export default function TradingBotCharts({
 
       const wave = Math.sin(seed + now.getTime() / 90000) * 140
       const wave2 = Math.cos(seed * 0.7 + now.getTime() / 140000) * 90
-      const momentumValue = Number((snapshot.equityUsd + wave + wave2).toFixed(2))
+      const momentumValue = Number(convert(snapshot.equityUsd + wave + wave2).toFixed(2))
       const pnlWave = Math.sin(seed * 0.6 + now.getTime() / 110000) * 45
-      const pnlValue = Number((snapshot.pnlUsd + pnlWave).toFixed(2))
+      const pnlValue = Number(convert(snapshot.pnlUsd + pnlWave).toFixed(2))
       const volumeValue = Math.round(clamp(55 + Math.abs(Math.sin(seed + now.getTime() / 180000) * 90), 20, 160))
       const time = now.getTime()
 
@@ -108,7 +110,7 @@ export default function TradingBotCharts({
       >
         <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
           <PieChart size={16} />
-          Portfolio momentum (USD)
+          Portfolio momentum ({currency})
         </div>
         <div className="px-[5px]">
           <ResponsiveContainer width="100%" height={220}>

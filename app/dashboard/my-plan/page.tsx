@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { Calendar, Hash, Zap, TrendingUp, Clock } from 'lucide-react'
+import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 
 export default async function MyPlanPage() {
   const { userId } = await auth()
@@ -32,6 +33,12 @@ export default async function MyPlanPage() {
   const totalInvestment = totalPaid._sum.amountUsd
     ? parseFloat(totalPaid._sum.amountUsd.toString())
     : 0
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const formatMoney = (amountUsd: number) =>
+    formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
 
   const activePlan = user?.userPlans.find(plan => plan.status === 'active') || null
   const selectedPlan = user?.userPlans.find(plan => plan.status === 'selected') || null
@@ -264,7 +271,7 @@ export default async function MyPlanPage() {
             <div className="mt-4 md:mt-0 text-right">
               <div className="text-white/60 text-sm mb-1">Total Investment</div>
               <div className="text-3xl font-bold text-white">
-                ${totalInvestment.toLocaleString()}
+              {formatMoney(totalInvestment)}
               </div>
             </div>
           </div>

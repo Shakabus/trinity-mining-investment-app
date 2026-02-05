@@ -6,6 +6,7 @@ import TradingWithdrawalForm from '@/components/trading/TradingWithdrawalForm'
 import EmptyState from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
+import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,6 +32,12 @@ export default async function TradingWithdrawalsPage() {
   const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
   const now = new Date()
   const minWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const formatMoney = (amountUsd: number) =>
+    formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
 
   const historySeries = user?.tradingWithdrawals.slice(0, 8).map(withdrawal => ({
     time: new Date(withdrawal.requestedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -74,8 +81,8 @@ export default async function TradingWithdrawalsPage() {
               }}
             >
               <div className="text-xs text-white/60">Available Balance</div>
-              <div className="text-2xl font-semibold text-white">${availableUsd.toFixed(2)}</div>
-              <div className="text-xs text-white/50">Minimum withdrawal: ${minWithdrawalUsd.toFixed(2)}</div>
+              <div className="text-2xl font-semibold text-white">{formatMoney(availableUsd)}</div>
+              <div className="text-xs text-white/50">Minimum withdrawal: {formatMoney(minWithdrawalUsd)}</div>
             </div>
           </div>
 
@@ -118,7 +125,7 @@ export default async function TradingWithdrawalsPage() {
           <div className="space-y-3 text-sm">
             {user.tradingWithdrawals.slice(0, 8).map(withdrawal => (
               <div key={withdrawal.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div className="text-white font-semibold">${Number(withdrawal.amountUsd).toFixed(2)}</div>
+                <div className="text-white font-semibold">{formatMoney(Number(withdrawal.amountUsd))}</div>
                 <div className="text-white/60">{withdrawal.walletAddress}</div>
                 <div className="text-white/50">{withdrawal.status}</div>
                 <div className="text-white/40 text-xs">{new Date(withdrawal.requestedAt).toLocaleString()}</div>

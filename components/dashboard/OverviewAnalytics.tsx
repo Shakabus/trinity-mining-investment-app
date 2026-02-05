@@ -11,6 +11,7 @@ import {
   Bar,
 } from 'recharts'
 import { Activity, TrendingUp, BarChart3, Scale } from 'lucide-react'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface OverviewAnalyticsProps {
   earningsSeries: { time: string; value: number }[]
@@ -25,6 +26,7 @@ export default function OverviewAnalytics({
   sharesSeries,
   estimatedVsActual,
 }: OverviewAnalyticsProps) {
+  const { currency } = useCurrency()
   return (
     <div className="space-y-6">
       <h2 className="text-2xl md:text-3xl font-bold text-white">Performance Analytics</h2>
@@ -40,7 +42,7 @@ export default function OverviewAnalytics({
         >
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <TrendingUp size={16} />
-            Earnings over time (USD)
+            Earnings over time ({currency})
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={220}>

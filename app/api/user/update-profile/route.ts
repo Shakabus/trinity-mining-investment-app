@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { isSupportedCurrency } from '@/lib/forex'
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +15,9 @@ export async function POST(req: Request) {
     const body = await req.json()
     const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : ''
     const phone = typeof body.phone === 'string' ? body.phone.trim() : ''
+    const preferredCurrency = typeof body.preferredCurrency === 'string'
+      ? body.preferredCurrency.trim().toUpperCase()
+      : 'USD'
 
     if (fullName.length === 0) {
       return NextResponse.json({ error: 'Full name is required.' }, { status: 400 })
@@ -43,6 +47,10 @@ export async function POST(req: Request) {
       }
     }
 
+    if (!isSupportedCurrency(preferredCurrency)) {
+      return NextResponse.json({ error: 'Unsupported currency selection.' }, { status: 400 })
+    }
+
     const currentUser = await prisma.user.findUnique({
       where: { clerkUserId: userId },
     })
@@ -52,6 +60,7 @@ export async function POST(req: Request) {
       data: {
         fullName: fullName,
         phone: phone.length > 0 ? phone : null,
+        preferredCurrency,
       },
     })
 
@@ -62,6 +71,9 @@ export async function POST(req: Request) {
       }
       if ((currentUser.phone || '') !== (phone.length > 0 ? phone : '')) {
         changedFields.push('phone')
+      }
+      if ((currentUser.preferredCurrency || 'USD') !== preferredCurrency) {
+        changedFields.push('currency')
       }
 
       if (changedFields.length > 0) {

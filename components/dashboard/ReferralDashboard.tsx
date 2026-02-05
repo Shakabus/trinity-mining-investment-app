@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import LoadingButton from '@/components/ui/LoadingButton'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface ReferralItem {
   id: number
@@ -60,9 +61,12 @@ export default function ReferralDashboard({
   withdrawals,
   walletAddresses,
 }: ReferralDashboardProps) {
+  const { currency, rates, format, convert } = useCurrency()
+  const rate = rates[currency] || 1
+  const toUsd = (value: number) => (rate ? value / rate : value)
   const [origin, setOrigin] = useState('')
   const [withdrawCoin, setWithdrawCoin] = useState<'BTC' | 'ETH' | 'LTC'>('BTC')
-  const [withdrawAmountUsd, setWithdrawAmountUsd] = useState(minWithdrawalUsd.toFixed(2))
+  const [withdrawAmountUsd, setWithdrawAmountUsd] = useState(convert(minWithdrawalUsd).toFixed(2))
   const [withdrawStatus, setWithdrawStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
@@ -74,10 +78,10 @@ export default function ReferralDashboard({
   }, [])
 
   useEffect(() => {
-    if (Number(withdrawAmountUsd) < minWithdrawalUsd) {
-      setWithdrawAmountUsd(minWithdrawalUsd.toFixed(2))
+    if (Number(withdrawAmountUsd) < convert(minWithdrawalUsd)) {
+      setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
     }
-  }, [minWithdrawalUsd, withdrawAmountUsd])
+  }, [convert, minWithdrawalUsd, withdrawAmountUsd])
 
   const referralLink = useMemo(() => {
     if (!referralCode) return ''
@@ -86,7 +90,8 @@ export default function ReferralDashboard({
   }, [origin, referralCode])
 
   const handleWithdraw = async () => {
-    const amountUsd = Number(withdrawAmountUsd)
+    const amountInput = Number(withdrawAmountUsd)
+    const amountUsd = toUsd(amountInput)
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
       setWithdrawStatus({ type: 'error', message: 'Enter a valid amount.' })
       return
@@ -94,7 +99,7 @@ export default function ReferralDashboard({
     if (amountUsd < minWithdrawalUsd) {
       setWithdrawStatus({
         type: 'error',
-        message: `Minimum withdrawal is $${minWithdrawalUsd.toFixed(2)}.`,
+        message: `Minimum withdrawal is ${format(minWithdrawalUsd)}.`,
       })
       return
     }
@@ -119,8 +124,9 @@ export default function ReferralDashboard({
         const data = await response.json().catch(() => null)
         throw new Error(data?.error || 'Failed to submit referral withdrawal.')
       }
-      setWithdrawStatus({ type: 'success', message: 'Referral withdrawal submitted.' })
-    } catch (error: any) {
+        setWithdrawStatus({ type: 'success', message: 'Referral withdrawal submitted.' })
+        setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
+      } catch (error: any) {
       setWithdrawStatus({
         type: 'error',
         message: error?.message || 'Failed to submit referral withdrawal.',
@@ -179,9 +185,9 @@ export default function ReferralDashboard({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'Total Referral Earnings', value: `$${totalBonusUsd.toFixed(2)}` },
-          { label: 'Available for Withdrawal', value: `$${availableUsd.toFixed(2)}` },
-          { label: 'Pending Requests', value: `$${pendingUsd.toFixed(2)}` },
+          { label: 'Total Referral Earnings', value: format(totalBonusUsd) },
+          { label: 'Available for Withdrawal', value: format(availableUsd) },
+          { label: 'Pending Requests', value: format(pendingUsd) },
         ].map(item => (
           <div
             key={item.label}
@@ -209,16 +215,18 @@ export default function ReferralDashboard({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <h3 className="text-white font-semibold">Referral Withdrawal</h3>
           <div className="text-xs text-white/50">
-            Minimum: ${minWithdrawalUsd.toFixed(2)} | Wallet: {walletAddresses[withdrawCoin] || 'Not set'}
+            Minimum: {format(minWithdrawalUsd)} | Wallet: {walletAddresses[withdrawCoin] || 'Not set'}
           </div>
         </div>
 
         <div className="mb-4 flex flex-col md:flex-row gap-3">
           <div className="flex-1">
-            <label className="block text-xs text-white/60 mb-1">Amount (USD)</label>
+            <label className="block text-xs text-white/60 mb-1">Amount ({currency})</label>
             <input
               type="number"
               value={withdrawAmountUsd}
+              min={convert(minWithdrawalUsd)}
+              max={convert(availableUsd)}
               onChange={event => setWithdrawAmountUsd(event.target.value)}
               className="w-full px-3 py-2 rounded-lg text-sm"
               style={{
@@ -326,7 +334,7 @@ export default function ReferralDashboard({
                     <div className="text-white/90">{bonus.refereeName}</div>
                     <div className="text-xs text-white/50">Earned: {formatDate(bonus.createdAt)}</div>
                   </div>
-                  <div className="text-white font-semibold">${bonus.amountUsd.toFixed(2)}</div>
+                  <div className="text-white font-semibold">{format(bonus.amountUsd)}</div>
                 </div>
               ))}
             </div>
@@ -351,7 +359,7 @@ export default function ReferralDashboard({
               <thead>
                 <tr className="text-white/50 text-left">
                   <th className="py-2">Date</th>
-                  <th className="py-2">Amount (USD)</th>
+                  <th className="py-2">Amount ({currency})</th>
                   <th className="py-2">Coin</th>
                   <th className="py-2">Status</th>
                 </tr>
@@ -360,7 +368,7 @@ export default function ReferralDashboard({
                 {withdrawals.map(item => (
                   <tr key={item.id} className="border-t border-white/10">
                     <td className="py-2 text-white/80">{formatDate(item.requestedAt)}</td>
-                    <td className="py-2 text-white/80">${item.amountUsd.toFixed(2)}</td>
+                    <td className="py-2 text-white/80">{format(item.amountUsd)}</td>
                     <td className="py-2 text-white/80">{item.coinType}</td>
                     <td className="py-2 text-white/80">{item.status}</td>
                   </tr>

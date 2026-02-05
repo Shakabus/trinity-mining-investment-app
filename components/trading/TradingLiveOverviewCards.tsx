@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Hash, TrendingUp, Activity } from 'lucide-react'
 import { simulateTradingProgress } from '@/lib/trading'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 interface TradingLiveOverviewCardsProps {
   planLabel: string
@@ -23,6 +24,7 @@ export default function TradingLiveOverviewCards({
   startDateIso,
   seed,
 }: TradingLiveOverviewCardsProps) {
+  const { format } = useCurrency()
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export default function TradingLiveOverviewCards({
           <Hash size={16} />
           <span>Portfolio Equity</span>
         </div>
-        <div className="text-xl font-bold text-white">${snapshot.equityUsd.toFixed(2)}</div>
+        <div className="text-xl font-bold text-white">{format(snapshot.equityUsd)}</div>
       </div>
       <div
         className="p-4 rounded-2xl"
@@ -81,7 +83,7 @@ export default function TradingLiveOverviewCards({
           <TrendingUp size={16} />
           <span>Realized P/L</span>
         </div>
-        <div className="text-xl font-bold text-white">${snapshot.pnlUsd.toFixed(2)}</div>
+        <div className="text-xl font-bold text-white">{format(snapshot.pnlUsd)}</div>
       </div>
       <div
         className="p-4 rounded-2xl"
