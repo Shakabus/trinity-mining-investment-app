@@ -274,9 +274,7 @@ export default async function DashboardPage() {
 
           {effectiveAccountStatus === 'inactive' && !hasActivePlans && (
             <div className="space-y-4">
-              <p className="text-sm md:text-base text-white/80">
-                Your account is ready! Get started by selecting a mining plan.
-              </p>
+              <p className="text-sm md:text-base text-white/80">{t('accountReadyMessage')}</p>
               <Link
                 href="/dashboard/plans"
                 className="inline-block px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all text-sm md:text-base"
@@ -293,13 +291,13 @@ export default async function DashboardPage() {
           {!hasActivePlans && user?.accountStatus === 'pending' && (
             <div className="space-y-4">
               <p className="text-sm md:text-base text-white/80">
-                Your payment is being processed. You will be notified once your mining plan is activated.
+                {t('paymentProcessingMessage')}
               </p>
               <Link
                 href="/dashboard/payment"
                 className="text-sm md:text-base text-purple-300 hover:text-purple-200 underline"
               >
-                View payment instructions →
+                {t('viewPaymentInstructions')} →
               </Link>
             </div>
           )}
@@ -316,7 +314,7 @@ export default async function DashboardPage() {
                       color: '#fde047',
                     }}
                   >
-                    Proof not submitted (Mining)
+                    {t('proofNotSubmittedMining')}
                   </span>
                 )}
                 {hasTradingSelected && (
@@ -328,7 +326,7 @@ export default async function DashboardPage() {
                       color: '#fde047',
                     }}
                   >
-                    Proof not submitted (Trading)
+                    {t('proofNotSubmittedTrading')}
                   </span>
                 )}
               </div>

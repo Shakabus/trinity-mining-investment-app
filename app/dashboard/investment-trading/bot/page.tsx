@@ -97,8 +97,8 @@ export default async function TradingBotPage() {
         />
       ) : (
         <EmptyState
-          title="Activate a trading plan to view portfolio activity"
-          description="Once your plan is active, portfolio performance and liquidity charts will appear here."
+          title={t('tradingBotEmptyTitle')}
+          description={t('tradingBotEmptyDescription')}
           action={
             <Link
               href="/dashboard/investment-trading#plans"
@@ -108,7 +108,7 @@ export default async function TradingBotPage() {
                 color: '#ffffff',
               }}
             >
-              Activate a plan
+              {t('activatePlan')}
               <ArrowUpRight size={14} />
             </Link>
           }

@@ -6,6 +6,7 @@ import LoadingButton from '@/components/ui/LoadingButton'
 import EmptyState from '@/components/ui/EmptyState'
 import { DollarSign } from 'lucide-react'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
+import { useLanguage } from '@/components/i18n/LanguageProvider'
 
 interface EarningsRecord {
   id: number
@@ -44,11 +45,6 @@ interface EarningsDisplayProps {
   }
 }
 
-function formatDate(value: string | null) {
-  if (!value) return 'Not available'
-  return new Date(value).toLocaleString()
-}
-
 export default function EarningsDisplay({
   records,
   startDate,
@@ -61,6 +57,7 @@ export default function EarningsDisplay({
   walletAddresses,
 }: EarningsDisplayProps) {
   const { currency, rates, format, convert } = useCurrency()
+  const { t } = useLanguage()
   const rate = rates[currency] || 1
   const toUsd = (value: number) => (rate ? value / rate : value)
   const [now, setNow] = useState(Date.now())
@@ -68,6 +65,11 @@ export default function EarningsDisplay({
   const [withdrawAmountUsd, setWithdrawAmountUsd] = useState(convert(minWithdrawalUsd).toFixed(2))
   const [withdrawStatus, setWithdrawStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
+
+  const formatDate = (value: string | null) => {
+    if (!value) return t('notAvailable')
+    return new Date(value).toLocaleString()
+  }
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 10000)
@@ -115,22 +117,22 @@ export default function EarningsDisplay({
     const amountInput = Number(withdrawAmountUsd)
     const amountUsd = toUsd(amountInput)
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
-      setWithdrawStatus({ type: 'error', message: 'Enter a valid amount.' })
+      setWithdrawStatus({ type: 'error', message: t('withdrawValidAmount') })
       return
     }
     if (amountUsd < minWithdrawalUsd) {
       setWithdrawStatus({
         type: 'error',
-        message: `Minimum withdrawal is ${format(minWithdrawalUsd)}.`,
+        message: t('withdrawMin').replace('{amount}', format(minWithdrawalUsd)),
       })
       return
     }
     if (amountUsd > withdrawableUsd) {
-      setWithdrawStatus({ type: 'error', message: 'Amount exceeds withdrawable balance.' })
+      setWithdrawStatus({ type: 'error', message: t('withdrawExceeds') })
       return
     }
     if (!walletAddresses[withdrawCoin]) {
-      setWithdrawStatus({ type: 'error', message: `Please add a ${withdrawCoin} wallet address.` })
+      setWithdrawStatus({ type: 'error', message: t('walletMissing').replace('{coin}', withdrawCoin) })
       return
     }
 
@@ -144,14 +146,14 @@ export default function EarningsDisplay({
       })
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        throw new Error(data?.error || 'Failed to submit withdrawal.')
+        throw new Error(data?.error || t('withdrawFailed'))
       }
-      setWithdrawStatus({ type: 'success', message: 'Withdrawal request submitted.' })
+      setWithdrawStatus({ type: 'success', message: t('withdrawSubmitted') })
       setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
     } catch (error: any) {
       setWithdrawStatus({
         type: 'error',
-        message: error?.message || 'Failed to submit withdrawal request.',
+        message: error?.message || t('withdrawFailed'),
       })
     } finally {
       setIsRequesting(false)
@@ -212,11 +214,11 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <div className="text-sm text-white/60 mb-1">Estimated Daily Earnings</div>
+          <div className="text-sm text-white/60 mb-1">{t('estimatedDailyEarnings')}</div>
           <div className="text-2xl font-semibold text-white truncate" title={format(totals.dailyUsd)}>
             {format(totals.dailyUsd)}
           </div>
-          <div className="text-xs text-white/50 mt-2">Based on current hashrate and plan</div>
+          <div className="text-xs text-white/50 mt-2">{t('basedOnHashrate')}</div>
         </div>
 
         <div
@@ -227,15 +229,15 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <div className="text-sm text-white/60 mb-1">Total Earned ({currency})</div>
+          <div className="text-sm text-white/60 mb-1">{t('totalEarnedLabel')} ({currency})</div>
           <div className="text-2xl font-semibold text-white truncate" title={format(liveTotals.totalUsd)}>
             {format(liveTotals.totalUsd)}
           </div>
           <div
             className="text-xs text-white/50 mt-2 truncate"
-            title={`Withdrawable: ${format(totals.withdrawableUsd)} | Pending release: ${format(totals.lockedUsd)}`}
+            title={`${t('withdrawableLabel')}: ${format(totals.withdrawableUsd)} | ${t('pendingReleaseLabel')}: ${format(totals.lockedUsd)}`}
           >
-            Withdrawable: {format(totals.withdrawableUsd)} | Pending release: {format(totals.lockedUsd)}
+            {t('withdrawableLabel')}: {format(totals.withdrawableUsd)} | {t('pendingReleaseLabel')}: {format(totals.lockedUsd)}
           </div>
         </div>
 
@@ -247,9 +249,11 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <div className="text-sm text-white/60 mb-1">Last Payout</div>
+          <div className="text-sm text-white/60 mb-1">{t('lastPayoutLabel')}</div>
           <div className="text-lg font-semibold text-white">{formatDate(lastPayoutAt)}</div>
-          <div className="text-xs text-white/50 mt-2">Last update: {formatDate(lastUpdatedAt)}</div>
+          <div className="text-xs text-white/50 mt-2">
+            {t('lastUpdateLabel')}: {formatDate(lastUpdatedAt)}
+          </div>
         </div>
       </div>
 
@@ -262,7 +266,7 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-4">Last 24 Hours Earnings ({currency})</h3>
+          <h3 className="text-white font-semibold mb-4">{t('earnings24h')} ({currency})</h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={hourlySeries} margin={{ left: 5, right: 5, top: 5, bottom: 0 }}>
               <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '12px' }} tickMargin={6} />
@@ -288,7 +292,7 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-4">Weekly Earnings ({currency})</h3>
+          <h3 className="text-white font-semibold mb-4">{t('earningsWeekly')} ({currency})</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={weeklySeries} margin={{ left: 5, right: 5, top: 5, bottom: 0 }}>
               <XAxis dataKey="day" stroke="#ffffff40" style={{ fontSize: '12px' }} tickMargin={6} />
@@ -315,11 +319,11 @@ export default function EarningsDisplay({
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
-        <h3 className="text-white font-semibold mb-4">Earnings by Asset</h3>
+        <h3 className="text-white font-semibold mb-4">{t('earningsByAsset')}</h3>
         {liveRecords.length === 0 ? (
           <EmptyState
-            title="No earnings yet"
-            description="Your earnings will appear here once mining is active and estimates are calculated."
+            title={t('noEarningsTitle')}
+            description={t('noEarningsDescription')}
             icon={<DollarSign className="text-white/70 mx-auto" size={36} />}
           />
         ) : (
@@ -329,15 +333,17 @@ export default function EarningsDisplay({
                 <div className="text-white font-semibold">{record.coinType}</div>
                 <div className="text-xs text-white/50">{record.planName}</div>
                 {record.isHistorical && !record.isWithdrawable && (
-                  <div className="text-xs text-blue-300 mt-1">Pending system release</div>
+                  <div className="text-xs text-blue-300 mt-1">{t('pendingSystemRelease')}</div>
                 )}
                 <div className="mt-2 text-sm text-white/80">
-                  Daily estimate: {record.dailyEstimateCrypto.toFixed(8)} {record.coinType}
+                  {t('dailyEstimateLabel')}: {record.dailyEstimateCrypto.toFixed(8)} {record.coinType}
                 </div>
                 <div className="text-sm text-white/80">
-                  Total earned: {record.liveTotalCrypto.toFixed(8)} {record.coinType}
+                  {t('totalEarnedLabel')}: {record.liveTotalCrypto.toFixed(8)} {record.coinType}
                 </div>
-                <div className="text-xs text-white/40 mt-2">Last update: {formatDate(record.lastCalculatedAt)}</div>
+                <div className="text-xs text-white/40 mt-2">
+                  {t('lastUpdateLabel')}: {formatDate(record.lastCalculatedAt)}
+                </div>
               </div>
             ))}
           </div>
@@ -353,16 +359,16 @@ export default function EarningsDisplay({
         }}
       >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-          <h3 className="text-white font-semibold">Withdrawals</h3>
+          <h3 className="text-white font-semibold">{t('withdrawals')}</h3>
           <div className="text-xs text-white/50">
-            Withdrawable: {format(withdrawableUsd)} | Pending requests: {format(pendingUsd)}
+            {t('withdrawableLabel')}: {format(withdrawableUsd)} | {t('pendingRequests')}: {format(pendingUsd)}
           </div>
         </div>
 
         <div className="mb-5 p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
           <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
-              <label className="block text-xs text-white/60 mb-1">Amount ({currency})</label>
+              <label className="block text-xs text-white/60 mb-1">{t('withdrawalAmountLabel')} ({currency})</label>
               <input
                 type="number"
                 value={withdrawAmountUsd}
@@ -378,7 +384,7 @@ export default function EarningsDisplay({
               />
             </div>
             <div className="w-full md:w-40">
-              <label className="block text-xs text-white/60 mb-1">Coin</label>
+              <label className="block text-xs text-white/60 mb-1">{t('withdrawalCoinLabel')}</label>
               <select
                 value={withdrawCoin}
                 onChange={event => setWithdrawCoin(event.target.value as 'BTC' | 'ETH' | 'LTC')}
@@ -402,7 +408,7 @@ export default function EarningsDisplay({
             </div>
           </div>
           <div className="text-xs text-white/50">
-            Minimum withdrawal: {format(minWithdrawalUsd)}. Wallet: {walletAddresses[withdrawCoin] || 'Not set'}
+            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)}. {t('walletLabel')}: {walletAddresses[withdrawCoin] || t('notSet')}
           </div>
           {withdrawStatus && (
             <div
@@ -419,28 +425,28 @@ export default function EarningsDisplay({
           <LoadingButton
             onClick={handleWithdraw}
             isLoading={isRequesting}
-            loadingText="Submitting..."
+            loadingText={t('submitting')}
             className="px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
               background: 'linear-gradient(135deg, #582dff, #3a137a)',
               color: '#ffffff',
             }}
           >
-            Request Withdrawal
+            {t('requestWithdrawal')}
           </LoadingButton>
         </div>
 
         {payouts.length === 0 ? (
-          <div className="text-white/60 text-sm">No withdrawals yet.</div>
+          <div className="text-white/60 text-sm">{t('noWithdrawalsYet')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-white/50 text-left">
-                  <th className="py-2">Date</th>
-                  <th className="py-2">Amount ({currency})</th>
-                  <th className="py-2">Coin</th>
-                  <th className="py-2">Status</th>
+                  <th className="py-2">{t('activityTableDate')}</th>
+                  <th className="py-2">{t('withdrawalAmountLabel')} ({currency})</th>
+                  <th className="py-2">{t('withdrawalCoinLabel')}</th>
+                  <th className="py-2">{t('status')}</th>
                 </tr>
               </thead>
               <tbody>

@@ -95,22 +95,22 @@ export default function ReferralDashboard({
     const amountInput = Number(withdrawAmountUsd)
     const amountUsd = toUsd(amountInput)
     if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
-      setWithdrawStatus({ type: 'error', message: 'Enter a valid amount.' })
+      setWithdrawStatus({ type: 'error', message: t('withdrawValidAmount') })
       return
     }
     if (amountUsd < minWithdrawalUsd) {
       setWithdrawStatus({
         type: 'error',
-        message: `Minimum withdrawal is ${format(minWithdrawalUsd)}.`,
+        message: t('withdrawMin').replace('{amount}', format(minWithdrawalUsd)),
       })
       return
     }
     if (amountUsd > availableUsd) {
-      setWithdrawStatus({ type: 'error', message: 'Amount exceeds available referral balance.' })
+      setWithdrawStatus({ type: 'error', message: t('referralAmountExceeds') })
       return
     }
     if (!walletAddresses[withdrawCoin]) {
-      setWithdrawStatus({ type: 'error', message: `Please add a ${withdrawCoin} wallet address.` })
+      setWithdrawStatus({ type: 'error', message: t('walletMissing').replace('{coin}', withdrawCoin) })
       return
     }
 
@@ -124,14 +124,14 @@ export default function ReferralDashboard({
       })
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        throw new Error(data?.error || 'Failed to submit referral withdrawal.')
+        throw new Error(data?.error || t('referralWithdrawalFailed'))
       }
-        setWithdrawStatus({ type: 'success', message: 'Referral withdrawal submitted.' })
+        setWithdrawStatus({ type: 'success', message: t('referralWithdrawalSubmitted') })
         setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
       } catch (error: any) {
       setWithdrawStatus({
         type: 'error',
-        message: error?.message || 'Failed to submit referral withdrawal.',
+        message: error?.message || t('referralWithdrawalFailed'),
       })
     } finally {
       setIsRequesting(false)
@@ -142,7 +142,7 @@ export default function ReferralDashboard({
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('referralsTitle')}</h1>
-        <p className="text-white/70">Share your link and earn {bonusPercent}% on first payments.</p>
+        <p className="text-white/70">{t('referralSubtitle').replace('{percent}', bonusPercent.toString())}</p>
       </div>
 
       <div
@@ -153,13 +153,13 @@ export default function ReferralDashboard({
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
-        <div className="text-sm text-white/60 mb-2">Your Referral Link</div>
+        <div className="text-sm text-white/60 mb-2">{t('yourReferralLink')}</div>
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div
             className="flex-1 px-4 py-2 rounded-xl text-sm text-white/90 break-all font-mono tracking-wide"
             style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
           >
-            {referralCode || 'Your referral code will appear once it is generated.'}
+            {referralCode || t('referralCodePending')}
           </div>
           <button
             onClick={async () => {
@@ -177,19 +177,19 @@ export default function ReferralDashboard({
             }}
             disabled={!referralCode}
           >
-            {isCopied ? 'Copied' : 'Copy Link'}
+            {isCopied ? t('copied') : t('copyLink')}
           </button>
         </div>
         {isCopied && (
-          <div className="text-xs text-green-200 mt-2">Referral link copied to clipboard.</div>
+          <div className="text-xs text-green-200 mt-2">{t('linkCopied')}</div>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'Total Referral Earnings', value: format(totalBonusUsd) },
-          { label: 'Available for Withdrawal', value: format(availableUsd) },
-          { label: 'Pending Requests', value: format(pendingUsd) },
+          { label: t('totalReferralEarnings'), value: format(totalBonusUsd) },
+          { label: t('availableForWithdrawal'), value: format(availableUsd) },
+          { label: t('pendingRequests'), value: format(pendingUsd) },
         ].map(item => (
           <div
             key={item.label}
@@ -217,15 +217,15 @@ export default function ReferralDashboard({
         }}
       >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-          <h3 className="text-white font-semibold">Referral Withdrawal</h3>
+          <h3 className="text-white font-semibold">{t('referralWithdrawalTitle')}</h3>
           <div className="text-xs text-white/50">
-            Minimum: {format(minWithdrawalUsd)} | Wallet: {walletAddresses[withdrawCoin] || 'Not set'}
+            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)} | {t('walletLabel')}: {walletAddresses[withdrawCoin] || t('notSet')}
           </div>
         </div>
 
         <div className="mb-4 flex flex-col md:flex-row gap-3">
           <div className="flex-1">
-            <label className="block text-xs text-white/60 mb-1">Amount ({currency})</label>
+            <label className="block text-xs text-white/60 mb-1">{t('withdrawalAmountLabel')} ({currency})</label>
             <input
               type="number"
               value={withdrawAmountUsd}
@@ -241,7 +241,7 @@ export default function ReferralDashboard({
             />
           </div>
           <div className="w-full md:w-40">
-            <label className="block text-xs text-white/60 mb-1">Coin</label>
+            <label className="block text-xs text-white/60 mb-1">{t('withdrawalCoinLabel')}</label>
             <select
               value={withdrawCoin}
               onChange={event => setWithdrawCoin(event.target.value as 'BTC' | 'ETH' | 'LTC')}
@@ -288,7 +288,7 @@ export default function ReferralDashboard({
             color: '#ffffff',
           }}
         >
-          Request Referral Withdrawal
+          {t('requestReferralWithdrawal')}
         </LoadingButton>
       </div>
 
@@ -303,14 +303,14 @@ export default function ReferralDashboard({
         >
           <h3 className="text-white font-semibold mb-3">Referred Users</h3>
           {referrals.length === 0 ? (
-            <div className="text-white/60 text-sm">No referred users yet.</div>
+            <div className="text-white/60 text-sm">{t('noReferralsYet')}</div>
           ) : (
             <div className="space-y-3">
               {referrals.slice(0, 6).map(ref => (
                 <div key={ref.id} className="flex items-center justify-between text-sm border-b border-white/10 pb-2">
                   <div>
                     <div className="text-white/90">{ref.fullName || ref.email}</div>
-                    <div className="text-xs text-white/50">Joined: {formatDate(ref.createdAt)}</div>
+                    <div className="text-xs text-white/50">{t('joinedLabel')}: {formatDate(ref.createdAt)}</div>
                   </div>
                   <div className="text-xs text-white/60">{ref.accountStatus}</div>
                 </div>
@@ -327,16 +327,16 @@ export default function ReferralDashboard({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-3">Referral Bonuses</h3>
+          <h3 className="text-white font-semibold mb-3">{t('referralBonusesTitle')}</h3>
           {bonuses.length === 0 ? (
-            <div className="text-white/60 text-sm">No referral bonuses yet.</div>
+            <div className="text-white/60 text-sm">{t('referralBonusesEmpty')}</div>
           ) : (
             <div className="space-y-3">
               {bonuses.slice(0, 6).map(bonus => (
                 <div key={bonus.id} className="flex items-center justify-between text-sm border-b border-white/10 pb-2">
                   <div>
                     <div className="text-white/90">{bonus.refereeName}</div>
-                    <div className="text-xs text-white/50">Earned: {formatDate(bonus.createdAt)}</div>
+                    <div className="text-xs text-white/50">{t('earnedLabel')}: {formatDate(bonus.createdAt)}</div>
                   </div>
                   <div className="text-white font-semibold">{format(bonus.amountUsd)}</div>
                 </div>
@@ -354,18 +354,18 @@ export default function ReferralDashboard({
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
-        <h3 className="text-white font-semibold mb-3">Referral Withdrawals</h3>
+        <h3 className="text-white font-semibold mb-3">{t('referralWithdrawalsTitle')}</h3>
         {withdrawals.length === 0 ? (
-          <div className="text-white/60 text-sm">No referral withdrawals yet.</div>
+          <div className="text-white/60 text-sm">{t('referralWithdrawalsEmpty')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-white/50 text-left">
-                  <th className="py-2">Date</th>
-                  <th className="py-2">Amount ({currency})</th>
-                  <th className="py-2">Coin</th>
-                  <th className="py-2">Status</th>
+                  <th className="py-2">{t('activityTableDate')}</th>
+                  <th className="py-2">{t('withdrawalAmountLabel')} ({currency})</th>
+                  <th className="py-2">{t('withdrawalCoinLabel')}</th>
+                  <th className="py-2">{t('status')}</th>
                 </tr>
               </thead>
               <tbody>

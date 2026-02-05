@@ -38,12 +38,10 @@ export default async function SettingsAccountPage() {
       <div className="space-y-6">
         {/* Email (Read-only from Clerk) */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">
-            Email Address
-          </label>
+          <label className="block text-sm font-medium text-white/80 mb-2">{t('emailAddress')}</label>
           <div className="px-4 py-3 rounded-lg bg-white/5 border border-white/10">
             <div className="text-white text-sm md:text-base">{user?.email}</div>
-            <div className="text-xs text-white/50 mt-1">Managed by your account provider</div>
+            <div className="text-xs text-white/50 mt-1">{t('managedByProvider')}</div>
           </div>
         </div>
 
@@ -68,36 +66,34 @@ export default async function SettingsAccountPage() {
 
         {/* Member Since */}
         <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">
-            Member Since
-          </label>
+          <label className="block text-sm font-medium text-white/80 mb-2">{t('memberSince')}</label>
           <div className="px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm md:text-base">
             {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'
-            }) : 'N/A'}
+            }) : t('notAvailable')}
           </div>
         </div>
 
         {/* Divider */}
         <div className="border-t border-white/10 pt-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Active Sessions</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">{t('activeSessions')}</h3>
           <div className="p-4 rounded-lg bg-white/5 border border-white/10">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <div className="text-white font-medium text-sm md:text-base">Current Session</div>
+                <div className="text-white font-medium text-sm md:text-base">{t('currentSession')}</div>
                 <div className="text-xs md:text-sm text-white/60">
-                  Windows • Chrome • {new Date().toLocaleDateString()}
+                  {t('sessionDevice').replace('{date}', new Date().toLocaleDateString())}
                 </div>
               </div>
               <div className="px-3 py-1 rounded-full bg-green-500/20 border border-green-500/30 text-green-300 text-xs font-medium w-fit">
-                Active Now
+                {t('activeNow')}
               </div>
             </div>
           </div>
           <p className="text-xs text-white/50 mt-3">
-            For security settings and password management, click your profile icon (top-right) → Manage Account
+            {t('securityHelp')}
           </p>
         </div>
 

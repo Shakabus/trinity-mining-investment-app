@@ -70,7 +70,7 @@ export default async function EarningsPage() {
   const records = updatedRecords.map(record => ({
     id: record.id,
     coinType: record.coinType,
-    planName: record.userPlan?.plan?.name ?? 'Unknown Plan',
+    planName: record.userPlan?.plan?.name ?? t('unknownPlan'),
     dailyEstimateUsd: Number(record.dailyEstimateUsd),
     dailyEstimateCrypto: Number(record.dailyEstimateCrypto),
     totalEarnedUsd: Number(record.totalEarnedUsd),
@@ -117,7 +117,7 @@ export default async function EarningsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('earningsTitle')}</h1>
-          <p className="text-white/70">Track your daily estimates, totals, and payout history.</p>
+          <p className="text-white/70">{t('earningsSubtitle')}</p>
         </div>
 
         <EarningsDisplay

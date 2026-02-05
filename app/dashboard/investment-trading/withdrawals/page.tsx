@@ -89,7 +89,7 @@ export default async function TradingWithdrawalsPage() {
               <div className="text-2xl font-semibold text-white truncate" title={formatMoney(availableUsd)}>
                 {formatMoney(availableUsd)}
               </div>
-              <div className="text-xs text-white/50">Minimum withdrawal: {formatMoney(minWithdrawalUsd)}</div>
+              <div className="text-xs text-white/50">{t('minWithdrawalLabel')}: {formatMoney(minWithdrawalUsd)}</div>
             </div>
           </div>
 
@@ -101,8 +101,8 @@ export default async function TradingWithdrawalsPage() {
         </>
       ) : (
         <EmptyState
-          title="Activate a trading plan to request withdrawals"
-          description="Once your investment plan is active, you can request withdrawals and view payout history."
+          title={t('tradingWithdrawalsEmptyTitle')}
+          description={t('tradingWithdrawalsEmptyDescription')}
           action={
             <Link
               href="/dashboard/investment-trading#plans"
@@ -112,7 +112,7 @@ export default async function TradingWithdrawalsPage() {
                 color: '#ffffff',
               }}
             >
-              Activate a plan
+              {t('activatePlan')}
               <ArrowUpRight size={14} />
             </Link>
           }
@@ -127,7 +127,7 @@ export default async function TradingWithdrawalsPage() {
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
-        <h2 className="text-white font-semibold text-lg mb-4">Recent Requests</h2>
+        <h2 className="text-white font-semibold text-lg mb-4">{t('recentRequestsTitle')}</h2>
         {user?.tradingWithdrawals.length ? (
           <div className="space-y-3 text-sm">
             {user.tradingWithdrawals.slice(0, 8).map(withdrawal => (

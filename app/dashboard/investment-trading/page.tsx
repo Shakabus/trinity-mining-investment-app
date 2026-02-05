@@ -184,7 +184,7 @@ export default async function TradingInvestmentPage() {
         <div>
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('tradingTitle')}</h1>
           <p className="text-white/70 max-w-2xl">
-            Portfolio management overview, allocation strategy, and performance snapshots.
+            {t('tradingOverviewSubtitle')}
           </p>
         </div>
         <Link
@@ -195,7 +195,7 @@ export default async function TradingInvestmentPage() {
             color: '#ffffff',
           }}
         >
-          Portfolio Activity <ArrowUpRight size={16} className="inline-block ml-2" />
+          {t('tradingPortfolioButton')} <ArrowUpRight size={16} className="inline-block ml-2" />
         </Link>
       </div>
 
@@ -207,7 +207,7 @@ export default async function TradingInvestmentPage() {
             border: '1px solid rgba(59, 130, 246, 0.3)',
           }}
         >
-          Trading investment is awaiting payment verification. Submit proof to activate your portfolio.
+          {t('tradingAwaitingPayment')}
           <div className="mt-3">
             <Link
               href="/dashboard/investment-trading/payment"
@@ -217,7 +217,7 @@ export default async function TradingInvestmentPage() {
                 color: '#ffffff',
               }}
             >
-              Go to payment instructions
+              {t('viewPaymentInstructions')}
               <ArrowUpRight size={14} />
             </Link>
           </div>
@@ -288,8 +288,8 @@ export default async function TradingInvestmentPage() {
         />
       ) : (
         <EmptyState
-          title="Activate a trading plan to view portfolio analytics"
-          description="Select a trading investment plan to unlock managed portfolio charts and performance insights."
+          title={t('tradingEmptyTitle')}
+          description={t('tradingEmptyDescription')}
           action={
             <Link
               href="/dashboard/investment-trading#plans"
@@ -299,7 +299,7 @@ export default async function TradingInvestmentPage() {
                 color: '#ffffff',
               }}
             >
-              View trading plans
+              {t('viewTradingPlans')}
               <ArrowUpRight size={14} />
             </Link>
           }
@@ -308,7 +308,7 @@ export default async function TradingInvestmentPage() {
 
       <section id="plans" className="space-y-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Trading Plans</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">{t('tradingPlansTitle')}</h2>
           <p className="text-white/70">Select a trading investment package to activate your bot.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

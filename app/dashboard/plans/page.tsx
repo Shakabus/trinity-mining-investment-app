@@ -155,7 +155,7 @@ export default async function PlansPage() {
             {t('plansTitle')}
           </h1>
           <p className="text-base md:text-lg text-white/70 leading-relaxed">
-            Choose a plan that fits your mining goals. All plans include 24/7 support and automated payouts.
+            {t('plansDescription')}
           </p>
         </div>
 
@@ -168,7 +168,7 @@ export default async function PlansPage() {
               color: '#bfdbfe',
             }}
           >
-            Upgrade pending payment. Your current plan stays active until payment is confirmed.
+            {t('upgradePendingPayment')}
           </div>
         )}
 
@@ -181,7 +181,7 @@ export default async function PlansPage() {
               color: '#a7f3d0',
             }}
           >
-            Upgrade credit is based on your remaining contract time. Your estimated credit is {formatMoney(proratedCredit)}.
+            {t('upgradeCreditNote').replace('{amount}', formatMoney(proratedCredit))}
           </div>
         )}
 
@@ -196,12 +196,8 @@ export default async function PlansPage() {
             }}
           >
             <div className="text-6xl mb-6">💎</div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-              No Plans Available
-            </h2>
-            <p className="text-white/70 text-lg">
-              Plans are being configured. Please check back soon!
-            </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">{t('noPlansTitle')}</h2>
+            <p className="text-white/70 text-lg">{t('noPlansBody')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 px-2">

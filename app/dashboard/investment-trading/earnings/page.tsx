@@ -118,8 +118,8 @@ export default async function TradingEarningsPage() {
         />
       ) : (
         <EmptyState
-          title="Activate a trading plan to view earnings"
-          description="Trading earnings, drawdowns, and comparisons appear once your portfolio is active."
+          title={t('tradingEarningsEmptyTitle')}
+          description={t('tradingEarningsEmptyDescription')}
           action={
             <Link
               href="/dashboard/investment-trading#plans"
@@ -129,7 +129,7 @@ export default async function TradingEarningsPage() {
                 color: '#ffffff',
               }}
             >
-              Activate a plan
+              {t('activatePlan')}
               <ArrowUpRight size={14} />
             </Link>
           }

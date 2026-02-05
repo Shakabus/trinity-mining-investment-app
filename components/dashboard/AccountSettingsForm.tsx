@@ -4,6 +4,7 @@ import { useState } from 'react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { SUPPORTED_CURRENCIES, type CurrencyCode } from '@/lib/forex'
 import { SUPPORTED_LANGUAGES, LANGUAGE_LABELS, type LanguageCode } from '@/lib/i18n'
+import { useLanguage } from '@/components/i18n/LanguageProvider'
 
 interface AccountSettingsFormProps {
   fullName: string
@@ -18,6 +19,7 @@ export default function AccountSettingsForm({
   preferredCurrency,
   preferredLanguage,
 }: AccountSettingsFormProps) {
+  const { t } = useLanguage()
   const [nameValue, setNameValue] = useState(fullName)
   const [phoneValue, setPhoneValue] = useState(phone)
   const [currencyValue, setCurrencyValue] = useState<CurrencyCode>(preferredCurrency)
@@ -30,12 +32,12 @@ export default function AccountSettingsForm({
     const trimmedPhone = phoneValue.trim()
 
     if (!trimmedName) {
-      setStatus({ type: 'error', message: 'Full name is required.' })
+      setStatus({ type: 'error', message: t('fullNameRequiredError') })
       return
     }
 
     if (trimmedName.length < 2) {
-      setStatus({ type: 'error', message: 'Full name must be at least 2 characters.' })
+      setStatus({ type: 'error', message: t('fullNameTooShortError') })
       return
     }
 
@@ -43,11 +45,11 @@ export default function AccountSettingsForm({
       const phoneAllowed = /^[0-9+()\- ]+$/.test(trimmedPhone)
       const phoneDigits = trimmedPhone.replace(/\D/g, '')
       if (!phoneAllowed) {
-        setStatus({ type: 'error', message: 'Phone number contains invalid characters.' })
+        setStatus({ type: 'error', message: t('phoneInvalidError') })
         return
       }
       if (phoneDigits.length < 7 || phoneDigits.length > 15) {
-        setStatus({ type: 'error', message: 'Phone number must be 7 to 15 digits.' })
+        setStatus({ type: 'error', message: t('phoneLengthError') })
         return
       }
     }
@@ -69,13 +71,13 @@ export default function AccountSettingsForm({
 
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        setStatus({ type: 'error', message: data?.error || 'Failed to save profile.' })
+        setStatus({ type: 'error', message: data?.error || t('profileSaveFailed') })
         return
       }
 
-      setStatus({ type: 'success', message: 'Profile updated successfully.' })
+      setStatus({ type: 'success', message: t('profileUpdated') })
     } catch {
-      setStatus({ type: 'error', message: 'Network error. Please try again.' })
+      setStatus({ type: 'error', message: t('networkError') })
     } finally {
       setIsSaving(false)
     }
@@ -86,32 +88,32 @@ export default function AccountSettingsForm({
       {/* Full Name */}
       <div>
         <label className="block text-sm font-medium text-white/80 mb-2">
-          Full Name <span className="text-red-300">*</span>
+          {t('fullNameLabel')} <span className="text-red-300">*</span>
         </label>
         <input
           type="text"
           value={nameValue}
           onChange={event => setNameValue(event.target.value)}
           className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
-          placeholder="Enter your full name"
+          placeholder={t('fullNamePlaceholder')}
         />
       </div>
 
       {/* Phone */}
       <div>
-        <label className="block text-sm font-medium text-white/80 mb-2">Phone Number (Optional)</label>
+        <label className="block text-sm font-medium text-white/80 mb-2">{t('phoneLabel')}</label>
         <input
           type="tel"
           value={phoneValue}
           onChange={event => setPhoneValue(event.target.value)}
           className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
-          placeholder="+1 (555) 000-0000"
+          placeholder={t('phonePlaceholder')}
         />
       </div>
 
       {/* Preferred Currency */}
       <div>
-        <label className="block text-sm font-medium text-white/80 mb-2">Preferred Currency</label>
+        <label className="block text-sm font-medium text-white/80 mb-2">{t('preferredCurrencyLabel')}</label>
         <select
           value={currencyValue}
           onChange={event => setCurrencyValue(event.target.value as CurrencyCode)}
@@ -123,14 +125,12 @@ export default function AccountSettingsForm({
             </option>
           ))}
         </select>
-        <p className="text-xs text-white/50 mt-2">
-          All user-side currency values will display in this currency.
-        </p>
+        <p className="text-xs text-white/50 mt-2">{t('preferredCurrencyHelp')}</p>
       </div>
 
       {/* Preferred Language */}
       <div>
-        <label className="block text-sm font-medium text-white/80 mb-2">Language</label>
+        <label className="block text-sm font-medium text-white/80 mb-2">{t('preferredLanguageLabel')}</label>
         <select
           value={languageValue}
           onChange={event => setLanguageValue(event.target.value as LanguageCode)}
@@ -142,9 +142,7 @@ export default function AccountSettingsForm({
             </option>
           ))}
         </select>
-        <p className="text-xs text-white/50 mt-2">
-          Dashboard labels will update to your selected language.
-        </p>
+        <p className="text-xs text-white/50 mt-2">{t('preferredLanguageHelp')}</p>
       </div>
 
       {status && (
@@ -165,14 +163,14 @@ export default function AccountSettingsForm({
         <LoadingButton
           onClick={handleSubmit}
           isLoading={isSaving}
-          loadingText="Saving..."
+          loadingText={t('saving')}
           className="w-full sm:w-auto px-6 py-3 rounded-full font-semibold transition-all text-sm md:text-base disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
             background: 'linear-gradient(135deg, #582dff, #3a137a)',
             color: '#ffffff',
           }}
         >
-          Save Changes
+          {t('saveChanges')}
         </LoadingButton>
       </div>
     </div>

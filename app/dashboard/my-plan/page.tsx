@@ -58,7 +58,7 @@ export default async function MyPlanPage() {
         <div className="space-y-6">
           <div>
       <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('myPlanTitle')}</h1>
-            <p className="text-white/70">View and manage your current mining plan</p>
+            <p className="text-white/70">{t('myPlanSubtitle')}</p>
           </div>
 
           <div 
@@ -70,9 +70,9 @@ export default async function MyPlanPage() {
             }}
           >
             <div className="text-6xl mb-6">📦</div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">No Active Plan</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">{t('noActivePlanTitle')}</h2>
             <p className="text-white/70 mb-8 max-w-md mx-auto">
-              You have not selected a mining plan yet. Choose one to start earning!
+              {t('noActivePlanBody')}
             </p>
             <Link
               href="/dashboard/plans"
@@ -83,7 +83,7 @@ export default async function MyPlanPage() {
                 boxShadow: '0 4px 24px rgba(88, 45, 255, 0.4)',
               }}
             >
-              Browse Plans →
+              {t('browsePlans')} →
             </Link>
           </div>
         </div>
@@ -134,8 +134,8 @@ export default async function MyPlanPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">My Plan</h1>
-          <p className="text-white/70">Manage your current mining plan</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('myPlanTitle')}</h1>
+          <p className="text-white/70">{t('myPlanManageSubtitle')}</p>
         </div>
 
         {/* Status Badge */}
@@ -150,9 +150,9 @@ export default async function MyPlanPage() {
             <div className="flex items-start gap-3">
               <Clock size={24} className="text-blue-300 shrink-0 mt-1" />
               <div>
-                <h3 className="font-semibold text-blue-200 mb-2">Upgrade Pending Payment</h3>
+                <h3 className="font-semibold text-blue-200 mb-2">{t('upgradePendingTitle')}</h3>
                 <p className="text-blue-100/80 text-sm mb-4">
-                  Your current plan remains active until the upgrade payment is confirmed.
+                  {t('upgradePendingBody')}
                 </p>
                 <Link
                   href="/dashboard/payment?verify=1"
@@ -163,7 +163,7 @@ export default async function MyPlanPage() {
                     color: '#bfdbfe',
                   }}
                 >
-                  Upload Upgrade Payment Proof {'>'}
+                  {t('uploadUpgradeProof')} {'>'}
                 </Link>
               </div>
             </div>
@@ -181,9 +181,9 @@ export default async function MyPlanPage() {
             <div className="flex items-start gap-3">
               <Clock size={24} className="text-yellow-300 shrink-0 mt-1" />
               <div>
-                <h3 className="font-semibold text-yellow-300 mb-2">Proof Not Submitted</h3>
+                <h3 className="font-semibold text-yellow-300 mb-2">{t('proofNotSubmittedTitle')}</h3>
                 <p className="text-yellow-200/80 text-sm mb-4">
-                  Upload your payment proof to move this plan into verification.
+                  {t('proofNotSubmittedBody')}
                 </p>
                 <Link
                   href="/dashboard/payment?verify=1"
@@ -194,7 +194,7 @@ export default async function MyPlanPage() {
                     color: '#fde047',
                   }}
                 >
-                  Upload Payment Proof â†’
+                  {t('uploadPaymentProof')} â†’
                 </Link>
               </div>
             </div>
@@ -212,9 +212,9 @@ export default async function MyPlanPage() {
             <div className="flex items-start gap-3">
               <Clock size={24} className="text-yellow-300 shrink-0 mt-1" />
               <div>
-                <h3 className="font-semibold text-yellow-300 mb-2">Payment Pending</h3>
+                <h3 className="font-semibold text-yellow-300 mb-2">{t('paymentPendingTitle')}</h3>
                 <p className="text-yellow-200/80 text-sm mb-4">
-                  Your plan is awaiting payment confirmation. Complete your payment to activate mining.
+                  {t('paymentPendingBody')}
                 </p>
                 <Link
                   href="/dashboard/payment?verify=1"
@@ -225,7 +225,7 @@ export default async function MyPlanPage() {
                     color: '#fde047',
                   }}
                 >
-                  Upload Payment Proof →
+                  {t('uploadPaymentProof')} →
                 </Link>
               </div>
             </div>

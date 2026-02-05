@@ -122,7 +122,7 @@ export default async function MiningPage() {
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('miningTitle')}</h1>
-            <p className="text-white/70">Monitor your mining operations in real-time</p>
+            <p className="text-white/70">{t('miningSubtitle')}</p>
           </div>
 
           <div 
@@ -134,11 +134,11 @@ export default async function MiningPage() {
             }}
           >
             <div className="text-6xl mb-6">⛏️</div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Mining Not Active</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">{t('miningNotActiveTitle')}</h2>
             <p className="text-white/70 mb-8 max-w-md mx-auto">
               {user.accountStatus === 'pending' 
-                ? 'Your payment is being processed. Mining will start once your account is activated.'
-                : 'Select a mining plan to start earning!'}
+                ? t('miningPendingBody')
+                : t('miningSelectPlanBody')}
             </p>
             <Link
               href={user.accountStatus === 'pending' ? '/dashboard/payment' : '/dashboard/plans'}
@@ -149,7 +149,7 @@ export default async function MiningPage() {
                 boxShadow: '0 4px 24px rgba(88, 45, 255, 0.4)',
               }}
             >
-              {user.accountStatus === 'pending' ? 'View Payment Status' : 'Browse Plans'} →
+              {user.accountStatus === 'pending' ? t('viewPaymentStatus') : t('browsePlans')} →
             </Link>
           </div>
         </div>

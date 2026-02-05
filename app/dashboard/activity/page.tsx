@@ -44,7 +44,7 @@ export default async function ActivityPage() {
     <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-6 space-y-6">
       <div>
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('activityTitle')}</h1>
-        <p className="text-white/70">Your recent account actions and requests.</p>
+        <p className="text-white/70">{t('activitySubtitle')}</p>
       </div>
 
       <div
@@ -57,8 +57,8 @@ export default async function ActivityPage() {
       >
         {user.userActivityLogs.length === 0 ? (
           <EmptyState
-            title="No activity yet"
-            description="Your account actions will show up here as you manage plans, withdrawals, and settings."
+            title={t('activityEmptyTitle')}
+            description={t('activityEmptyDescription')}
             icon={<Activity className="text-white/70 mx-auto" size={36} />}
           />
         ) : (
@@ -66,9 +66,9 @@ export default async function ActivityPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-white/50 text-left">
-                  <th className="py-2">Date</th>
-                  <th className="py-2">Action</th>
-                  <th className="py-2">Details</th>
+                  <th className="py-2">{t('activityTableDate')}</th>
+                  <th className="py-2">{t('activityTableAction')}</th>
+                  <th className="py-2">{t('activityTableDetails')}</th>
                 </tr>
               </thead>
               <tbody>

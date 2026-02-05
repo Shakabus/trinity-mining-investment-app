@@ -5,62 +5,6 @@ import SupportCenterClient from '@/components/dashboard/SupportCenterClient'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
-const FAQ_ITEMS = [
-  {
-    question: 'How do I start mining?',
-    answer:
-      'Choose a plan, complete the payment instructions, and wait for confirmation. Once confirmed, your mining dashboard will begin tracking hashrate, shares, and earnings automatically.',
-  },
-  {
-    question: 'Why are my earnings estimates changing?',
-    answer:
-      'Estimates adjust based on assigned hashrate, uptime, and network conditions. The system updates estimates on a schedule to reflect real mining performance.',
-  },
-  {
-    question: 'What is a pending withdrawal?',
-    answer:
-      'Pending means your request has been received and is waiting to be processed. Once processed, the status will update and your activity log will show it.',
-  },
-  {
-    question: 'How do plan upgrades work?',
-    answer:
-      'When you upgrade, the remaining value on your current plan is credited against the new plan. Your previous earnings are preserved and shown separately as historical.',
-  },
-  {
-    question: 'Why do I see historical earnings?',
-    answer:
-      'Historical earnings come from older plans and remain visible after upgrades. They can be unlocked and withdrawn once the release window is met.',
-  },
-  {
-    question: 'How do I update my wallet address?',
-    answer:
-      'Go to Settings, enter the correct wallet addresses, and save. Always double-check the address format before saving.',
-  },
-]
-
-const HOW_IT_WORKS = [
-  {
-    title: 'Plans and activation',
-    body:
-      'Plans define your assigned hashrate, duration, and supported assets. After selecting a plan, follow the payment instructions and submit your proof when ready.',
-  },
-  {
-    title: 'Mining performance',
-    body:
-      'Your hashrate is designed to stay near the assigned maximum, with small fluctuations. Shares and earnings update as the system tracks mining activity.',
-  },
-  {
-    title: 'Earnings and payouts',
-    body:
-      'Daily estimates are calculated automatically unless a manual override is applied. Withdrawals are requests that get reviewed before they are processed.',
-  },
-  {
-    title: 'Upgrades and history',
-    body:
-      'Upgrades apply a credit for unused time on the current plan. Your previous earnings remain visible and can be released based on the system rules.',
-  },
-]
-
 export default async function SupportPage() {
   const { userId } = await auth()
 
@@ -97,6 +41,34 @@ export default async function SupportPage() {
     : languageFromCurrency(preferredCurrency)
   const t = (key: string) => translate(key, preferredLanguage)
 
+  const howItWorks = [
+    {
+      title: t('howPlansTitle'),
+      body: t('howPlansBody'),
+    },
+    {
+      title: t('howMiningTitle'),
+      body: t('howMiningBody'),
+    },
+    {
+      title: t('howEarningsTitle'),
+      body: t('howEarningsBody'),
+    },
+    {
+      title: t('howUpgradesTitle'),
+      body: t('howUpgradesBody'),
+    },
+  ]
+
+  const faqItems = [
+    { question: t('faq1Q'), answer: t('faq1A') },
+    { question: t('faq2Q'), answer: t('faq2A') },
+    { question: t('faq3Q'), answer: t('faq3A') },
+    { question: t('faq4Q'), answer: t('faq4A') },
+    { question: t('faq5Q'), answer: t('faq5A') },
+    { question: t('faq6Q'), answer: t('faq6A') },
+  ]
+
   const tickets = user.supportTickets.map(ticket => ({
     id: ticket.id,
     subject: ticket.subject,
@@ -126,9 +98,7 @@ export default async function SupportPage() {
           }}
         >
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{t('supportTitle')}</h1>
-          <p className="text-white/70">
-            Learn how the platform works, find quick answers, and send a support request.
-          </p>
+          <p className="text-white/70">{t('supportIntro')}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -140,9 +110,9 @@ export default async function SupportPage() {
               border: '1px solid rgba(255, 255, 255, 0.18)',
             }}
           >
-            <h2 className="text-xl font-semibold text-white mb-4">How it works</h2>
+            <h2 className="text-xl font-semibold text-white mb-4">{t('supportHowItWorksTitle')}</h2>
             <div className="space-y-4 text-sm text-white/70">
-              {HOW_IT_WORKS.map(item => (
+              {howItWorks.map(item => (
                 <div key={item.title}>
                   <div className="text-white font-semibold mb-1">{item.title}</div>
                   <div>{item.body}</div>
@@ -159,9 +129,9 @@ export default async function SupportPage() {
               border: '1px solid rgba(255, 255, 255, 0.18)',
             }}
           >
-            <h2 className="text-xl font-semibold text-white mb-4">FAQ</h2>
+            <h2 className="text-xl font-semibold text-white mb-4">{t('supportFaqTitle')}</h2>
             <div className="space-y-4 text-sm text-white/70">
-              {FAQ_ITEMS.map(item => (
+              {faqItems.map(item => (
                 <div key={item.question}>
                   <div className="text-white font-semibold mb-1">{item.question}</div>
                   <div>{item.answer}</div>
