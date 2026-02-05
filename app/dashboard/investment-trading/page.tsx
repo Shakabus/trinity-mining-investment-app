@@ -10,6 +10,8 @@ import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
 import EmptyState from '@/components/ui/EmptyState'
 import TradingLiveOverviewCards from '@/components/trading/TradingLiveOverviewCards'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +41,15 @@ export default async function TradingInvestmentPage() {
   if (!user) {
     redirect('/sign-in')
   }
+
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
 
   const tradingPlans = await prisma.tradingPlan.findMany({
     where: { status: 'active' },
@@ -171,7 +182,7 @@ export default async function TradingInvestmentPage() {
       <TradingSectionObserver />
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Investment Trading</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('tradingTitle')}</h1>
           <p className="text-white/70 max-w-2xl">
             Portfolio management overview, allocation strategy, and performance snapshots.
           </p>

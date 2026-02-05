@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 import { Activity, TrendingUp, BarChart3, Scale } from 'lucide-react'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
+import { useLanguage } from '@/components/i18n/LanguageProvider'
 
 interface OverviewAnalyticsProps {
   earningsSeries: { time: string; value: number }[]
@@ -27,9 +28,10 @@ export default function OverviewAnalytics({
   estimatedVsActual,
 }: OverviewAnalyticsProps) {
   const { currency } = useCurrency()
+  const { t } = useLanguage()
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl md:text-3xl font-bold text-white">Performance Analytics</h2>
+      <h2 className="text-2xl md:text-3xl font-bold text-white">{t('performanceAnalytics')}</h2>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div
@@ -42,7 +44,7 @@ export default function OverviewAnalytics({
         >
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <TrendingUp size={16} />
-            Earnings over time ({currency})
+            {t('earningsOverTime')} ({currency})
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={220}>
@@ -73,7 +75,7 @@ export default function OverviewAnalytics({
         >
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <Activity size={16} />
-            Hashrate stability
+            {t('hashrateStability')}
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={220}>
@@ -106,7 +108,7 @@ export default function OverviewAnalytics({
         >
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <BarChart3 size={16} />
-            Shares submission history
+            {t('sharesHistory')}
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={220}>
@@ -137,7 +139,7 @@ export default function OverviewAnalytics({
         >
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <Scale size={16} />
-            Estimated vs actual earnings
+            {t('estimatedVsActual')}
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={220}>
@@ -160,11 +162,11 @@ export default function OverviewAnalytics({
           <div className="flex items-center justify-center gap-6 mt-3 text-xs text-white/60">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-blue-400" />
-              Estimated
+              {t('estimated')}
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-emerald-400" />
-              Actual
+              {t('actual')}
             </div>
           </div>
         </div>

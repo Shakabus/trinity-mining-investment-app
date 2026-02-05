@@ -2,6 +2,8 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import SupportCenterClient from '@/components/dashboard/SupportCenterClient'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
 const FAQ_ITEMS = [
   {
@@ -86,6 +88,15 @@ export default async function SupportPage() {
     redirect('/sign-in')
   }
 
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
+
   const tickets = user.supportTickets.map(ticket => ({
     id: ticket.id,
     subject: ticket.subject,
@@ -114,7 +125,7 @@ export default async function SupportPage() {
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Help Center</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{t('supportTitle')}</h1>
           <p className="text-white/70">
             Learn how the platform works, find quick answers, and send a support request.
           </p>

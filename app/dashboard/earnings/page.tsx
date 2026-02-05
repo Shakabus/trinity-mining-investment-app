@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import EarningsDisplay from '@/components/dashboard/EarningsDisplay'
 import { autoUpdateEarnings } from '@/lib/earnings'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
 export default async function EarningsPage() {
   const { userId } = await auth()
@@ -56,6 +58,15 @@ export default async function EarningsPage() {
     now,
   })
 
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
+
   const records = updatedRecords.map(record => ({
     id: record.id,
     coinType: record.coinType,
@@ -105,7 +116,7 @@ export default async function EarningsPage() {
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-6">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Earnings</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('earningsTitle')}</h1>
           <p className="text-white/70">Track your daily estimates, totals, and payout history.</p>
         </div>
 

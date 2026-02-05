@@ -2,6 +2,8 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import MiningDashboard from '@/components/dashboard/MiningDashboard'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import Link from 'next/link'
 
 const HASHRATE_UNIT_FACTORS: Record<string, number> = {
@@ -102,6 +104,15 @@ export default async function MiningPage() {
     redirect('/sign-in')
   }
 
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
+
   const miningStats = user.miningStats[0]
 
   // If no active mining
@@ -110,7 +121,7 @@ export default async function MiningPage() {
       <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6 py-6">
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Mining Dashboard</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('miningTitle')}</h1>
             <p className="text-white/70">Monitor your mining operations in real-time</p>
           </div>
 

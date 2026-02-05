@@ -5,6 +5,8 @@ import TradingBotCharts from '@/components/trading/TradingBotCharts'
 import EmptyState from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +29,15 @@ export default async function TradingBotPage() {
     },
   })
 
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
+
   const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
   const activeStats = user?.tradingStats.find(stat => stat.isActive) ?? null
   const seed = (user?.id || 1) * 17
@@ -34,7 +45,7 @@ export default async function TradingBotPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Portfolio Activity</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('tradingPortfolioTitle')}</h1>
         <p className="text-white/70">
           Managed portfolio signals, liquidity flow, and risk-adjusted performance snapshots.
         </p>

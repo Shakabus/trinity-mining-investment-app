@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import PlanCard from '@/components/dashboard/PlanCard'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 
 export default async function PlansPage() {
   const { userId } = await auth()
@@ -55,6 +56,10 @@ export default async function PlansPage() {
     : 'USD'
   const formatMoney = (amountUsd: number) =>
     formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
 
   const plansData = await prisma.plan.findMany({
     where: { status: 'active' },
@@ -147,7 +152,7 @@ export default async function PlansPage() {
         {/* Header Section */}
         <div className="text-left max-w-3xl px-4 pt-2">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4">
-            Mining Plans
+            {t('plansTitle')}
           </h1>
           <p className="text-base md:text-lg text-white/70 leading-relaxed">
             Choose a plan that fits your mining goals. All plans include 24/7 support and automated payouts.

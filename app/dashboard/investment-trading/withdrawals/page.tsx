@@ -7,6 +7,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +37,10 @@ export default async function TradingWithdrawalsPage() {
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
     ? (user?.preferredCurrency as CurrencyCode)
     : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
   const formatMoney = (amountUsd: number) =>
     formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
 
@@ -62,7 +67,7 @@ export default async function TradingWithdrawalsPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Trading Withdrawals</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('tradingWithdrawalsTitle')}</h1>
         <p className="text-white/70">Request withdrawals from your trading earnings.</p>
       </div>
 

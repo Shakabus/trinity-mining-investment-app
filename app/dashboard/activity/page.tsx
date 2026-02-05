@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import EmptyState from '@/components/ui/EmptyState'
 import { Activity } from 'lucide-react'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
 function formatDate(value: Date) {
   return value.toLocaleString()
@@ -29,10 +31,19 @@ export default async function ActivityPage() {
     redirect('/sign-in')
   }
 
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
+
   return (
     <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-6 space-y-6">
       <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Activity</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('activityTitle')}</h1>
         <p className="text-white/70">Your recent account actions and requests.</p>
       </div>
 

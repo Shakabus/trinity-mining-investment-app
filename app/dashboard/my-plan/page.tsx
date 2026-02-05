@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { Calendar, Hash, Zap, TrendingUp, Clock } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 
 export default async function MyPlanPage() {
   const { userId } = await auth()
@@ -39,6 +40,10 @@ export default async function MyPlanPage() {
     : 'USD'
   const formatMoney = (amountUsd: number) =>
     formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
 
   const activePlan = user?.userPlans.find(plan => plan.status === 'active') || null
   const selectedPlan = user?.userPlans.find(plan => plan.status === 'selected') || null
@@ -52,7 +57,7 @@ export default async function MyPlanPage() {
       <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6 py-6">
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">My Plan</h1>
+      <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('myPlanTitle')}</h1>
             <p className="text-white/70">View and manage your current mining plan</p>
           </div>
 

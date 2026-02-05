@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import TradingEarningsCharts from '@/components/trading/TradingEarningsCharts'
 import TradingLiveEarningsCards from '@/components/trading/TradingLiveEarningsCards'
 import { buildTradingSeries, simulateTradingProgress } from '@/lib/trading'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import EmptyState from '@/components/ui/EmptyState'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
@@ -32,6 +34,15 @@ export default async function TradingEarningsPage() {
   const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
   const activeEarning = user?.tradingEarnings.find(earning => earning.isActive) ?? null
   const now = new Date()
+
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
 
   let snapshot = null as null | { dailyEstimateUsd: number; earnedUsd: number }
   if (activePlan) {
@@ -93,7 +104,7 @@ export default async function TradingEarningsPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Trading Earnings</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('tradingEarningsTitle')}</h1>
         <p className="text-white/70">Track trading profit, estimates, and momentum.</p>
       </div>
 

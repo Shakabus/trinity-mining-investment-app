@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
+import { useLanguage } from '@/components/i18n/LanguageProvider'
 
 interface ReferralItem {
   id: number
@@ -62,6 +63,7 @@ export default function ReferralDashboard({
   walletAddresses,
 }: ReferralDashboardProps) {
   const { currency, rates, format, convert } = useCurrency()
+  const { t } = useLanguage()
   const rate = rates[currency] || 1
   const toUsd = (value: number) => (rate ? value / rate : value)
   const [origin, setOrigin] = useState('')
@@ -139,7 +141,7 @@ export default function ReferralDashboard({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Referrals</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('referralsTitle')}</h1>
         <p className="text-white/70">Share your link and earn {bonusPercent}% on first payments.</p>
       </div>
 

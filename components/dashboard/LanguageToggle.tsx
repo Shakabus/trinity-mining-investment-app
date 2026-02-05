@@ -14,7 +14,7 @@ export default function LanguageToggle() {
     setIsSaving(true)
     setStatus(null)
     try {
-      const response = await fetch('/api/user/update-profile', {
+      const response = await fetch('/api/user/update-preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ preferredLanguage: value }),
