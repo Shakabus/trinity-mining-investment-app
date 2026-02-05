@@ -4,6 +4,7 @@ import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { Menu } from 'lucide-react'
 import { useState } from 'react'
+import { useLanguage } from '@/components/i18n/LanguageProvider'
 
 interface DashboardNavProps {
   user: {
@@ -16,6 +17,8 @@ interface DashboardNavProps {
 
 export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
   const [isMounted] = useState(true)
+  const { t } = useLanguage()
+  const statusKey = user?.accountStatus === 'active' ? 'active' : user?.accountStatus === 'pending' ? 'pending' : 'inactive'
 
   return (
     <nav
@@ -49,7 +52,7 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
         <div className="flex items-center gap-3 md:gap-6">
           {/* Account Status Badge */}
           <div className="hidden md:flex items-center gap-2">
-            <span className="text-sm text-white/70">Status:</span>
+            <span className="text-sm text-white/70">{t('status')}:</span>
             <span
               className="px-3 py-1 rounded-full text-xs font-semibold"
               style={{
@@ -74,7 +77,7 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
                     : 'rgba(239, 68, 68, 0.3)',
               }}
             >
-              {user?.accountStatus?.toUpperCase()}
+              {t(statusKey).toUpperCase()}
             </span>
           </div>
 

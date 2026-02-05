@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useLanguage } from '@/components/i18n/LanguageProvider'
 import {
   LayoutDashboard,
   Gem,
@@ -24,26 +25,27 @@ import {
 } from 'lucide-react'
 
 const menuItems = [
-  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Plans', href: '/dashboard/plans', icon: Gem },
-  { name: 'My Plan', href: '/dashboard/my-plan', icon: Package },
-  { name: 'Mining', href: '/dashboard/mining', icon: Pickaxe },
-  { name: 'Earnings', href: '/dashboard/earnings', icon: DollarSign },
+  { name: 'Overview', labelKey: 'overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Plans', labelKey: 'plans', href: '/dashboard/plans', icon: Gem },
+  { name: 'My Plan', labelKey: 'myPlan', href: '/dashboard/my-plan', icon: Package },
+  { name: 'Mining', labelKey: 'mining', href: '/dashboard/mining', icon: Pickaxe },
+  { name: 'Earnings', labelKey: 'earnings', href: '/dashboard/earnings', icon: DollarSign },
   {
     name: 'Investment Trading',
+    labelKey: 'investmentTrading',
     href: '/dashboard/investment-trading',
     icon: Layers,
     children: [
-      { name: 'Plans', href: '/dashboard/investment-trading#plans', icon: Package },
-      { name: 'Portfolio Activity', href: '/dashboard/investment-trading/bot', icon: LineChart },
-      { name: 'Earnings', href: '/dashboard/investment-trading/earnings', icon: LineChart },
-      { name: 'Withdrawals', href: '/dashboard/investment-trading/withdrawals', icon: Wallet },
+      { name: 'Plans', labelKey: 'plans', href: '/dashboard/investment-trading#plans', icon: Package },
+      { name: 'Portfolio Activity', labelKey: 'portfolioActivity', href: '/dashboard/investment-trading/bot', icon: LineChart },
+      { name: 'Earnings', labelKey: 'earnings', href: '/dashboard/investment-trading/earnings', icon: LineChart },
+      { name: 'Withdrawals', labelKey: 'withdrawals', href: '/dashboard/investment-trading/withdrawals', icon: Wallet },
     ],
   },
-  { name: 'Referrals', href: '/dashboard/referrals', icon: Link2 },
-  { name: 'Activity', href: '/dashboard/activity', icon: History },
-  { name: 'Support', href: '/dashboard/support', icon: LifeBuoy },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: 'Referrals', labelKey: 'referrals', href: '/dashboard/referrals', icon: Link2 },
+  { name: 'Activity', labelKey: 'activity', href: '/dashboard/activity', icon: History },
+  { name: 'Support', labelKey: 'support', href: '/dashboard/support', icon: LifeBuoy },
+  { name: 'Settings', labelKey: 'settings', href: '/dashboard/settings', icon: Settings },
 ]
 
 interface DashboardSidebarProps {
@@ -53,6 +55,7 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const { t } = useLanguage()
   const [hash, setHash] = useState('')
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -153,7 +156,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       >
                         <Icon size={18} strokeWidth={2} />
                       </div>
-                      {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                    {!isCollapsed && <span className="font-medium">{t(item.labelKey || item.name)}</span>}
                     </Link>
                     {!isCollapsed && (
                       <button
@@ -200,7 +203,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                             >
                               <ChildIcon size={16} strokeWidth={2} />
                             </div>
-                            <span className="font-medium">{child.name}</span>
+                            <span className="font-medium">{t(child.labelKey || child.name)}</span>
                           </Link>
                         )
                       })}
@@ -236,7 +239,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                 >
                   <Icon size={18} strokeWidth={2} />
                 </div>
-                {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                {!isCollapsed && <span className="font-medium">{t(item.labelKey || item.name)}</span>}
               </Link>
             )
           })}

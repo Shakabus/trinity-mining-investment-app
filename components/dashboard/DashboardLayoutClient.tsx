@@ -4,6 +4,8 @@ import { useState } from 'react'
 import DashboardNav from './DashboardNav'
 import DashboardSidebar from './DashboardSidebar'
 import { CurrencyProvider } from '@/components/currency/CurrencyProvider'
+import { LanguageProvider } from '@/components/i18n/LanguageProvider'
+import type { LanguageCode } from '@/lib/i18n'
 import type { CurrencyCode, FxRates } from '@/lib/forex'
 
 interface DashboardLayoutClientProps {
@@ -14,6 +16,7 @@ interface DashboardLayoutClientProps {
     accountStatus: string
   } | null
   accountStatusOverride?: string
+  preferredLanguage: LanguageCode
   preferredCurrency: CurrencyCode
   rates: FxRates
 }
@@ -22,6 +25,7 @@ export default function DashboardLayoutClient({
   children,
   user,
   accountStatusOverride,
+  preferredLanguage,
   preferredCurrency,
   rates,
 }: DashboardLayoutClientProps) {
@@ -32,6 +36,7 @@ export default function DashboardLayoutClient({
 
   return (
     <CurrencyProvider currency={preferredCurrency} rates={rates}>
+      <LanguageProvider language={preferredLanguage}>
       <div
         className="h-screen overflow-hidden"
         style={{ background: '#000000' }}
@@ -52,6 +57,7 @@ export default function DashboardLayoutClient({
           </div>
         </div>
       </div>
+      </LanguageProvider>
     </CurrencyProvider>
   )
 }

@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { isSupportedCurrency } from '@/lib/forex'
+import { isSupportedLanguage } from '@/lib/i18n'
 
 export async function POST(req: Request) {
   try {
@@ -18,6 +19,9 @@ export async function POST(req: Request) {
     const preferredCurrency = typeof body.preferredCurrency === 'string'
       ? body.preferredCurrency.trim().toUpperCase()
       : 'USD'
+    const preferredLanguage = typeof body.preferredLanguage === 'string'
+      ? body.preferredLanguage.trim().toLowerCase()
+      : undefined
 
     if (fullName.length === 0) {
       return NextResponse.json({ error: 'Full name is required.' }, { status: 400 })
@@ -50,6 +54,9 @@ export async function POST(req: Request) {
     if (!isSupportedCurrency(preferredCurrency)) {
       return NextResponse.json({ error: 'Unsupported currency selection.' }, { status: 400 })
     }
+    if (preferredLanguage && !isSupportedLanguage(preferredLanguage)) {
+      return NextResponse.json({ error: 'Unsupported language selection.' }, { status: 400 })
+    }
 
     const currentUser = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -61,6 +68,7 @@ export async function POST(req: Request) {
         fullName: fullName,
         phone: phone.length > 0 ? phone : null,
         preferredCurrency,
+        preferredLanguage: preferredLanguage || undefined,
       },
     })
 
@@ -74,6 +82,9 @@ export async function POST(req: Request) {
       }
       if ((currentUser.preferredCurrency || 'USD') !== preferredCurrency) {
         changedFields.push('currency')
+      }
+      if (preferredLanguage && (currentUser.preferredLanguage || 'en') !== preferredLanguage) {
+        changedFields.push('language')
       }
 
       if (changedFields.length > 0) {

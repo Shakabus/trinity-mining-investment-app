@@ -3,17 +3,25 @@
 import { useState } from 'react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { SUPPORTED_CURRENCIES, type CurrencyCode } from '@/lib/forex'
+import { SUPPORTED_LANGUAGES, LANGUAGE_LABELS, type LanguageCode } from '@/lib/i18n'
 
 interface AccountSettingsFormProps {
   fullName: string
   phone: string
   preferredCurrency: CurrencyCode
+  preferredLanguage: LanguageCode
 }
 
-export default function AccountSettingsForm({ fullName, phone, preferredCurrency }: AccountSettingsFormProps) {
+export default function AccountSettingsForm({
+  fullName,
+  phone,
+  preferredCurrency,
+  preferredLanguage,
+}: AccountSettingsFormProps) {
   const [nameValue, setNameValue] = useState(fullName)
   const [phoneValue, setPhoneValue] = useState(phone)
   const [currencyValue, setCurrencyValue] = useState<CurrencyCode>(preferredCurrency)
+  const [languageValue, setLanguageValue] = useState<LanguageCode>(preferredLanguage)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -55,6 +63,7 @@ export default function AccountSettingsForm({ fullName, phone, preferredCurrency
           fullName: trimmedName,
           phone: trimmedPhone,
           preferredCurrency: currencyValue,
+          preferredLanguage: languageValue,
         }),
       })
 
@@ -116,6 +125,25 @@ export default function AccountSettingsForm({ fullName, phone, preferredCurrency
         </select>
         <p className="text-xs text-white/50 mt-2">
           All user-side currency values will display in this currency.
+        </p>
+      </div>
+
+      {/* Preferred Language */}
+      <div>
+        <label className="block text-sm font-medium text-white/80 mb-2">Language</label>
+        <select
+          value={languageValue}
+          onChange={event => setLanguageValue(event.target.value as LanguageCode)}
+          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
+        >
+          {SUPPORTED_LANGUAGES.map(code => (
+            <option key={code} value={code} style={{ color: '#000000' }}>
+              {LANGUAGE_LABELS[code]}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-white/50 mt-2">
+          Dashboard labels will update to your selected language.
         </p>
       </div>
 

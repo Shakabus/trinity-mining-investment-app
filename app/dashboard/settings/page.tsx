@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import AccountSettingsForm from '@/components/dashboard/AccountSettingsForm'
 import { isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+import { isSupportedLanguage, type LanguageCode, languageFromCurrency } from '@/lib/i18n'
 
 export default async function SettingsAccountPage() {
   const { userId } = await auth()
@@ -45,6 +46,15 @@ export default async function SettingsAccountPage() {
             isSupportedCurrency(user?.preferredCurrency || '')
               ? (user?.preferredCurrency as CurrencyCode)
               : 'USD'
+          }
+          preferredLanguage={
+            isSupportedLanguage(user?.preferredLanguage || '')
+              ? (user?.preferredLanguage as LanguageCode)
+              : languageFromCurrency(
+                  isSupportedCurrency(user?.preferredCurrency || '')
+                    ? (user?.preferredCurrency as CurrencyCode)
+                    : 'USD'
+                )
           }
         />
 

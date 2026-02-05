@@ -8,6 +8,8 @@ import { simulateTradingProgress } from '@/lib/trading'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
+import LanguageToggle from '@/components/dashboard/LanguageToggle'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 
 import TickerTape from '@/components/dashboard/TickerTape'
 import AdvancedChart from '@/components/dashboard/AdvancedChart'
@@ -98,6 +100,10 @@ export default async function DashboardPage() {
     : 'USD'
   const formatMoney = (amountUsd: number) =>
     formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
 
   const updatedEarnings = user
     ? await autoUpdateEarnings({
@@ -243,13 +249,16 @@ export default async function DashboardPage() {
       {/* All other content gets the page padding (so ticker has no gap and spans full width) */}
       <div className="p-4 md:p-6 lg:p-8 space-y-6">
         {/* Welcome Section */}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-            Welcome back, {user?.fullName || 'there'}! 👋
-          </h1>
-          <p className="text-sm md:text-base text-white/70">
-            Here is an overview of your mining account
-          </p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              {t('welcomeBack')}, {user?.fullName || 'there'}! 👋
+            </h1>
+            <p className="text-sm md:text-base text-white/70">
+              {t('overviewSubtitle')}
+            </p>
+          </div>
+          <LanguageToggle />
         </div>
 
         {/* Account Status Card */}
@@ -261,7 +270,7 @@ export default async function DashboardPage() {
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h2 className="text-lg md:text-xl font-semibold text-white mb-4">Account Status</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-white mb-4">{t('accountStatus')}</h2>
 
           {effectiveAccountStatus === 'inactive' && !hasActivePlans && (
             <div className="space-y-4">
@@ -276,7 +285,7 @@ export default async function DashboardPage() {
                   color: '#ffffff',
                 }}
               >
-                View Mining Plans →
+                {t('viewMiningPlans')} →
               </Link>
             </div>
           )}
@@ -333,7 +342,7 @@ export default async function DashboardPage() {
                       color: '#ffffff',
                     }}
                   >
-                    Upload Mining Proof {'>'}
+                    {t('uploadMiningProof')} {'>'}
                   </Link>
                 )}
                 {hasTradingSelected && (
@@ -345,7 +354,7 @@ export default async function DashboardPage() {
                       color: '#ffffff',
                     }}
                   >
-                    Upload Trading Proof {'>'}
+                    {t('uploadTradingProof')} {'>'}
                   </Link>
                 )}
               </div>

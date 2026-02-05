@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import DashboardLayoutClient from '@/components/dashboard/DashboardLayoutClient'
 import { createUniqueReferralCode, normalizeReferralCode } from '@/lib/referral'
 import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+import { isSupportedLanguage, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 
 export default async function DashboardLayout({
   children,
@@ -75,6 +76,9 @@ export default async function DashboardLayout({
   const preferredCurrency = isSupportedCurrency(user?.preferredCurrency || '')
     ? (user?.preferredCurrency as CurrencyCode)
     : 'USD'
+  const preferredLanguage: LanguageCode = isSupportedLanguage(user?.preferredLanguage || '')
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
   const [hasActiveMining, hasActiveTrading] = user
     ? await Promise.all([
         prisma.userPlan.count({ where: { userId: user.id, status: 'active' } }),
@@ -87,6 +91,7 @@ export default async function DashboardLayout({
     <DashboardLayoutClient
       user={user}
       accountStatusOverride={accountStatusOverride}
+      preferredLanguage={preferredLanguage}
       preferredCurrency={preferredCurrency}
       rates={rates}
     >
