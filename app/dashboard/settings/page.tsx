@@ -16,6 +16,12 @@ export default async function SettingsAccountPage() {
     where: { clerkUserId: userId }
   })
 
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = isSupportedLanguage(user?.preferredLanguage || '')
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
   const t = (key: string) => translate(key, preferredLanguage)
 
   return (
