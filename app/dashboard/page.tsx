@@ -123,6 +123,11 @@ export default async function DashboardPage() {
     0
   )
   let tradingEarningsSource = tradingEarnings
+  let tradingEarningsComputed = tradingEarnings.map(record => ({
+    ...record,
+    totalEarnedUsd: Number(record.totalEarnedUsd || 0),
+    dailyEstimateUsd: Number(record.dailyEstimateUsd || 0),
+  }))
   if (user && activeTradingPlan && activeTradingEarning && !activeTradingEarning.isAdminOverride) {
     const startDate = activeTradingPlan.startDate ?? activeTradingPlan.createdAt ?? now
     const seed = user.id * 13 + activeTradingPlan.id * 7
@@ -151,10 +156,19 @@ export default async function DashboardPage() {
           }
         : record
     )
+    tradingEarningsComputed = tradingEarningsComputed.map(record =>
+      record.id === activeTradingEarning.id
+        ? {
+            ...record,
+            totalEarnedUsd: snapshot.equityUsd,
+            dailyEstimateUsd: snapshot.dailyEstimateUsd,
+          }
+        : record
+    )
   }
 
-  const tradingTotalUsd = tradingEarningsSource
-    ? tradingEarningsSource.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
+  const tradingTotalUsd = tradingEarningsComputed
+    ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
     : 0
   const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
   const completedMiningAvailable = updatedEarnings.some(
@@ -182,8 +196,8 @@ export default async function DashboardPage() {
     const hoursAgo = 23 - index
     const combinedEstimatedDaily =
       estimatedDailyUsd +
-      (tradingEarningsSource.length > 0
-        ? tradingEarningsSource.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0)
+      (tradingEarningsComputed.length > 0
+        ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0)
         : 0)
     const value = Math.max(0, totalEarnedUsd - (combinedEstimatedDaily / 24) * hoursAgo)
     const converted = convertUsd(value, rates, preferredCurrency)
@@ -212,8 +226,8 @@ export default async function DashboardPage() {
 
   const combinedEstimatedDaily =
     estimatedDailyUsd +
-    (tradingEarningsSource.length > 0
-      ? tradingEarningsSource.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0)
+    (tradingEarningsComputed.length > 0
+      ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0)
       : 0)
   const combinedActualDaily = daysActive > 0 ? totalEarnedUsd / daysActive : 0
   const convertedEstimatedDaily = convertUsd(combinedEstimatedDaily, rates, preferredCurrency)
