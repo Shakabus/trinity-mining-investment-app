@@ -205,7 +205,7 @@ export default function EarningsDisplay({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div
-          className="p-6 rounded-3xl"
+          className="p-6 rounded-3xl min-w-0"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',
@@ -213,12 +213,14 @@ export default function EarningsDisplay({
           }}
         >
           <div className="text-sm text-white/60 mb-1">Estimated Daily Earnings</div>
-          <div className="text-2xl font-semibold text-white">{format(totals.dailyUsd)}</div>
+          <div className="text-2xl font-semibold text-white truncate" title={format(totals.dailyUsd)}>
+            {format(totals.dailyUsd)}
+          </div>
           <div className="text-xs text-white/50 mt-2">Based on current hashrate and plan</div>
         </div>
 
         <div
-          className="p-6 rounded-3xl"
+          className="p-6 rounded-3xl min-w-0"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',
@@ -226,14 +228,19 @@ export default function EarningsDisplay({
           }}
         >
           <div className="text-sm text-white/60 mb-1">Total Earned ({currency})</div>
-          <div className="text-2xl font-semibold text-white">{format(liveTotals.totalUsd)}</div>
-          <div className="text-xs text-white/50 mt-2">
+          <div className="text-2xl font-semibold text-white truncate" title={format(liveTotals.totalUsd)}>
+            {format(liveTotals.totalUsd)}
+          </div>
+          <div
+            className="text-xs text-white/50 mt-2 truncate"
+            title={`Withdrawable: ${format(totals.withdrawableUsd)} | Pending release: ${format(totals.lockedUsd)}`}
+          >
             Withdrawable: {format(totals.withdrawableUsd)} | Pending release: {format(totals.lockedUsd)}
           </div>
         </div>
 
         <div
-          className="p-6 rounded-3xl"
+          className="p-6 rounded-3xl min-w-0"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',

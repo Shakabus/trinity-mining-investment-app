@@ -81,7 +81,9 @@ export default async function TradingWithdrawalsPage() {
               }}
             >
               <div className="text-xs text-white/60">Available Balance</div>
-              <div className="text-2xl font-semibold text-white">{formatMoney(availableUsd)}</div>
+              <div className="text-2xl font-semibold text-white truncate" title={formatMoney(availableUsd)}>
+                {formatMoney(availableUsd)}
+              </div>
               <div className="text-xs text-white/50">Minimum withdrawal: {formatMoney(minWithdrawalUsd)}</div>
             </div>
           </div>

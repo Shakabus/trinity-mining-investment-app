@@ -42,7 +42,7 @@ export default function TradingLiveEarningsCards({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div
-        className="p-4 rounded-2xl"
+        className="p-4 rounded-2xl min-w-0"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
@@ -53,10 +53,12 @@ export default function TradingLiveEarningsCards({
           <DollarSign size={16} />
           <span>Total Earned</span>
         </div>
-        <div className="text-xl font-bold text-white">{format(snapshot.earnedUsd)}</div>
+        <div className="text-xl font-bold text-white truncate" title={format(snapshot.earnedUsd)}>
+          {format(snapshot.earnedUsd)}
+        </div>
       </div>
       <div
-        className="p-4 rounded-2xl"
+        className="p-4 rounded-2xl min-w-0"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
@@ -67,10 +69,12 @@ export default function TradingLiveEarningsCards({
           <Activity size={16} />
           <span>Daily Estimate</span>
         </div>
-        <div className="text-xl font-bold text-white">{format(snapshot.dailyEstimateUsd)}</div>
+        <div className="text-xl font-bold text-white truncate" title={format(snapshot.dailyEstimateUsd)}>
+          {format(snapshot.dailyEstimateUsd)}
+        </div>
       </div>
       <div
-        className="p-4 rounded-2xl"
+        className="p-4 rounded-2xl min-w-0"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
@@ -81,7 +85,9 @@ export default function TradingLiveEarningsCards({
           <TrendingUp size={16} />
           <span>Expected Return</span>
         </div>
-        <div className="text-xl font-bold text-white">{format(expectedReturnUsd)}</div>
+        <div className="text-xl font-bold text-white truncate" title={format(expectedReturnUsd)}>
+          {format(expectedReturnUsd)}
+        </div>
       </div>
     </div>
   )

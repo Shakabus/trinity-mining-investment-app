@@ -191,7 +191,7 @@ export default async function DashboardPage() {
 
         {/* Account Status Card */}
         <div
-          className="p-4 md:p-6 rounded-3xl"
+          className="p-4 md:p-6 rounded-3xl min-w-0"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',
@@ -379,7 +379,7 @@ export default async function DashboardPage() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
           <div
-            className="p-4 md:p-6 rounded-3xl"
+            className="p-4 md:p-6 rounded-3xl min-w-0"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
               backdropFilter: 'blur(20px)',
@@ -395,7 +395,7 @@ export default async function DashboardPage() {
           </div>
 
           <div
-            className="p-4 md:p-6 rounded-3xl"
+            className="p-4 md:p-6 rounded-3xl min-w-0"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
               backdropFilter: 'blur(20px)',
@@ -403,18 +403,21 @@ export default async function DashboardPage() {
             }}
           >
             <div className="text-xs md:text-sm text-white/60 mb-2">Total Earned</div>
-            <div className="text-lg md:text-2xl font-bold text-white">
+            <div className="text-lg md:text-2xl font-bold text-white truncate" title={formatMoney(totalEarnedUsd)}>
               {formatMoney(totalEarnedUsd)}
             </div>
             {pendingReleaseUsd > 0 && (
-              <div className="text-xs text-blue-200 mt-2">
+              <div
+                className="text-xs text-blue-200 mt-2 truncate"
+                title={`Pending system release: ${formatMoney(pendingReleaseUsd)}`}
+              >
                 Pending system release: {formatMoney(pendingReleaseUsd)}
               </div>
             )}
           </div>
 
           <div
-            className="p-4 md:p-6 rounded-3xl"
+            className="p-4 md:p-6 rounded-3xl min-w-0"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
               backdropFilter: 'blur(20px)',
@@ -422,13 +425,13 @@ export default async function DashboardPage() {
             }}
           >
             <div className="text-xs md:text-sm text-white/60 mb-2">Mining Earned</div>
-            <div className="text-lg md:text-2xl font-bold text-white">
+            <div className="text-lg md:text-2xl font-bold text-white truncate" title={formatMoney(miningEarnedUsd)}>
               {formatMoney(miningEarnedUsd)}
             </div>
           </div>
 
           <div
-            className="p-4 md:p-6 rounded-3xl"
+            className="p-4 md:p-6 rounded-3xl min-w-0"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
               backdropFilter: 'blur(20px)',
@@ -436,13 +439,13 @@ export default async function DashboardPage() {
             }}
           >
             <div className="text-xs md:text-sm text-white/60 mb-2">Trading Earned</div>
-            <div className="text-lg md:text-2xl font-bold text-white">
+            <div className="text-lg md:text-2xl font-bold text-white truncate" title={formatMoney(tradingTotalUsd)}>
               {formatMoney(tradingTotalUsd)}
             </div>
           </div>
 
           <div
-            className="p-4 md:p-6 rounded-3xl"
+            className="p-4 md:p-6 rounded-3xl min-w-0"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
               backdropFilter: 'blur(20px)',
@@ -456,7 +459,7 @@ export default async function DashboardPage() {
           </div>
 
           <div
-            className="p-4 md:p-6 rounded-3xl"
+            className="p-4 md:p-6 rounded-3xl min-w-0"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
               backdropFilter: 'blur(20px)',
@@ -473,7 +476,7 @@ export default async function DashboardPage() {
 
         {/* Quick Actions */}
         <div
-          className="p-4 md:p-6 rounded-3xl"
+          className="p-4 md:p-6 rounded-3xl min-w-0"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',

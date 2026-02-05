@@ -191,7 +191,7 @@ export default function ReferralDashboard({
         ].map(item => (
           <div
             key={item.label}
-            className="p-5 rounded-3xl"
+            className="p-5 rounded-3xl min-w-0"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
               backdropFilter: 'blur(20px)',
@@ -199,7 +199,9 @@ export default function ReferralDashboard({
             }}
           >
             <div className="text-sm text-white/60 mb-1">{item.label}</div>
-            <div className="text-2xl font-semibold text-white">{item.value}</div>
+            <div className="text-2xl font-semibold text-white truncate" title={item.value}>
+              {item.value}
+            </div>
           </div>
         ))}
       </div>

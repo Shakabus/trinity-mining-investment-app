@@ -46,7 +46,7 @@ export default function TradingLiveOverviewCards({
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div
-        className="p-4 rounded-2xl"
+        className="p-4 rounded-2xl min-w-0"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
@@ -58,7 +58,7 @@ export default function TradingLiveOverviewCards({
         <div className="text-xs text-white/50 mt-1">{statusLabel}</div>
       </div>
       <div
-        className="p-4 rounded-2xl"
+        className="p-4 rounded-2xl min-w-0"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
@@ -69,10 +69,12 @@ export default function TradingLiveOverviewCards({
           <Hash size={16} />
           <span>Portfolio Equity</span>
         </div>
-        <div className="text-xl font-bold text-white">{format(snapshot.equityUsd)}</div>
+        <div className="text-xl font-bold text-white truncate" title={format(snapshot.equityUsd)}>
+          {format(snapshot.equityUsd)}
+        </div>
       </div>
       <div
-        className="p-4 rounded-2xl"
+        className="p-4 rounded-2xl min-w-0"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
@@ -83,10 +85,12 @@ export default function TradingLiveOverviewCards({
           <TrendingUp size={16} />
           <span>Realized P/L</span>
         </div>
-        <div className="text-xl font-bold text-white">{format(snapshot.pnlUsd)}</div>
+        <div className="text-xl font-bold text-white truncate" title={format(snapshot.pnlUsd)}>
+          {format(snapshot.pnlUsd)}
+        </div>
       </div>
       <div
-        className="p-4 rounded-2xl"
+        className="p-4 rounded-2xl min-w-0"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
