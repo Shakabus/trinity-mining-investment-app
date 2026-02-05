@@ -122,7 +122,6 @@ export default async function DashboardPage() {
     (sum, record) => sum + (record.isHistorical ? 0 : Number(record.dailyEstimateUsd || 0)),
     0
   )
-  let tradingEarningsSource = tradingEarnings
   let tradingEarningsComputed = tradingEarnings.map(record => ({
     ...record,
     totalEarnedUsd: Number(record.totalEarnedUsd || 0),
@@ -147,15 +146,6 @@ export default async function DashboardPage() {
         lastCalculatedAt: now,
       },
     })
-    tradingEarningsSource = tradingEarnings.map(record =>
-      record.id === activeTradingEarning.id
-        ? {
-            ...record,
-            totalEarnedUsd: snapshot.equityUsd,
-            dailyEstimateUsd: snapshot.dailyEstimateUsd,
-          }
-        : record
-    )
     tradingEarningsComputed = tradingEarningsComputed.map(record =>
       record.id === activeTradingEarning.id
         ? {
