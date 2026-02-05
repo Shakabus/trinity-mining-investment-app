@@ -67,7 +67,8 @@ export async function getFxRates(): Promise<FxRates> {
 }
 
 export function convertUsd(amountUsd: number, rates: FxRates, currency: CurrencyCode) {
-  const rate = rates[currency] ?? 1
+  const raw = rates[currency]
+  const rate = raw && raw > 0 ? raw : 1
   return amountUsd * rate
 }
 
