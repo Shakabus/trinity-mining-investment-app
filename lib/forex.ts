@@ -43,11 +43,7 @@ export async function getFxRates(): Promise<FxRates> {
   }
 
   try {
-    const symbols = SUPPORTED_CURRENCIES.join(',')
-    const res = await fetch(
-      `https://api.exchangerate.host/latest?base=USD&symbols=${symbols}`,
-      { cache: 'no-store' }
-    )
+    const res = await fetch('https://open.er-api.com/v6/latest/USD', { cache: 'no-store' })
     if (!res.ok) {
       throw new Error('FX fetch failed')
     }
