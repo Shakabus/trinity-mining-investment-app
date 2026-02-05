@@ -64,14 +64,26 @@ export default async function DashboardPage() {
   })
 
   const tradingEarnings = user ? await prisma.tradingEarning.findMany({
-    where: { userId: user.id, isActive: true },
+    where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
   }) : []
 
   const currentPlan = user?.userPlans[0]
   const tradingPlan = user?.tradingPlans?.[0] ?? null
-  const activeMiningPlan = user?.userPlans.find(plan => plan.status === 'active') ?? null
-  const activeTradingPlan = user?.tradingPlans?.find(plan => plan.status === 'active') ?? null
+  const activeMiningPlan = user
+    ? await prisma.userPlan.findFirst({
+        where: { userId: user.id, status: 'active' },
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    : null
+  const activeTradingPlan = user
+    ? await prisma.tradingUserPlan.findFirst({
+        where: { userId: user.id, status: 'active' },
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    : null
   const hasMiningSelected = currentPlan?.status === 'selected'
   const hasTradingSelected = tradingPlan?.status === 'selected'
   const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
@@ -118,6 +130,7 @@ export default async function DashboardPage() {
   const completedTradingPlan = user?.tradingPlans?.find(plan => plan.status === 'completed') ?? null
   const completedTradingAvailable = Boolean(completedTradingPlan && tradingEarnings.length > 0)
   const hasActivePlans = Boolean(activeMiningPlan || activeTradingPlan)
+  const effectiveAccountStatus = hasActivePlans ? 'active' : (user?.accountStatus ?? 'inactive')
   const daysActiveDates = [
     activeMiningPlan?.startDate ?? activeMiningPlan?.createdAt ?? null,
     activeMining?.createdAt ?? null,
@@ -127,7 +140,7 @@ export default async function DashboardPage() {
     ? new Date(Math.min(...daysActiveDates.map(date => date.getTime())))
     : null
   const daysActive =
-    user?.accountStatus === 'active' && daysActiveStart
+    effectiveAccountStatus === 'active' && daysActiveStart
       ? Math.max(1, Math.floor((now.getTime() - new Date(daysActiveStart).getTime()) / (1000 * 60 * 60 * 24)) + 1)
       : 0
   const actualDailyUsd = daysActive > 0 ? totalEarnedUsd / daysActive : 0
@@ -200,7 +213,7 @@ export default async function DashboardPage() {
         >
           <h2 className="text-lg md:text-xl font-semibold text-white mb-4">Account Status</h2>
 
-          {user?.accountStatus === 'inactive' && !hasActivePlans && (
+          {effectiveAccountStatus === 'inactive' && !hasActivePlans && (
             <div className="space-y-4">
               <p className="text-sm md:text-base text-white/80">
                 Your account is ready! Get started by selecting a mining plan.
@@ -218,7 +231,7 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {user?.accountStatus === 'pending' && (
+          {!hasActivePlans && user?.accountStatus === 'pending' && (
             <div className="space-y-4">
               <p className="text-sm md:text-base text-white/80">
                 Your payment is being processed. You will be notified once your mining plan is activated.
