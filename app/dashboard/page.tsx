@@ -7,6 +7,7 @@ import { autoUpdateEarnings } from '@/lib/earnings'
 import { simulateTradingProgress } from '@/lib/trading'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+import type { TradingEarning } from '@prisma/client'
 
 import TickerTape from '@/components/dashboard/TickerTape'
 import AdvancedChart from '@/components/dashboard/AdvancedChart'
@@ -122,7 +123,11 @@ export default async function DashboardPage() {
     (sum, record) => sum + (record.isHistorical ? 0 : Number(record.dailyEstimateUsd || 0)),
     0
   )
-  let tradingEarningsComputed = tradingEarnings.map(record => ({
+  type TradingEarningComputed = Omit<TradingEarning, 'totalEarnedUsd' | 'dailyEstimateUsd'> & {
+    totalEarnedUsd: number
+    dailyEstimateUsd: number
+  }
+  let tradingEarningsComputed: TradingEarningComputed[] = tradingEarnings.map(record => ({
     ...record,
     totalEarnedUsd: Number(record.totalEarnedUsd || 0),
     dailyEstimateUsd: Number(record.dailyEstimateUsd || 0),
