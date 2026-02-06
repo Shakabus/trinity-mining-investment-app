@@ -100,10 +100,16 @@ export default function HomePage() {
 
         <section className="mt-20 space-y-6">
           <h2 className="text-3xl font-semibold">Watchlist</h2>
-          <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl">
-            <div className="h-[520px] md:h-[620px]">
-              <TradingViewWidget />
-            </div>
+          <div
+            className="w-full rounded-3xl p-4 md:p-6"
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <TradingViewWidget />
           </div>
         </section>
       </main>
