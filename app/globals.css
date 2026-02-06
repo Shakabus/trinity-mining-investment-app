@@ -330,3 +330,25 @@ a[aria-disabled="true"],
 .animate-float-fast {
   animation: floatUpDown 4s ease-in-out infinite;
 }
+
+.tradingview-widget-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tradingview-widget-container__widget {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.tradingview-widget-copyright {
+  padding-top: 8px;
+  font-size: 12px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+}
