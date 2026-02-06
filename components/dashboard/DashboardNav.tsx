@@ -2,7 +2,6 @@
 
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import Image from 'next/image'
 import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
@@ -43,14 +42,9 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
 
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
-            <Image
-              src="/logo-trinity.png"
-              alt="Trinity"
-              width={160}
-              height={44}
-              className="h-7 w-auto md:h-9"
-              priority
-            />
+            <div className="text-lg md:text-2xl font-bold text-white">
+              Trinity Mining
+            </div>
           </Link>
         </div>
 
