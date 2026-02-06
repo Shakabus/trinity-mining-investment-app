@@ -271,8 +271,9 @@ export default async function DashboardPage() {
           }}
         >
           <h2 className="text-lg md:text-xl font-semibold text-white mb-4">{t('accountStatus')}</h2>
-
-          {effectiveAccountStatus === 'inactive' && !hasActivePlans && (
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="flex-1 min-w-0 space-y-4">
+            {effectiveAccountStatus === 'inactive' && !hasActivePlans && (
             <div className="space-y-4">
               <p className="text-sm md:text-base text-white/80">{t('accountReadyMessage')}</p>
               <Link
@@ -301,9 +302,10 @@ export default async function DashboardPage() {
               </Link>
             </div>
           )}
+            </div>
 
           {(hasMiningSelected || hasTradingSelected) && user?.accountStatus !== 'pending' && (
-            <div className="space-y-4">
+            <div className="w-full lg:w-80 xl:w-96 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 {hasMiningSelected && (
                   <span
@@ -358,6 +360,8 @@ export default async function DashboardPage() {
               </div>
             </div>
           )}
+
+          </div>
 
           {(completedMiningAvailable || completedTradingAvailable) && (
             <div
