@@ -28,11 +28,11 @@ interface PaymentInstructionsProps {
 
 // Wallet addresses for different cryptocurrencies
 const WALLET_ADDRESSES = {
-  BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0emh',
-  ETH: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-  LTC: 'LdP8Qox1VAhCzLJNqrr74YovaWYyNBUWvL',
-  USDT: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
-  MULTI: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0emh' // Default to BTC for multi-asset
+  BTC: 'bc1q76ztuupz9sycs3hf0l8q0t3mt5j78rxr29cwv4',
+  ETH: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
+  USDT: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
+  SOL: '54fnCmk1gLDhtzDcd8xt7ar4YKKu9sJqqwyXNoDZMpw8',
+  MULTI: 'bc1q76ztuupz9sycs3hf0l8q0t3mt5j78rxr29cwv4' // Default to BTC for multi-asset
 }
 
 export default function PaymentInstructions({ plan }: PaymentInstructionsProps) {
@@ -58,7 +58,7 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
   }
 
   const cryptoOptions = plan.coinType === 'MULTI' 
-    ? ['BTC', 'ETH', 'LTC', 'USDT'] 
+    ? ['BTC', 'ETH', 'USDT', 'SOL'] 
     : [plan.coinType]
 
   useEffect(() => {
@@ -72,12 +72,16 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
     if (!trimmed) return 'Transaction ID is required.'
     const isHex64 = /^[a-fA-F0-9]{64}$/.test(trimmed)
     const isEthTx = /^0x[a-fA-F0-9]{64}$/.test(trimmed)
+    const isSolTx = trimmed.length >= 32
     const coin = selectedCrypto
     if (coin === 'ETH' || coin === 'USDT') {
       return isEthTx ? null : 'ETH/USDT TXID must start with 0x and be 66 characters total.'
     }
-    if (coin === 'BTC' || coin === 'LTC') {
-      return isHex64 ? null : `${coin} TXID must be 64 hex characters.`
+    if (coin === 'BTC') {
+      return isHex64 ? null : 'BTC TXID must be 64 hex characters.'
+    }
+    if (coin === 'SOL') {
+      return isSolTx ? null : 'SOL transaction signature must be at least 32 characters.'
     }
     return isHex64 || isEthTx ? null : 'TXID format looks invalid.'
   }
@@ -277,9 +281,25 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
             <div>
               <h3 className="text-white font-semibold mb-2">Network Information:</h3>
               <div className="space-y-2 text-sm text-white/70">
-                <p>• Network: {selectedCrypto === 'USDT' ? 'ERC-20 (Ethereum)' : selectedCrypto}</p>
+                <p>
+                  • Network:{' '}
+                  {selectedCrypto === 'USDT'
+                    ? 'ERC-20 (Ethereum)'
+                    : selectedCrypto === 'ETH'
+                    ? 'Ethereum'
+                    : selectedCrypto === 'SOL'
+                    ? 'Solana'
+                    : 'Bitcoin'}
+                </p>
                 <p>• Amount: {format(plan.finalPrice)} equivalent in {selectedCrypto}</p>
-                <p>• Minimum Confirmations: {selectedCrypto === 'BTC' ? '3' : selectedCrypto === 'ETH' ? '12' : '6'}</p>
+                <p>
+                  • Minimum Confirmations:{' '}
+                  {selectedCrypto === 'BTC'
+                    ? '3'
+                    : selectedCrypto === 'ETH' || selectedCrypto === 'USDT'
+                    ? '12'
+                    : '6'}
+                </p>
               </div>
             </div>
           </div>
