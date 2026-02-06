@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import TradingOverviewCharts from '@/components/trading/TradingOverviewCharts'
+import TradingViewWidget from '@/components/trading/TradingViewWidget'
 import TradingPlanCard from '@/components/trading/TradingPlanCard'
 import TradingSectionObserver from '@/components/trading/TradingSectionObserver'
 import { buildAllocationSeries, simulateTradingProgress } from '@/lib/trading'
@@ -305,6 +306,17 @@ export default async function TradingInvestmentPage() {
           }
         />
       )}
+
+      <div
+        className="w-full rounded-3xl p-4 md:p-6"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+        }}
+      >
+        <TradingViewWidget />
+      </div>
 
       <section id="plans" className="space-y-6">
         <div>
