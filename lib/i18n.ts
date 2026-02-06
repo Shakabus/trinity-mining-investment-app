@@ -1,6 +1,6 @@
-﻿export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'zh' | 'ja' | 'hi' | 'ar'
+﻿export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt'
 
-export const SUPPORTED_LANGUAGES: LanguageCode[] = ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'hi', 'ar']
+export const SUPPORTED_LANGUAGES: LanguageCode[] = ['en', 'es', 'fr', 'de', 'it', 'pt']
 
 export const LANGUAGE_LABELS: Record<LanguageCode, string> = {
   en: 'English',
@@ -9,10 +9,6 @@ export const LANGUAGE_LABELS: Record<LanguageCode, string> = {
   de: 'German',
   it: 'Italian',
   pt: 'Portuguese (BR)',
-  zh: 'Chinese',
-  ja: 'Japanese',
-  hi: 'Hindi',
-  ar: 'Arabic',
 }
 
 export function isSupportedLanguage(value: string): value is LanguageCode {
@@ -22,10 +18,7 @@ export function isSupportedLanguage(value: string): value is LanguageCode {
 export function languageFromCurrency(currency: string): LanguageCode {
   const code = currency.toUpperCase()
   if (code === 'EUR') return 'fr'
-  if (code === 'JPY') return 'ja'
   if (code === 'CHF') return 'de'
-  if (code === 'CNY') return 'zh'
-  if (code === 'INR') return 'hi'
   if (code === 'BRL') return 'pt'
   return 'en'
 }
@@ -2533,14 +2526,11 @@ const DICTIONARY: Record<LanguageCode, Dictionary> = {
   de: DE,
   it: IT,
   pt: PT,
-  zh: ZH,
-  ja: JA,
-  hi: HI,
-  ar: AR,
 }
 
 export function translate(key: string, lang: LanguageCode) {
   return DICTIONARY[lang]?.[key] ?? DICTIONARY.en[key] ?? key
 }
+
 
 
