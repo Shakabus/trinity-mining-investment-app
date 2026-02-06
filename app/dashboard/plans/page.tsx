@@ -2,6 +2,8 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import PlanCard from '@/components/dashboard/PlanCard'
+import Link from 'next/link'
+import { Clock } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 
@@ -33,6 +35,16 @@ export default async function PlansPage() {
           upgradeFromPlanId: { not: null },
         },
         include: { plan: true },
+      })
+    : null
+  const pendingSelection = user
+    ? await prisma.userPlan.findFirst({
+        where: {
+          userId: user.id,
+          status: { in: ['selected', 'awaiting_payment'] },
+          upgradeFromPlanId: null,
+        },
+        orderBy: { createdAt: 'desc' },
       })
     : null
   const now = new Date()
@@ -158,6 +170,44 @@ export default async function PlansPage() {
             {t('plansDescription')}
           </p>
         </div>
+
+        {pendingSelection && (
+          <div
+            className="mx-4 p-4 rounded-2xl text-sm"
+            style={{
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '1px solid rgba(234, 179, 8, 0.3)',
+              color: '#fde047',
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <Clock size={18} className="text-yellow-300 shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold">
+                  {pendingSelection.status === 'selected'
+                    ? t('proofNotSubmittedTitle')
+                    : t('paymentPendingTitle')}
+                </div>
+                <div className="text-yellow-200/80 mt-1">
+                  {pendingSelection.status === 'selected'
+                    ? t('proofNotSubmittedBody')
+                    : t('paymentPendingBody')}
+                </div>
+                <Link
+                  href="/dashboard/payment?verify=1"
+                  className="inline-flex mt-3 items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold"
+                  style={{
+                    background: 'rgba(234, 179, 8, 0.2)',
+                    border: '1px solid rgba(234, 179, 8, 0.4)',
+                    color: '#fde047',
+                  }}
+                >
+                  {t('uploadPaymentProof')}
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {pendingUpgrade && (
           <div
