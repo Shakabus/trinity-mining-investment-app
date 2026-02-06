@@ -426,6 +426,262 @@ const ES: Dictionary = {
   recentRequestsTitle: 'Solicitudes recientes',
 }
 
+const FR: Dictionary = {
+  status: 'Statut',
+  active: 'Actif',
+  pending: 'En attente',
+  inactive: 'Inactif',
+  overview: 'Aperçu',
+  plans: 'Plans',
+  myPlan: 'Mon plan',
+  mining: 'Minage',
+  earnings: 'Gains',
+  investmentTrading: "Trading d'investissement",
+  portfolioActivity: 'Activité du portefeuille',
+  withdrawals: 'Retraits',
+  referrals: 'Parrainages',
+  activity: 'Activité',
+  support: 'Support',
+  settings: 'Paramètres',
+  accountStatus: 'Statut du compte',
+  viewMiningPlans: 'Voir les plans de minage',
+  uploadMiningProof: 'Téléverser la preuve de minage',
+  uploadTradingProof: 'Téléverser la preuve de trading',
+  welcomeBack: 'Bon retour',
+  overviewSubtitle: 'Voici un résumé de votre compte de minage',
+  language: 'Langue',
+  performanceAnalytics: 'Analyses de performance',
+  earningsOverTime: 'Gains dans le temps',
+  hashrateStability: 'Stabilité du hashrate',
+  sharesHistory: 'Historique des shares',
+  estimatedVsActual: 'Estimé vs Réel',
+  estimated: 'Estimé',
+  actual: 'Réel',
+  accountInformation: 'Informations du compte',
+  emailAddress: 'Adresse e-mail',
+  memberSince: 'Membre depuis',
+  activeSessions: 'Sessions actives',
+  plansTitle: 'Plans',
+  myPlanTitle: 'Mon plan',
+  miningTitle: 'Minage',
+  earningsTitle: 'Gains',
+  referralsTitle: 'Parrainages',
+  activityTitle: 'Activité',
+  supportTitle: 'Support',
+  settingsTitle: 'Paramètres',
+  tradingTitle: "Trading d'investissement",
+  tradingEarningsTitle: 'Gains de trading',
+  tradingWithdrawalsTitle: 'Retraits de trading',
+  tradingPortfolioTitle: 'Activité du portefeuille',
+  activitySubtitle: 'Vos actions et demandes récentes.',
+  activityEmptyTitle: 'Aucune activité pour le moment',
+  activityEmptyDescription:
+    'Vos actions apparaîtront ici lorsque vous gérerez des plans, retraits et paramètres.',
+  activityTableDate: 'Date',
+  activityTableAction: 'Action',
+  activityTableDetails: 'Détails',
+  supportIntro:
+    'Apprenez comment la plateforme fonctionne, trouvez des réponses et envoyez une demande.',
+  supportHowItWorksTitle: 'Comment ça marche',
+  supportFaqTitle: 'Questions fréquentes',
+  howPlansTitle: 'Plans et activation',
+  howPlansBody:
+    'Les plans définissent votre hashrate assigné, la durée et les actifs pris en charge. Après avoir choisi un plan, suivez les instructions et téléversez votre preuve lorsque vous êtes prêt.',
+  howMiningTitle: 'Performance de minage',
+  howMiningBody:
+    'Votre hashrate reste proche du maximum assigné, avec de légères variations. Les shares et les gains se mettent à jour au fil de l’activité.',
+  howEarningsTitle: 'Gains et paiements',
+  howEarningsBody:
+    'Les estimations quotidiennes sont calculées automatiquement sauf en cas d’ajustement manuel. Les retraits sont des demandes examinées avant traitement.',
+  howUpgradesTitle: 'Mises à niveau et historique',
+  howUpgradesBody:
+    'Les mises à niveau appliquent un crédit pour le temps non utilisé du plan actuel. Vos gains précédents restent visibles et peuvent être libérés selon les règles.',
+  faq1Q: 'Comment commencer à miner ?',
+  faq1A:
+    'Choisissez un plan, effectuez le paiement et attendez la confirmation. Une fois confirmé, votre tableau de bord commencera à enregistrer le hashrate, les shares et les gains.',
+  faq2Q: 'Pourquoi mes estimations changent-elles ?',
+  faq2A:
+    'Les estimations s’ajustent en fonction du hashrate assigné, du temps actif et des conditions du réseau. Le système les met à jour selon un calendrier.',
+  faq3Q: 'Qu’est-ce qu’un retrait en attente ?',
+  faq3A:
+    'En attente signifie que votre demande a été reçue et attend son traitement. Lorsqu’elle est traitée, le statut est mis à jour.',
+  faq4Q: 'Comment fonctionnent les mises à niveau de plan ?',
+  faq4A:
+    'Lors d’une mise à niveau, la valeur restante du plan actuel est créditée sur le nouveau. Vos gains antérieurs sont conservés et affichés comme historiques.',
+  faq5Q: 'Pourquoi vois-je des gains historiques ?',
+  faq5A:
+    'Ils proviennent de plans précédents et restent visibles après une mise à niveau. Ils peuvent être débloqués et retirés lorsque la période est remplie.',
+  faq6Q: 'Comment mettre à jour mon adresse de portefeuille ?',
+  faq6A:
+    'Allez dans Paramètres, saisissez les adresses correctes et enregistrez. Vérifiez le format avant de sauvegarder.',
+  plansDescription:
+    'Choisissez un plan adapté à vos objectifs. Tous incluent le support 24/7 et des paiements automatisés.',
+  upgradePendingPayment:
+    'Mise à niveau avec paiement en attente. Votre plan actuel reste actif jusqu’à confirmation.',
+  upgradeCreditNote:
+    'Le crédit de mise à niveau est basé sur le temps restant. Crédit estimé : {amount}.',
+  noPlansTitle: 'Aucun plan disponible',
+  noPlansBody:
+    'Les plans sont en cours de configuration. Revenez bientôt !',
+  unknownPlan: 'Plan inconnu',
+  myPlanSubtitle: 'Consultez et gérez votre plan de minage actuel',
+  noActivePlanTitle: 'Aucun plan actif',
+  noActivePlanBody:
+    'Vous n’avez pas encore choisi de plan de minage. Sélectionnez-en un pour commencer à gagner !',
+  browsePlans: 'Voir les plans',
+  myPlanManageSubtitle: 'Gérez votre plan de minage actuel',
+  upgradePendingTitle: 'Mise à niveau en attente de paiement',
+  upgradePendingBody:
+    'Votre plan actuel reste actif jusqu’à confirmation du paiement.',
+  uploadUpgradeProof: 'Téléverser la preuve de mise à niveau',
+  selectedPlan: 'Plan sélectionné',
+  paymentDetails: 'Détails de paiement',
+  paymentInstruction:
+    'Envoyez le montant requis à l’adresse fournie. Téléversez la preuve pour passer en revue.',
+  paymentNetwork: 'Réseau',
+  paymentWallet: 'Adresse du portefeuille',
+  paymentAmount: 'Montant à envoyer',
+  paymentConfirmations: 'Confirmations',
+  paymentProof: 'Preuve de paiement',
+  paymentReceipt: 'Reçu / Capture',
+  paymentTxid: 'TXID / Hash',
+  paymentSubmit: 'Soumettre la preuve',
+  paymentSubmitting: 'Soumission...',
+  paymentSubmitted: 'Preuve soumise',
+  paymentApproved: 'Paiement approuvé',
+  paymentRejected: 'Paiement refusé',
+  paymentAwaitingApproval: 'En attente d’approbation',
+  paymentUploadHint:
+    'Formats acceptés : PDF, PNG, JPG. Assurez-vous que le TXID est visible.',
+  paymentProofRequired: 'Une preuve de paiement est requise.',
+  paymentTxidRequired: 'Le TXID est requis.',
+  paymentError: 'Échec de l’envoi de la preuve.',
+  paymentSuccess:
+    'Preuve envoyée. Votre demande est en cours de traitement.',
+  totalEarned: 'Total des gains',
+  miningEarned: 'Gains de minage',
+  tradingEarned: "Gains d'investissement",
+  dailyEstimate: 'Estimation quotidienne',
+  availableToWithdraw: 'Disponible pour retrait',
+  pendingRelease: 'Libération du système en attente',
+  miningStatus: 'Statut du minage',
+  miningHashrate: 'Hashrate',
+  miningTotalHashes: 'Hashes totaux',
+  miningShares: 'Shares valides',
+  miningEarnings: 'Gains de minage',
+  miningDailyEstimate: 'Estimation quotidienne',
+  miningNextPayout: 'Prochain paiement',
+  tradingEquity: 'Valeur du portefeuille',
+  tradingPnl: 'P/L réalisé',
+  tradingWinRate: 'Taux de réussite',
+  tradingOpenPositions: 'Positions ouvertes',
+  tradingAllocationMix: 'Répartition des actifs',
+  tradingStrategyScorecards: 'Scores de stratégie',
+  tradingMarketActivity: 'Activité du marché',
+  tradingEarningsSubtitle:
+    "Consultez les gains d'investissement et la disponibilité des retraits.",
+  tradingWithdrawalsSubtitle:
+    'Gérez les demandes de retrait et l’historique des paiements.',
+  tradingAvailableWithdraw: 'Disponible pour retrait',
+  tradingPendingWithdraw: 'En attente',
+  tradingMinimumWithdraw: 'Retrait minimum',
+  tradingRequestWithdraw: 'Demander un retrait',
+  withdrawAmount: 'Montant du retrait',
+  withdrawMethod: 'Méthode de retrait',
+  withdrawWallet: 'Adresse du portefeuille',
+  withdrawSubmit: 'Soumettre le retrait',
+  withdrawSubmitting: 'Soumission...',
+  withdrawSubmitted: 'Demande de retrait envoyée.',
+  withdrawFailed: "Échec de l'envoi de la demande.",
+  withdrawMin: 'Le retrait minimum est {amount}.',
+  withdrawExceeds: 'Le montant dépasse le solde disponible.',
+  noWithdrawalsYet: 'Aucun retrait pour le moment.',
+  notAvailable: 'Non disponible',
+  withdrawValidAmount: 'Entrez un montant valide.',
+  walletMissing: 'Ajoutez l’adresse {coin}.',
+  referralAmountExceeds:
+    'Le montant dépasse le solde disponible des parrainages.',
+  referralWithdrawalSubmitted:
+    'Retrait de parrainage soumis.',
+  referralWithdrawalFailed:
+    'Échec du retrait de parrainage.',
+  requestReferralWithdrawal: 'Demander un retrait de parrainage',
+  noReferralsYet: 'Aucun parrainage pour le moment.',
+  joinedLabel: 'Inscrit',
+  referralBonusesTitle: 'Bonus de parrainage',
+  referralBonusesEmpty: 'Aucun bonus pour le moment.',
+  earnedLabel: 'Gagné',
+  referralWithdrawalsTitle: 'Retraits de parrainage',
+  referralWithdrawalsEmpty: 'Aucun retrait pour le moment.',
+  fullNameLabel: 'Nom complet',
+  fullNamePlaceholder: 'Saisissez votre nom complet',
+  fullNameRequiredError: 'Le nom est obligatoire.',
+  fullNameTooShortError: 'Doit comporter au moins 2 caractères.',
+  phoneLabel: 'Téléphone (optionnel)',
+  phonePlaceholder: '+1 (555) 000-0000',
+  phoneInvalidError: 'Le téléphone contient des caractères invalides.',
+  phoneLengthError: 'Doit contenir 7 à 15 chiffres.',
+  preferredCurrencyLabel: 'Devise préférée',
+  preferredCurrencyHelp:
+    'Toutes les valeurs seront affichées dans cette devise.',
+  preferredLanguageLabel: 'Langue',
+  preferredLanguageHelp:
+    'Les libellés du tableau de bord se mettent à jour.',
+  profileUpdated: 'Profil mis à jour.',
+  profileSaveFailed: "Impossible d'enregistrer le profil.",
+  networkError: 'Erreur réseau. Réessayez.',
+  saveChanges: 'Enregistrer les modifications',
+  saving: 'Enregistrement...',
+  managedByProvider:
+    'Géré par votre fournisseur de compte',
+  currentSession: 'Session actuelle',
+  sessionDevice: 'Windows - Chrome - {date}',
+  activeNow: 'Actif maintenant',
+  securityHelp:
+    'Pour la sécurité et le mot de passe, cliquez sur votre profil (en haut à droite) -> Gérer le compte',
+  miningSubtitle: 'Surveillez votre minage en temps réel',
+  miningNotActiveTitle: 'Minage non actif',
+  miningPendingBody:
+    'Votre paiement est en cours de traitement. Le minage commencera lorsque le compte sera activé.',
+  miningSelectPlanBody:
+    'Sélectionnez un plan de minage pour commencer à gagner.',
+  viewPaymentStatus: 'Voir le statut du paiement',
+  accountReadyMessage:
+    'Votre compte est prêt. Choisissez un plan de minage pour commencer.',
+  paymentProcessingMessage:
+    'Votre paiement est en cours de traitement. Nous vous informerons une fois le plan activé.',
+  viewPaymentInstructions: 'Voir les instructions de paiement',
+  proofNotSubmittedMining:
+    'Preuve non soumise (Minage)',
+  proofNotSubmittedTrading:
+    'Preuve non soumise (Trading)',
+  tradingOverviewSubtitle:
+    'Résumé du portefeuille, allocation et performance.',
+  tradingPortfolioButton: 'Activité du portefeuille',
+  tradingAwaitingPayment:
+    "L'investissement en trading attend la vérification. Soumettez la preuve.",
+  tradingEmptyTitle:
+    'Activez un plan de trading pour voir les analyses',
+  tradingEmptyDescription:
+    'Sélectionnez un plan pour débloquer les graphiques et la performance gérée.',
+  viewTradingPlans: 'Voir les plans de trading',
+  tradingPlansTitle: 'Plans de trading',
+  activatePlan: 'Activer le plan',
+  tradingBotEmptyTitle:
+    'Activez un plan de trading pour voir l’activité',
+  tradingBotEmptyDescription:
+    'Une fois actif, les performances et graphiques de liquidité apparaîtront.',
+  tradingEarningsEmptyTitle:
+    'Activez un plan de trading pour voir les gains',
+  tradingEarningsEmptyDescription:
+    'Les gains, drawdowns et comparaisons apparaissent une fois le plan actif.',
+  tradingWithdrawalsEmptyTitle:
+    'Activez un plan de trading pour demander des retraits',
+  tradingWithdrawalsEmptyDescription:
+    'Une fois actif, vous pourrez demander des retraits et voir l’historique.',
+  recentRequestsTitle: 'Demandes récentes',
+}
+
 const DE: Dictionary = {
   status: 'Status',
   active: 'Aktiv',
