@@ -30,7 +30,7 @@ export default function HeroLottie() {
         renderer: 'svg',
         loop: true,
         autoplay: true,
-        path: '/lottie/hero.json',
+        path: '/lottie/Bitcoin%20Cryptocurrency%20city.json',
       })
     }
 

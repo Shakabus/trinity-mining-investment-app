@@ -24,7 +24,7 @@ export default function HomePage() {
           </p>
         </section>
 
-        <div className="mt-10 rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl">
+        <div className="mt-10">
           <HeroLottie />
         </div>
       </main>
