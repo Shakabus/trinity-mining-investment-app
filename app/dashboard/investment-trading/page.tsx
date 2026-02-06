@@ -315,6 +315,7 @@ export default async function TradingInvestmentPage() {
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
+        <div className="text-lg md:text-xl font-semibold text-white mb-4">Current Market Data</div>
         <TradingViewWidget />
       </div>
 

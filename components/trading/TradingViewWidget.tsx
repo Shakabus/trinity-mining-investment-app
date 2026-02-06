@@ -70,8 +70,8 @@
      }
    }, [])
 
-   return (
-     <div className="tradingview-widget-container h-[520px] w-full" ref={containerRef}>
+  return (
+    <div className="tradingview-widget-container h-[680px] md:h-[760px] w-full" ref={containerRef}>
        <div className="tradingview-widget-container__widget h-full w-full"></div>
        <div className="tradingview-widget-copyright text-[11px] text-white/50">
          <a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank">
