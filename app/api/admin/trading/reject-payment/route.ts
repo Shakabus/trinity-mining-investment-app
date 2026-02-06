@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Trading plan not found' }, { status: 404 })
     }
 
-    if (tradingPlan.status !== 'awaiting_payment' || tradingPlan.paymentStatus !== 'pending') {
+    if (!['awaiting_payment', 'selected'].includes(tradingPlan.status) || tradingPlan.paymentStatus !== 'pending') {
       return NextResponse.json({ error: 'Payment already processed for this plan.' }, { status: 409 })
     }
 
