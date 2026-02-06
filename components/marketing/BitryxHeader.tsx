@@ -17,7 +17,7 @@ export default function BitryxHeader() {
     <header className={`bitryx-header${open ? ' active' : ''}`}>
       <div className="bitryx-container">
         <div className="bitryx-logo">
-          <Link href="/">Bitryx</Link>
+          <Link href="/">Trinity</Link>
         </div>
 
         <nav className="bitryx-nav">

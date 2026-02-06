@@ -115,6 +115,7 @@ a[aria-disabled="true"],
   top: 5px;
   z-index: 999;
   font-family: "Poppins", sans-serif;
+  margin-top: 5px;
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.12),
