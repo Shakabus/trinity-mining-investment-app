@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import HeroLottie from '@/components/marketing/HeroLottie'
+import RevenueCalculator from '@/components/marketing/RevenueCalculator'
 
 export default function HomePage() {
   return (
@@ -27,6 +28,10 @@ export default function HomePage() {
         <div className="mt-10">
           <HeroLottie />
         </div>
+
+        <section className="mt-20">
+          <RevenueCalculator />
+        </section>
       </main>
     </div>
   )
