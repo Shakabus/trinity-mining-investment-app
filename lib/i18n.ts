@@ -426,7 +426,6 @@ const ES: Dictionary = {
   recentRequestsTitle: 'Solicitudes recientes',
 }
 
-const FR: Dictionary = EN
 const DE: Dictionary = EN
 const IT: Dictionary = EN
 const PT: Dictionary = EN
