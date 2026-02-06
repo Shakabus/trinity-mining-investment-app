@@ -22,7 +22,7 @@
          "backgroundColor": "#0F0F0F",
          "support_host": "https://www.tradingview.com",
          "width": "100%",
-         "height": "100%",
+         "height": "900",
          "symbolsGroups": [
            {
              "name": "Crypto",
@@ -71,8 +71,11 @@
    }, [])
 
   return (
-    <div className="tradingview-widget-container h-[680px] md:h-[760px] w-full" ref={containerRef}>
-       <div className="tradingview-widget-container__widget h-full w-full"></div>
+    <div
+      className="tradingview-widget-container h-[780px] md:h-[920px] w-full"
+      ref={containerRef}
+    >
+      <div className="tradingview-widget-container__widget h-full w-full"></div>
        <div className="tradingview-widget-copyright text-[11px] text-white/50">
          <a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank">
            <span className="text-blue-300">Market summary</span>
