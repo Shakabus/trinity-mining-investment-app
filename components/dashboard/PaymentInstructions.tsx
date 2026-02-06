@@ -41,7 +41,7 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
   const searchParams = useSearchParams()
   const [copied, setCopied] = useState(false)
   const [selectedCrypto, setSelectedCrypto] = useState<keyof typeof WALLET_ADDRESSES>(
-    plan.coinType === 'MULTI' ? 'BTC' : (plan.coinType as keyof typeof WALLET_ADDRESSES)
+    (plan.coinType as keyof typeof WALLET_ADDRESSES) || 'BTC'
   )
   const [showVerify, setShowVerify] = useState(false)
   const [txid, setTxid] = useState(plan.payment?.transactionId || '')
@@ -57,9 +57,7 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const cryptoOptions = plan.coinType === 'MULTI' 
-    ? ['BTC', 'ETH', 'USDT', 'SOL'] 
-    : [plan.coinType]
+  const cryptoOptions = ['BTC', 'ETH', 'USDT', 'SOL']
 
   useEffect(() => {
     if (searchParams?.get('verify') === '1') {
