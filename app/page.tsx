@@ -2,7 +2,7 @@ import Link from 'next/link'
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import HeroLottie from '@/components/marketing/HeroLottie'
 import RevenueCalculator from '@/components/marketing/RevenueCalculator'
-import WatchlistWidget from '@/components/marketing/WatchlistWidget'
+import TradingViewWidget from '@/components/trading/TradingViewWidget'
 
 export default function HomePage() {
   return (
@@ -102,7 +102,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-semibold">Watchlist</h2>
           <div className="rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl">
             <div className="h-[520px] md:h-[620px]">
-              <WatchlistWidget />
+              <TradingViewWidget />
             </div>
           </div>
         </section>
