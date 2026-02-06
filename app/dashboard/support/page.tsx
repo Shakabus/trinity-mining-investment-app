@@ -86,6 +86,12 @@ export default async function SupportPage() {
     { question: t('faq4Q'), answer: t('faq4A') },
     { question: t('faq5Q'), answer: t('faq5A') },
     { question: t('faq6Q'), answer: t('faq6A') },
+    { question: t('faq7Q'), answer: t('faq7A') },
+    { question: t('faq8Q'), answer: t('faq8A') },
+    { question: t('faq9Q'), answer: t('faq9A') },
+    { question: t('faq10Q'), answer: t('faq10A') },
+    { question: t('faq11Q'), answer: t('faq11A') },
+    { question: t('faq12Q'), answer: t('faq12A') },
   ]
 
   const tickets = user.supportTickets.map(ticket => ({
