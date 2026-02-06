@@ -9,7 +9,7 @@ export default function HomePage() {
         <BitryxHeader />
       </div>
 
-      <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-14">
+      <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28">
         <section className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/70">
             A Stable Mining Platform
@@ -19,8 +19,8 @@ export default function HomePage() {
           </h1>
           <p className="mt-4 text-sm text-white/70 md:text-base">
             Join the revolution in cloud-based mining with high yields and zero
-            hardware hassle. Mine crypto effortlessly with Bitryx- power your
-            future today
+            hardware hassle. Mine crypto effortlessly with Trinity In One- power
+            your future today
           </p>
         </section>
 

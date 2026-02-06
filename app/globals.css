@@ -111,11 +111,13 @@ a[aria-disabled="true"],
 }
 
 .bitryx-header {
-  position: sticky;
+  position: fixed;
   top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1200px, calc(100% - 48px));
   z-index: 999;
   font-family: "Poppins", sans-serif;
-  margin-top: 5px;
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.12),
