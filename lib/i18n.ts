@@ -1,4 +1,4 @@
-export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'zh' | 'ja' | 'hi' | 'ar'
+Ôªøexport type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'zh' | 'ja' | 'hi' | 'ar'
 
 export const SUPPORTED_LANGUAGES: LanguageCode[] = ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'hi', 'ar']
 
@@ -486,7 +486,7 @@ const ES: Dictionary = {
   currentSession: 'Sesion actual',
   sessionDevice: 'Windows - Chrome - {date}',
   activeNow: 'Activo ahora',
-  securityHelp: 'Para seguridad y contraseÒa, haz clic en tu perfil (arriba derecha) -> Administrar cuenta',
+  securityHelp: 'Para seguridad y contrase√±a, haz clic en tu perfil (arriba derecha) -> Administrar cuenta',
   miningSubtitle: 'Monitorea tu mineria en tiempo real',
   miningNotActiveTitle: 'Mineria no activa',
   miningPendingBody: 'Tu pago se esta procesando. La mineria iniciara cuando la cuenta se active.',
@@ -519,32 +519,32 @@ const FR: Dictionary = {
   active: 'Actif',
   pending: 'En attente',
   inactive: 'Inactif',
-  overview: 'AperÁu',
+  overview: 'Aper√ßu',
   plans: 'Plans',
   myPlan: 'Mon plan',
   mining: 'Minage',
   earnings: 'Gains',
   investmentTrading: "Trading d'investissement",
-  portfolioActivity: 'ActivitÈ du portefeuille',
+  portfolioActivity: 'Activit√© du portefeuille',
   withdrawals: 'Retraits',
   referrals: 'Parrainages',
-  activity: 'ActivitÈ',
+  activity: 'Activit√©',
   support: 'Support',
-  settings: 'ParamËtres',
+  settings: 'Param√®tres',
   accountStatus: 'Statut du compte',
   viewMiningPlans: 'Voir les plans de minage',
-  uploadMiningProof: 'TÈlÈverser la preuve de minage',
-  uploadTradingProof: 'TÈlÈverser la preuve de trading',
+  uploadMiningProof: 'T√©l√©verser la preuve de minage',
+  uploadTradingProof: 'T√©l√©verser la preuve de trading',
   welcomeBack: 'Bon retour',
-  overviewSubtitle: 'Voici un rÈsumÈ de votre compte de minage',
+  overviewSubtitle: 'Voici un r√©sum√© de votre compte de minage',
   language: 'Langue',
   performanceAnalytics: 'Analyses de performance',
   earningsOverTime: 'Gains dans le temps',
-  hashrateStability: 'StabilitÈ du hashrate',
+  hashrateStability: 'Stabilit√© du hashrate',
   sharesHistory: 'Historique des shares',
-  estimatedVsActual: 'EstimÈ vs RÈel',
-  estimated: 'EstimÈ',
-  actual: 'RÈel',
+  estimatedVsActual: 'Estim√© vs R√©el',
+  estimated: 'Estim√©',
+  actual: 'R√©el',
   accountInformation: 'Informations du compte',
   emailAddress: 'Adresse e-mail',
   memberSince: 'Membre depuis',
@@ -554,154 +554,154 @@ const FR: Dictionary = {
   miningTitle: 'Minage',
   earningsTitle: 'Gains',
   referralsTitle: 'Parrainages',
-  activityTitle: 'ActivitÈ',
+  activityTitle: 'Activit√©',
   supportTitle: 'Support',
-  settingsTitle: 'ParamËtres',
+  settingsTitle: 'Param√®tres',
   tradingTitle: "Trading d'investissement",
   tradingEarningsTitle: 'Gains de trading',
   tradingWithdrawalsTitle: 'Retraits de trading',
-  tradingPortfolioTitle: 'ActivitÈ du portefeuille',
-  activitySubtitle: 'Vos actions et demandes rÈcentes.',
-  activityEmptyTitle: 'Aucune activitÈ pour le moment',
+  tradingPortfolioTitle: 'Activit√© du portefeuille',
+  activitySubtitle: 'Vos actions et demandes r√©centes.',
+  activityEmptyTitle: 'Aucune activit√© pour le moment',
   activityEmptyDescription:
-    'Vos actions apparaÓtront ici lorsque vous gÈrerez des plans, retraits et paramËtres.',
+    'Vos actions appara√Ætront ici lorsque vous g√©rerez des plans, retraits et param√®tres.',
   activityTableDate: 'Date',
   activityTableAction: 'Action',
-  activityTableDetails: 'DÈtails',
+  activityTableDetails: 'D√©tails',
   supportIntro:
-    'Apprenez comment la plateforme fonctionne, trouvez des rÈponses et envoyez une demande.',
-  supportHowItWorksTitle: 'Comment Áa marche',
-  supportFaqTitle: 'Questions frÈquentes',
+    'Apprenez comment la plateforme fonctionne, trouvez des r√©ponses et envoyez une demande.',
+  supportHowItWorksTitle: 'Comment √ßa marche',
+  supportFaqTitle: 'Questions fr√©quentes',
   howPlansTitle: 'Plans et activation',
   howPlansSummary: 'Choisissez un plan, soumettez la preuve, attendez la confirmation.',
   howPlansBody:
-    'Les plans dÈfinissent votre hashrate assignÈ, la durÈe et les actifs pris en charge. AprËs avoir choisi un plan, suivez les instructions et tÈlÈversez votre preuve lorsque vous Ítes prÍt.',
+    'Les plans d√©finissent votre hashrate assign√©, la dur√©e et les actifs pris en charge. Apr√®s avoir choisi un plan, suivez les instructions et t√©l√©versez votre preuve lorsque vous √™tes pr√™t.',
   howPlansBodyLong:
-    'Les plans dÈterminent la puissance ou le capital attribuÈ, la durÈe du plan et les actifs disponibles. Lorsque vous choisissez un plan, il ne síactive pas instantanÈment. Le plan est crÈÈ en statut en attente et vous voyez les instructions de paiement avec le montant exact et líadresse du portefeuille.\n\n' +
-    'Une fois le reÁu et le hash de transaction soumis, le plan passe en rÈvision. AprËs confirmation, le plan devient actif et les indicateurs commencent ‡ se mettre ‡ jour. Cela protËge votre paiement et clarifie le processus.\n\n' +
-    'Si vous fermez la page de paiement, vous pouvez revenir plus tard pour tÈlÈverser la preuve. La sÈlection reste visible jusquí‡ approbation ou rejet, avec suivi dans le tableau de bord.',
+    'Les plans d√©terminent la puissance ou le capital attribu√©, la dur√©e du plan et les actifs disponibles. Lorsque vous choisissez un plan, il ne s‚Äôactive pas instantan√©ment. Le plan est cr√©√© en statut en attente et vous voyez les instructions de paiement avec le montant exact et l‚Äôadresse du portefeuille.\n\n' +
+    'Une fois le re√ßu et le hash de transaction soumis, le plan passe en r√©vision. Apr√®s confirmation, le plan devient actif et les indicateurs commencent √† se mettre √† jour. Cela prot√®ge votre paiement et clarifie le processus.\n\n' +
+    'Si vous fermez la page de paiement, vous pouvez revenir plus tard pour t√©l√©verser la preuve. La s√©lection reste visible jusqu‚Äô√† approbation ou rejet, avec suivi dans le tableau de bord.',
   howMiningTitle: 'Performance de minage',
-  howMiningSummary: 'Le hashrate reste stable pendant que les gains Èvoluent.',
+  howMiningSummary: 'Le hashrate reste stable pendant que les gains √©voluent.',
   howMiningBody:
-    'Votre hashrate reste proche du maximum assignÈ, avec de lÈgËres variations. Les shares et les gains se mettent ‡ jour au fil de líactivitÈ.',
+    'Votre hashrate reste proche du maximum assign√©, avec de l√©g√®res variations. Les shares et les gains se mettent √† jour au fil de l‚Äôactivit√©.',
   howMiningBodyLong:
-    'La performance de minage est reprÈsentÈe par un hashrate stable et des compteurs en mouvement. Le hashrate est la capacitÈ attribuÈe au plan, il ne monte pas indÈfiniment. Vous verrez les hashes totaux, les shares valides et les gains augmenter avec le temps.\n\n' +
-    'Ces compteurs sont conÁus pour paraÓtre rÈalistes: de petites fluctuations apparaissent mais la tendance respecte les limites du plan. Si un plan est en pause ou terminÈ, les compteurs síarrÍtent et les gains passent au solde retirable.',
+    'La performance de minage est repr√©sent√©e par un hashrate stable et des compteurs en mouvement. Le hashrate est la capacit√© attribu√©e au plan, il ne monte pas ind√©finiment. Vous verrez les hashes totaux, les shares valides et les gains augmenter avec le temps.\n\n' +
+    'Ces compteurs sont con√ßus pour para√Ætre r√©alistes: de petites fluctuations apparaissent mais la tendance respecte les limites du plan. Si un plan est en pause ou termin√©, les compteurs s‚Äôarr√™tent et les gains passent au solde retirable.',
   howEarningsTitle: 'Gains et paiements',
-  howEarningsSummary: 'Les estimations se mettent ‡ jour et les retraits sont sur demande.',
+  howEarningsSummary: 'Les estimations se mettent √† jour et les retraits sont sur demande.',
   howEarningsBody:
-    'Les estimations quotidiennes sont calculÈes automatiquement sauf en cas díajustement manuel. Les retraits sont des demandes examinÈes avant traitement.',
+    'Les estimations quotidiennes sont calcul√©es automatiquement sauf en cas d‚Äôajustement manuel. Les retraits sont des demandes examin√©es avant traitement.',
   howEarningsBodyLong:
-    'Les gains sont calculÈs selon la configuration du plan et le temps actif. Les estimations quotidiennes se mettent ‡ jour selon un calendrier et reflËtent la production attendue. En cas díajustement manuel, cette valeur prime jusquí‡ suppression.\n\n' +
-    'Les paiements sont demandÈs. Lorsque vous demandez un retrait, il est mis en file díattente et le statut se met ‡ jour pendant le traitement. Les gains díun plan terminÈ sont transfÈrÈs au solde retirable.',
-  howUpgradesTitle: 'Mises ‡ niveau et historique',
-  howUpgradesSummary: 'Les mises ‡ niveau prÈservent líhistorique et appliquent un crÈdit.',
+    'Les gains sont calcul√©s selon la configuration du plan et le temps actif. Les estimations quotidiennes se mettent √† jour selon un calendrier et refl√®tent la production attendue. En cas d‚Äôajustement manuel, cette valeur prime jusqu‚Äô√† suppression.\n\n' +
+    'Les paiements sont demand√©s. Lorsque vous demandez un retrait, il est mis en file d‚Äôattente et le statut se met √† jour pendant le traitement. Les gains d‚Äôun plan termin√© sont transf√©r√©s au solde retirable.',
+  howUpgradesTitle: 'Mises √† niveau et historique',
+  howUpgradesSummary: 'Les mises √† niveau pr√©servent l‚Äôhistorique et appliquent un cr√©dit.',
   howUpgradesBody:
-    'Les mises ‡ niveau appliquent un crÈdit pour le temps non utilisÈ du plan actuel. Vos gains prÈcÈdents restent visibles et peuvent Ítre libÈrÈs selon les rËgles.',
+    'Les mises √† niveau appliquent un cr√©dit pour le temps non utilis√© du plan actuel. Vos gains pr√©c√©dents restent visibles et peuvent √™tre lib√©r√©s selon les r√®gles.',
   howUpgradesBodyLong:
-    'Lors díune mise ‡ niveau, la valeur restante du plan actuel est crÈditÈe sur le nouveau. Cela Èvite de rÈinitialiser votre progression et rend la mise ‡ niveau Èquitable. Vos gains et totaux prÈcÈdents restent visibles comme historiques.\n\n' +
-    'Si un plan se termine pendant une mise ‡ niveau, ses gains passent au solde retirable. Cela Èvite toute perte de valeur et conserve líhistorique.',
-  howTradingTitle: 'Configuration du trading díinvestissement',
-  howTradingSummary: 'Le plan síactive aprËs la preuve et montre des rÈsultats gÈrÈs.',
+    'Lors d‚Äôune mise √† niveau, la valeur restante du plan actuel est cr√©dit√©e sur le nouveau. Cela √©vite de r√©initialiser votre progression et rend la mise √† niveau √©quitable. Vos gains et totaux pr√©c√©dents restent visibles comme historiques.\n\n' +
+    'Si un plan se termine pendant une mise √† niveau, ses gains passent au solde retirable. Cela √©vite toute perte de valeur et conserve l‚Äôhistorique.',
+  howTradingTitle: 'Configuration du trading d‚Äôinvestissement',
+  howTradingSummary: 'Le plan s‚Äôactive apr√®s la preuve et montre des r√©sultats g√©r√©s.',
   howTradingBodyLong:
-    'Les plans de trading díinvestissement suivent le mÍme processus díapprobation que le minage. AprËs sÈlection, vous soumettez la preuve et le plan devient actif aprËs confirmation. Une fois actif, le systËme affiche la performance du portefeuille, les changements díallocation et les rÈsultats rÈalisÈs.\n\n' +
-    'Líenvironnement de trading est gÈrÈ comme un portefeuille, pas comme un bot isolÈ. Le systËme prÈsente un rÈsultat combinÈ sur crypto, actions et immobilier.',
-  howPortfolioTitle: 'StratÈgie de portefeuille et allocation',
-  howPortfolioSummary: 'Les allocations Èvoluent selon líorientation du marchÈ.',
+    'Les plans de trading d‚Äôinvestissement suivent le m√™me processus d‚Äôapprobation que le minage. Apr√®s s√©lection, vous soumettez la preuve et le plan devient actif apr√®s confirmation. Une fois actif, le syst√®me affiche la performance du portefeuille, les changements d‚Äôallocation et les r√©sultats r√©alis√©s.\n\n' +
+    'L‚Äôenvironnement de trading est g√©r√© comme un portefeuille, pas comme un bot isol√©. Le syst√®me pr√©sente un r√©sultat combin√© sur crypto, actions et immobilier.',
+  howPortfolioTitle: 'Strat√©gie de portefeuille et allocation',
+  howPortfolioSummary: 'Les allocations √©voluent selon l‚Äôorientation du march√©.',
   howPortfolioBodyLong:
-    'Le mix díallocation montre la rÈpartition du capital entre les actifs. Cette rÈpartition change avec le temps pour que líactif dominant Èvolue. Les scorecards se mettent ‡ jour en parallËle pour montrer la contribution de chaque classe.\n\n' +
-    'Cíest un portefeuille gÈrÈ qui se rÈÈquilibre. Au fil des changements, líÈquitÈ et le P/L rÈalisÈ se mettent ‡ jour.',
-  howRiskTitle: 'Risque, drawdowns et rÈcupÈration',
-  howRiskSummary: 'Les drawdowns et la rÈcupÈration sont modÈlisÈs dans le temps.',
+    'Le mix d‚Äôallocation montre la r√©partition du capital entre les actifs. Cette r√©partition change avec le temps pour que l‚Äôactif dominant √©volue. Les scorecards se mettent √† jour en parall√®le pour montrer la contribution de chaque classe.\n\n' +
+    'C‚Äôest un portefeuille g√©r√© qui se r√©√©quilibre. Au fil des changements, l‚Äô√©quit√© et le P/L r√©alis√© se mettent √† jour.',
+  howRiskTitle: 'Risque, drawdowns et r√©cup√©ration',
+  howRiskSummary: 'Les drawdowns et la r√©cup√©ration sont mod√©lis√©s dans le temps.',
   howRiskBodyLong:
-    'Les graphiques incluent des drawdowns et des rÈcupÈrations pour reflÈter les conditions du marchÈ. Vous verrez des pÈriodes de baisse suivies de rÈcupÈration. Cela Èvite une hausse linÈaire et rend le mouvement plus rÈaliste.\n\n' +
-    'Quand líobjectif est atteint ou la durÈe terminÈe, le plan se termine et les fonds passent au solde retirable. Une entrÈe díactivitÈ et une notification apparaissent.',
-  faq1Q: 'Comment commencer ‡ miner ?',
+    'Les graphiques incluent des drawdowns et des r√©cup√©rations pour refl√©ter les conditions du march√©. Vous verrez des p√©riodes de baisse suivies de r√©cup√©ration. Cela √©vite une hausse lin√©aire et rend le mouvement plus r√©aliste.\n\n' +
+    'Quand l‚Äôobjectif est atteint ou la dur√©e termin√©e, le plan se termine et les fonds passent au solde retirable. Une entr√©e d‚Äôactivit√© et une notification apparaissent.',
+  faq1Q: 'Comment commencer √† miner ?',
   faq1A:
-    'Choisissez un plan, effectuez le paiement et attendez la confirmation. Une fois confirmÈ, votre tableau de bord commencera ‡ enregistrer le hashrate, les shares et les gains.',
+    'Choisissez un plan, effectuez le paiement et attendez la confirmation. Une fois confirm√©, votre tableau de bord commencera √† enregistrer le hashrate, les shares et les gains.',
   faq2Q: 'Pourquoi mes estimations changent-elles ?',
   faq2A:
-    'Les estimations síajustent en fonction du hashrate assignÈ, du temps actif et des conditions du rÈseau. Le systËme les met ‡ jour selon un calendrier.',
-  faq3Q: 'Quíest-ce quíun retrait en attente ?',
+    'Les estimations s‚Äôajustent en fonction du hashrate assign√©, du temps actif et des conditions du r√©seau. Le syst√®me les met √† jour selon un calendrier.',
+  faq3Q: 'Qu‚Äôest-ce qu‚Äôun retrait en attente ?',
   faq3A:
-    'En attente signifie que votre demande a ÈtÈ reÁue et attend son traitement. Lorsquíelle est traitÈe, le statut est mis ‡ jour.',
-  faq4Q: 'Comment fonctionnent les mises ‡ niveau de plan ?',
+    'En attente signifie que votre demande a √©t√© re√ßue et attend son traitement. Lorsqu‚Äôelle est trait√©e, le statut est mis √† jour.',
+  faq4Q: 'Comment fonctionnent les mises √† niveau de plan ?',
   faq4A:
-    'Lors díune mise ‡ niveau, la valeur restante du plan actuel est crÈditÈe sur le nouveau. Vos gains antÈrieurs sont conservÈs et affichÈs comme historiques.',
+    'Lors d‚Äôune mise √† niveau, la valeur restante du plan actuel est cr√©dit√©e sur le nouveau. Vos gains ant√©rieurs sont conserv√©s et affich√©s comme historiques.',
   faq5Q: 'Pourquoi vois-je des gains historiques ?',
   faq5A:
-    'Ils proviennent de plans prÈcÈdents et restent visibles aprËs une mise ‡ niveau. Ils peuvent Ítre dÈbloquÈs et retirÈs lorsque la pÈriode est remplie.',
-  faq6Q: 'Comment mettre ‡ jour mon adresse de portefeuille ?',
+    'Ils proviennent de plans pr√©c√©dents et restent visibles apr√®s une mise √† niveau. Ils peuvent √™tre d√©bloqu√©s et retir√©s lorsque la p√©riode est remplie.',
+  faq6Q: 'Comment mettre √† jour mon adresse de portefeuille ?',
   faq6A:
-    'Allez dans ParamËtres, saisissez les adresses correctes et enregistrez. VÈrifiez le format avant de sauvegarder.',
+    'Allez dans Param√®tres, saisissez les adresses correctes et enregistrez. V√©rifiez le format avant de sauvegarder.',
   faq7Q: 'Quand puis-je retirer mes gains ?',
   faq7A:
-    'Les retraits sont possibles lorsque les gains deviennent retirables. Les demandes sont examinÈes et le statut apparaÓt dans líactivitÈ.',
+    'Les retraits sont possibles lorsque les gains deviennent retirables. Les demandes sont examin√©es et le statut appara√Æt dans l‚Äôactivit√©.',
   faq8Q: 'Pourquoi mon plan est-il toujours en attente ?',
   faq8A:
-    'En attente signifie que la preuve a ÈtÈ reÁue et attend la confirmation. Une fois confirmÈe, le plan síactive automatiquement.',
-  faq9Q: 'Puis-je changer ma devise prÈfÈrÈe ?',
+    'En attente signifie que la preuve a √©t√© re√ßue et attend la confirmation. Une fois confirm√©e, le plan s‚Äôactive automatiquement.',
+  faq9Q: 'Puis-je changer ma devise pr√©f√©r√©e ?',
   faq9A:
-    'Oui. Mettez ‡ jour la devise dans ParamËtres. Les montants síafficheront avec le taux le plus rÈcent.',
+    'Oui. Mettez √† jour la devise dans Param√®tres. Les montants s‚Äôafficheront avec le taux le plus r√©cent.',
   faq10Q: 'Que se passe-t-il quand le plan se termine ?',
   faq10A:
-    'Le plan síarrÍte automatiquement et les gains passent au solde retirable. Un avis de fin apparaÓtra.',
-  faq11Q: 'Comment les indicateurs de trading se mettent-ils ‡ jour ?',
+    'Le plan s‚Äôarr√™te automatiquement et les gains passent au solde retirable. Un avis de fin appara√Ætra.',
+  faq11Q: 'Comment les indicateurs de trading se mettent-ils √† jour ?',
   faq11A:
-    'La valeur du portefeuille, le P/L et les stratÈgies se mettent ‡ jour par intervalles pour reflÈter une performance gÈrÈe.',
+    'La valeur du portefeuille, le P/L et les strat√©gies se mettent √† jour par intervalles pour refl√©ter une performance g√©r√©e.',
   faq12Q: 'Comment fonctionnent les parrainages ?',
   faq12A:
-    'Partagez votre lien. Lorsquíune personne síinscrit et paie, des bonus peuvent Ítre crÈditÈs selon la configuration.',
+    'Partagez votre lien. Lorsqu‚Äôune personne s‚Äôinscrit et paie, des bonus peuvent √™tre cr√©dit√©s selon la configuration.',
   plansDescription:
-    'Choisissez un plan adaptÈ ‡ vos objectifs. Tous incluent le support 24/7 et des paiements automatisÈs.',
+    'Choisissez un plan adapt√© √† vos objectifs. Tous incluent le support 24/7 et des paiements automatis√©s.',
   upgradePendingPayment:
-    'Mise ‡ niveau avec paiement en attente. Votre plan actuel reste actif jusquí‡ confirmation.',
+    'Mise √† niveau avec paiement en attente. Votre plan actuel reste actif jusqu‚Äô√† confirmation.',
   upgradeCreditNote:
-    'Le crÈdit de mise ‡ niveau est basÈ sur le temps restant. CrÈdit estimÈ : {amount}.',
+    'Le cr√©dit de mise √† niveau est bas√© sur le temps restant. Cr√©dit estim√© : {amount}.',
   noPlansTitle: 'Aucun plan disponible',
   noPlansBody:
-    'Les plans sont en cours de configuration. Revenez bientÙt !',
+    'Les plans sont en cours de configuration. Revenez bient√¥t !',
   unknownPlan: 'Plan inconnu',
-  myPlanSubtitle: 'Consultez et gÈrez votre plan de minage actuel',
+  myPlanSubtitle: 'Consultez et g√©rez votre plan de minage actuel',
   noActivePlanTitle: 'Aucun plan actif',
   noActivePlanBody:
-    'Vous níavez pas encore choisi de plan de minage. SÈlectionnez-en un pour commencer ‡ gagner !',
+    'Vous n‚Äôavez pas encore choisi de plan de minage. S√©lectionnez-en un pour commencer √† gagner !',
   browsePlans: 'Voir les plans',
-  myPlanManageSubtitle: 'GÈrez votre plan de minage actuel',
-  upgradePendingTitle: 'Mise ‡ niveau en attente de paiement',
+  myPlanManageSubtitle: 'G√©rez votre plan de minage actuel',
+  upgradePendingTitle: 'Mise √† niveau en attente de paiement',
   upgradePendingBody:
-    'Votre plan actuel reste actif jusquí‡ confirmation du paiement.',
-  uploadUpgradeProof: 'TÈlÈverser la preuve de mise ‡ niveau',
-  selectedPlan: 'Plan sÈlectionnÈ',
-  paymentDetails: 'DÈtails de paiement',
+    'Votre plan actuel reste actif jusqu‚Äô√† confirmation du paiement.',
+  uploadUpgradeProof: 'T√©l√©verser la preuve de mise √† niveau',
+  selectedPlan: 'Plan s√©lectionn√©',
+  paymentDetails: 'D√©tails de paiement',
   paymentInstruction:
-    'Envoyez le montant requis ‡ líadresse fournie. TÈlÈversez la preuve pour passer en revue.',
-  paymentNetwork: 'RÈseau',
+    'Envoyez le montant requis √† l‚Äôadresse fournie. T√©l√©versez la preuve pour passer en revue.',
+  paymentNetwork: 'R√©seau',
   paymentWallet: 'Adresse du portefeuille',
-  paymentAmount: 'Montant ‡ envoyer',
+  paymentAmount: 'Montant √† envoyer',
   paymentConfirmations: 'Confirmations',
   paymentProof: 'Preuve de paiement',
-  paymentReceipt: 'ReÁu / Capture',
+  paymentReceipt: 'Re√ßu / Capture',
   paymentTxid: 'TXID / Hash',
   paymentSubmit: 'Soumettre la preuve',
   paymentSubmitting: 'Soumission...',
   paymentSubmitted: 'Preuve soumise',
-  paymentApproved: 'Paiement approuvÈ',
-  paymentRejected: 'Paiement refusÈ',
-  paymentAwaitingApproval: 'En attente díapprobation',
+  paymentApproved: 'Paiement approuv√©',
+  paymentRejected: 'Paiement refus√©',
+  paymentAwaitingApproval: 'En attente d‚Äôapprobation',
   paymentUploadHint:
-    'Formats acceptÈs : PDF, PNG, JPG. Assurez-vous que le TXID est visible.',
+    'Formats accept√©s : PDF, PNG, JPG. Assurez-vous que le TXID est visible.',
   paymentProofRequired: 'Une preuve de paiement est requise.',
   paymentTxidRequired: 'Le TXID est requis.',
-  paymentError: '…chec de líenvoi de la preuve.',
+  paymentError: '√âchec de l‚Äôenvoi de la preuve.',
   paymentSuccess:
-    'Preuve envoyÈe. Votre demande est en cours de traitement.',
+    'Preuve envoy√©e. Votre demande est en cours de traitement.',
   totalEarned: 'Total des gains',
   miningEarned: 'Gains de minage',
   tradingEarned: "Gains d'investissement",
   dailyEstimate: 'Estimation quotidienne',
   availableToWithdraw: 'Disponible pour retrait',
-  pendingRelease: 'LibÈration du systËme en attente',
+  pendingRelease: 'Lib√©ration du syst√®me en attente',
   miningStatus: 'Statut du minage',
   miningHashrate: 'Hashrate',
   miningTotalHashes: 'Hashes totaux',
@@ -710,105 +710,105 @@ const FR: Dictionary = {
   miningDailyEstimate: 'Estimation quotidienne',
   miningNextPayout: 'Prochain paiement',
   tradingEquity: 'Valeur du portefeuille',
-  tradingPnl: 'P/L rÈalisÈ',
-  tradingWinRate: 'Taux de rÈussite',
+  tradingPnl: 'P/L r√©alis√©',
+  tradingWinRate: 'Taux de r√©ussite',
   tradingOpenPositions: 'Positions ouvertes',
-  tradingAllocationMix: 'RÈpartition des actifs',
-  tradingStrategyScorecards: 'Scores de stratÈgie',
-  tradingMarketActivity: 'ActivitÈ du marchÈ',
+  tradingAllocationMix: 'R√©partition des actifs',
+  tradingStrategyScorecards: 'Scores de strat√©gie',
+  tradingMarketActivity: 'Activit√© du march√©',
   tradingEarningsSubtitle:
-    "Consultez les gains d'investissement et la disponibilitÈ des retraits.",
+    "Consultez les gains d'investissement et la disponibilit√© des retraits.",
   tradingWithdrawalsSubtitle:
-    'GÈrez les demandes de retrait et líhistorique des paiements.',
+    'G√©rez les demandes de retrait et l‚Äôhistorique des paiements.',
   tradingAvailableWithdraw: 'Disponible pour retrait',
   tradingPendingWithdraw: 'En attente',
   tradingMinimumWithdraw: 'Retrait minimum',
   tradingRequestWithdraw: 'Demander un retrait',
   withdrawAmount: 'Montant du retrait',
-  withdrawMethod: 'MÈthode de retrait',
+  withdrawMethod: 'M√©thode de retrait',
   withdrawWallet: 'Adresse du portefeuille',
   withdrawSubmit: 'Soumettre le retrait',
   withdrawSubmitting: 'Soumission...',
-  withdrawSubmitted: 'Demande de retrait envoyÈe.',
-  withdrawFailed: "…chec de l'envoi de la demande.",
+  withdrawSubmitted: 'Demande de retrait envoy√©e.',
+  withdrawFailed: "√âchec de l'envoi de la demande.",
   withdrawMin: 'Le retrait minimum est {amount}.',
-  withdrawExceeds: 'Le montant dÈpasse le solde disponible.',
+  withdrawExceeds: 'Le montant d√©passe le solde disponible.',
   noWithdrawalsYet: 'Aucun retrait pour le moment.',
   notAvailable: 'Non disponible',
   withdrawValidAmount: 'Entrez un montant valide.',
-  walletMissing: 'Ajoutez líadresse {coin}.',
+  walletMissing: 'Ajoutez l‚Äôadresse {coin}.',
   referralAmountExceeds:
-    'Le montant dÈpasse le solde disponible des parrainages.',
+    'Le montant d√©passe le solde disponible des parrainages.',
   referralWithdrawalSubmitted:
     'Retrait de parrainage soumis.',
   referralWithdrawalFailed:
-    '…chec du retrait de parrainage.',
+    '√âchec du retrait de parrainage.',
   requestReferralWithdrawal: 'Demander un retrait de parrainage',
   noReferralsYet: 'Aucun parrainage pour le moment.',
   joinedLabel: 'Inscrit',
   referralBonusesTitle: 'Bonus de parrainage',
   referralBonusesEmpty: 'Aucun bonus pour le moment.',
-  earnedLabel: 'GagnÈ',
+  earnedLabel: 'Gagn√©',
   referralWithdrawalsTitle: 'Retraits de parrainage',
   referralWithdrawalsEmpty: 'Aucun retrait pour le moment.',
   fullNameLabel: 'Nom complet',
   fullNamePlaceholder: 'Saisissez votre nom complet',
   fullNameRequiredError: 'Le nom est obligatoire.',
-  fullNameTooShortError: 'Doit comporter au moins 2 caractËres.',
-  phoneLabel: 'TÈlÈphone (optionnel)',
+  fullNameTooShortError: 'Doit comporter au moins 2 caract√®res.',
+  phoneLabel: 'T√©l√©phone (optionnel)',
   phonePlaceholder: '+1 (555) 000-0000',
-  phoneInvalidError: 'Le tÈlÈphone contient des caractËres invalides.',
-  phoneLengthError: 'Doit contenir 7 ‡ 15 chiffres.',
-  preferredCurrencyLabel: 'Devise prÈfÈrÈe',
+  phoneInvalidError: 'Le t√©l√©phone contient des caract√®res invalides.',
+  phoneLengthError: 'Doit contenir 7 √† 15 chiffres.',
+  preferredCurrencyLabel: 'Devise pr√©f√©r√©e',
   preferredCurrencyHelp:
-    'Toutes les valeurs seront affichÈes dans cette devise.',
+    'Toutes les valeurs seront affich√©es dans cette devise.',
   preferredLanguageLabel: 'Langue',
   preferredLanguageHelp:
-    'Les libellÈs du tableau de bord se mettent ‡ jour.',
-  profileUpdated: 'Profil mis ‡ jour.',
+    'Les libell√©s du tableau de bord se mettent √† jour.',
+  profileUpdated: 'Profil mis √† jour.',
   profileSaveFailed: "Impossible d'enregistrer le profil.",
-  networkError: 'Erreur rÈseau. RÈessayez.',
+  networkError: 'Erreur r√©seau. R√©essayez.',
   saveChanges: 'Enregistrer les modifications',
   saving: 'Enregistrement...',
   managedByProvider:
-    'GÈrÈ par votre fournisseur de compte',
+    'G√©r√© par votre fournisseur de compte',
   currentSession: 'Session actuelle',
   sessionDevice: 'Windows - Chrome - {date}',
   activeNow: 'Actif maintenant',
   securityHelp:
-    'Pour la sÈcuritÈ et le mot de passe, cliquez sur votre profil (en haut ‡ droite) -> GÈrer le compte',
-  miningSubtitle: 'Surveillez votre minage en temps rÈel',
+    'Pour la s√©curit√© et le mot de passe, cliquez sur votre profil (en haut √† droite) -> G√©rer le compte',
+  miningSubtitle: 'Surveillez votre minage en temps r√©el',
   miningNotActiveTitle: 'Minage non actif',
   miningPendingBody:
-    'Votre paiement est en cours de traitement. Le minage commencera lorsque le compte sera activÈ.',
+    'Votre paiement est en cours de traitement. Le minage commencera lorsque le compte sera activ√©.',
   miningSelectPlanBody:
-    'SÈlectionnez un plan de minage pour commencer ‡ gagner.',
+    'S√©lectionnez un plan de minage pour commencer √† gagner.',
   viewPaymentStatus: 'Voir le statut du paiement',
   accountReadyMessage:
-    'Votre compte est prÍt. Choisissez un plan de minage pour commencer.',
+    'Votre compte est pr√™t. Choisissez un plan de minage pour commencer.',
   paymentProcessingMessage:
-    'Votre paiement est en cours de traitement. Nous vous informerons une fois le plan activÈ.',
+    'Votre paiement est en cours de traitement. Nous vous informerons une fois le plan activ√©.',
   viewPaymentInstructions: 'Voir les instructions de paiement',
   proofNotSubmittedMining:
     'Preuve non soumise (Minage)',
   proofNotSubmittedTrading:
     'Preuve non soumise (Trading)',
   tradingOverviewSubtitle:
-    'RÈsumÈ du portefeuille, allocation et performance.',
-  tradingPortfolioButton: 'ActivitÈ du portefeuille',
+    'R√©sum√© du portefeuille, allocation et performance.',
+  tradingPortfolioButton: 'Activit√© du portefeuille',
   tradingAwaitingPayment:
-    "L'investissement en trading attend la vÈrification. Soumettez la preuve.",
+    "L'investissement en trading attend la v√©rification. Soumettez la preuve.",
   tradingEmptyTitle:
     'Activez un plan de trading pour voir les analyses',
   tradingEmptyDescription:
-    'SÈlectionnez un plan pour dÈbloquer les graphiques et la performance gÈrÈe.',
+    'S√©lectionnez un plan pour d√©bloquer les graphiques et la performance g√©r√©e.',
   viewTradingPlans: 'Voir les plans de trading',
   tradingPlansTitle: 'Plans de trading',
   activatePlan: 'Activer le plan',
   tradingBotEmptyTitle:
-    'Activez un plan de trading pour voir líactivitÈ',
+    'Activez un plan de trading pour voir l‚Äôactivit√©',
   tradingBotEmptyDescription:
-    'Une fois actif, les performances et graphiques de liquiditÈ apparaÓtront.',
+    'Une fois actif, les performances et graphiques de liquidit√© appara√Ætront.',
   tradingEarningsEmptyTitle:
     'Activez un plan de trading pour voir les gains',
   tradingEarningsEmptyDescription:
@@ -816,8 +816,8 @@ const FR: Dictionary = {
   tradingWithdrawalsEmptyTitle:
     'Activez un plan de trading pour demander des retraits',
   tradingWithdrawalsEmptyDescription:
-    'Une fois actif, vous pourrez demander des retraits et voir líhistorique.',
-  recentRequestsTitle: 'Demandes rÈcentes',
+    'Une fois actif, vous pourrez demander des retraits et voir l‚Äôhistorique.',
+  recentRequestsTitle: 'Demandes r√©centes',
 }
 
 const DE: Dictionary = {
@@ -877,49 +877,49 @@ const DE: Dictionary = {
   supportHowItWorksTitle: 'So funktioniert es',
   supportFaqTitle: 'FAQ',
   howPlansTitle: 'Plane und Aktivierung',
-  howPlansSummary: 'Plane w‰hlen, Nachweis senden, Best‰tigung abwarten.',
+  howPlansSummary: 'Plane w√§hlen, Nachweis senden, Best√§tigung abwarten.',
   howPlansBody:
     'Plane definieren Hashrate, Laufzeit und Assets. Nach Auswahl folge den Zahlungsanweisungen und lade den Nachweis hoch.',
   howPlansBodyLong:
-    'Plane bestimmen, wie viel Leistung oder Kapital zugewiesen wird, wie lange der Plan l‰uft und welche Assets verf¸gbar sind. Wenn du einen Plan ausw‰hlst, wird er nicht sofort aktiviert. Der Plan wird als ausstehend erstellt und du erh‰ltst Zahlungsanweisungen mit dem exakten Betrag und der Wallet-Adresse.\n\n' +
-    'Sobald du Beleg und Transaktions-Hash eingereicht hast, geht der Plan in die Pr¸fung. Nach Best‰tigung wird er aktiv und die Kennzahlen beginnen sich zu aktualisieren. Das sch¸tzt deine Zahlung und h‰lt den Ablauf sauber.\n\n' +
-    'Wenn du die Zahlungsseite schlieﬂt, kannst du sp‰ter den Nachweis hochladen. Deine Auswahl bleibt sichtbar, bis sie best‰tigt oder abgelehnt wird.',
+    'Plane bestimmen, wie viel Leistung oder Kapital zugewiesen wird, wie lange der Plan l√§uft und welche Assets verf√ºgbar sind. Wenn du einen Plan ausw√§hlst, wird er nicht sofort aktiviert. Der Plan wird als ausstehend erstellt und du erh√§ltst Zahlungsanweisungen mit dem exakten Betrag und der Wallet-Adresse.\n\n' +
+    'Sobald du Beleg und Transaktions-Hash eingereicht hast, geht der Plan in die Pr√ºfung. Nach Best√§tigung wird er aktiv und die Kennzahlen beginnen sich zu aktualisieren. Das sch√ºtzt deine Zahlung und h√§lt den Ablauf sauber.\n\n' +
+    'Wenn du die Zahlungsseite schlie√üt, kannst du sp√§ter den Nachweis hochladen. Deine Auswahl bleibt sichtbar, bis sie best√§tigt oder abgelehnt wird.',
   howMiningTitle: 'Mining-Performance',
-  howMiningSummary: 'Die Hashrate bleibt stabil, w‰hrend Ertr‰ge wachsen.',
+  howMiningSummary: 'Die Hashrate bleibt stabil, w√§hrend Ertr√§ge wachsen.',
   howMiningBody:
     'Deine Hashrate bleibt nahe am Maximum mit kleinen Schwankungen. Shares und Ertrage werden automatisch aktualisiert.',
   howMiningBodyLong:
-    'Mining-Performance wird durch eine stabile Hashrate und bewegte Z‰hler dargestellt. Die Hashrate ist die zugewiesene Kapazit‰t und steigt nicht endlos. Stattdessen wachsen Total-Hashes, g¸ltige Shares und Ertr‰ge mit der Zeit.\n\n' +
-    'Diese Z‰hler verhalten sich realistisch: kleine Schwankungen sind normal, die Tendenz bleibt innerhalb der Plan-Grenzen. Wenn ein Plan pausiert oder abgeschlossen ist, stoppen die Z‰hler und der Verdienst wird zum auszahlbaren Saldo verschoben.',
+    'Mining-Performance wird durch eine stabile Hashrate und bewegte Z√§hler dargestellt. Die Hashrate ist die zugewiesene Kapazit√§t und steigt nicht endlos. Stattdessen wachsen Total-Hashes, g√ºltige Shares und Ertr√§ge mit der Zeit.\n\n' +
+    'Diese Z√§hler verhalten sich realistisch: kleine Schwankungen sind normal, die Tendenz bleibt innerhalb der Plan-Grenzen. Wenn ein Plan pausiert oder abgeschlossen ist, stoppen die Z√§hler und der Verdienst wird zum auszahlbaren Saldo verschoben.',
   howEarningsTitle: 'Ertrage und Auszahlungen',
-  howEarningsSummary: 'Sch‰tzungen aktualisieren sich, Auszahlungen sind Anfragen.',
+  howEarningsSummary: 'Sch√§tzungen aktualisieren sich, Auszahlungen sind Anfragen.',
   howEarningsBody:
     'Tagliche Schatzzahlen werden automatisch berechnet, sofern kein manueller Override vorliegt. Auszahlungen sind Anfragen.',
   howEarningsBodyLong:
-    'Ertr‰ge werden anhand der Plan-Konfiguration und der aktiven Zeit berechnet. T‰gliche Sch‰tzungen aktualisieren sich nach Zeitplan und spiegeln die erwartete Leistung wider. Bei manueller Anpassung hat dieser Wert Vorrang.\n\n' +
-    'Auszahlungen erfolgen auf Anfrage. Wenn du eine Auszahlung anforderst, wird sie gepr¸ft und der Status aktualisiert. Bei Planabschluss werden die Ertr‰ge dem auszahlbaren Saldo hinzugef¸gt.',
+    'Ertr√§ge werden anhand der Plan-Konfiguration und der aktiven Zeit berechnet. T√§gliche Sch√§tzungen aktualisieren sich nach Zeitplan und spiegeln die erwartete Leistung wider. Bei manueller Anpassung hat dieser Wert Vorrang.\n\n' +
+    'Auszahlungen erfolgen auf Anfrage. Wenn du eine Auszahlung anforderst, wird sie gepr√ºft und der Status aktualisiert. Bei Planabschluss werden die Ertr√§ge dem auszahlbaren Saldo hinzugef√ºgt.',
   howUpgradesTitle: 'Upgrades und Historie',
   howUpgradesSummary: 'Upgrades erhalten die Historie und nutzen Restguthaben.',
   howUpgradesBody:
     'Upgrades gewahren einen Kredit fur verbleibende Zeit. Fruhere Ertrage bleiben sichtbar und konnen freigegeben werden.',
   howUpgradesBodyLong:
-    'Beim Upgrade wird der Restwert des aktuellen Plans als Guthaben auf den neuen Plan angerechnet. Dadurch bleibt dein Fortschritt erhalten. Fr¸here Ertr‰ge und Totals bleiben als Historie sichtbar.\n\n' +
-    'Endet ein Plan w‰hrend eines Upgrades, werden die verbleibenden Ertr‰ge zum auszahlbaren Saldo verschoben. So geht kein Wert verloren.',
+    'Beim Upgrade wird der Restwert des aktuellen Plans als Guthaben auf den neuen Plan angerechnet. Dadurch bleibt dein Fortschritt erhalten. Fr√ºhere Ertr√§ge und Totals bleiben als Historie sichtbar.\n\n' +
+    'Endet ein Plan w√§hrend eines Upgrades, werden die verbleibenden Ertr√§ge zum auszahlbaren Saldo verschoben. So geht kein Wert verloren.',
   howTradingTitle: 'Investment-Trading Einrichtung',
   howTradingSummary: 'Aktivierung nach Nachweis, Ergebnisse als Portfolio.',
   howTradingBodyLong:
-    'Investment-Trading-Pl‰ne folgen dem gleichen Best‰tigungsprozess wie Mining. Nach der Auswahl reichst du den Nachweis ein und der Plan wird nach Best‰tigung aktiv. Danach erscheinen Portfolio-Performance, Allokationen und realisierte Ergebnisse.\n\n' +
-    'Das Trading wird als Portfolio verwaltet, nicht als einzelner Bot. Ergebnisse werden ¸ber Krypto, Aktien und Immobilien hinweg kombiniert.',
+    'Investment-Trading-Pl√§ne folgen dem gleichen Best√§tigungsprozess wie Mining. Nach der Auswahl reichst du den Nachweis ein und der Plan wird nach Best√§tigung aktiv. Danach erscheinen Portfolio-Performance, Allokationen und realisierte Ergebnisse.\n\n' +
+    'Das Trading wird als Portfolio verwaltet, nicht als einzelner Bot. Ergebnisse werden √ºber Krypto, Aktien und Immobilien hinweg kombiniert.',
   howPortfolioTitle: 'Portfolio-Strategie und Allokation',
   howPortfolioSummary: 'Allokationen rotieren je nach Marktfokus.',
   howPortfolioBodyLong:
-    'Die Allokationsmischung zeigt die Verteilung des Kapitals. Diese Mischung ‰ndert sich, sodass ein Asset dominiert und sp‰ter wechselt. Scorecards aktualisieren sich parallel und zeigen die Beitr‰ge der Assetklassen.\n\n' +
-    'Das ist ein gemanagtes Portfolio mit Rebalancing. W‰hrend sich das Portfolio ver‰ndert, aktualisieren sich Equity und realisierter P/L.',
+    'Die Allokationsmischung zeigt die Verteilung des Kapitals. Diese Mischung √§ndert sich, sodass ein Asset dominiert und sp√§ter wechselt. Scorecards aktualisieren sich parallel und zeigen die Beitr√§ge der Assetklassen.\n\n' +
+    'Das ist ein gemanagtes Portfolio mit Rebalancing. W√§hrend sich das Portfolio ver√§ndert, aktualisieren sich Equity und realisierter P/L.',
   howRiskTitle: 'Risiko, Drawdowns und Erholung',
-  howRiskSummary: 'Drawdowns und Erholung werden ¸ber Zeit modelliert.',
+  howRiskSummary: 'Drawdowns und Erholung werden √ºber Zeit modelliert.',
   howRiskBodyLong:
-    'Die Charts zeigen R¸ckg‰nge und Erholungen, um Marktbedingungen abzubilden. Du wirst Phasen mit R¸ckgang und anschlieﬂender Erholung sehen. Das verhindert lineares Wachstum und wirkt realistischer.\n\n' +
-    'Wenn das Ziel erreicht oder die Laufzeit endet, wird der Plan abgeschlossen und die Mittel werden auszahlbar. Eine Aktivit‰tsmeldung und Benachrichtigung erscheinen.',
+    'Die Charts zeigen R√ºckg√§nge und Erholungen, um Marktbedingungen abzubilden. Du wirst Phasen mit R√ºckgang und anschlie√üender Erholung sehen. Das verhindert lineares Wachstum und wirkt realistischer.\n\n' +
+    'Wenn das Ziel erreicht oder die Laufzeit endet, wird der Plan abgeschlossen und die Mittel werden auszahlbar. Eine Aktivit√§tsmeldung und Benachrichtigung erscheinen.',
   faq1Q: 'Wie starte ich mit Mining?',
   faq1A:
     'Plane wahlen, Zahlung abschliessen, Bestatigung abwarten. Danach beginnt das Dashboard Hashrate, Shares und Ertrage zu verfolgen.',
@@ -936,18 +936,18 @@ const DE: Dictionary = {
     'Historische Ertrage stammen aus alten Planen und bleiben sichtbar. Sie konnen nach Freigabe abgehoben werden.',
   faq6Q: 'Wie aktualisiere ich die Wallet-Adresse?',
   faq6A: 'Gehe zu Einstellungen, trage die korrekten Adressen ein und speichere.',
-  faq7Q: 'Wann kann ich meine Ertr‰ge auszahlen?',
-  faq7A: 'Auszahlungen sind mˆglich, sobald die Ertr‰ge als auszahlbar markiert sind. Anfragen werden gepr¸ft und im Aktivit‰tslog angezeigt.',
+  faq7Q: 'Wann kann ich meine Ertr√§ge auszahlen?',
+  faq7A: 'Auszahlungen sind m√∂glich, sobald die Ertr√§ge als auszahlbar markiert sind. Anfragen werden gepr√ºft und im Aktivit√§tslog angezeigt.',
   faq8Q: 'Warum steht mein Plan noch auf ausstehend?',
-  faq8A: 'Ausstehend bedeutet, dass der Nachweis eingegangen ist und die Best‰tigung noch l‰uft. Danach wird der Plan automatisch aktiv.',
-  faq9Q: 'Kann ich meine bevorzugte W‰hrung ‰ndern?',
-  faq9A: 'Ja. ƒndere sie in den Einstellungen. Alle Betr‰ge werden mit dem aktuellen Kurs angezeigt.',
+  faq8A: 'Ausstehend bedeutet, dass der Nachweis eingegangen ist und die Best√§tigung noch l√§uft. Danach wird der Plan automatisch aktiv.',
+  faq9Q: 'Kann ich meine bevorzugte W√§hrung √§ndern?',
+  faq9A: 'Ja. √Ñndere sie in den Einstellungen. Alle Betr√§ge werden mit dem aktuellen Kurs angezeigt.',
   faq10Q: 'Was passiert, wenn ein Plan endet?',
-  faq10A: 'Der Plan stoppt automatisch und die Ertr‰ge werden auszahlbar. Du siehst auﬂerdem eine Abschlussmeldung.',
+  faq10A: 'Der Plan stoppt automatisch und die Ertr√§ge werden auszahlbar. Du siehst au√üerdem eine Abschlussmeldung.',
   faq11Q: 'Wie aktualisieren sich die Trading-Kennzahlen?',
   faq11A: 'Portfolio-Wert, P/L und Strategiedaten aktualisieren sich in Intervallen, um eine gemanagte Performance zu zeigen.',
   faq12Q: 'Wie funktionieren Empfehlungen?',
-  faq12A: 'Teile deinen Link. Wenn jemand sich registriert und bezahlt, kˆnnen Empfehlungsboni gutgeschrieben werden.',
+  faq12A: 'Teile deinen Link. Wenn jemand sich registriert und bezahlt, k√∂nnen Empfehlungsboni gutgeschrieben werden.',
   plansDescription: 'Wahle einen Plan, der zu deinen Zielen passt. Alle Plane bieten 24/7 Support und automatische Auszahlungen.',
   upgradePendingPayment: 'Upgrade ausstehend. Der aktuelle Plan bleibt aktiv, bis die Zahlung bestatigt ist.',
   upgradeCreditNote: 'Upgrade-Kredit basiert auf der Restlaufzeit. Geschatzter Kredit: {amount}.',
@@ -1129,45 +1129,45 @@ const IT: Dictionary = {
   howPlansBody:
     'I piani definiscono hashrate, durata e asset. Dopo la scelta, segui le istruzioni di pagamento e carica la prova.',
   howPlansBodyLong:
-    'I piani determinano quanta potenza o capitale viene assegnato, la durata del piano e quali asset sono disponibili. Quando scegli un piano non viene attivato subito. Il piano viene creato in stato in attesa e vedrai le istruzioni di pagamento con líimporto esatto e líindirizzo del wallet.\n\n' +
+    'I piani determinano quanta potenza o capitale viene assegnato, la durata del piano e quali asset sono disponibili. Quando scegli un piano non viene attivato subito. Il piano viene creato in stato in attesa e vedrai le istruzioni di pagamento con l‚Äôimporto esatto e l‚Äôindirizzo del wallet.\n\n' +
     'Dopo aver inviato ricevuta e hash della transazione, il piano passa in revisione. Una volta confermato, si attiva e le metriche iniziano ad aggiornarsi. Questo protegge il pagamento e rende il processo chiaro.\n\n' +
-    'Se chiudi la pagina di pagamento, puoi tornare pi˘ tardi per caricare la prova. La selezione resta visibile finchÈ non viene approvata o rifiutata.',
+    'Se chiudi la pagina di pagamento, puoi tornare pi√π tardi per caricare la prova. La selezione resta visibile finch√© non viene approvata o rifiutata.',
   howMiningTitle: 'Prestazioni mining',
-  howMiningSummary: 'Líhashrate resta stabile mentre shares e guadagni crescono.',
+  howMiningSummary: 'L‚Äôhashrate resta stabile mentre shares e guadagni crescono.',
   howMiningBody:
     'L hashrate resta vicino al massimo assegnato con piccole fluttuazioni. Share e guadagni si aggiornano automaticamente.',
   howMiningBodyLong:
-    'Le prestazioni mining sono rappresentate da un hashrate stabile e contatori in movimento. Líhashrate Ë la capacit‡ assegnata, quindi non cresce senza limite. Vedrai hash totali, shares valide e guadagni aumentare nel tempo.\n\n' +
-    'Questi contatori sono progettati per essere realistici: piccole fluttuazioni sono normali, ma la tendenza rispetta i limiti del piano. Se un piano Ë in pausa o terminato, i contatori si fermano e i guadagni diventano prelevabili.',
+    'Le prestazioni mining sono rappresentate da un hashrate stabile e contatori in movimento. L‚Äôhashrate √® la capacit√† assegnata, quindi non cresce senza limite. Vedrai hash totali, shares valide e guadagni aumentare nel tempo.\n\n' +
+    'Questi contatori sono progettati per essere realistici: piccole fluttuazioni sono normali, ma la tendenza rispetta i limiti del piano. Se un piano √® in pausa o terminato, i contatori si fermano e i guadagni diventano prelevabili.',
   howEarningsTitle: 'Guadagni e prelievi',
   howEarningsSummary: 'Le stime si aggiornano e i prelievi sono su richiesta.',
   howEarningsBody:
     'Le stime giornaliere sono automatiche salvo override manuale. I prelievi sono richieste che vengono revisionate.',
   howEarningsBodyLong:
-    'I guadagni sono calcolati in base alla configurazione del piano e al tempo attivo. Le stime giornaliere si aggiornano a intervalli e riflettono líoutput previsto. Se cíË un override manuale, quel valore ha priorit‡.\n\n' +
+    'I guadagni sono calcolati in base alla configurazione del piano e al tempo attivo. Le stime giornaliere si aggiornano a intervalli e riflettono l‚Äôoutput previsto. Se c‚Äô√® un override manuale, quel valore ha priorit√†.\n\n' +
     'I prelievi sono richieste. Quando richiedi un prelievo, entra in revisione e lo stato si aggiorna. Quando un piano termina, i guadagni passano al saldo prelevabile.',
   howUpgradesTitle: 'Upgrade e storico',
   howUpgradesSummary: 'Gli upgrade preservano lo storico e applicano il credito residuo.',
   howUpgradesBody:
     'Gli upgrade applicano un credito per il tempo residuo. I guadagni precedenti restano visibili e possono essere rilasciati.',
   howUpgradesBodyLong:
-    'Con líupgrade, il valore residuo del piano attuale viene accreditato sul nuovo piano. Questo evita di perdere progresso. I guadagni precedenti restano visibili come storico.\n\n' +
+    'Con l‚Äôupgrade, il valore residuo del piano attuale viene accreditato sul nuovo piano. Questo evita di perdere progresso. I guadagni precedenti restano visibili come storico.\n\n' +
     'Se un piano termina durante un upgrade, i guadagni residui diventano prelevabili. Nessun valore viene perso e lo storico resta coerente.',
   howTradingTitle: 'Configurazione trading di investimento',
   howTradingSummary: 'Attivazione dopo prova e risultati gestiti.',
   howTradingBodyLong:
     'I piani di trading seguono lo stesso flusso di approvazione del mining. Dopo la selezione, invii la prova e il piano si attiva dopo la conferma. Una volta attivo, vedrai performance del portafoglio, allocazioni e risultati realizzati.\n\n' +
-    'Líambiente di trading Ë gestito come portafoglio, non come singolo bot. I risultati sono combinati tra crypto, azioni e immobiliare.',
+    'L‚Äôambiente di trading √® gestito come portafoglio, non come singolo bot. I risultati sono combinati tra crypto, azioni e immobiliare.',
   howPortfolioTitle: 'Strategia del portafoglio e allocazione',
   howPortfolioSummary: 'Le allocazioni ruotano in base al focus di mercato.',
   howPortfolioBodyLong:
-    'Il mix di allocazione mostra come il capitale Ë distribuito tra gli asset. Questa distribuzione cambia nel tempo per riflettere i cambi di focus. Le scorecard si aggiornano in parallelo mostrando il contributo di ogni asset class.\n\n' +
-    '» un portafoglio gestito con ribilanciamento. Man mano che cambia, equity e P/L realizzato si aggiornano nel tempo.',
+    'Il mix di allocazione mostra come il capitale √® distribuito tra gli asset. Questa distribuzione cambia nel tempo per riflettere i cambi di focus. Le scorecard si aggiornano in parallelo mostrando il contributo di ogni asset class.\n\n' +
+    '√à un portafoglio gestito con ribilanciamento. Man mano che cambia, equity e P/L realizzato si aggiornano nel tempo.',
   howRiskTitle: 'Rischio, drawdown e recupero',
   howRiskSummary: 'Drawdown e recupero sono modellati nel tempo.',
   howRiskBodyLong:
-    'I grafici includono drawdown e recuperi per riflettere condizioni di mercato reali. Vedrai periodi di calo seguiti da recupero. Questo evita una crescita lineare e rende il movimento pi˘ realistico.\n\n' +
-    'Quando líobiettivo Ë raggiunto o la durata termina, il piano si chiude e i fondi diventano prelevabili. Apparir‡ anche una voce di attivit‡ e una notifica.',
+    'I grafici includono drawdown e recuperi per riflettere condizioni di mercato reali. Vedrai periodi di calo seguiti da recupero. Questo evita una crescita lineare e rende il movimento pi√π realistico.\n\n' +
+    'Quando l‚Äôobiettivo √® raggiunto o la durata termina, il piano si chiude e i fondi diventano prelevabili. Apparir√† anche una voce di attivit√† e una notifica.',
   faq1Q: 'Come inizio a minare?',
   faq1A:
     'Scegli un piano, completa il pagamento e attendi la conferma. Poi la dashboard iniziera a tracciare hashrate, share e guadagni.',
@@ -1185,11 +1185,11 @@ const IT: Dictionary = {
   faq6Q: 'Come aggiorno il wallet?',
   faq6A: 'Vai su Impostazioni, inserisci gli indirizzi corretti e salva.',
   faq7Q: 'Quando posso prelevare i guadagni?',
-  faq7A: 'I prelievi sono disponibili quando i guadagni risultano prelevabili. Le richieste vengono revisionate e aggiornate nelle attivit‡.',
-  faq8Q: 'PerchÈ il mio piano Ë ancora in attesa?',
-  faq8A: 'In attesa significa che la prova Ë stata ricevuta e aspetta conferma. Dopo la conferma, il piano si attiva automaticamente.',
+  faq7A: 'I prelievi sono disponibili quando i guadagni risultano prelevabili. Le richieste vengono revisionate e aggiornate nelle attivit√†.',
+  faq8Q: 'Perch√© il mio piano √® ancora in attesa?',
+  faq8A: 'In attesa significa che la prova √® stata ricevuta e aspetta conferma. Dopo la conferma, il piano si attiva automaticamente.',
   faq9Q: 'Posso cambiare la valuta preferita?',
-  faq9A: 'SÏ. Aggiornala in Impostazioni. Tutti gli importi verranno mostrati con il tasso pi˘ recente.',
+  faq9A: 'S√¨. Aggiornala in Impostazioni. Tutti gli importi verranno mostrati con il tasso pi√π recente.',
   faq10Q: 'Cosa succede quando il piano termina?',
   faq10A: 'Il piano si ferma automaticamente e i guadagni diventano prelevabili. Vedrai anche un avviso di completamento.',
   faq11Q: 'Come si aggiornano le metriche di trading?',
@@ -1432,7 +1432,7 @@ const PT: Dictionary = {
   faq5A:
     'Ganhos historicos vem de planos antigos e continuam visiveis. Podem ser liberados quando a janela de liberacao for atendida.',
   faq6Q: 'Como atualizo meu endereco de carteira?',
-  faq6A: 'V· em Configuracoes, informe os enderecos corretos e salve.',
+  faq6A: 'V√° em Configuracoes, informe os enderecos corretos e salve.',
   faq7Q: 'Quando posso sacar meus ganhos?',
   faq7A: 'Os saques ficam disponiveis quando os ganhos se tornam sacaveis. As solicitacoes passam por revisao e aparecem no log.',
   faq8Q: 'Por que meu plano ainda esta pendente?',
@@ -1445,7 +1445,7 @@ const PT: Dictionary = {
   faq11A: 'Equity, P/L e estrategias se atualizam em intervalos para refletir performance gerida.',
   faq12Q: 'Como funcionam os referidos?',
   faq12A: 'Compartilhe seu link. Quando alguem se cadastra e paga, bonus de referidos podem ser creditados.',
-  plansDescription: 'Escolha um plano que combine com seus objetivos. Todos os planos incluem suporte 24/7 e pagamentos autom·ticos.',
+  plansDescription: 'Escolha um plano que combine com seus objetivos. Todos os planos incluem suporte 24/7 e pagamentos autom√°ticos.',
   upgradePendingPayment: 'Upgrade pendente. O plano atual permanece ativo ate a confirmacao do pagamento.',
   upgradeCreditNote: 'O credito de upgrade e baseado no tempo restante. Credito estimado: {amount}.',
   noPlansTitle: 'Nenhum plano disponivel',
@@ -2177,7 +2177,7 @@ const HI: Dictionary = {
   howPlansBody:
     '????? ???? ??????, ???? ?? ??????? ???? ?? ???? ???? ????? ????? ?? ??? ?????? ????????? ?? ???? ???? ?? ????? ??? ?????',
   howPlansBodyLong:
-    '????? ?? ?? ???? ??? ?? ????? ????? ?? ????? ?????? ????, ???? ????? ???? ?? ??? ?? ???? ?????? ???? ????? ????? ?? ????? ?????? ???? ????? ????? ìpendingî ?????? ??? ???? ?? ?? ???? ???? ???? ? ????? ??? ?????? ???? ???\n\n' +
+    '????? ?? ?? ???? ??? ?? ????? ????? ?? ????? ?????? ????, ???? ????? ???? ?? ??? ?? ???? ?????? ???? ????? ????? ?? ????? ?????? ???? ????? ????? ‚Äúpending‚Äù ?????? ??? ???? ?? ?? ???? ???? ???? ? ????? ??? ?????? ???? ???\n\n' +
     '???? ?? ???????????? ??? ????? ?? ??? ????? ??????? ??? ???? ??? ?????? ???? ?? ????? ?????? ???? ?? ?? ????????? ????? ???? ???? ???? ???? ?????? ???????? ???? ?? ?? ????????? ?????? ???? ???\n\n' +
     '??? ?? ?????? ??? ??? ?? ???, ?? ??? ??? ???? ??? ????? ????? ?? ???? ???? ??? ?? ?? ?????? ?? ?? ??????? ?? ???????? ? ?? ????',
   howMiningTitle: '??????? ????????',
@@ -2542,4 +2542,5 @@ const DICTIONARY: Record<LanguageCode, Dictionary> = {
 export function translate(key: string, lang: LanguageCode) {
   return DICTIONARY[lang]?.[key] ?? DICTIONARY.en[key] ?? key
 }
+
 
