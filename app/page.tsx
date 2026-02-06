@@ -98,6 +98,73 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section className="mt-20 space-y-10 text-center">
+          <p className="text-xs uppercase tracking-[0.35em] text-white/60">
+            Transformative Method To Monetize Digital Assets
+          </p>
+          <h2 className="mx-auto max-w-4xl text-3xl font-semibold leading-tight md:text-5xl">
+            Harness Trinity Collective Global Mining Farm Network
+          </h2>
+
+          <div className="infrastructure-container">
+            <div className="infra-card">
+              <div className="icon-container">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="2" y="2" width="20" height="20" rx="2" />
+                  <line x1="7" y1="8" x2="17" y2="8" />
+                  <line x1="7" y1="12" x2="17" y2="12" />
+                  <line x1="7" y1="16" x2="17" y2="16" />
+                  <circle cx="4.5" cy="8" r="0.5" fill="#ffffff" />
+                  <circle cx="4.5" cy="12" r="0.5" fill="#ffffff" />
+                  <circle cx="4.5" cy="16" r="0.5" fill="#ffffff" />
+                </svg>
+              </div>
+              <div className="card-title">ASIC Miners</div>
+              <div className="card-description">
+                Purpose-built machines optimized for Bitcoin mining. High-performance chips deliver maximum hash power with exceptional energy efficiency.
+              </div>
+              <div className="card-stats">200+ TH/s per unit</div>
+            </div>
+
+            <div className="infra-card">
+              <div className="icon-container">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="7" width="18" height="10" rx="2" />
+                  <path d="M7 7V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v3" />
+                  <line x1="7" y1="10" x2="7" y2="14" />
+                  <line x1="10" y1="10" x2="10" y2="14" />
+                  <line x1="14" y1="10" x2="14" y2="14" />
+                  <line x1="17" y1="10" x2="17" y2="14" />
+                  <line x1="9" y1="17" x2="9" y2="20" />
+                  <line x1="15" y1="17" x2="15" y2="20" />
+                </svg>
+              </div>
+              <div className="card-title">GPU Rigs</div>
+              <div className="card-description">
+                Versatile graphics card setups for altcoin mining. Multi-GPU configurations provide flexibility across various proof-of-work algorithms.
+              </div>
+              <div className="card-stats">Multi-GPU flexibility</div>
+            </div>
+
+            <div className="infra-card">
+              <div className="icon-container">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
+                  <path d="M12 12h.01" />
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 2v10" />
+                  <path d="M12 15v7" />
+                </svg>
+              </div>
+              <div className="card-title">Infrastructure</div>
+              <div className="card-description">
+                Advanced cooling systems, reliable power distribution, and network pooling ensure optimal performance and uptime across the entire farm.
+              </div>
+              <div className="card-stats">24/7 uptime guarantee</div>
+            </div>
+          </div>
+        </section>
+
         <section className="mt-20 space-y-6">
           <h2 className="text-3xl font-semibold">Watchlist</h2>
           <div
