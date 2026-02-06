@@ -34,7 +34,7 @@ export default function LanguageToggle() {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+      className="flex w-fit max-w-full items-center gap-3 px-4 py-3 rounded-2xl"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
         backdropFilter: 'blur(20px)',
