@@ -44,19 +44,38 @@ export default async function SupportPage() {
   const howItWorks = [
     {
       title: t('howPlansTitle'),
-      body: t('howPlansBody'),
+      summary: t('howPlansSummary'),
+      body: t('howPlansBodyLong'),
     },
     {
       title: t('howMiningTitle'),
-      body: t('howMiningBody'),
+      summary: t('howMiningSummary'),
+      body: t('howMiningBodyLong'),
     },
     {
       title: t('howEarningsTitle'),
-      body: t('howEarningsBody'),
+      summary: t('howEarningsSummary'),
+      body: t('howEarningsBodyLong'),
     },
     {
       title: t('howUpgradesTitle'),
-      body: t('howUpgradesBody'),
+      summary: t('howUpgradesSummary'),
+      body: t('howUpgradesBodyLong'),
+    },
+    {
+      title: t('howTradingTitle'),
+      summary: t('howTradingSummary'),
+      body: t('howTradingBodyLong'),
+    },
+    {
+      title: t('howPortfolioTitle'),
+      summary: t('howPortfolioSummary'),
+      body: t('howPortfolioBodyLong'),
+    },
+    {
+      title: t('howRiskTitle'),
+      summary: t('howRiskSummary'),
+      body: t('howRiskBodyLong'),
     },
   ]
 
@@ -113,10 +132,23 @@ export default async function SupportPage() {
             <h2 className="text-xl font-semibold text-white mb-4">{t('supportHowItWorksTitle')}</h2>
             <div className="space-y-4 text-sm text-white/70">
               {howItWorks.map(item => (
-                <div key={item.title}>
-                  <div className="text-white font-semibold mb-1">{item.title}</div>
-                  <div>{item.body}</div>
-                </div>
+                <details
+                  key={item.title}
+                  className="group rounded-2xl border border-white/10 bg-white/5 p-4"
+                >
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
+                    <div>
+                      <div className="text-white font-semibold">{item.title}</div>
+                      <div className="mt-1 text-xs text-white/60">{item.summary}</div>
+                    </div>
+                    <span className="text-white/60 transition-transform group-open:rotate-180">v</span>
+                  </summary>
+                  <div className="mt-3 space-y-3 text-sm text-white/70">
+                    {item.body.split('\n\n').map((paragraph, index) => (
+                      <p key={`${item.title}-${index}`}>{paragraph}</p>
+                    ))}
+                  </div>
+                </details>
               ))}
             </div>
           </div>

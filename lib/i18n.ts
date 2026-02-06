@@ -89,13 +89,45 @@ const EN: Dictionary = {
   supportHowItWorksTitle: 'How it works',
   supportFaqTitle: 'FAQ',
   howPlansTitle: 'Plans and activation',
+  howPlansSummary: 'Pick a plan, submit proof, and wait for confirmation.',
   howPlansBody: 'Plans define your assigned hashrate, duration, and supported assets. After selecting a plan, follow the payment instructions and submit your proof when ready.',
+  howPlansBodyLong:
+    'Plans determine how much power or capital is assigned, how long the plan runs, and which assets are available to you. When you choose a plan you are not activating it instantly. The plan is created in a pending state, and you will see payment instructions with the exact amount and wallet address.\n\n' +
+    'Once you submit your receipt and transaction hash, the plan moves into a review state. When confirmation is completed, the plan becomes active and metrics begin to update. This protects you from being charged without receiving service and keeps the process clean for both sides.\n\n' +
+    'If you close the payment page, you can return later to upload proof. Your plan selection remains visible until it is approved or rejected, and you can track its status in your dashboard.',
   howMiningTitle: 'Mining performance',
+  howMiningSummary: 'Hashrate stays steady while shares and earnings grow.',
   howMiningBody: 'Your hashrate is designed to stay near the assigned maximum, with small fluctuations. Shares and earnings update as the system tracks mining activity.',
+  howMiningBodyLong:
+    'Mining performance is represented by a stable hashrate and moving counters. The hashrate is the capacity assigned to your plan, so it does not climb endlessly. Instead you will see total hashes, valid shares, and earnings increase as time passes.\n\n' +
+    'These counters are designed to feel realistic: small natural fluctuations occur, but the overall trend remains aligned with your plan limits. If a plan is paused or completed, mining counters stop and your earned amount is moved to the withdrawable balance.',
   howEarningsTitle: 'Earnings and payouts',
+  howEarningsSummary: 'Estimates update on a schedule and payouts are request-based.',
   howEarningsBody: 'Daily estimates are calculated automatically unless a manual override is applied. Withdrawals are requests that get reviewed before they are processed.',
+  howEarningsBodyLong:
+    'Earnings are calculated from your plan configuration and the time the plan is active. Daily estimates update on a schedule and reflect expected output. If there is a manual override, that value takes priority until it is removed.\n\n' +
+    'Payouts are request based. When you request a withdrawal, it is queued for review and the status updates as it is processed. Completed plan earnings move into the withdrawable balance so you can request them immediately.',
   howUpgradesTitle: 'Upgrades and history',
+  howUpgradesSummary: 'Upgrades preserve history and apply remaining credit.',
   howUpgradesBody: 'Upgrades apply a credit for unused time on the current plan. Your previous earnings remain visible and can be released based on the system rules.',
+  howUpgradesBodyLong:
+    'When you upgrade, the remaining value of your current plan is applied as a credit toward the new plan. This keeps upgrades fair and avoids resetting your progress. Your previous earnings and mined totals remain visible as historical data.\n\n' +
+    'If a plan completes while you are upgrading, its remaining earnings move into the withdrawable pool. This ensures no loss of value and keeps your activity history accurate.',
+  howTradingTitle: 'Investment trading setup',
+  howTradingSummary: 'Trading plans activate after proof and show managed results.',
+  howTradingBodyLong:
+    'Investment trading plans follow the same approval flow as mining. After selecting a plan, you submit payment proof and the plan becomes active only after confirmation. When active, the system starts presenting portfolio performance, allocation shifts, and realized performance.\n\n' +
+    'The trading environment is managed as a portfolio, not a single bot. The system shows a blended result across assets like crypto, stocks, and real estate to reflect a managed strategy rather than isolated trades.',
+  howPortfolioTitle: 'Portfolio strategy and allocation',
+  howPortfolioSummary: 'Allocations shift to reflect changing market focus.',
+  howPortfolioBodyLong:
+    'The allocation mix displays how capital is distributed across assets. This mix updates over time so one asset can become dominant, then rotate to another as strategies shift. The scorecards update in parallel to show how each asset class is contributing to results.\n\n' +
+    'You can think of this as a managed portfolio that rebalances. As the portfolio changes, your equity and realized profit and loss update in a time based sequence.',
+  howRiskTitle: 'Risk, drawdowns, and recovery',
+  howRiskSummary: 'Drawdowns are modeled and recovery is reflected over time.',
+  howRiskBodyLong:
+    'Performance charts include drawdowns and recoveries to mirror real market conditions. You will see periods of decline followed by recovery as the portfolio adjusts. This is designed to avoid a straight line increase and to better represent realistic portfolio movement.\n\n' +
+    'Once the plan target is reached or the duration ends, the plan is marked completed and funds move to withdrawable balance. You will also see an activity log entry and a notification in your overview.',
   faq1Q: 'How do I start mining?',
   faq1A: 'Choose a plan, complete the payment instructions, and wait for confirmation. Once confirmed, your mining dashboard will begin tracking hashrate, shares, and earnings automatically.',
   faq2Q: 'Why are my earnings estimates changing?',
