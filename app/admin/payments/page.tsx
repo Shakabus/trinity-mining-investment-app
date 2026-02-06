@@ -47,7 +47,7 @@ export default async function AdminPaymentsPage() {
 
   const pendingTradingPlans = await prisma.tradingUserPlan.findMany({
     where: {
-      status: 'awaiting_payment',
+      status: { in: ['awaiting_payment', 'selected'] },
       paymentStatus: 'pending',
     },
     include: {
