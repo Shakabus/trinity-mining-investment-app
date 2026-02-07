@@ -6,6 +6,7 @@ import TradingViewWidget from '@/components/trading/TradingViewWidget'
 import WalletLottie from '@/components/marketing/WalletLottie'
 import OnboardingProcess from '@/components/marketing/OnboardingProcess'
 import TradingOnboardingSnake from '@/components/marketing/TradingOnboardingSnake'
+import FeaturesOrbitSection from '@/components/marketing/FeaturesOrbitSection'
 
 export default function HomePage() {
   return (
@@ -210,6 +211,7 @@ export default function HomePage() {
 
         <OnboardingProcess />
         <TradingOnboardingSnake />
+        <FeaturesOrbitSection />
       </main>
     </div>
   )
