@@ -3,6 +3,7 @@ import BitryxHeader from '@/components/marketing/BitryxHeader'
 import HeroLottie from '@/components/marketing/HeroLottie'
 import RevenueCalculator from '@/components/marketing/RevenueCalculator'
 import TradingViewWidget from '@/components/trading/TradingViewWidget'
+import WalletLottie from '@/components/marketing/WalletLottie'
 
 export default function HomePage() {
   return (
@@ -177,6 +178,31 @@ export default function HomePage() {
             }}
           >
             <TradingViewWidget />
+          </div>
+        </section>
+
+        <section className="mt-20 grid gap-10 rounded-[32px] border border-white/10 bg-white/5 p-10 backdrop-blur-2xl md:grid-cols-[1.1fr,0.9fr]">
+          <div className="space-y-6">
+            <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
+              Embrace Trinity in One Strategy for Building a Strong Crypto
+              Revenue Source via Efficient Cloud Hash Power
+            </h2>
+            <p className="text-sm text-white/70 md:text-base">
+              Scale into mining with resilient infrastructure, enterprise-grade
+              monitoring, and verified payout cycles. Trinity in One delivers
+              performance-focused planning so you can grow without operational
+              overhead.
+            </p>
+            <a href="#get-started" className="glass-button">
+              Get Started
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </a>
+          </div>
+          <div className="flex items-center justify-center">
+            <WalletLottie />
           </div>
         </section>
       </main>
