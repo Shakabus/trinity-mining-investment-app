@@ -4,6 +4,7 @@ import HeroLottie from '@/components/marketing/HeroLottie'
 import RevenueCalculator from '@/components/marketing/RevenueCalculator'
 import TradingViewWidget from '@/components/trading/TradingViewWidget'
 import WalletLottie from '@/components/marketing/WalletLottie'
+import OnboardingProcess from '@/components/marketing/OnboardingProcess'
 
 export default function HomePage() {
   return (
@@ -205,6 +206,8 @@ export default function HomePage() {
             <WalletLottie />
           </div>
         </section>
+
+        <OnboardingProcess />
       </main>
     </div>
   )
