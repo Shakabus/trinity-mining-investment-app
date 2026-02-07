@@ -9,13 +9,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .heading {
   width: 100%;
   max-width: 1100px;
   text-align: left;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.8rem;
 }
 
 .intro {
@@ -33,7 +34,7 @@
   height: 100%;
   display: block;
   position: absolute;
-  top: 140px;
+  top: 122px;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -58,6 +59,7 @@
   max-width: 1100px;
   min-height: 680px;
   pointer-events: none;
+  margin: 0 auto;
 }
 
 .snakeStep {
@@ -130,7 +132,7 @@
 
 @media (max-width: 1024px) {
   .snakeSection {
-    min-height: 640px;
+    min-height: 620px;
   }
 
   .snakeSteps {
@@ -138,7 +140,7 @@
   }
 
   .snakeSvg {
-    top: 150px;
+    top: 128px;
   }
 
   .snakeStep span {
@@ -157,16 +159,20 @@
 
 @media (max-width: 768px) {
   .snakeSection {
-    min-height: 760px;
-    padding: 2.2rem 0.4rem 0.8rem;
+    min-height: 690px;
+    padding: 2rem 0.4rem 0.6rem;
   }
 
   .snakeSteps {
-    min-height: 760px;
+    min-height: 690px;
   }
 
   .snakeSvg {
-    top: 170px;
+    top: 118px;
+  }
+
+  .heading {
+    margin-bottom: 0.45rem;
   }
 
   .snakeStep {
@@ -222,15 +228,15 @@
 
 @media (max-width: 480px) {
   .snakeSection {
-    min-height: 840px;
+    min-height: 760px;
   }
 
   .snakeSteps {
-    min-height: 840px;
+    min-height: 760px;
   }
 
   .snakeSvg {
-    top: 185px;
+    top: 116px;
   }
 
   .snakeStep span {

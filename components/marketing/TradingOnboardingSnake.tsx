@@ -60,41 +60,41 @@ export default function TradingOnboardingSnake() {
         <path
           className={styles.snakeLineBg}
           d="
-            M 50 70
-            L 650 70
-            Q 950 70 950 140
-            Q 950 210 650 210
-            L 250 210
-            Q 50 210 50 280
-            Q 50 350 250 350
-            L 650 350
-            Q 950 350 950 420
-            Q 950 490 650 490
-            L 250 490
+            M 175 70
+            L 775 70
+            Q 1075 70 1075 140
+            Q 1075 210 775 210
+            L 375 210
+            Q 175 210 175 280
+            Q 175 350 375 350
+            L 775 350
+            Q 1075 350 1075 420
+            Q 1075 490 775 490
+            L 375 490
           "
         />
         <path
           className={styles.snakeLine}
           style={{ strokeDashoffset: dashOffset }}
           d="
-            M 50 70
-            L 650 70
-            Q 950 70 950 140
-            Q 950 210 650 210
-            L 250 210
-            Q 50 210 50 280
-            Q 50 350 250 350
-            L 650 350
-            Q 950 350 950 420
-            Q 950 490 650 490
-            L 250 490
+            M 175 70
+            L 775 70
+            Q 1075 70 1075 140
+            Q 1075 210 775 210
+            L 375 210
+            Q 175 210 175 280
+            Q 175 350 375 350
+            L 775 350
+            Q 1075 350 1075 420
+            Q 1075 490 775 490
+            L 375 490
           "
         />
       </svg>
 
       <div className={styles.snakeSteps}>
         {STEP_DATA.map((text, index) => {
-          const stepNumber = String(index + 5).padStart(2, '0')
+          const stepNumber = String(index + 1)
           const stepClass = styles[`s${index + 1}` as keyof typeof styles] || ''
           const isActive = progress >= STEP_THRESHOLDS[index]
 
