@@ -11,8 +11,7 @@ declare global {
         renderer: 'svg' | 'canvas' | 'html'
         loop: boolean
         autoplay: boolean
-        path?: string
-        animationData?: unknown
+        path: string
       }) => { destroy: () => void }
     }
   }
@@ -137,24 +136,24 @@ export default function FeaturesOrbitSection() {
     const start = async () => {
       if (!lottieRef.current || !window.lottie) return
       const candidates = ['/lottie/crypto%20bitcoin.json', '/lottie/crypto bitcoin.json']
-      let animationData: unknown = null
+      let path = candidates[0]
       for (const candidate of candidates) {
         try {
-          const response = await fetch(candidate)
+          const response = await fetch(candidate, { method: 'HEAD' })
           if (!response.ok) continue
-          animationData = await response.json()
+          path = candidate
           break
         } catch {
           // try the next path
         }
       }
-      if (cancelled || !lottieRef.current || !window.lottie || !animationData) return
+      if (cancelled || !lottieRef.current || !window.lottie) return
       animation = window.lottie.loadAnimation({
         container: lottieRef.current,
         renderer: 'svg',
         loop: true,
         autoplay: true,
-        animationData,
+        path,
       })
     }
 
