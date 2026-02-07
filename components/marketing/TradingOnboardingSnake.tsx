@@ -51,10 +51,8 @@ export default function TradingOnboardingSnake() {
   return (
     <section ref={sectionRef} className={`${styles.snakeSection} ${alumniSans.className}`}>
       <div className={styles.heading}>
-        <p className={styles.kicker}>Onboarding Process Continuation</p>
-        <h2 className={styles.title}>Investment Trading Onboarding</h2>
-        <p className={styles.subtitle}>
-          Continue the same Trinity in One journey from mining setup into managed multi-asset trading operations.
+        <p className={styles.intro}>
+          Further Elavate your Trinity experience with our profitable Investment trading easy onboarding process.
         </p>
       </div>
 
@@ -114,4 +112,3 @@ export default function TradingOnboardingSnake() {
     </section>
   )
 }
-
