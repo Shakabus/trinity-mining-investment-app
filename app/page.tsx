@@ -181,8 +181,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-20 grid gap-10 rounded-[32px] border border-white/10 bg-white/5 p-10 backdrop-blur-2xl md:grid-cols-[1.1fr,0.9fr]">
-          <div className="space-y-6">
+        <section className="mt-20 flex flex-col gap-10 lg:flex-row lg:items-center">
+          <div className="w-full max-w-2xl space-y-6">
             <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
               Embrace Trinity in One Strategy for Building a Strong Crypto
               Revenue Source via Efficient Cloud Hash Power
@@ -201,7 +201,7 @@ export default function HomePage() {
               </svg>
             </a>
           </div>
-          <div className="flex items-center justify-center">
+          <div className="flex w-full items-center justify-center lg:justify-end">
             <WalletLottie />
           </div>
         </section>

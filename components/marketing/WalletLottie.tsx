@@ -22,29 +22,48 @@ export default function WalletLottie() {
   useEffect(() => {
     let animation: { destroy: () => void } | null = null
     let scriptEl: HTMLScriptElement | null = null
+    let cancelled = false
 
-    const start = () => {
+    const resolvePath = async () => {
+      const candidates = ['/lottie/Crypto-Wallet.json', '/lottie/Crypto%20Wallet.json']
+      for (const candidate of candidates) {
+        try {
+          const response = await fetch(candidate, { method: 'HEAD' })
+          if (response.ok) return candidate
+        } catch {
+          // Ignore and try the next candidate.
+        }
+      }
+      return candidates[0]
+    }
+
+    const start = async () => {
       if (!containerRef.current || !window.lottie) return
+      const path = await resolvePath()
+      if (cancelled || !containerRef.current || !window.lottie) return
       animation = window.lottie.loadAnimation({
         container: containerRef.current,
         renderer: 'svg',
         loop: true,
         autoplay: true,
-        path: '/lottie/Crypto-Wallet.json',
+        path,
       })
     }
 
     if (window.lottie) {
-      start()
+      void start()
     } else {
       scriptEl = document.createElement('script')
       scriptEl.src = 'https://unpkg.com/lottie-web/build/player/lottie.min.js'
       scriptEl.async = true
-      scriptEl.onload = start
+      scriptEl.onload = () => {
+        void start()
+      }
       document.body.appendChild(scriptEl)
     }
 
     return () => {
+      cancelled = true
       animation?.destroy()
       if (scriptEl) {
         scriptEl.remove()
@@ -52,5 +71,5 @@ export default function WalletLottie() {
     }
   }, [])
 
-  return <div ref={containerRef} className="h-[360px] w-full md:h-[420px]" />
+  return <div ref={containerRef} className="h-[320px] w-full max-w-[560px] md:h-[420px]" />
 }
