@@ -160,7 +160,7 @@
 @media (max-width: 768px) {
   .snakeSection {
     min-height: 690px;
-    padding: 2rem 0.4rem 0.6rem;
+    padding: 1.45rem 0.4rem 0.6rem;
   }
 
   .snakeSteps {
@@ -168,11 +168,11 @@
   }
 
   .snakeSvg {
-    top: 118px;
+    top: 92px;
   }
 
   .heading {
-    margin-bottom: 0.45rem;
+    margin-bottom: 0.15rem;
   }
 
   .snakeStep {
@@ -236,7 +236,11 @@
   }
 
   .snakeSvg {
-    top: 116px;
+    top: 88px;
+  }
+
+  .heading {
+    margin-bottom: 0.1rem;
   }
 
   .snakeStep span {
