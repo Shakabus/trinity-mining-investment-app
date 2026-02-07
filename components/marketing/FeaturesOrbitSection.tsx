@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import styles from '@/components/marketing/FeaturesOrbitSection.module.css'
 
 declare global {
@@ -11,7 +11,8 @@ declare global {
         renderer: 'svg' | 'canvas' | 'html'
         loop: boolean
         autoplay: boolean
-        path: string
+        path?: string
+        animationData?: unknown
       }) => { destroy: () => void }
     }
   }
@@ -20,6 +21,9 @@ declare global {
 type FeatureItem = {
   title: string
   description: string
+  slot: 'slot1' | 'slot2' | 'slot3' | 'slot4' | 'slot5' | 'slot6'
+  align: 'left' | 'right'
+  delay: string
   icon: React.ReactNode
 }
 
@@ -28,6 +32,9 @@ const FEATURES: FeatureItem[] = [
     title: 'Real-Time Earnings Dashboard',
     description:
       'Track hashrates, daily earnings, and mining stats live with a customizable dashboard built for transparent visibility and control.',
+    slot: 'slot1',
+    align: 'left',
+    delay: '0s',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -43,6 +50,9 @@ const FEATURES: FeatureItem[] = [
     title: 'Managed Investment Trading Perks',
     description:
       'Access centrally managed trading strategies across crypto, stocks, and property-linked exposure with active risk control and dynamic allocation.',
+    slot: 'slot2',
+    align: 'right',
+    delay: '0.5s',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 3v18" />
@@ -56,6 +66,9 @@ const FEATURES: FeatureItem[] = [
     title: 'Multi-Asset Trading Support',
     description:
       'Operate from one account while portfolio engines rotate exposure between mining-linked assets and market opportunities for better balance.',
+    slot: 'slot3',
+    align: 'right',
+    delay: '1s',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="10" />
@@ -68,6 +81,9 @@ const FEATURES: FeatureItem[] = [
     title: 'Flexible Contract Plans',
     description:
       'Choose contracts by capital level, payout window, and strategy appetite. Move between plan tiers as your portfolio objectives grow.',
+    slot: 'slot4',
+    align: 'right',
+    delay: '1.5s',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -81,6 +97,9 @@ const FEATURES: FeatureItem[] = [
     title: 'Instant Payouts and Low Withdrawal Fees',
     description:
       'Request withdrawals from completed cycles with low fee friction and payout handling designed for faster access to realized earnings.',
+    slot: 'slot5',
+    align: 'left',
+    delay: '2s',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="10" />
@@ -93,6 +112,9 @@ const FEATURES: FeatureItem[] = [
     title: 'Referral and Bonus Programs',
     description:
       'Earn bonus rewards and commission credits by inviting others, with referral activity visible in your dashboard performance views.',
+    slot: 'slot6',
+    align: 'left',
+    delay: '2.5s',
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -107,38 +129,32 @@ const FEATURES: FeatureItem[] = [
 export default function FeaturesOrbitSection() {
   const lottieRef = useRef<HTMLDivElement | null>(null)
 
-  const lottiePaths = useMemo(
-    () => ['/lottie/crypto%20bitcoin.json', '/lottie/crypto bitcoin.json'],
-    []
-  )
-
   useEffect(() => {
     let animation: { destroy: () => void } | null = null
     let scriptEl: HTMLScriptElement | null = null
     let cancelled = false
 
-    const resolvePath = async () => {
-      for (const candidate of lottiePaths) {
-        try {
-          const response = await fetch(candidate, { method: 'HEAD' })
-          if (response.ok) return candidate
-        } catch {
-          // try next path
-        }
-      }
-      return lottiePaths[0]
-    }
-
     const start = async () => {
       if (!lottieRef.current || !window.lottie) return
-      const path = await resolvePath()
-      if (cancelled || !lottieRef.current || !window.lottie) return
+      const candidates = ['/lottie/crypto%20bitcoin.json', '/lottie/crypto bitcoin.json']
+      let animationData: unknown = null
+      for (const candidate of candidates) {
+        try {
+          const response = await fetch(candidate)
+          if (!response.ok) continue
+          animationData = await response.json()
+          break
+        } catch {
+          // try the next path
+        }
+      }
+      if (cancelled || !lottieRef.current || !window.lottie || !animationData) return
       animation = window.lottie.loadAnimation({
         container: lottieRef.current,
         renderer: 'svg',
         loop: true,
         autoplay: true,
-        path,
+        animationData,
       })
     }
 
@@ -159,7 +175,7 @@ export default function FeaturesOrbitSection() {
       animation?.destroy()
       scriptEl?.remove()
     }
-  }, [lottiePaths])
+  }, [])
 
   return (
     <section className={styles.section}>
@@ -171,8 +187,15 @@ export default function FeaturesOrbitSection() {
       <div className={styles.featuresContainer}>
         <div ref={lottieRef} className={styles.bgLottie} aria-hidden="true" />
         {FEATURES.map(item => (
-          <div key={item.title} className={styles.featureItem}>
-            <div className={styles.featureIcon}>{item.icon}</div>
+          <div
+            key={item.title}
+            className={`${styles.featureItem} ${styles[item.slot]} ${
+              item.align === 'right' ? styles.rightAlign : styles.leftAlign
+            }`}
+          >
+            <div className={styles.featureIcon} style={{ animationDelay: item.delay }}>
+              {item.icon}
+            </div>
             <div className={styles.featureContent}>
               <div className={styles.featureTitle}>{item.title}</div>
               <div className={styles.featureDescription}>{item.description}</div>
@@ -183,4 +206,3 @@ export default function FeaturesOrbitSection() {
     </section>
   )
 }
-
