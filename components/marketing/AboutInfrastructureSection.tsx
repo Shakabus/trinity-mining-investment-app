@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import styles from '@/components/marketing/AboutInfrastructureSection.module.css'
+import InfrastructureHighlightNote from '@/components/marketing/InfrastructureHighlightNote'
 
 type InfraItem = {
   title: string
@@ -110,6 +111,8 @@ export default function AboutInfrastructureSection() {
           </article>
         ))}
       </div>
+
+      <InfrastructureHighlightNote />
     </section>
   )
 }
