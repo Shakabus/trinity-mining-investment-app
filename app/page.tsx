@@ -7,6 +7,7 @@ import WalletLottie from '@/components/marketing/WalletLottie'
 import OnboardingProcess from '@/components/marketing/OnboardingProcess'
 import TradingOnboardingSnake from '@/components/marketing/TradingOnboardingSnake'
 import FeaturesOrbitSection from '@/components/marketing/FeaturesOrbitSection'
+import RewardsIncentivesSection from '@/components/marketing/RewardsIncentivesSection'
 
 export default function HomePage() {
   return (
@@ -212,6 +213,7 @@ export default function HomePage() {
         <OnboardingProcess />
         <TradingOnboardingSnake />
         <FeaturesOrbitSection />
+        <RewardsIncentivesSection />
       </main>
     </div>
   )
