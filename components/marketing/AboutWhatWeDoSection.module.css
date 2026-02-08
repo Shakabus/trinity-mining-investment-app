@@ -60,6 +60,7 @@
 
 @media (max-width: 768px) {
   .row {
+    grid-template-columns: 1fr;
     gap: 16px;
   }
 
