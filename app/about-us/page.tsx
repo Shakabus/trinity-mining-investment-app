@@ -1,4 +1,5 @@
 import BitryxHeader from '@/components/marketing/BitryxHeader'
+import MarketingFooter from '@/components/marketing/MarketingFooter'
 
 export default function AboutUsPage() {
   return (
@@ -6,21 +7,20 @@ export default function AboutUsPage() {
       <div className="mx-auto w-full max-w-6xl px-6 pt-6">
         <BitryxHeader />
       </div>
-      <main className="mx-auto w-full max-w-5xl px-6 pb-24 pt-28">
-        <div className="rounded-[32px] border border-white/10 bg-white/5 p-10 backdrop-blur-2xl">
-          <h1 className="text-3xl font-semibold">About Bitryx</h1>
-          <p className="mt-4 text-sm text-white/70">
-            Bitryx combines enterprise-grade mining operations with managed
-            multi-asset portfolio strategies, built for transparency and
-            long-term capital preservation.
+      <main className="mx-auto flex w-full max-w-5xl px-6 pb-24 pt-28">
+        <section className="w-full py-20 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
+            About Us
           </p>
-          <p className="mt-4 text-sm text-white/70">
-            Every plan is verified by internal monitoring, documented payout
-            workflows, and risk controls that prioritize stability before
-            scaling exposure.
+          <h1 className="mt-4 text-4xl font-semibold leading-tight md:text-6xl">
+            Trinity in One
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-sm text-white/70 md:text-base">
+            We build transparent mining and investment systems designed for steady, structured growth.
           </p>
-        </div>
+        </section>
       </main>
+      <MarketingFooter />
     </div>
   )
 }
