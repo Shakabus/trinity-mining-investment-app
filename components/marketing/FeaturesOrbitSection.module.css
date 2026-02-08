@@ -3,6 +3,7 @@
   margin-top: 5.5rem;
   padding: 2rem 0 3rem;
   overflow: hidden;
+  scroll-margin-top: 110px;
 }
 
 .titleWrap {

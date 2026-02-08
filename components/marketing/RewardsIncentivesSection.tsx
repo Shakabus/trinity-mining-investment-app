@@ -64,7 +64,7 @@ export default function RewardsIncentivesSection() {
   }, [])
 
   return (
-    <section className={styles.section}>
+    <section id="incentives" className={styles.section}>
       <div className={styles.headingWrap}>
         <h2 className={styles.title}>Rewards and Incentives</h2>
         <p className={styles.subtitle}>

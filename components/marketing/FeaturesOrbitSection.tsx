@@ -177,7 +177,7 @@ export default function FeaturesOrbitSection() {
   }, [])
 
   return (
-    <section className={styles.section}>
+    <section id="features" className={styles.section}>
       <div className={styles.titleWrap}>
         <h2 className={styles.title}>Our Features</h2>
         <p className={styles.subtitle}>Offering practical and rewarding features</p>
