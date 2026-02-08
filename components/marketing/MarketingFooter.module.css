@@ -55,6 +55,10 @@
   padding: 0;
 }
 
+.linksPane {
+  margin-left: -0.65rem;
+}
+
 .logo {
   font-family: 'Poppins', sans-serif;
   font-size: clamp(1.35rem, 2.1vw, 1.75rem);
@@ -78,9 +82,12 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-/* Pull first link column slightly left for clearer two-column separation */
 .linkGrid .link:nth-child(odd) {
-  transform: translateX(-0.35rem);
+  transform: translateX(0);
+}
+
+.linkGrid .link:nth-child(even) {
+  transform: translateX(0.65rem);
 }
 
 .link {
@@ -157,11 +164,19 @@
     grid-template-columns: 1fr;
   }
 
+  .linksPane {
+    margin-left: 0;
+  }
+
   .linkGrid {
     grid-template-columns: 1fr;
   }
 
   .linkGrid .link:nth-child(odd) {
+    transform: none;
+  }
+
+  .linkGrid .link:nth-child(even) {
     transform: none;
   }
 }
