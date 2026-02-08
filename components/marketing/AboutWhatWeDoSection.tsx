@@ -4,47 +4,56 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import styles from '@/components/marketing/AboutWhatWeDoSection.module.css'
 
+declare global {
+  interface Window {
+    lottie?: {
+      loadAnimation: (options: {
+        container: HTMLElement
+        renderer: 'svg' | 'canvas' | 'html'
+        loop: boolean
+        autoplay: boolean
+        path: string
+      }) => { destroy: () => void }
+    }
+  }
+}
+
 export default function AboutWhatWeDoSection() {
   const containerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     let animation: { destroy: () => void } | null = null
+    let scriptEl: HTMLScriptElement | null = null
     let cancelled = false
 
-    const loadAnimation = async () => {
-      if (!containerRef.current) return
+    const start = () => {
+      if (!containerRef.current || !window.lottie || cancelled) return
 
-      const lottie = (await import('lottie-web')).default
-      const candidates = ['/lottie/Cryptocurrency.json', '/lottie/cryptocurrency.json']
-      let animationData: unknown = null
-
-      for (const candidate of candidates) {
-        try {
-          const response = await fetch(candidate)
-          if (!response.ok) continue
-          animationData = await response.json()
-          break
-        } catch {
-          // Try the next candidate path.
-        }
-      }
-
-      if (!animationData || cancelled || !containerRef.current) return
-
-      animation = lottie.loadAnimation({
+      animation = window.lottie.loadAnimation({
         container: containerRef.current,
         renderer: 'svg',
         loop: true,
         autoplay: true,
-        animationData,
+        path: '/lottie/Cryptocurrency.json',
       })
     }
 
-    void loadAnimation()
+    if (window.lottie) {
+      start()
+    } else {
+      scriptEl = document.createElement('script')
+      scriptEl.src = 'https://unpkg.com/lottie-web/build/player/lottie.min.js'
+      scriptEl.async = true
+      scriptEl.onload = start
+      document.body.appendChild(scriptEl)
+    }
 
     return () => {
       cancelled = true
       animation?.destroy()
+      if (scriptEl) {
+        scriptEl.remove()
+      }
     }
   }, [])
 
