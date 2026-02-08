@@ -25,26 +25,57 @@ export default function AboutWhatWeDoSection() {
     let animation: { destroy: () => void } | null = null
     let scriptEl: HTMLScriptElement | null = null
     let cancelled = false
+    const candidatePaths = [
+      '/lottie/Cryptocurrency.json',
+      '/lottie/cryptocurrency.json',
+      '/lottie/CryptoCurrency.json',
+    ]
 
-    const start = () => {
+    const resolvePath = async () => {
+      for (const candidate of candidatePaths) {
+        try {
+          const response = await fetch(candidate, { method: 'HEAD' })
+          if (response.ok) return candidate
+        } catch {
+          // Try next candidate.
+        }
+      }
+      return candidatePaths[0]
+    }
+
+    const start = async () => {
+      if (!containerRef.current || !window.lottie || cancelled) return
+      const path = await resolvePath()
       if (!containerRef.current || !window.lottie || cancelled) return
 
       animation = window.lottie.loadAnimation({
         container: containerRef.current,
-        renderer: 'svg',
+        renderer: 'canvas',
         loop: true,
         autoplay: true,
-        path: '/lottie/Cryptocurrency.json',
+        path,
       })
     }
 
     if (window.lottie) {
-      start()
+      void start()
     } else {
       scriptEl = document.createElement('script')
       scriptEl.src = 'https://unpkg.com/lottie-web/build/player/lottie.min.js'
       scriptEl.async = true
-      scriptEl.onload = start
+      scriptEl.onload = () => {
+        void start()
+      }
+      scriptEl.onerror = () => {
+        const fallbackScript = document.createElement('script')
+        fallbackScript.src = 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js'
+        fallbackScript.async = true
+        fallbackScript.onload = () => {
+          void start()
+        }
+        document.body.appendChild(fallbackScript)
+        scriptEl = fallbackScript
+      }
       document.body.appendChild(scriptEl)
     }
 
