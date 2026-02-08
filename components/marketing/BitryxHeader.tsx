@@ -45,21 +45,21 @@ export default function BitryxHeader() {
 
       <div className="bitryx-mobile-menu">
         {NAV_ITEMS.map(item => (
-          <a
+          <Link
             key={item.href}
             href={item.href}
             onClick={() => setOpen(false)}
           >
             {item.label}
-          </a>
+          </Link>
         ))}
-        <a
+        <Link
           className="bitryx-login-btn mobile"
           href="/sign-in"
           onClick={() => setOpen(false)}
         >
           Login
-        </a>
+        </Link>
       </div>
     </header>
   )
