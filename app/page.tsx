@@ -232,14 +232,8 @@ export default function HomePage() {
           title="Mining Order & Payout List"
         />
 
-        <section
-          className="mt-10 rounded-[28px] border border-white/15 p-6 md:p-10"
-          style={{
-            background:
-              'linear-gradient(135deg, rgba(96, 35, 150, 0.78), rgba(56, 22, 112, 0.82))',
-          }}
-        >
-          <div className="grid gap-7 lg:grid-cols-[1.1fr,1fr] lg:items-start">
+        <section className="mt-10">
+          <div className="grid gap-8 lg:grid-cols-[1.08fr,1fr] lg:items-start">
             <div className="space-y-5">
               <h2 className="text-4xl font-semibold leading-tight md:text-6xl">
                 Explore Quality Mining Technology{' '}
@@ -247,21 +241,23 @@ export default function HomePage() {
               </h2>
               <p className="max-w-2xl text-sm leading-relaxed text-white/80 md:text-base">
                 Trinity in One combines mining operations and investment trading
-                into one performance system. On the mining side, your allocation
-                maps directly to real hashrate tiers with uptime-focused
-                infrastructure, transparent monitoring, and payout windows tied
-                to active plan cycles.
+                into one performance system.
               </p>
             </div>
 
             <div className="space-y-4 pt-1">
+              <p className="text-sm leading-relaxed text-white/85 md:text-base">
+                On the mining side, your allocation maps directly to real
+                hashrate tiers with uptime-focused infrastructure, transparent
+                monitoring, and payout windows tied to active plan cycles.
+              </p>
               <p className="text-sm leading-relaxed text-white/85 md:text-base">
                 On the trading side, capital is routed through structured
                 investment plans with defined return multipliers, controlled
                 duration windows, and risk-layered portfolio execution across
                 crypto, stocks, and property-linked exposure.
               </p>
-              <p className="text-sm leading-relaxed text-white/75 md:text-base">
+              <p className="text-sm leading-relaxed text-white/85 md:text-base">
                 The result is a unified growth model where mining output and
                 managed trading performance are both tracked from one dashboard,
                 with clear status flow from order to completion.
