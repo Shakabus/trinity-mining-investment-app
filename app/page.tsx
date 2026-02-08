@@ -214,6 +214,14 @@ export default function HomePage() {
         <TradingOnboardingSnake />
         <FeaturesOrbitSection />
         <RewardsIncentivesSection />
+        <section className="mt-3">
+          <div className="mx-auto h-px w-full max-w-6xl bg-white/20" />
+          <p className="mt-2 text-center text-sm text-white/70 md:text-base">
+            All rewards are performance-dependent and influenced by network
+            conditions. Bitryx prioritizes transparency and realistic
+            expectations in how rewards are structured.
+          </p>
+        </section>
       </main>
     </div>
   )
