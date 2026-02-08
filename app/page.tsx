@@ -233,8 +233,8 @@ export default function HomePage() {
         />
 
         <section className="mt-10 overflow-x-auto">
-          <div className="grid min-w-[980px] grid-cols-[1.08fr,1fr] items-start gap-8">
-            <div className="space-y-5">
+          <div className="flex items-start gap-10" style={{ minWidth: 980 }}>
+            <div className="w-1/2 space-y-5">
               <h2 className="text-4xl font-semibold leading-tight md:text-6xl">
                 Explore Quality Mining Technology{' '}
                 <span className="text-fuchsia-500">#TrinityinOne</span>
@@ -245,7 +245,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="space-y-4 pt-1">
+            <div className="w-1/2 space-y-4 pt-1">
               <p className="text-sm leading-relaxed text-white/85 md:text-base">
                 On the mining side, your allocation maps directly to real
                 hashrate tiers with uptime-focused infrastructure, transparent
