@@ -22,10 +22,6 @@ export default function MarketingFooter() {
       <div className={styles.shell}>
         <div className={styles.brandPane}>
           <div className={styles.logo}>Trinity in One</div>
-          <p className={styles.tagline}>
-            Unified mining and investment trading infrastructure, built for transparent
-            execution and structured portfolio growth.
-          </p>
         </div>
 
         <div className={styles.linksPane}>
@@ -43,11 +39,8 @@ export default function MarketingFooter() {
           <h3 className={styles.heading}>Connect</h3>
           <div className={styles.socialRow}>
             <a className={styles.socialIcon} href="#" aria-label="X">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M18.244 2H21l-6.53 7.46L22 22h-5.86l-4.59-6.01L6.3 22H3.54l6.98-7.98L2 2h6.01l4.15 5.47L18.24 2z"
-                  fill="currentColor"
-                />
+              <svg viewBox="0 0 24 24" aria-hidden="true" className={styles.xIcon}>
+                <path d="M18.244 2H21l-6.53 7.46L22 22h-5.86l-4.59-6.01L6.3 22H3.54l6.98-7.98L2 2h6.01l4.15 5.47L18.24 2z" />
               </svg>
             </a>
             <a className={styles.socialIcon} href="#" aria-label="Facebook">
@@ -74,7 +67,7 @@ export default function MarketingFooter() {
       </div>
 
       <div className={styles.meta}>
-        <span>© {year} Trinity in One. All rights reserved.</span>
+        <span>&copy; {year} Trinity in One. All rights reserved.</span>
       </div>
     </footer>
   )

@@ -9,7 +9,8 @@
   width: 100%;
   max-width: 1150px;
   display: grid;
-  gap: 1.25rem;
+  row-gap: 1.25rem;
+  column-gap: 2.4rem;
   grid-template-columns: 1.2fr 1fr 0.9fr;
   border-radius: 30px;
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -48,29 +49,18 @@
 .socialPane {
   position: relative;
   z-index: 1;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 12px 24px rgba(0, 0, 0, 0.28);
-  padding: 1.3rem 1.4rem;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .logo {
   font-family: 'Poppins', sans-serif;
-  font-size: clamp(1.6rem, 2.7vw, 2.1rem);
+  font-size: clamp(1.35rem, 2.1vw, 1.75rem);
   font-weight: 600;
   color: #ffffff;
   letter-spacing: 0.02em;
-}
-
-.tagline {
-  margin-top: 0.95rem;
-  font-family: 'Inter', sans-serif;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 0.95rem;
-  line-height: 1.6;
 }
 
 .heading {
@@ -84,7 +74,7 @@
 
 .linkGrid {
   display: grid;
-  gap: 0.65rem 1.1rem;
+  gap: 0.65rem 2rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -137,9 +127,14 @@
 .socialIcon svg {
   width: 20px;
   height: 20px;
-  fill: currentColor;
+  fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
+}
+
+.xIcon {
+  fill: currentColor !important;
+  stroke: none !important;
 }
 
 .meta {
