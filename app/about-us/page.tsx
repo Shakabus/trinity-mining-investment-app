@@ -44,6 +44,14 @@ export default function AboutUsPage() {
     () => paragraphChars.reduce((sum, chars) => sum + chars.length, 0),
     [paragraphChars],
   )
+  const paragraphStartOffsets = useMemo(() => {
+    let offset = 0
+    return paragraphChars.map(chars => {
+      const start = offset
+      offset += chars.length
+      return start
+    })
+  }, [paragraphChars])
 
   const totalChars = titleChars.length + bodyCharCount
 
@@ -73,8 +81,6 @@ export default function AboutUsPage() {
   const titleHighlightCount = Math.min(highlightedCount, titleChars.length)
   const bodyHighlightCount = Math.max(0, highlightedCount - titleChars.length)
 
-  let bodyOffset = 0
-
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="mx-auto w-full max-w-6xl px-6 pt-6">
@@ -103,8 +109,7 @@ export default function AboutUsPage() {
 
           <div className="mt-5 space-y-5">
             {paragraphChars.map((chars, paragraphIndex) => {
-              const paragraphStart = bodyOffset
-              bodyOffset += chars.length
+              const paragraphStart = paragraphStartOffsets[paragraphIndex] ?? 0
 
               return (
                 <p
