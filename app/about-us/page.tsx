@@ -44,14 +44,15 @@ export default function AboutUsPage() {
     () => paragraphChars.reduce((sum, chars) => sum + chars.length, 0),
     [paragraphChars],
   )
-  const paragraphStartOffsets = useMemo(() => {
-    let offset = 0
-    return paragraphChars.map(chars => {
-      const start = offset
-      offset += chars.length
-      return start
-    })
-  }, [paragraphChars])
+  const paragraphStartOffsets = useMemo(
+    () =>
+      paragraphChars.map((_, index) =>
+        paragraphChars
+          .slice(0, index)
+          .reduce((sum, chars) => sum + chars.length, 0),
+      ),
+    [paragraphChars],
+  )
 
   const totalChars = titleChars.length + bodyCharCount
 
