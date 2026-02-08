@@ -5,6 +5,7 @@ import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import MissionVisionCards from '@/components/marketing/MissionVisionCards'
 import AboutWhatWeDoSection from '@/components/marketing/AboutWhatWeDoSection'
+import AboutInfrastructureSection from '@/components/marketing/AboutInfrastructureSection'
 
 const TITLE_TEXT = 'Our Story'
 
@@ -134,6 +135,7 @@ export default function AboutUsPage() {
 
         <MissionVisionCards />
         <AboutWhatWeDoSection />
+        <AboutInfrastructureSection />
       </main>
 
       <MarketingFooter />
