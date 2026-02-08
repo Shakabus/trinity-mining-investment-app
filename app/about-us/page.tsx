@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
+import MissionVisionCards from '@/components/marketing/MissionVisionCards'
 
 const TITLE_TEXT = 'Our Story'
 
@@ -129,6 +130,8 @@ export default function AboutUsPage() {
             })}
           </div>
         </section>
+
+        <MissionVisionCards />
       </main>
 
       <MarketingFooter />
