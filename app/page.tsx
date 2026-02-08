@@ -104,6 +104,11 @@ export default function HomePage() {
           </div>
         </section>
 
+        <OrderPayoutList
+          variant="trading"
+          title="Trading Investment Order & Payout List"
+        />
+
         <section className="mt-20 space-y-10 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-white/60">
             Transformative Method To Monetize Digital Assets
@@ -223,7 +228,10 @@ export default function HomePage() {
             expectations in how rewards are structured.
           </p>
         </section>
-        <OrderPayoutList />
+        <OrderPayoutList
+          variant="mining"
+          title="Mining Order & Payout List"
+        />
       </main>
     </div>
   )

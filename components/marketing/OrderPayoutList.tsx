@@ -4,31 +4,43 @@ import { useMemo, useState } from 'react'
 import styles from '@/components/marketing/OrderPayoutList.module.css'
 
 type TabKey = 'orders' | 'completed'
+type Variant = 'mining' | 'trading'
 
-type PlanRow = {
+type MiningPlanRow = {
   name: string
   hashrate: string
   buyInPrice: string
   payoutPrice: string
+  durationDays: number[]
   type: 'Mining'
+}
+
+type TradingPlanRow = {
+  name: string
+  minDurationHours: number
+  maxDurationHours: number
+  investmentUsd: number
+  returnRate: number
+  type: 'Investment'
 }
 
 type Row = {
   planName: string
   startDate: string
   endDate: string
-  hashrate: string
-  type: 'Mining'
+  metric: string
+  type: 'Mining' | 'Investment'
   price: string
   status: 'Pending' | 'Completed'
 }
 
-const MINING_PLANS: PlanRow[] = [
+const MINING_PLANS: MiningPlanRow[] = [
   {
     name: 'Starter Plan',
     hashrate: '10 TH/s',
     buyInPrice: '$50.00',
     payoutPrice: '$95.00',
+    durationDays: [30, 60, 90],
     type: 'Mining',
   },
   {
@@ -36,6 +48,7 @@ const MINING_PLANS: PlanRow[] = [
     hashrate: '30 TH/s',
     buyInPrice: '$120.00',
     payoutPrice: '$235.00',
+    durationDays: [90, 180],
     type: 'Mining',
   },
   {
@@ -43,6 +56,7 @@ const MINING_PLANS: PlanRow[] = [
     hashrate: '50 TH/s',
     buyInPrice: '$200.00',
     payoutPrice: '$420.00',
+    durationDays: [180, 365],
     type: 'Mining',
   },
   {
@@ -50,6 +64,7 @@ const MINING_PLANS: PlanRow[] = [
     hashrate: '200 TH/s',
     buyInPrice: '$800.00',
     payoutPrice: '$1,920.00',
+    durationDays: [365, 730, 1095],
     type: 'Mining',
   },
   {
@@ -57,6 +72,7 @@ const MINING_PLANS: PlanRow[] = [
     hashrate: '1,000 TH/s',
     buyInPrice: '$5,000.00',
     payoutPrice: '$13,500.00',
+    durationDays: [730, 1095, 1825],
     type: 'Mining',
   },
   {
@@ -64,7 +80,59 @@ const MINING_PLANS: PlanRow[] = [
     hashrate: '1,000 TH/s',
     buyInPrice: '$12,000.00',
     payoutPrice: '$31,200.00',
+    durationDays: [730, 1095, 1825],
     type: 'Mining',
+  },
+]
+
+const TRADING_PLANS: TradingPlanRow[] = [
+  {
+    name: 'Mega Cloud Pack',
+    minDurationHours: 35,
+    maxDurationHours: 48,
+    investmentUsd: 2000,
+    returnRate: 2.12,
+    type: 'Investment',
+  },
+  {
+    name: 'Mega Cloud Pack',
+    minDurationHours: 35,
+    maxDurationHours: 48,
+    investmentUsd: 9500,
+    returnRate: 2.78,
+    type: 'Investment',
+  },
+  {
+    name: 'Top Premium Package',
+    minDurationHours: 48,
+    maxDurationHours: 72,
+    investmentUsd: 10000,
+    returnRate: 2.25,
+    type: 'Investment',
+  },
+  {
+    name: 'Top Premium Package',
+    minDurationHours: 48,
+    maxDurationHours: 72,
+    investmentUsd: 42000,
+    returnRate: 2.75,
+    type: 'Investment',
+  },
+  {
+    name: 'VIP Promo Pack',
+    minDurationHours: 72,
+    maxDurationHours: 96,
+    investmentUsd: 50000,
+    returnRate: 2.35,
+    type: 'Investment',
+  },
+  {
+    name: 'VIP Promo Pack',
+    minDurationHours: 72,
+    maxDurationHours: 96,
+    investmentUsd: 120000,
+    returnRate: 2.8,
+    type: 'Investment',
   },
 ]
 
@@ -76,8 +144,13 @@ function formatDate(date: Date) {
   })
 }
 
-function pickDurations() {
-  return [30, 60, 90, 180, 365, 730][Math.floor(Math.random() * 6)]
+function formatUsd(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
 }
 
 function shuffle<T>(values: T[]): T[] {
@@ -89,19 +162,25 @@ function shuffle<T>(values: T[]): T[] {
   return copy
 }
 
-function buildRows(status: 'Pending' | 'Completed'): Row[] {
-  const plans = shuffle(MINING_PLANS)
-  return plans.map(plan => {
-    const duration = pickDurations()
+function pickFrom<T>(values: T[]): T {
+  return values[Math.floor(Math.random() * values.length)]
+}
+
+function randomHours(min: number, max: number): number {
+  const span = max - min
+  return min + Math.floor(Math.random() * (span + 1))
+}
+
+function buildMiningRows(status: 'Pending' | 'Completed'): Row[] {
+  return shuffle(MINING_PLANS).map(plan => {
+    const duration = pickFrom(plan.durationDays)
     const now = new Date()
     const start = new Date(now)
     const end = new Date(now)
 
     if (status === 'Pending') {
-      start.setDate(now.getDate())
       end.setDate(now.getDate() + duration)
     } else {
-      end.setDate(now.getDate())
       start.setDate(now.getDate() - duration)
     }
 
@@ -109,7 +188,7 @@ function buildRows(status: 'Pending' | 'Completed'): Row[] {
       planName: plan.name,
       startDate: formatDate(start),
       endDate: formatDate(end),
-      hashrate: plan.hashrate,
+      metric: plan.hashrate,
       type: plan.type,
       price: status === 'Pending' ? plan.buyInPrice : plan.payoutPrice,
       status,
@@ -117,16 +196,63 @@ function buildRows(status: 'Pending' | 'Completed'): Row[] {
   })
 }
 
-export default function OrderPayoutList() {
+function buildTradingRows(status: 'Pending' | 'Completed'): Row[] {
+  return shuffle(TRADING_PLANS).map(plan => {
+    const now = new Date()
+    const durationHours = randomHours(plan.minDurationHours, plan.maxDurationHours)
+    const start = new Date(now)
+    const end = new Date(now)
+
+    if (status === 'Pending') {
+      end.setHours(now.getHours() + durationHours)
+    } else {
+      start.setHours(now.getHours() - durationHours)
+    }
+
+    const payoutUsd = plan.investmentUsd * plan.returnRate
+
+    return {
+      planName: plan.name,
+      startDate: formatDate(start),
+      endDate: formatDate(end),
+      metric: `${plan.returnRate.toFixed(2)}x`,
+      type: plan.type,
+      price: status === 'Pending' ? formatUsd(plan.investmentUsd) : formatUsd(payoutUsd),
+      status,
+    }
+  })
+}
+
+function buildRows(variant: Variant, status: 'Pending' | 'Completed'): Row[] {
+  return variant === 'trading' ? buildTradingRows(status) : buildMiningRows(status)
+}
+
+interface OrderPayoutListProps {
+  variant?: Variant
+  title?: string
+}
+
+export default function OrderPayoutList({
+  variant = 'mining',
+  title,
+}: OrderPayoutListProps) {
   const [tab, setTab] = useState<TabKey>('orders')
-  const pendingRows = useMemo(() => buildRows('Pending'), [])
-  const completedRows = useMemo(() => buildRows('Completed'), [])
+  const pendingRows = useMemo(() => buildRows(variant, 'Pending'), [variant])
+  const completedRows = useMemo(() => buildRows(variant, 'Completed'), [variant])
   const rows = tab === 'orders' ? pendingRows : completedRows
+
+  const sectionTitle =
+    title ||
+    (variant === 'trading'
+      ? 'Trading Investment Order & Payout List'
+      : 'Mining Order & Payout List')
+
+  const metricHeader = variant === 'trading' ? 'Return Rate' : 'Hashpower'
 
   return (
     <section className={styles.section}>
       <div className={styles.headingWrap}>
-        <h2 className={styles.title}>Order &amp; Payout List</h2>
+        <h2 className={styles.title}>{sectionTitle}</h2>
       </div>
 
       <div className={styles.tabs}>
@@ -153,19 +279,19 @@ export default function OrderPayoutList() {
               <th>Order Created</th>
               <th>Start Date</th>
               <th>End Date</th>
-              <th>Hashpower</th>
+              <th>{metricHeader}</th>
               <th>Type</th>
               <th>Price</th>
               <th>Order Status</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(row => (
-              <tr key={`${tab}-${row.planName}-${row.startDate}`}>
+            {rows.map((row, index) => (
+              <tr key={`${tab}-${row.planName}-${row.startDate}-${index}`}>
                 <td>{row.planName}</td>
                 <td>{row.startDate}</td>
                 <td>{row.endDate}</td>
-                <td>{row.hashrate}</td>
+                <td>{row.metric}</td>
                 <td>{row.type}</td>
                 <td>{row.price}</td>
                 <td>
