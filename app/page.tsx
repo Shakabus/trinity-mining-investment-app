@@ -8,6 +8,7 @@ import OnboardingProcess from '@/components/marketing/OnboardingProcess'
 import TradingOnboardingSnake from '@/components/marketing/TradingOnboardingSnake'
 import FeaturesOrbitSection from '@/components/marketing/FeaturesOrbitSection'
 import RewardsIncentivesSection from '@/components/marketing/RewardsIncentivesSection'
+import OrderPayoutList from '@/components/marketing/OrderPayoutList'
 
 export default function HomePage() {
   return (
@@ -218,10 +219,11 @@ export default function HomePage() {
           <div className="mx-auto h-px w-full max-w-6xl bg-white/20" />
           <p className="mt-2 text-center text-sm text-white/70 md:text-base">
             All rewards are performance-dependent and influenced by network
-            conditions. Bitryx prioritizes transparency and realistic
+            conditions. Trinity In One prioritizes transparency and realistic
             expectations in how rewards are structured.
           </p>
         </section>
+        <OrderPayoutList />
       </main>
     </div>
   )
