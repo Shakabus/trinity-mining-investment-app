@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react'
 import styles from '@/components/marketing/AboutInfrastructureSection.module.css'
 
 type InfraItem = {
   title: string
   description: string
-  icon: JSX.Element
+  icon: ReactNode
 }
 
 const ITEMS: InfraItem[] = [
