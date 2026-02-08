@@ -8,6 +8,7 @@ import TradingOnboardingSnake from '@/components/marketing/TradingOnboardingSnak
 import FeaturesOrbitSection from '@/components/marketing/FeaturesOrbitSection'
 import RewardsIncentivesSection from '@/components/marketing/RewardsIncentivesSection'
 import OrderPayoutList from '@/components/marketing/OrderPayoutList'
+import MarketingFooter from '@/components/marketing/MarketingFooter'
 
 export default function HomePage() {
   return (
@@ -266,6 +267,7 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+      <MarketingFooter />
     </div>
   )
 }
