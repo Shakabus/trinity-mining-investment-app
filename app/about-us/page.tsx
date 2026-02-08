@@ -6,6 +6,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter'
 import MissionVisionCards from '@/components/marketing/MissionVisionCards'
 import AboutWhatWeDoSection from '@/components/marketing/AboutWhatWeDoSection'
 import AboutInfrastructureSection from '@/components/marketing/AboutInfrastructureSection'
+import AboutWhyChooseTrinitySnake from '@/components/marketing/AboutWhyChooseTrinitySnake'
 
 const TITLE_TEXT = 'Our Story'
 
@@ -136,6 +137,7 @@ export default function AboutUsPage() {
         <MissionVisionCards />
         <AboutWhatWeDoSection />
         <AboutInfrastructureSection />
+        <AboutWhyChooseTrinitySnake />
       </main>
 
       <MarketingFooter />
