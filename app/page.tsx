@@ -235,7 +235,7 @@ export default function HomePage() {
         <section className="mt-10 overflow-x-auto">
           <div className="flex items-start gap-10" style={{ minWidth: 980 }}>
             <div className="w-1/2 space-y-5">
-              <h2 className="text-4xl font-semibold leading-tight md:text-6xl">
+              <h2 className="text-3xl font-semibold leading-tight md:text-5xl">
                 Explore Quality Mining Technology{' '}
                 <span className="text-fuchsia-500">#TrinityinOne</span>
               </h2>
