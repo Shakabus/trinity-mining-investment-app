@@ -128,7 +128,7 @@ a[aria-disabled="true"],
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   border-bottom: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 30px;
-  overflow-x: clip;
+  overflow: visible;
 }
 
 .bitryx-container {
@@ -262,9 +262,12 @@ a[aria-disabled="true"],
   display: flex;
   flex-direction: column;
   gap: 26px;
-  transition: right 0.5s ease;
+  transition: right 0.35s ease, opacity 0.25s ease, transform 0.25s ease;
   z-index: 20000;
-  pointer-events: auto;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
 }
 
 .bitryx-login-btn.mobile {
@@ -273,12 +276,21 @@ a[aria-disabled="true"],
   align-self: flex-start;
 }
 
+.bitryx-mobile-menu a {
+  display: block;
+  user-select: none;
+}
+
 .bitryx-mobile-menu a:hover {
   opacity: 1;
 }
 
 .bitryx-header.active .bitryx-mobile-menu {
   right: 20px;
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .bitryx-header.active .bitryx-toggle span:nth-child(1) {
