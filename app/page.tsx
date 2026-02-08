@@ -232,8 +232,8 @@ export default function HomePage() {
           title="Mining Order & Payout List"
         />
 
-        <section className="mt-10">
-          <div className="grid gap-8 lg:grid-cols-[1.08fr,1fr] lg:items-start">
+        <section className="mt-10 overflow-x-auto">
+          <div className="grid min-w-[980px] grid-cols-[1.08fr,1fr] items-start gap-8">
             <div className="space-y-5">
               <h2 className="text-4xl font-semibold leading-tight md:text-6xl">
                 Explore Quality Mining Technology{' '}
