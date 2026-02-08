@@ -9,6 +9,7 @@ import FeaturesOrbitSection from '@/components/marketing/FeaturesOrbitSection'
 import RewardsIncentivesSection from '@/components/marketing/RewardsIncentivesSection'
 import OrderPayoutList from '@/components/marketing/OrderPayoutList'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
+import Link from 'next/link'
 
 export default function HomePage() {
   return (
@@ -203,13 +204,13 @@ export default function HomePage() {
               performance-focused planning so you can grow without operational
               overhead.
             </p>
-            <a href="#get-started" className="glass-button">
+            <Link href="/sign-up" className="glass-button">
               Get Started
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="12 5 19 12 12 19" />
               </svg>
-            </a>
+            </Link>
           </div>
           <div className="flex w-full items-center justify-center lg:justify-end">
             <WalletLottie />

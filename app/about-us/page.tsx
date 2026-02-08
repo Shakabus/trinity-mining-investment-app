@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import MissionVisionCards from '@/components/marketing/MissionVisionCards'
+import AboutWhatWeDoSection from '@/components/marketing/AboutWhatWeDoSection'
 
 const TITLE_TEXT = 'Our Story'
 
@@ -132,6 +133,7 @@ export default function AboutUsPage() {
         </section>
 
         <MissionVisionCards />
+        <AboutWhatWeDoSection />
       </main>
 
       <MarketingFooter />
