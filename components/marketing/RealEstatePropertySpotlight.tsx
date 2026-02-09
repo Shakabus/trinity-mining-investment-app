@@ -11,6 +11,7 @@ type BuyInOption = {
   duration: string
   payoutModel: string
   projectedBand: string
+  illustrativeOutcome: string
 }
 
 type PropertyItem = {
@@ -61,28 +62,32 @@ const PROPERTIES: PropertyItem[] = [
         minimum: '$5,000',
         duration: '12 months',
         payoutModel: 'Monthly rental-income share',
-        projectedBand: '0.8% - 1.2% monthly (performance-based)',
+        projectedBand: '9% - 14% annualized (performance-based)',
+        illustrativeOutcome: '$5,000 -> $5,450-$5,700 in 12 months*',
       },
       {
         tier: 'Hospitality Revenue Pool',
         minimum: '$15,000',
         duration: '18 months',
         payoutModel: 'Monthly hotel operating surplus share',
-        projectedBand: '1.0% - 1.6% monthly (performance-based)',
+        projectedBand: '11% - 18% annualized (performance-based)',
+        illustrativeOutcome: '$15,000 -> $17,475-$19,050 over 18 months*',
       },
       {
         tier: 'Floor Allocation Plus',
         minimum: '$35,000',
         duration: '24 months',
         payoutModel: 'Blended room + F&B revenue split',
-        projectedBand: '1.2% - 1.9% monthly (performance-based)',
+        projectedBand: '13% - 21% annualized (performance-based)',
+        illustrativeOutcome: '$35,000 -> $44,100-$49,700 over 24 months*',
       },
       {
         tier: 'Strategic Asset Allocation',
         minimum: '$75,000',
         duration: '36 months',
         payoutModel: 'Priority allocation with blended yield',
-        projectedBand: '1.4% - 2.2% monthly (performance-based)',
+        projectedBand: '15% - 24% annualized (performance-based)',
+        illustrativeOutcome: '$75,000 -> $113,250-$129,000 over 36 months*',
       },
     ],
   },
@@ -117,28 +122,92 @@ const PROPERTIES: PropertyItem[] = [
         minimum: '$7,500',
         duration: '12 months',
         payoutModel: 'Monthly net room-revenue participation',
-        projectedBand: '0.9% - 1.3% monthly (performance-based)',
+        projectedBand: '10% - 15% annualized (performance-based)',
+        illustrativeOutcome: '$7,500 -> $8,250-$8,625 in 12 months*',
       },
       {
         tier: 'Premium Operations Pool',
         minimum: '$20,000',
         duration: '18 months',
         payoutModel: 'Monthly rooms + event surplus participation',
-        projectedBand: '1.1% - 1.7% monthly (performance-based)',
+        projectedBand: '12% - 19% annualized (performance-based)',
+        illustrativeOutcome: '$20,000 -> $23,600-$25,700 over 18 months*',
       },
       {
         tier: 'Hospitality Yield Plus',
         minimum: '$45,000',
         duration: '24 months',
         payoutModel: 'Blended occupancy and outlet revenue split',
-        projectedBand: '1.3% - 2.0% monthly (performance-based)',
+        projectedBand: '14% - 22% annualized (performance-based)',
+        illustrativeOutcome: '$45,000 -> $57,600-$64,800 over 24 months*',
       },
       {
         tier: 'Executive Asset Allocation',
         minimum: '$90,000',
         duration: '36 months',
         payoutModel: 'Priority monthly yield with strategic weighting',
-        projectedBand: '1.5% - 2.3% monthly (performance-based)',
+        projectedBand: '16% - 25% annualized (performance-based)',
+        illustrativeOutcome: '$90,000 -> $136,800-$157,500 over 36 months*',
+      },
+    ],
+  },
+  {
+    id: 'standard-london',
+    title: 'The Standard, London',
+    location: 'London, England, UK',
+    tag: 'Urban Lifestyle Hotel',
+    summary:
+      'A prominent Kings Cross hospitality asset with strong business, rail-hub, and lifestyle demand patterns. Trinity positions this property for structured monthly income participation with tiered entry options.',
+    imageSrc: '/properties/standard-london.jpg',
+    imageFallback: 'Add property image: /public/properties/standard-london.jpg',
+    facts: [
+      { label: 'Address', value: '10 Argyle Street' },
+      { label: 'City', value: 'London WC1H 8EG' },
+      { label: 'Asset Scale', value: '266-room hospitality profile' },
+      { label: 'Income Logic', value: 'Monthly occupancy-linked yield share' },
+    ],
+    modalTitle: 'The Standard, London',
+    modalLocation: '10 Argyle St, London WC1H 8EG, United Kingdom',
+    overview:
+      'The Standard, London is a centrally located hospitality asset adjacent to Kings Cross with high transport connectivity and premium demand overlap across business and leisure segments. Trinity structures this property as a managed monthly return lane tied to operating performance and controlled payout windows.',
+    highlights: [
+      'Prime Kings Cross transport and tourism node positioning',
+      'Lifestyle-hospitality demand plus business travel overlap',
+      'Strong potential from room, dining, and event utilization',
+      'Managed monthly distribution model with cycle reporting',
+    ],
+    options: [
+      {
+        tier: 'Urban Entry Allocation',
+        minimum: '$5,000',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '11% - 17% annualized (performance-based)',
+        illustrativeOutcome: '$5,000 -> $5,550-$5,850 in 12 months*',
+      },
+      {
+        tier: 'Kings Cross Revenue Pool',
+        minimum: '$18,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + outlet surplus participation',
+        projectedBand: '13% - 21% annualized (performance-based)',
+        illustrativeOutcome: '$18,000 -> $22,000-$23,670 over 18 months*',
+      },
+      {
+        tier: 'Prime Hospitality Plus',
+        minimum: '$40,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy and premium spend split',
+        projectedBand: '15% - 24% annualized (performance-based)',
+        illustrativeOutcome: '$40,000 -> $52,000-$59,200 over 24 months*',
+      },
+      {
+        tier: 'Executive London Allocation',
+        minimum: '$85,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '17% - 27% annualized (performance-based)',
+        illustrativeOutcome: '$85,000 -> $128,350-$153,850 over 36 months*',
       },
     ],
   },
@@ -259,6 +328,7 @@ export default function RealEstatePropertySpotlight() {
                       <th>Duration</th>
                       <th>Payout Basis</th>
                       <th>Projected Return Band</th>
+                      <th>Illustrative Outcome*</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -269,11 +339,17 @@ export default function RealEstatePropertySpotlight() {
                         <td>{option.duration}</td>
                         <td>{option.payoutModel}</td>
                         <td>{option.projectedBand}</td>
+                        <td>{option.illustrativeOutcome}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </section>
+
+              <p className={styles.blockText}>
+                *Illustrative outcomes are scenario examples for presentation
+                purposes only and do not represent guaranteed returns.
+              </p>
 
               <div className={styles.modalActions}>
                 <Link href="/dashboard/real-estate" className={styles.btnPrimary}>
