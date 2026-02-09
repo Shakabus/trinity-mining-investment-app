@@ -860,6 +860,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'westin-maui-kaanapali',
+    title: "The Westin Maui Resort & Spa, Ka'anapali",
+    location: 'Maui, Hawaii, USA',
+    tag: 'Oceanfront Resort Asset',
+    summary:
+      'A premier oceanfront resort in Kaanapali with strong leisure demand, premium room categories, and destination-driven occupancy. Trinity structures this property as a managed participation lane with monthly performance reporting and payout cycles.',
+    imageSrc: '/properties/westin-maui-kaanapali.jpg',
+    imageAlternates: [
+      '/properties/westin-maui-resort-spa-kaanapali.jpg',
+      '/properties/the-westin-maui-resort-spa.jpg',
+      '/properties/westin-kaanapali-maui.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/westin-maui-kaanapali.jpg',
+    facts: [
+      { label: 'Address', value: '2365 Kaanapali Parkway' },
+      { label: 'City', value: 'Lahaina, HI 96761' },
+      { label: 'Asset Scale', value: '750+ room oceanfront resort profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + resort + activities participation' },
+    ],
+    modalTitle: "The Westin Maui Resort & Spa, Ka'anapali",
+    modalLocation: '2365 Kaanapali Pkwy, Lahaina, Hawaii 96761, United States',
+    overview:
+      'The Westin Maui Resort and Spa, Kaanapali is a flagship Hawaii hospitality asset with strong seasonal leisure demand, premium oceanfront positioning, and high ancillary spend potential. Trinity maps this property into structured buy-in tiers tied to recurring monthly operating windows.',
+    highlights: [
+      'Prime Ka anapali beachfront positioning with high tourism demand',
+      'Large-scale resort profile with diversified room mix',
+      'Revenue exposure across rooms, dining, experiences, and resort amenities',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Hawaii Entry Allocation',
+        minimum: '$9,500',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '150% - 215% total cycle',
+        illustrativeOutcome: '$9,500 -> $23,750-$29,925 in 12 months',
+      },
+      {
+        tier: 'Oceanfront Yield Pool',
+        minimum: '$29,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + resort surplus participation',
+        projectedBand: '190% - 265% total cycle',
+        illustrativeOutcome: '$29,000 -> $84,100-$105,850 over 18 months',
+      },
+      {
+        tier: 'Resort Performance Plus',
+        minimum: '$64,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, amenities, and outlet revenue split',
+        projectedBand: '235% - 320% total cycle',
+        illustrativeOutcome: '$64,000 -> $214,400-$268,800 over 24 months',
+      },
+      {
+        tier: 'Institutional Maui Allocation',
+        minimum: '$138,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '280% - 365% total cycle',
+        illustrativeOutcome: '$138,000 -> $524,400-$641,700 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
