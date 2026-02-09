@@ -403,6 +403,72 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'diplomat-beach-resort-hollywood',
+    title: 'The Diplomat Beach Resort',
+    location: 'Hollywood, Florida, USA',
+    tag: 'Coastal Resort Asset',
+    summary:
+      'A major oceanfront resort property in Hollywood, Florida with strong convention, leisure, and event demand. Trinity structures this asset as a managed participation lane with monthly hospitality-linked distribution cycles.',
+    imageSrc: '/properties/diplomat-beach-resort-hollywood.jpg',
+    imageAlternates: [
+      '/properties/the-diplomat-beach-resort-hollywood.jpg',
+      '/properties/diplomat-beach-resort.jpg',
+      '/properties/diplomat-hollywood-florida.jpg',
+    ],
+    imageFallback:
+      'Add property image: /public/properties/diplomat-beach-resort-hollywood.jpg',
+    facts: [
+      { label: 'Address', value: '3555 S Ocean Drive' },
+      { label: 'City', value: 'Hollywood, FL 33019' },
+      { label: 'Asset Scale', value: 'Large oceanfront resort profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + events revenue participation' },
+    ],
+    modalTitle: 'The Diplomat Beach Resort Hollywood',
+    modalLocation: '3555 S Ocean Dr, Hollywood, Florida 33019, United States',
+    overview:
+      'The Diplomat Beach Resort is a flagship South Florida oceanfront hospitality asset with strong conference, premium leisure, and event-driven demand. Trinity maps this property into structured buy-in tiers tied to monthly operating performance and managed payout windows.',
+    highlights: [
+      'Prime oceanfront position between Miami and Fort Lauderdale demand zones',
+      'Large-scale conference and events revenue exposure with 200k+ sq ft event capacity',
+      'Diversified hospitality cash-flow mix across rooms, F&B, and venues',
+      'Monthly reporting and distribution model under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Coastal Entry Allocation',
+        minimum: '$9,000',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '610% - 810% total cycle',
+        illustrativeOutcome: '$9,000 -> $63,000-$81,900 in 12 months',
+      },
+      {
+        tier: 'Resort Revenue Pool',
+        minimum: '$26,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + event surplus participation',
+        projectedBand: '650% - 870% total cycle',
+        illustrativeOutcome: '$26,000 -> $195,000-$252,300 over 18 months',
+      },
+      {
+        tier: 'Oceanfront Yield Plus',
+        minimum: '$58,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, events, and outlet split',
+        projectedBand: '690% - 910% total cycle',
+        illustrativeOutcome: '$58,000 -> $458,200-$585,800 over 24 months',
+      },
+      {
+        tier: 'Executive Coastal Allocation',
+        minimum: '$120,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '740% - 970% total cycle',
+        illustrativeOutcome: '$120,000 -> $1,008,000-$1,284,000 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
