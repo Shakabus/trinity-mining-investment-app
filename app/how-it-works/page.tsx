@@ -6,6 +6,7 @@ import MiningInvestmentFramework from '@/components/marketing/MiningInvestmentFr
 import HowFlowHighlightLottieSection from '@/components/marketing/HowFlowHighlightLottieSection'
 import MiningPlansSection from '@/components/marketing/MiningPlansSection'
 import InvestmentTradingPlansSection from '@/components/marketing/InvestmentTradingPlansSection'
+import HowItWorksFaqSection from '@/components/marketing/HowItWorksFaqSection'
 
 export default function HowItWorksPage() {
   return (
@@ -32,6 +33,7 @@ export default function HowItWorksPage() {
         <MiningInvestmentFramework />
         <InvestmentTradingPlansSection />
         <MiningPlansSection />
+        <HowItWorksFaqSection />
       </main>
       <MarketingFooter />
     </div>
