@@ -664,6 +664,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'omni-san-diego',
+    title: 'Omni San Diego Hotel',
+    location: 'San Diego, California, USA',
+    tag: 'Convention & Ballpark Hospitality Asset',
+    summary:
+      'A high-traffic downtown hospitality asset connected to Petco Park and near the convention corridor. Trinity structures this property as a managed participation lane with monthly performance reporting and payout cycles.',
+    imageSrc: '/properties/omni-san-diego.jpg',
+    imageAlternates: [
+      '/properties/omni-san-diego-hotel.jpg',
+      '/properties/omni-san-diego-ballpark.jpg',
+      '/properties/omni-hotel-san-diego.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/omni-san-diego.jpg',
+    facts: [
+      { label: 'Address', value: '675 L Street' },
+      { label: 'City', value: 'San Diego, CA 92101' },
+      { label: 'Asset Scale', value: '511-room downtown hotel profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + events revenue participation' },
+    ],
+    modalTitle: 'Omni San Diego Hotel',
+    modalLocation: '675 L St, San Diego, California 92101, United States',
+    overview:
+      'Omni San Diego is a major downtown hospitality asset with strong occupancy drivers from conventions, events, ballpark activity, and tourism demand in the Gaslamp corridor. Trinity maps this property into structured buy-in tiers linked to recurring monthly operating windows.',
+    highlights: [
+      'Prime downtown location near the San Diego Convention Center',
+      '511-room profile with consistent conference and event demand',
+      'Diversified operating mix across rooms, events, and food-and-beverage outlets',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Downtown Entry Allocation',
+        minimum: '$8,500',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '145% - 205% total cycle',
+        illustrativeOutcome: '$8,500 -> $20,825-$25,925 in 12 months',
+      },
+      {
+        tier: 'Convention Yield Pool',
+        minimum: '$26,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + event surplus participation',
+        projectedBand: '180% - 255% total cycle',
+        illustrativeOutcome: '$26,000 -> $72,800-$92,300 over 18 months',
+      },
+      {
+        tier: 'Ballpark Performance Plus',
+        minimum: '$57,500',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, event, and outlet revenue split',
+        projectedBand: '225% - 310% total cycle',
+        illustrativeOutcome: '$57,500 -> $186,875-$235,750 over 24 months',
+      },
+      {
+        tier: 'Institutional Downtown Allocation',
+        minimum: '$128,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '270% - 355% total cycle',
+        illustrativeOutcome: '$128,000 -> $473,600-$582,400 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
