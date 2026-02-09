@@ -581,6 +581,7 @@ a[aria-disabled="true"],
 
 .marketing-page {
   position: relative;
+  isolation: isolate;
 }
 
 .marketing-page-content {
@@ -592,5 +593,5 @@ a[aria-disabled="true"],
 .marketing-footer-reveal {
   position: sticky;
   bottom: 0;
-  z-index: -20;
+  z-index: 1;
 }
