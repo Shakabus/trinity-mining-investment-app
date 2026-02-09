@@ -45,6 +45,11 @@
   z-index: 1;
 }
 
+.headerLayer {
+  position: relative;
+  z-index: 5;
+}
+
 .hero {
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 30px;
@@ -442,4 +447,3 @@
     padding: 20px 16px;
   }
 }
-

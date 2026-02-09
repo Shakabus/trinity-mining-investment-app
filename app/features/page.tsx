@@ -103,7 +103,7 @@ export default function FeaturesPage() {
       <div className={styles.glowA} />
       <div className={styles.glowB} />
 
-      <div className={`mx-auto w-full max-w-6xl px-6 pt-6 ${styles.content}`}>
+      <div className={`mx-auto w-full max-w-6xl px-6 pt-6 ${styles.headerLayer}`}>
         <BitryxHeader />
       </div>
 
@@ -222,4 +222,3 @@ export default function FeaturesPage() {
     </div>
   )
 }
-

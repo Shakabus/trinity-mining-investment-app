@@ -111,7 +111,7 @@ export default function IncentivesPage() {
       <div className={styles.glowB} />
       <div className={styles.glowC} />
 
-      <div className={`mx-auto w-full max-w-6xl px-6 pt-6 ${styles.content}`}>
+      <div className={`mx-auto w-full max-w-6xl px-6 pt-6 ${styles.headerLayer}`}>
         <BitryxHeader />
       </div>
 
@@ -258,4 +258,3 @@ export default function IncentivesPage() {
     </div>
   )
 }
-
