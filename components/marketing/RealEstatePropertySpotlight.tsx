@@ -1056,6 +1056,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'shinjuku-washington-hotel-tokyo',
+    title: 'Shinjuku Washington Hotel',
+    location: 'Tokyo, Japan',
+    tag: 'High-Density Urban Hospitality Asset',
+    summary:
+      'A major high-capacity hotel asset in West Shinjuku serving business, transit, and leisure demand. Trinity structures this property as a managed participation lane with monthly operating reports and payout cycles.',
+    imageSrc: '/properties/shinjuku-washington-hotel.jpg',
+    imageAlternates: [
+      '/properties/shinjuku-washington-hotel-tokyo.jpg',
+      '/properties/tokyo-shinjuku-washington-hotel.jpg',
+      '/properties/shinjuku-washington.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/shinjuku-washington-hotel.jpg',
+    facts: [
+      { label: 'Address', value: '3-2-9 Nishi-Shinjuku, Shinjuku-ku' },
+      { label: 'City', value: 'Tokyo 160-8336' },
+      { label: 'Asset Scale', value: '1,200+ room urban hotel profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + retail-adjacent demand participation' },
+    ],
+    modalTitle: 'Shinjuku Washington Hotel, Tokyo',
+    modalLocation: '3-2-9 Nishi-Shinjuku, Shinjuku City, Tokyo 160-8336, Japan',
+    overview:
+      'Shinjuku Washington Hotel is a high-volume urban hospitality asset in one of Tokyos busiest commercial districts. Trinity maps this property into structured buy-in tiers tied to recurring monthly operating windows driven by business travel, domestic demand, and international tourism.',
+    highlights: [
+      'Prime West Shinjuku location with strong transport and business demand',
+      'High room-capacity profile supporting steady occupancy cycles',
+      'Urban revenue mix from room demand, food-and-beverage, and district traffic',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Tokyo Entry Allocation',
+        minimum: '$8,500',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '145% - 205% total cycle',
+        illustrativeOutcome: '$8,500 -> $20,825-$25,925 in 12 months',
+      },
+      {
+        tier: 'Shinjuku Yield Pool',
+        minimum: '$27,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + district demand surplus participation',
+        projectedBand: '185% - 260% total cycle',
+        illustrativeOutcome: '$27,000 -> $77,625-$97,200 over 18 months',
+      },
+      {
+        tier: 'Urban Performance Plus',
+        minimum: '$59,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy and outlet revenue split',
+        projectedBand: '230% - 315% total cycle',
+        illustrativeOutcome: '$59,000 -> $194,700-$244,850 over 24 months',
+      },
+      {
+        tier: 'Institutional Tokyo Allocation',
+        minimum: '$136,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '275% - 360% total cycle',
+        illustrativeOutcome: '$136,000 -> $510,000-$625,600 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
