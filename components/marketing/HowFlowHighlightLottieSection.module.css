@@ -1,6 +1,6 @@
 .section {
   width: 100%;
-  padding: 132px 0 20px;
+  padding: 188px 0 24px;
 }
 
 .row {
@@ -88,7 +88,7 @@
   }
 
   .section {
-    padding-top: 96px;
+    padding-top: 132px;
   }
 
   .lottieBox {

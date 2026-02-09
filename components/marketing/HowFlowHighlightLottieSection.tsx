@@ -70,11 +70,11 @@ export default function HowFlowHighlightLottieSection() {
     const updateProgress = () => {
       if (!sectionRef.current) return
       const rect = sectionRef.current.getBoundingClientRect()
-      const start = window.innerHeight * 0.75
-      const end = window.innerHeight * 0.3
-      const span = rect.height + (start - end)
+      const start = window.innerHeight * 0.82
+      const end = window.innerHeight * 0.48
+      const span = Math.max(1, rect.height + (start - end))
       const amount = start - rect.top
-      setProgress(clamp(amount / span, 0, 1))
+      setProgress(clamp((amount / span) * 1.35, 0, 1))
     }
 
     updateProgress()
@@ -88,77 +88,44 @@ export default function HowFlowHighlightLottieSection() {
 
   useEffect(() => {
     let animation: { destroy: () => void } | null = null
-    let scriptEl: HTMLScriptElement | null = null
     let cancelled = false
 
     const candidatePaths = ['/lottie/Revenue.json', '/lottie/revenue.json', '/lottie/REVENUE.json']
 
-    const start = () => {
-      if (!lottieRef.current || !window.lottie || cancelled) return
+    const start = async () => {
+      if (!lottieRef.current || cancelled) return
 
-      const loadByIndex = async (index: number) => {
-        if (!lottieRef.current || !window.lottie || cancelled) return
-        if (index >= candidatePaths.length) return
+      const lottie = (await import('lottie-web')).default
+      let animationData: unknown = null
 
+      for (const candidatePath of candidatePaths) {
         try {
-          const response = await fetch(candidatePaths[index], { cache: 'no-store' })
-          if (!response.ok) {
-            await loadByIndex(index + 1)
-            return
-          }
-
-          const animationData = await response.json()
-          if (!lottieRef.current || !window.lottie || cancelled) return
-
-          lottieRef.current.innerHTML = ''
-
-          const lottieRuntime = window.lottie as unknown as {
-            loadAnimation: (options: {
-              container: HTMLElement
-              renderer: 'svg' | 'canvas' | 'html'
-              loop: boolean
-              autoplay: boolean
-              animationData: unknown
-            }) => { destroy: () => void }
-          }
-
-          animation = lottieRuntime.loadAnimation({
-            container: lottieRef.current,
-            renderer: 'svg',
-            loop: true,
-            autoplay: true,
-            animationData,
-          })
+          const response = await fetch(candidatePath, { cache: 'no-store' })
+          if (!response.ok) continue
+          animationData = await response.json()
+          break
         } catch {
-          await loadByIndex(index + 1)
+          // try next path
         }
       }
 
-      void loadByIndex(0)
+      if (!animationData || !lottieRef.current || cancelled) return
+
+      lottieRef.current.innerHTML = ''
+      animation = lottie.loadAnimation({
+        container: lottieRef.current,
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        animationData,
+      })
     }
 
-    if (window.lottie) {
-      start()
-    } else {
-      scriptEl = document.createElement('script')
-      scriptEl.src = 'https://unpkg.com/lottie-web/build/player/lottie.min.js'
-      scriptEl.async = true
-      scriptEl.onload = start
-      scriptEl.onerror = () => {
-        const fallback = document.createElement('script')
-        fallback.src = 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js'
-        fallback.async = true
-        fallback.onload = start
-        document.body.appendChild(fallback)
-        scriptEl = fallback
-      }
-      document.body.appendChild(scriptEl)
-    }
+    void start()
 
     return () => {
       cancelled = true
       animation?.destroy()
-      if (scriptEl) scriptEl.remove()
     }
   }, [])
 
