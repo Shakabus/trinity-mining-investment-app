@@ -21,6 +21,7 @@ type PropertyItem = {
   tag: string
   summary: string
   imageSrc: string
+  imageAlternates?: string[]
   imageFallback: string
   facts: Array<{ label: string; value: string }>
   modalTitle: string
@@ -28,6 +29,63 @@ type PropertyItem = {
   overview: string
   highlights: string[]
   options: BuyInOption[]
+}
+
+function expandImagePath(path: string) {
+  const normalized = path.trim()
+  const match = normalized.match(/^(.*?)(\.[a-zA-Z0-9]+)$/)
+  if (!match) {
+    return [normalized, `${normalized}.jpg`, `${normalized}.jpeg`, `${normalized}.png`, `${normalized}.webp`]
+  }
+
+  const base = match[1]
+  const originalExt = match[2]
+  const extOrder = [originalExt.toLowerCase(), '.jpg', '.jpeg', '.png', '.webp']
+  return Array.from(new Set(extOrder)).map(ext => `${base}${ext}`)
+}
+
+function buildImageCandidates(paths: string[]) {
+  return Array.from(new Set(paths.flatMap(expandImagePath)))
+}
+
+function PropertyImage({
+  src,
+  alternates,
+  alt,
+  fallbackText,
+}: {
+  src: string
+  alternates?: string[]
+  alt: string
+  fallbackText: string
+}) {
+  const candidates = useMemo(() => buildImageCandidates([src, ...(alternates ?? [])]), [src, alternates])
+  const [candidateIndex, setCandidateIndex] = useState(0)
+  const [failed, setFailed] = useState(false)
+
+  const activeSrc = candidates[candidateIndex] ?? src
+
+  if (failed) {
+    return <div className={styles.imagePlaceholder}>{fallbackText}</div>
+  }
+
+  return (
+    <Image
+      key={activeSrc}
+      src={activeSrc}
+      alt={alt}
+      fill
+      className={styles.image}
+      sizes="(max-width: 1080px) 100vw, 50vw"
+      onError={() => {
+        if (candidateIndex < candidates.length - 1) {
+          setCandidateIndex(prev => prev + 1)
+          return
+        }
+        setFailed(true)
+      }}
+    />
+  )
 }
 
 const PROPERTIES: PropertyItem[] = [
@@ -39,6 +97,7 @@ const PROPERTIES: PropertyItem[] = [
     summary:
       'A design-forward hotel in the 22@ district with strong lifestyle demand factors. Trinity structures this asset as a managed income opportunity where users can choose tiered buy-in models tied to monthly performance cycles.',
     imageSrc: '/properties/hoxton-poblenou.jpg',
+    imageAlternates: ['/properties/hoxton-poblenou-barcelona.jpg'],
     imageFallback: 'Add property image: /public/properties/hoxton-poblenou.jpg',
     facts: [
       { label: 'Address', value: 'Avinguda Diagonal 205' },
@@ -67,27 +126,27 @@ const PROPERTIES: PropertyItem[] = [
       },
       {
         tier: 'Hospitality Revenue Pool',
-        minimum: '$15,000',
+        minimum: '$16,500',
         duration: '18 months',
         payoutModel: 'Monthly hotel operating surplus share',
         projectedBand: '620% - 820% total cycle',
-        illustrativeOutcome: '$15,000 -> $108,000-$138,000 over 18 months',
+        illustrativeOutcome: '$16,500 -> $118,800-$151,800 over 18 months',
       },
       {
         tier: 'Floor Allocation Plus',
-        minimum: '$35,000',
+        minimum: '$37,500',
         duration: '24 months',
         payoutModel: 'Blended room + F&B revenue split',
         projectedBand: '650% - 860% total cycle',
-        illustrativeOutcome: '$35,000 -> $262,500-$336,000 over 24 months',
+        illustrativeOutcome: '$37,500 -> $281,250-$360,000 over 24 months',
       },
       {
         tier: 'Strategic Asset Allocation',
-        minimum: '$75,000',
+        minimum: '$82,000',
         duration: '36 months',
         payoutModel: 'Priority allocation with blended yield',
         projectedBand: '680% - 900% total cycle',
-        illustrativeOutcome: '$75,000 -> $585,000-$750,000 over 36 months',
+        illustrativeOutcome: '$82,000 -> $639,600-$820,000 over 36 months',
       },
     ],
   },
@@ -99,6 +158,7 @@ const PROPERTIES: PropertyItem[] = [
     summary:
       'A historic luxury hospitality property in downtown Seattle positioned for high-value business and premium leisure demand. Trinity frames this asset as a managed monthly income participation model tied to hotel performance cycles.',
     imageSrc: '/properties/fairmont-olympic-seattle.jpg',
+    imageAlternates: ['/properties/fairmont-olympic-hotel-seattle.jpg'],
     imageFallback: 'Add property image: /public/properties/fairmont-olympic-seattle.jpg',
     facts: [
       { label: 'Address', value: '411 University Street' },
@@ -127,27 +187,27 @@ const PROPERTIES: PropertyItem[] = [
       },
       {
         tier: 'Premium Operations Pool',
-        minimum: '$20,000',
+        minimum: '$22,500',
         duration: '18 months',
         payoutModel: 'Monthly rooms + event surplus participation',
         projectedBand: '600% - 820% total cycle',
-        illustrativeOutcome: '$20,000 -> $140,000-$184,000 over 18 months',
+        illustrativeOutcome: '$22,500 -> $157,500-$207,000 over 18 months',
       },
       {
         tier: 'Hospitality Yield Plus',
-        minimum: '$45,000',
+        minimum: '$48,000',
         duration: '24 months',
         payoutModel: 'Blended occupancy and outlet revenue split',
         projectedBand: '640% - 860% total cycle',
-        illustrativeOutcome: '$45,000 -> $333,000-$432,000 over 24 months',
+        illustrativeOutcome: '$48,000 -> $355,200-$460,800 over 24 months',
       },
       {
         tier: 'Executive Asset Allocation',
-        minimum: '$90,000',
+        minimum: '$95,000',
         duration: '36 months',
         payoutModel: 'Priority monthly yield with strategic weighting',
         projectedBand: '700% - 920% total cycle',
-        illustrativeOutcome: '$90,000 -> $720,000-$918,000 over 36 months',
+        illustrativeOutcome: '$95,000 -> $760,000-$969,000 over 36 months',
       },
     ],
   },
@@ -159,6 +219,7 @@ const PROPERTIES: PropertyItem[] = [
     summary:
       'A prominent Kings Cross hospitality asset with strong business, rail-hub, and lifestyle demand patterns. Trinity positions this property for structured monthly income participation with tiered entry options.',
     imageSrc: '/properties/standard-london.jpg',
+    imageAlternates: ['/properties/the-standard-london.jpg'],
     imageFallback: 'Add property image: /public/properties/standard-london.jpg',
     facts: [
       { label: 'Address', value: '10 Argyle Street' },
@@ -179,11 +240,11 @@ const PROPERTIES: PropertyItem[] = [
     options: [
       {
         tier: 'Urban Entry Allocation',
-        minimum: '$5,000',
+        minimum: '$6,000',
         duration: '12 months',
         payoutModel: 'Monthly room-revenue participation',
         projectedBand: '600% - 800% total cycle',
-        illustrativeOutcome: '$5,000 -> $35,000-$45,000 in 12 months',
+        illustrativeOutcome: '$6,000 -> $42,000-$54,000 in 12 months',
       },
       {
         tier: 'Kings Cross Revenue Pool',
@@ -195,19 +256,85 @@ const PROPERTIES: PropertyItem[] = [
       },
       {
         tier: 'Prime Hospitality Plus',
-        minimum: '$40,000',
+        minimum: '$42,000',
         duration: '24 months',
         payoutModel: 'Blended occupancy and premium spend split',
         projectedBand: '660% - 880% total cycle',
-        illustrativeOutcome: '$40,000 -> $304,000-$392,000 over 24 months',
+        illustrativeOutcome: '$42,000 -> $319,200-$411,600 over 24 months',
       },
       {
         tier: 'Executive London Allocation',
-        minimum: '$85,000',
+        minimum: '$88,000',
         duration: '36 months',
         payoutModel: 'Priority weighted monthly yield participation',
         projectedBand: '700% - 930% total cycle',
-        illustrativeOutcome: '$85,000 -> $680,000-$875,500 over 36 months',
+        illustrativeOutcome: '$88,000 -> $704,000-$906,400 over 36 months',
+      },
+    ],
+  },
+  {
+    id: 'kimpton-miralina-paradise-valley',
+    title: 'Kimpton Miralina Resort & Villas',
+    location: 'Paradise Valley, Arizona, USA',
+    tag: 'Resort & Villas Asset',
+    summary:
+      'A premium resort-style property concept in Paradise Valley positioned for high-value leisure and villa-based yield participation. Trinity structures this as a managed hospitality and villa income lane with monthly distribution logic.',
+    imageSrc: '/properties/kimpton-miralina-paradise-valley.jpg',
+    imageAlternates: [
+      '/properties/kimpton-miralina-resort-villas.jpg',
+      '/properties/kimpton-miralina.jpg',
+      '/properties/kimpton-miralina-resort-villas-paradise-valley.jpg',
+    ],
+    imageFallback:
+      'Add property image: /public/properties/kimpton-miralina-paradise-valley.jpg',
+    facts: [
+      { label: 'Address', value: 'Paradise Valley Core District' },
+      { label: 'City', value: 'Paradise Valley, AZ' },
+      { label: 'Asset Scale', value: 'Resort + villa participation model' },
+      { label: 'Income Logic', value: 'Monthly hospitality + villa yield share' },
+    ],
+    modalTitle: 'Kimpton Miralina Resort & Villas',
+    modalLocation: 'Paradise Valley, Arizona, United States',
+    overview:
+      'Kimpton Miralina Resort & Villas is positioned as a luxury resort and villa-driven hospitality asset with premium seasonal demand characteristics. Trinity presents this property through structured participation tiers tied to monthly operational revenue cycles.',
+    highlights: [
+      'Luxury resort positioning with villa-led premium inventory',
+      'Leisure and high-spend hospitality demand profile',
+      'Income mix from rooms, villas, experiences, and F&B operations',
+      'Managed monthly reporting and payout flow through Trinity',
+    ],
+    options: [
+      {
+        tier: 'Resort Entry Lane',
+        minimum: '$6,500',
+        duration: '12 months',
+        payoutModel: 'Monthly room and villa occupancy share',
+        projectedBand: '620% - 820% total cycle',
+        illustrativeOutcome: '$6,500 -> $45,500-$59,800 in 12 months',
+      },
+      {
+        tier: 'Premium Villa Pool',
+        minimum: '$21,000',
+        duration: '18 months',
+        payoutModel: 'Monthly blended villa + resort surplus share',
+        projectedBand: '650% - 860% total cycle',
+        illustrativeOutcome: '$21,000 -> $157,500-$201,600 over 18 months',
+      },
+      {
+        tier: 'Luxury Yield Plus',
+        minimum: '$44,000',
+        duration: '24 months',
+        payoutModel: 'Blended room, villa, and premium service split',
+        projectedBand: '680% - 900% total cycle',
+        illustrativeOutcome: '$44,000 -> $343,200-$440,000 over 24 months',
+      },
+      {
+        tier: 'Executive Resort Allocation',
+        minimum: '$92,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly resort-villa participation',
+        projectedBand: '720% - 950% total cycle',
+        illustrativeOutcome: '$92,000 -> $754,400-$966,000 over 36 months',
       },
     ],
   },
@@ -234,22 +361,12 @@ export default function RealEstatePropertySpotlight() {
         {PROPERTIES.map(property => (
           <article key={property.id} className={styles.card}>
             <div className={styles.imageWrap}>
-              <Image
+              <PropertyImage
                 src={property.imageSrc}
+                alternates={property.imageAlternates}
                 alt={property.modalTitle}
-                fill
-                className={styles.image}
-                sizes="(max-width: 1080px) 100vw, 50vw"
-                onError={event => {
-                  const target = event.currentTarget as HTMLImageElement
-                  target.style.display = 'none'
-                  const fallback = target.nextElementSibling as HTMLElement | null
-                  if (fallback) fallback.style.display = 'grid'
-                }}
+                fallbackText={property.imageFallback}
               />
-              <div className={styles.imagePlaceholder} style={{ display: 'none' }}>
-                {property.imageFallback}
-              </div>
             </div>
 
             <div className={styles.body}>
