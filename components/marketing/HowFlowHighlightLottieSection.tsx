@@ -96,41 +96,45 @@ export default function HowFlowHighlightLottieSection() {
     const start = () => {
       if (!lottieRef.current || !window.lottie || cancelled) return
 
-      const loadByIndex = (index: number) => {
+      const loadByIndex = async (index: number) => {
         if (!lottieRef.current || !window.lottie || cancelled) return
         if (index >= candidatePaths.length) return
 
-        const anim = window.lottie.loadAnimation({
-          container: lottieRef.current,
-          renderer: 'canvas',
-          loop: true,
-          autoplay: true,
-          path: candidatePaths[index],
-        })
+        try {
+          const response = await fetch(candidatePaths[index], { cache: 'no-store' })
+          if (!response.ok) {
+            await loadByIndex(index + 1)
+            return
+          }
 
-        animation = anim
+          const animationData = await response.json()
+          if (!lottieRef.current || !window.lottie || cancelled) return
 
-        const animWithEvents = anim as unknown as {
-          addEventListener?: (name: string, cb: () => void) => void
+          lottieRef.current.innerHTML = ''
+
+          const lottieRuntime = window.lottie as unknown as {
+            loadAnimation: (options: {
+              container: HTMLElement
+              renderer: 'svg' | 'canvas' | 'html'
+              loop: boolean
+              autoplay: boolean
+              animationData: unknown
+            }) => { destroy: () => void }
+          }
+
+          animation = lottieRuntime.loadAnimation({
+            container: lottieRef.current,
+            renderer: 'svg',
+            loop: true,
+            autoplay: true,
+            animationData,
+          })
+        } catch {
+          await loadByIndex(index + 1)
         }
-
-        let resolved = false
-
-        animWithEvents.addEventListener?.('DOMLoaded', () => {
-          resolved = true
-        })
-
-        const onFail = () => {
-          if (resolved || cancelled) return
-          anim.destroy()
-          loadByIndex(index + 1)
-        }
-
-        animWithEvents.addEventListener?.('data_failed', onFail)
-        animWithEvents.addEventListener?.('error', onFail)
       }
 
-      loadByIndex(0)
+      void loadByIndex(0)
     }
 
     if (window.lottie) {
