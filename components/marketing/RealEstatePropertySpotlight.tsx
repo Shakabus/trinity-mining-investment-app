@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Image from 'next/image'
 import Link from 'next/link'
@@ -1188,7 +1188,13 @@ const PROPERTIES: PropertyItem[] = [
   },
 ]
 
-export default function RealEstatePropertySpotlight() {
+type RealEstatePropertySpotlightProps = {
+  buyInLabel?: string
+}
+
+export default function RealEstatePropertySpotlight({
+  buyInLabel = 'Buy In From Dashboard',
+}: RealEstatePropertySpotlightProps) {
   const [openId, setOpenId] = useState<string | null>(null)
 
   const openProperty = useMemo(
@@ -1246,7 +1252,7 @@ export default function RealEstatePropertySpotlight() {
                   View Full Details
                 </button>
                 <Link href="/dashboard/real-estate" className={styles.btnPrimary}>
-                  Buy In
+                  {buyInLabel}
                 </Link>
               </div>
             </div>

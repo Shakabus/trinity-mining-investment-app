@@ -1,4 +1,4 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 import { Building2, LineChart, Wallet } from 'lucide-react'
 import RealEstatePropertySpotlight from '@/components/marketing/RealEstatePropertySpotlight'
 
@@ -60,7 +60,8 @@ export default function RealEstatePortfolioDashboardPage() {
         </Link>
       </div>
 
-      <RealEstatePropertySpotlight />
+      <RealEstatePropertySpotlight buyInLabel="Buy In" />
     </div>
   )
 }
+
