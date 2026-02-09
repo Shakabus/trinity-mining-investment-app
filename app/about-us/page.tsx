@@ -8,6 +8,7 @@ import AboutWhatWeDoSection from '@/components/marketing/AboutWhatWeDoSection'
 import AboutInfrastructureSection from '@/components/marketing/AboutInfrastructureSection'
 import AboutWhyChooseTrinitySnake from '@/components/marketing/AboutWhyChooseTrinitySnake'
 import TestimonialsCarousel from '@/components/marketing/TestimonialsCarousel'
+import AboutFaqSection from '@/components/marketing/AboutFaqSection'
 
 const TITLE_TEXT = 'Our Story'
 
@@ -140,6 +141,7 @@ export default function AboutUsPage() {
         <AboutInfrastructureSection />
         <AboutWhyChooseTrinitySnake />
         <TestimonialsCarousel />
+        <AboutFaqSection />
       </main>
 
       <MarketingFooter />
