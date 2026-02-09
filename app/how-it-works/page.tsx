@@ -1,6 +1,7 @@
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import TrinityFlowTimeline from '@/components/marketing/TrinityFlowTimeline'
+import InteractiveKnowledgeHub from '@/components/marketing/InteractiveKnowledgeHub'
 
 export default function HowItWorksPage() {
   return (
@@ -22,6 +23,7 @@ export default function HowItWorksPage() {
         </section>
 
         <TrinityFlowTimeline />
+        <InteractiveKnowledgeHub />
       </main>
       <MarketingFooter />
     </div>
