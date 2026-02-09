@@ -28,6 +28,15 @@
   user-select: none;
 }
 
+.cardStack {
+  position: relative;
+  width: min(100%, 760px);
+  min-height: 280px;
+  perspective: 2200px;
+  transform-style: preserve-3d;
+  z-index: 2;
+}
+
 .deckLayer {
   position: absolute;
   width: min(100%, 760px);
@@ -53,7 +62,7 @@
 
 .card {
   position: relative;
-  width: min(100%, 760px);
+  width: 100%;
   min-height: 280px;
   border-radius: 22px;
   padding: 30px 32px 28px;
@@ -69,6 +78,14 @@
   overflow: hidden;
   transform-style: preserve-3d;
   z-index: 2;
+  backface-visibility: hidden;
+  will-change: transform, opacity, filter;
+}
+
+.cardOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
 }
 
 .card::before {
@@ -87,12 +104,24 @@
   pointer-events: none;
 }
 
-.flipNext {
-  animation: flipNext 460ms cubic-bezier(0.2, 0.68, 0.22, 1);
+.pageOutNext {
+  transform-origin: left center;
+  animation: pageOutNext 720ms cubic-bezier(0.25, 0.7, 0.2, 1) forwards;
 }
 
-.flipPrev {
-  animation: flipPrev 460ms cubic-bezier(0.2, 0.68, 0.22, 1);
+.pageInNext {
+  transform-origin: right center;
+  animation: pageInNext 720ms cubic-bezier(0.25, 0.7, 0.2, 1) forwards;
+}
+
+.pageOutPrev {
+  transform-origin: right center;
+  animation: pageOutPrev 720ms cubic-bezier(0.25, 0.7, 0.2, 1) forwards;
+}
+
+.pageInPrev {
+  transform-origin: left center;
+  animation: pageInPrev 720ms cubic-bezier(0.25, 0.7, 0.2, 1) forwards;
 }
 
 .quote {
@@ -176,32 +205,54 @@
   color: rgba(255, 255, 255, 0.62);
 }
 
-@keyframes flipNext {
+@keyframes pageOutNext {
   0% {
-    transform: perspective(1100px) rotateY(0deg) translateX(0);
-    opacity: 0.92;
-  }
-  48% {
-    transform: perspective(1100px) rotateY(-20deg) translateX(-24px);
-    opacity: 0.78;
+    transform: perspective(2200px) rotateY(0deg);
+    filter: brightness(1);
+    opacity: 1;
   }
   100% {
-    transform: perspective(1100px) rotateY(0deg) translateX(0);
+    transform: perspective(2200px) rotateY(-95deg);
+    filter: brightness(0.62);
+    opacity: 0.3;
+  }
+}
+
+@keyframes pageInNext {
+  0% {
+    transform: perspective(2200px) rotateY(95deg);
+    filter: brightness(0.62);
+    opacity: 0.3;
+  }
+  100% {
+    transform: perspective(2200px) rotateY(0deg);
+    filter: brightness(1);
     opacity: 1;
   }
 }
 
-@keyframes flipPrev {
+@keyframes pageOutPrev {
   0% {
-    transform: perspective(1100px) rotateY(0deg) translateX(0);
-    opacity: 0.92;
-  }
-  48% {
-    transform: perspective(1100px) rotateY(20deg) translateX(24px);
-    opacity: 0.78;
+    transform: perspective(2200px) rotateY(0deg);
+    filter: brightness(1);
+    opacity: 1;
   }
   100% {
-    transform: perspective(1100px) rotateY(0deg) translateX(0);
+    transform: perspective(2200px) rotateY(95deg);
+    filter: brightness(0.62);
+    opacity: 0.3;
+  }
+}
+
+@keyframes pageInPrev {
+  0% {
+    transform: perspective(2200px) rotateY(-95deg);
+    filter: brightness(0.62);
+    opacity: 0.3;
+  }
+  100% {
+    transform: perspective(2200px) rotateY(0deg);
+    filter: brightness(1);
     opacity: 1;
   }
 }
@@ -211,6 +262,10 @@
     min-height: 405px;
     padding: 0 40px;
     overflow: visible;
+  }
+
+  .cardStack {
+    min-height: 320px;
   }
 
   .card {

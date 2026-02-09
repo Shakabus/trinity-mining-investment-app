@@ -67,23 +67,31 @@ function clampIndex(index: number, length: number) {
 
 export default function TestimonialsCarousel() {
   const [current, setCurrent] = useState(0)
+  const [incomingIndex, setIncomingIndex] = useState<number | null>(null)
   const [direction, setDirection] = useState<'next' | 'prev'>('next')
   const startXRef = useRef<number | null>(null)
   const touchActiveRef = useRef(false)
 
   const total = TESTIMONIALS.length
   const currentItem = TESTIMONIALS[current]
+  const incomingItem = incomingIndex !== null ? TESTIMONIALS[incomingIndex] : null
 
-  const cardClass = `${styles.card} ${direction === 'next' ? styles.flipNext : styles.flipPrev}`
+  const isAnimating = incomingIndex !== null
+
+  const startFlip = (nextDirection: 'next' | 'prev') => {
+    if (isAnimating) return
+    setDirection(nextDirection)
+    setIncomingIndex(
+      clampIndex(current + (nextDirection === 'next' ? 1 : -1), total),
+    )
+  }
 
   const goNext = () => {
-    setDirection('next')
-    setCurrent(prev => clampIndex(prev + 1, total))
+    startFlip('next')
   }
 
   const goPrev = () => {
-    setDirection('prev')
-    setCurrent(prev => clampIndex(prev - 1, total))
+    startFlip('prev')
   }
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -99,10 +107,16 @@ export default function TestimonialsCarousel() {
 
     if (Math.abs(delta) < 45) return
     if (delta < 0) {
-      goNext()
+      startFlip('next')
     } else {
-      goPrev()
+      startFlip('prev')
     }
+  }
+
+  const onIncomingAnimationEnd = () => {
+    if (incomingIndex === null) return
+    setCurrent(incomingIndex)
+    setIncomingIndex(null)
   }
 
   return (
@@ -126,15 +140,42 @@ export default function TestimonialsCarousel() {
           </svg>
         </button>
 
-        <article className={cardClass} key={`${current}-${direction}`}>
-          <p className={styles.quote}>
-            &ldquo;{currentItem.text}&rdquo;
-          </p>
-          <div className={styles.meta}>
-            <span className={styles.dot} />
-            <span>{currentItem.name}</span>
-          </div>
-        </article>
+        <div className={styles.cardStack}>
+          <article
+            className={`${styles.card} ${
+              isAnimating
+                ? direction === 'next'
+                  ? styles.pageOutNext
+                  : styles.pageOutPrev
+                : ''
+            }`}
+          >
+            <p className={styles.quote}>
+              &ldquo;{currentItem.text}&rdquo;
+            </p>
+            <div className={styles.meta}>
+              <span className={styles.dot} />
+              <span>{currentItem.name}</span>
+            </div>
+          </article>
+
+          {incomingItem ? (
+            <article
+              className={`${styles.card} ${styles.cardOverlay} ${
+                direction === 'next' ? styles.pageInNext : styles.pageInPrev
+              }`}
+              onAnimationEnd={onIncomingAnimationEnd}
+            >
+              <p className={styles.quote}>
+                &ldquo;{incomingItem.text}&rdquo;
+              </p>
+              <div className={styles.meta}>
+                <span className={styles.dot} />
+                <span>{incomingItem.name}</span>
+              </div>
+            </article>
+          ) : null}
+        </div>
 
         <button
           type="button"
