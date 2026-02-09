@@ -41,6 +41,11 @@
   transition: color 0.1s ease;
 }
 
+.word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .charHighlighted {
   color: #fff;
 }
@@ -51,6 +56,7 @@
 
 .right {
   width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,6 +66,13 @@
   width: 100%;
   max-width: 500px;
   height: 380px;
+  min-height: 260px;
+}
+
+.lottieBox canvas,
+.lottieBox svg {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 @media (max-width: 1024px) {
@@ -79,4 +92,3 @@
     height: 260px;
   }
 }
-

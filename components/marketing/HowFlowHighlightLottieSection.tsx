@@ -37,6 +37,40 @@ function renderChar(char: string, highlighted: boolean, key: string) {
   )
 }
 
+function renderHighlightedText(text: string, highlightedCount: number, keyPrefix: string) {
+  const words = text.split(' ')
+
+  return words.flatMap((word, wordIndex) => {
+    const wordStartIndex = words
+      .slice(0, wordIndex)
+      .reduce((sum, currentWord) => sum + currentWord.length + 1, 0)
+
+    const nodes = [
+      <span key={`${keyPrefix}-word-${wordIndex}`} className={styles.word}>
+        {Array.from(word).map((char, charIndex) =>
+          renderChar(
+            char,
+            wordStartIndex + charIndex < highlightedCount,
+            `${keyPrefix}-${wordIndex}-${charIndex}`,
+          ),
+        )}
+      </span>,
+    ]
+
+    if (wordIndex < words.length - 1) {
+      nodes.push(
+        renderChar(
+          ' ',
+          wordStartIndex + word.length < highlightedCount,
+          `${keyPrefix}-space-${wordIndex}`,
+        ),
+      )
+    }
+
+    return nodes
+  })
+}
+
 export default function HowFlowHighlightLottieSection() {
   const sectionRef = useRef<HTMLElement | null>(null)
   const lottieRef = useRef<HTMLDivElement | null>(null)
@@ -76,7 +110,7 @@ export default function HowFlowHighlightLottieSection() {
     const resolvePath = async () => {
       for (const candidate of candidatePaths) {
         try {
-          const res = await fetch(candidate, { method: 'HEAD' })
+          const res = await fetch(candidate, { cache: 'no-store' })
           if (res.ok) return candidate
         } catch {
           // try next
@@ -92,7 +126,7 @@ export default function HowFlowHighlightLottieSection() {
 
       animation = window.lottie.loadAnimation({
         container: lottieRef.current,
-        renderer: 'svg',
+        renderer: 'canvas',
         loop: true,
         autoplay: true,
         path,
@@ -133,19 +167,11 @@ export default function HowFlowHighlightLottieSection() {
       <div className={styles.row}>
         <div className={styles.left}>
           <h2 className={styles.title}>
-            {titleChars.map((char, index) =>
-              renderChar(char, index < titleHighlightCount, `title-${index}`),
-            )}
+            {renderHighlightedText(TITLE_TEXT, titleHighlightCount, 'title')}
           </h2>
 
           <p className={styles.subtitle}>
-            {subtitleChars.map((char, index) =>
-              renderChar(
-                char,
-                index < subtitleHighlightCount,
-                `subtitle-${index}`,
-              ),
-            )}
+            {renderHighlightedText(SUBTITLE_TEXT, subtitleHighlightCount, 'subtitle')}
           </p>
 
           <div className={styles.ctaWrap}>
@@ -166,4 +192,3 @@ export default function HowFlowHighlightLottieSection() {
     </section>
   )
 }
-
