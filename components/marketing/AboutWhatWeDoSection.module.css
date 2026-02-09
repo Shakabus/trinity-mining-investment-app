@@ -11,8 +11,10 @@
 
 .lottieWrap {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   min-height: 320px;
 }
 
@@ -34,6 +36,7 @@
   font-weight: 600;
   line-height: 1.05;
   margin: 0;
+  text-align: center;
 }
 
 .text {

@@ -92,11 +92,11 @@ export default function AboutWhatWeDoSection() {
     <section className={styles.section}>
       <div className={styles.row}>
         <div className={styles.lottieWrap}>
+          <h2 className={styles.title}>What we do</h2>
           <div ref={containerRef} className={styles.lottieBox} aria-hidden="true" />
         </div>
 
         <div className={styles.content}>
-          <h2 className={styles.title}>What we do</h2>
           <p className={styles.text}>
             Trinity in One runs a unified multi-asset operation where cloud mining infrastructure,
             structured investment trading, and real-asset strategy work together under one execution
