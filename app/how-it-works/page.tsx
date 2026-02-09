@@ -4,6 +4,7 @@ import TrinityFlowTimeline from '@/components/marketing/TrinityFlowTimeline'
 import InteractiveKnowledgeHub from '@/components/marketing/InteractiveKnowledgeHub'
 import MiningInvestmentFramework from '@/components/marketing/MiningInvestmentFramework'
 import HowFlowHighlightLottieSection from '@/components/marketing/HowFlowHighlightLottieSection'
+import MiningPlansSection from '@/components/marketing/MiningPlansSection'
 
 export default function HowItWorksPage() {
   return (
@@ -28,6 +29,7 @@ export default function HowItWorksPage() {
         <HowFlowHighlightLottieSection />
         <InteractiveKnowledgeHub />
         <MiningInvestmentFramework />
+        <MiningPlansSection />
       </main>
       <MarketingFooter />
     </div>
