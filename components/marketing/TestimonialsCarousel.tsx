@@ -1,6 +1,6 @@
-'use client'
+﻿'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import styles from '@/components/marketing/TestimonialsCarousel.module.css'
 
 type Testimonial = {
@@ -74,10 +74,7 @@ export default function TestimonialsCarousel() {
   const total = TESTIMONIALS.length
   const currentItem = TESTIMONIALS[current]
 
-  const cardClass = useMemo(
-    () => `${styles.card} ${direction === 'next' ? styles.flipNext : styles.flipPrev}`,
-    [current, direction],
-  )
+  const cardClass = `${styles.card} ${direction === 'next' ? styles.flipNext : styles.flipPrev}`
 
   const goNext = () => {
     setDirection('next')
@@ -130,7 +127,9 @@ export default function TestimonialsCarousel() {
         </button>
 
         <article className={cardClass} key={`${current}-${direction}`}>
-          <p className={styles.quote}>"{currentItem.text}"</p>
+          <p className={styles.quote}>
+            &ldquo;{currentItem.text}&rdquo;
+          </p>
           <div className={styles.meta}>
             <span className={styles.dot} />
             <span>{currentItem.name}</span>
