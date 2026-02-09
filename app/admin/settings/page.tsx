@@ -1,7 +1,27 @@
-import { prisma } from '@/lib/db'
+﻿import { prisma } from '@/lib/db'
 import SupportInboxClient from '@/components/admin/SupportInboxClient'
+import ContactLeadsInboxClient from '@/components/admin/ContactLeadsInboxClient'
 
 export const dynamic = 'force-dynamic'
+
+const CONTACT_PREFIX = 'Contact Form:'
+
+function parseContactMessage(body: string) {
+  const getField = (label: string) => {
+    const match = body.match(new RegExp(`^${label}:\\s*(.*)$`, 'im'))
+    return match?.[1]?.trim() || ''
+  }
+
+  const messageMatch = body.match(/(?:^|\n)Message:\s*\n([\s\S]*)$/i)
+
+  return {
+    fullName: getField('Visitor Name') || 'Unknown visitor',
+    email: getField('Visitor Email') || '',
+    phone: getField('Visitor Phone') || 'Not provided',
+    sourcePage: getField('Source Page') || '/contact',
+    message: messageMatch?.[1]?.trim() || body.trim(),
+  }
+}
 
 export default async function SupportInboxPage() {
   const tickets = await prisma.supportTicket.findMany({
@@ -16,7 +36,10 @@ export default async function SupportInboxPage() {
     },
   })
 
-  const mappedTickets = tickets.map(ticket => ({
+  const contactTickets = tickets.filter(ticket => ticket.subject.startsWith(CONTACT_PREFIX))
+  const supportTickets = tickets.filter(ticket => !ticket.subject.startsWith(CONTACT_PREFIX))
+
+  const mappedTickets = supportTickets.map(ticket => ({
     id: ticket.id,
     subject: ticket.subject,
     status: ticket.status,
@@ -38,8 +61,27 @@ export default async function SupportInboxPage() {
     })),
   }))
 
+  const mappedLeads = contactTickets.map(ticket => {
+    const firstMessage = ticket.messages.find(message => message.senderRole === 'user') ?? ticket.messages[0]
+    const parsed = parseContactMessage(firstMessage?.body || '')
+    const cleanSubject = ticket.subject.replace(CONTACT_PREFIX, '').replace(/^:\s*/, '').trim()
+
+    return {
+      ticketId: ticket.id,
+      status: ticket.status,
+      subject: cleanSubject || 'General inquiry',
+      fullName: parsed.fullName,
+      email: parsed.email,
+      phone: parsed.phone,
+      sourcePage: parsed.sourcePage,
+      message: parsed.message,
+      createdAt: ticket.createdAt.toISOString(),
+    }
+  })
+
   return (
     <div className="space-y-8">
+      <ContactLeadsInboxClient leads={mappedLeads} />
       <SupportInboxClient tickets={mappedTickets} />
 
       <div
@@ -125,7 +167,7 @@ export default async function SupportInboxPage() {
             <div>
               <div className="text-white font-semibold mb-1">Assigned hashrate</div>
               <div>
-                Sets the maximum hashrate for the user’s plan. Keep it within the plan limit. This influences mining
+                Sets the maximum hashrate for the user's plan. Keep it within the plan limit. This influences mining
                 speed, shares, and earnings pacing.
               </div>
             </div>
@@ -139,7 +181,7 @@ export default async function SupportInboxPage() {
             <div>
               <div className="text-white font-semibold mb-1">Mining pool</div>
               <div>
-                Sets the pool label shown on the user’s mining page. Choose a pool that fits the plan or region.
+                Sets the pool label shown on the user's mining page. Choose a pool that fits the plan or region.
               </div>
             </div>
             <div>
@@ -244,3 +286,4 @@ export default async function SupportInboxPage() {
     </div>
   )
 }
+
