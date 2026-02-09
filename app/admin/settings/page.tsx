@@ -167,7 +167,7 @@ export default async function SupportInboxPage() {
             <div>
               <div className="text-white font-semibold mb-1">Assigned hashrate</div>
               <div>
-                Sets the maximum hashrate for the user's plan. Keep it within the plan limit. This influences mining
+                Sets the maximum hashrate for the users plan. Keep it within the plan limit. This influences mining
                 speed, shares, and earnings pacing.
               </div>
             </div>
@@ -181,7 +181,7 @@ export default async function SupportInboxPage() {
             <div>
               <div className="text-white font-semibold mb-1">Mining pool</div>
               <div>
-                Sets the pool label shown on the user's mining page. Choose a pool that fits the plan or region.
+                Sets the pool label shown on the users mining page. Choose a pool that fits the plan or region.
               </div>
             </div>
             <div>
@@ -286,4 +286,5 @@ export default async function SupportInboxPage() {
     </div>
   )
 }
+
 
