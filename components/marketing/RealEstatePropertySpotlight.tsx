@@ -1246,7 +1246,7 @@ export default function RealEstatePropertySpotlight() {
                   View Full Details
                 </button>
                 <Link href="/dashboard/real-estate" className={styles.btnPrimary}>
-                  Buy In From Dashboard
+                  Buy In
                 </Link>
               </div>
             </div>
