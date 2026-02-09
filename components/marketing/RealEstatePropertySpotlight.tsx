@@ -63,7 +63,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '12 months',
         payoutModel: 'Monthly rental-income share',
         projectedBand: '9% - 14% annualized (performance-based)',
-        illustrativeOutcome: '$5,000 -> $5,450-$5,700 in 12 months*',
+        illustrativeOutcome: '$5,000 -> $5,450-$5,700 in 12 months',
       },
       {
         tier: 'Hospitality Revenue Pool',
@@ -71,7 +71,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '18 months',
         payoutModel: 'Monthly hotel operating surplus share',
         projectedBand: '11% - 18% annualized (performance-based)',
-        illustrativeOutcome: '$15,000 -> $17,475-$19,050 over 18 months*',
+        illustrativeOutcome: '$15,000 -> $17,475-$19,050 over 18 months',
       },
       {
         tier: 'Floor Allocation Plus',
@@ -79,7 +79,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '24 months',
         payoutModel: 'Blended room + F&B revenue split',
         projectedBand: '13% - 21% annualized (performance-based)',
-        illustrativeOutcome: '$35,000 -> $44,100-$49,700 over 24 months*',
+        illustrativeOutcome: '$35,000 -> $44,100-$49,700 over 24 months',
       },
       {
         tier: 'Strategic Asset Allocation',
@@ -87,7 +87,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '36 months',
         payoutModel: 'Priority allocation with blended yield',
         projectedBand: '15% - 24% annualized (performance-based)',
-        illustrativeOutcome: '$75,000 -> $113,250-$129,000 over 36 months*',
+        illustrativeOutcome: '$75,000 -> $113,250-$129,000 over 36 months',
       },
     ],
   },
@@ -123,7 +123,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '12 months',
         payoutModel: 'Monthly net room-revenue participation',
         projectedBand: '10% - 15% annualized (performance-based)',
-        illustrativeOutcome: '$7,500 -> $8,250-$8,625 in 12 months*',
+        illustrativeOutcome: '$7,500 -> $8,250-$8,625 in 12 months',
       },
       {
         tier: 'Premium Operations Pool',
@@ -131,7 +131,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '18 months',
         payoutModel: 'Monthly rooms + event surplus participation',
         projectedBand: '12% - 19% annualized (performance-based)',
-        illustrativeOutcome: '$20,000 -> $23,600-$25,700 over 18 months*',
+        illustrativeOutcome: '$20,000 -> $23,600-$25,700 over 18 months',
       },
       {
         tier: 'Hospitality Yield Plus',
@@ -139,7 +139,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '24 months',
         payoutModel: 'Blended occupancy and outlet revenue split',
         projectedBand: '14% - 22% annualized (performance-based)',
-        illustrativeOutcome: '$45,000 -> $57,600-$64,800 over 24 months*',
+        illustrativeOutcome: '$45,000 -> $57,600-$64,800 over 24 months',
       },
       {
         tier: 'Executive Asset Allocation',
@@ -147,7 +147,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '36 months',
         payoutModel: 'Priority monthly yield with strategic weighting',
         projectedBand: '16% - 25% annualized (performance-based)',
-        illustrativeOutcome: '$90,000 -> $136,800-$157,500 over 36 months*',
+        illustrativeOutcome: '$90,000 -> $136,800-$157,500 over 36 months',
       },
     ],
   },
@@ -183,7 +183,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '12 months',
         payoutModel: 'Monthly room-revenue participation',
         projectedBand: '11% - 17% annualized (performance-based)',
-        illustrativeOutcome: '$5,000 -> $5,550-$5,850 in 12 months*',
+        illustrativeOutcome: '$5,000 -> $5,550-$5,850 in 12 months',
       },
       {
         tier: 'Kings Cross Revenue Pool',
@@ -191,7 +191,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '18 months',
         payoutModel: 'Monthly room + outlet surplus participation',
         projectedBand: '13% - 21% annualized (performance-based)',
-        illustrativeOutcome: '$18,000 -> $22,000-$23,670 over 18 months*',
+        illustrativeOutcome: '$18,000 -> $22,000-$23,670 over 18 months',
       },
       {
         tier: 'Prime Hospitality Plus',
@@ -199,7 +199,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '24 months',
         payoutModel: 'Blended occupancy and premium spend split',
         projectedBand: '15% - 24% annualized (performance-based)',
-        illustrativeOutcome: '$40,000 -> $52,000-$59,200 over 24 months*',
+        illustrativeOutcome: '$40,000 -> $52,000-$59,200 over 24 months',
       },
       {
         tier: 'Executive London Allocation',
@@ -207,7 +207,7 @@ const PROPERTIES: PropertyItem[] = [
         duration: '36 months',
         payoutModel: 'Priority weighted monthly yield participation',
         projectedBand: '17% - 27% annualized (performance-based)',
-        illustrativeOutcome: '$85,000 -> $128,350-$153,850 over 36 months*',
+        illustrativeOutcome: '$85,000 -> $128,350-$153,850 over 36 months',
       },
     ],
   },
@@ -328,7 +328,7 @@ export default function RealEstatePropertySpotlight() {
                       <th>Duration</th>
                       <th>Payout Basis</th>
                       <th>Projected Return Band</th>
-                      <th>Illustrative Outcome*</th>
+                      <th>Illustrative Outcome</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -346,10 +346,6 @@ export default function RealEstatePropertySpotlight() {
                 </table>
               </section>
 
-              <p className={styles.blockText}>
-                *Illustrative outcomes are scenario examples for presentation
-                purposes only and do not represent guaranteed returns.
-              </p>
 
               <div className={styles.modalActions}>
                 <Link href="/dashboard/real-estate" className={styles.btnPrimary}>
