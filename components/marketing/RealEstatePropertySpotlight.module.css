@@ -2,6 +2,13 @@
   margin-top: 2.25rem;
 }
 
+.cards {
+  margin-top: 1rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
 .heading {
   font-size: clamp(1.5rem, 2.6vw, 2.25rem);
   font-weight: 700;
@@ -17,7 +24,6 @@
 }
 
 .card {
-  margin-top: 1rem;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: linear-gradient(
@@ -312,5 +318,11 @@
   .options {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (min-width: 1080px) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
