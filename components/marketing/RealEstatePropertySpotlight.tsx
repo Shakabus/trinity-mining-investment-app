@@ -338,6 +338,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'park-hyatt-zurich',
+    title: 'Park Hyatt Zurich',
+    location: 'Zurich, Switzerland',
+    tag: 'Prime City-Center Luxury Asset',
+    summary:
+      'A five-star city-center hospitality asset in Zurich with premium business and leisure demand. Trinity structures this property as a managed revenue participation lane with monthly distribution cycles.',
+    imageSrc: '/properties/park-hyatt-zurich.jpg',
+    imageAlternates: [
+      '/properties/park-hyatt-zurich-switzerland.jpg',
+      '/properties/park-hyatt-zurich-hotel.jpg',
+      '/properties/zurich-park-hyatt.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/park-hyatt-zurich.jpg',
+    facts: [
+      { label: 'Address', value: 'Beethovenstrasse 21' },
+      { label: 'City', value: '8002 Zurich' },
+      { label: 'Asset Scale', value: 'City-center luxury hospitality profile' },
+      { label: 'Income Logic', value: 'Monthly room and event revenue participation' },
+    ],
+    modalTitle: 'Park Hyatt Zurich',
+    modalLocation: 'Beethovenstrasse 21, 8002 Zurich, Switzerland',
+    overview:
+      'Park Hyatt Zurich is a flagship luxury hospitality asset in central Zurich, positioned near the financial district, the lake area, and key convention demand zones. Trinity maps this property into structured buy-in tiers tied to recurring operational performance windows and monthly reporting cycles.',
+    highlights: [
+      'Prime Zurich city-center location with premium demand profile',
+      'Business, events, and leisure occupancy mix',
+      'Revenue exposure across rooms, dining, and venue operations',
+      'Monthly operational reporting and payout cycle framework',
+    ],
+    options: [
+      {
+        tier: 'Zurich Entry Lane',
+        minimum: '$8,000',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '620% - 820% total cycle',
+        illustrativeOutcome: '$8,000 -> $56,000-$73,600 in 12 months',
+      },
+      {
+        tier: 'City-Center Yield Pool',
+        minimum: '$24,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + event surplus participation',
+        projectedBand: '650% - 860% total cycle',
+        illustrativeOutcome: '$24,000 -> $180,000-$230,400 over 18 months',
+      },
+      {
+        tier: 'Executive Hospitality Plus',
+        minimum: '$52,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy and premium service split',
+        projectedBand: '680% - 900% total cycle',
+        illustrativeOutcome: '$52,000 -> $405,600-$520,000 over 24 months',
+      },
+      {
+        tier: 'Institutional Zurich Allocation',
+        minimum: '$110,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '730% - 960% total cycle',
+        illustrativeOutcome: '$110,000 -> $913,000-$1,166,000 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
