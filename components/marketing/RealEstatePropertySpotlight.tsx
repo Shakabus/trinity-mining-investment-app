@@ -599,6 +599,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'grand-hyatt-indian-wells',
+    title: 'Grand Hyatt Indian Wells Resort & Villas',
+    location: 'Indian Wells, California, USA',
+    tag: 'Resort Villas & Leisure Asset',
+    summary:
+      'A large-format Palm Springs area resort with strong leisure, events, and villa-driven demand. Trinity structures this property as a managed participation lane with monthly operational reporting and payout cycles.',
+    imageSrc: '/properties/grand-hyatt-indian-wells.jpg',
+    imageAlternates: [
+      '/properties/grand-hyatt-indian-wells-resort-villas.jpg',
+      '/properties/hyatt-indian-wells.jpg',
+      '/properties/indian-wells-grand-hyatt.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/grand-hyatt-indian-wells.jpg',
+    facts: [
+      { label: 'Address', value: '44600 Indian Wells Lane' },
+      { label: 'City', value: 'Indian Wells, CA 92210' },
+      { label: 'Asset Scale', value: '531 rooms including suites and villas' },
+      { label: 'Income Logic', value: 'Monthly rooms + resort + villas revenue participation' },
+    ],
+    modalTitle: 'Grand Hyatt Indian Wells Resort & Villas',
+    modalLocation: '44600 Indian Wells Ln, Indian Wells, California 92210, United States',
+    overview:
+      'Grand Hyatt Indian Wells is a high-capacity destination resort in Greater Palm Springs with demand across family leisure, premium villa stays, events, and group travel. Trinity maps this asset into structured buy-in tiers linked to recurring monthly performance windows.',
+    highlights: [
+      'Large-scale resort profile with 531 rooms, suites, and villas',
+      'Strong leisure and group travel demand in the Greater Palm Springs corridor',
+      'Diversified operating mix across rooms, villas, F&B, and resort experiences',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Desert Entry Allocation',
+        minimum: '$8,000',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '145% - 205% total cycle',
+        illustrativeOutcome: '$8,000 -> $19,600-$24,400 in 12 months',
+      },
+      {
+        tier: 'Resort & Villas Yield Pool',
+        minimum: '$24,500',
+        duration: '18 months',
+        payoutModel: 'Monthly room + villas surplus participation',
+        projectedBand: '180% - 255% total cycle',
+        illustrativeOutcome: '$24,500 -> $68,600-$86,975 over 18 months',
+      },
+      {
+        tier: 'Palm Springs Performance Plus',
+        minimum: '$56,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, villas, and resort spend split',
+        projectedBand: '225% - 310% total cycle',
+        illustrativeOutcome: '$56,000 -> $182,000-$229,600 over 24 months',
+      },
+      {
+        tier: 'Institutional Desert Allocation',
+        minimum: '$125,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '270% - 355% total cycle',
+        illustrativeOutcome: '$125,000 -> $462,500-$568,750 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
