@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 const NAV_ITEMS = [
-  { label: 'About Us', href: '/about-us' },
   { label: 'Features', href: '/#features' },
-  { label: 'How It Works', href: '/how-it-works' },
   { label: 'Incentives', href: '/#incentives' },
+  { label: 'About Us', href: '/about-us' },
+  { label: 'How It Works', href: '/how-it-works' },
 ]
 
 export default function BitryxHeader() {
