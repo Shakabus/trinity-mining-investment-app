@@ -22,6 +22,8 @@ import {
   Layers,
   ChevronDown,
   ChevronRight,
+  Building2,
+  Home,
 } from 'lucide-react'
 
 const menuItems = [
@@ -40,6 +42,16 @@ const menuItems = [
       { name: 'Portfolio Activity', labelKey: 'portfolioActivity', href: '/dashboard/investment-trading/bot', icon: LineChart },
       { name: 'Earnings', labelKey: 'earnings', href: '/dashboard/investment-trading/earnings', icon: LineChart },
       { name: 'Withdrawals', labelKey: 'withdrawals', href: '/dashboard/investment-trading/withdrawals', icon: Wallet },
+    ],
+  },
+  {
+    name: 'Real estate Portfolio',
+    href: '/dashboard/real-estate',
+    icon: Building2,
+    children: [
+      { name: 'My Properties', href: '/dashboard/real-estate/my-properties', icon: Home },
+      { name: 'Property Earnings', href: '/dashboard/real-estate/property-earnings', icon: LineChart },
+      { name: 'Withdrawals', labelKey: 'withdrawals', href: '/dashboard/real-estate/withdrawals', icon: Wallet },
     ],
   },
   { name: 'Referrals', labelKey: 'referrals', href: '/dashboard/referrals', icon: Link2 },
@@ -62,6 +74,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
     return window.localStorage.getItem('dashboard_sidebar_collapsed') === 'true'
   })
   const [isTradingOpen, setIsTradingOpen] = useState(true)
+  const [isRealEstateOpen, setIsRealEstateOpen] = useState(true)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -72,7 +85,23 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
   }, [pathname])
 
   const isTradingRoute = pathname?.startsWith('/dashboard/investment-trading')
-  const tradingOpen = isTradingRoute ? true : isTradingOpen
+  const isRealEstateRoute = pathname?.startsWith('/dashboard/real-estate')
+
+  const isParentOpen = (href: string) => {
+    if (href === '/dashboard/investment-trading') return isTradingRoute ? true : isTradingOpen
+    if (href === '/dashboard/real-estate') return isRealEstateRoute ? true : isRealEstateOpen
+    return false
+  }
+
+  const toggleParent = (href: string) => {
+    if (href === '/dashboard/investment-trading') {
+      setIsTradingOpen(prev => !prev)
+      return
+    }
+    if (href === '/dashboard/real-estate') {
+      setIsRealEstateOpen(prev => !prev)
+    }
+  }
 
   const toggleCollapsed = () => {
     setIsCollapsed(prev => {
@@ -127,6 +156,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
             const Icon = item.icon
 
             if ('children' in item) {
+              const parentOpen = isParentOpen(item.href)
               return (
                 <div key={item.href} className="space-y-1">
                   <div
@@ -156,25 +186,30 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       >
                         <Icon size={18} strokeWidth={2} />
                       </div>
-                    {!isCollapsed && <span className="font-medium">{t(item.labelKey || item.name)}</span>}
+                    {!isCollapsed && (
+                      <span className="font-medium">
+                        {item.labelKey ? t(item.labelKey) : item.name}
+                      </span>
+                    )}
                     </Link>
                     {!isCollapsed && (
                       <button
                         type="button"
-                        onClick={() => setIsTradingOpen(prev => !prev)}
+                        onClick={() => toggleParent(item.href)}
                         className="ml-auto p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                        aria-label={isTradingOpen ? 'Collapse investment links' : 'Expand investment links'}
+                        aria-label={parentOpen ? 'Collapse section links' : 'Expand section links'}
                       >
-                        {isTradingOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        {parentOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                       </button>
                     )}
                   </div>
-                    {!isCollapsed && tradingOpen && (
+                    {!isCollapsed && parentOpen && (
                       <div className="ml-10 space-y-1">
                       {item.children?.map(child => {
                         const childActive =
                           pathname === child.href ||
-                          (child.href.includes('#') &&
+                          (item.href === '/dashboard/investment-trading' &&
+                            child.href.includes('#') &&
                             pathname === '/dashboard/investment-trading' &&
                             hash === '#plans')
                         const ChildIcon = child.icon
@@ -203,7 +238,9 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                             >
                               <ChildIcon size={16} strokeWidth={2} />
                             </div>
-                            <span className="font-medium">{t(child.labelKey || child.name)}</span>
+                            <span className="font-medium">
+                              {child.labelKey ? t(child.labelKey) : child.name}
+                            </span>
                           </Link>
                         )
                       })}
@@ -239,7 +276,11 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                 >
                   <Icon size={18} strokeWidth={2} />
                 </div>
-                {!isCollapsed && <span className="font-medium">{t(item.labelKey || item.name)}</span>}
+                {!isCollapsed && (
+                  <span className="font-medium">
+                    {item.labelKey ? t(item.labelKey) : item.name}
+                  </span>
+                )}
               </Link>
             )
           })}
@@ -278,6 +319,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
             const Icon = item.icon
 
             if ('children' in item) {
+              const parentOpen = isParentOpen(item.href)
               return (
                 <div key={item.href} className="space-y-1">
                   <div
@@ -311,19 +353,20 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                     </Link>
                     <button
                       type="button"
-                      onClick={() => setIsTradingOpen(prev => !prev)}
+                      onClick={() => toggleParent(item.href)}
                       className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                      aria-label={isTradingOpen ? 'Collapse investment links' : 'Expand investment links'}
+                      aria-label={parentOpen ? 'Collapse section links' : 'Expand section links'}
                     >
-                      {isTradingOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      {parentOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </button>
                   </div>
-                  {tradingOpen && (
+                  {parentOpen && (
                     <div className="ml-10 space-y-1">
                       {item.children?.map(child => {
                         const childActive =
                           pathname === child.href ||
-                          (child.href.includes('#') &&
+                          (item.href === '/dashboard/investment-trading' &&
+                            child.href.includes('#') &&
                             pathname === '/dashboard/investment-trading' &&
                             hash === '#plans')
                       const ChildIcon = child.icon
