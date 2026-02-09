@@ -21,15 +21,15 @@ export default function HomePage() {
       <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28">
         <section className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/70">
-            A Stable Mining Platform
+            A Stable Trading Investment and Mining Platform
           </p>
           <h1 className="mt-4 text-4xl font-semibold leading-tight md:text-6xl">
             To Maximize Profitability
           </h1>
           <p className="mt-4 text-sm text-white/70 md:text-base">
-            Join the revolution in cloud-based mining with high yields and zero
-            hardware hassle. Mine crypto effortlessly with Trinity In One- power
-            your future today
+            Join Trinity in One for structured mining and investment trading with
+            clear cycle visibility, managed execution, and zero hardware hassle.
+            Grow your portfolio through one unified platform.
           </p>
         </section>
 
