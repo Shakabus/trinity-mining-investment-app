@@ -295,12 +295,13 @@ export default function FaqPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-6">
-        <BitryxHeader />
-      </div>
+    <div className="min-h-screen bg-black text-white marketing-page">
+      <div className="marketing-page-content">
+        <div className="mx-auto w-full max-w-6xl px-6 pt-6">
+          <BitryxHeader />
+        </div>
 
-      <main className="mx-auto w-full max-w-6xl px-6 pb-14 pt-28">
+        <main className="mx-auto w-full max-w-6xl px-6 pb-14 pt-28">
         <section className="rounded-3xl border border-white/15 bg-gradient-to-br from-white/[0.11] to-white/[0.03] p-7 shadow-[0_12px_40px_rgba(0,0,0,0.45)] md:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Help Center</p>
           <h1 className="mt-4 text-3xl font-semibold leading-tight md:text-5xl">
@@ -449,10 +450,10 @@ export default function FaqPage() {
             </Link>
           </div>
         </section>
-      </main>
+        </main>
+      </div>
 
       <MarketingFooter />
     </div>
   )
 }
-

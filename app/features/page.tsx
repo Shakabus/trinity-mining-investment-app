@@ -99,15 +99,15 @@ const STATS = [
 
 export default function FeaturesPage() {
   return (
-    <div className={`min-h-screen bg-black text-white ${styles.page}`}>
+    <div className={`min-h-screen bg-black text-white marketing-page ${styles.page}`}>
       <div className={styles.glowA} />
       <div className={styles.glowB} />
+      <div className="marketing-page-content">
+        <div className={`mx-auto w-full max-w-6xl px-6 pt-6 ${styles.headerLayer}`}>
+          <BitryxHeader />
+        </div>
 
-      <div className={`mx-auto w-full max-w-6xl px-6 pt-6 ${styles.headerLayer}`}>
-        <BitryxHeader />
-      </div>
-
-      <main className={`mx-auto w-full max-w-6xl px-6 pb-14 pt-28 ${styles.content}`}>
+        <main className={`mx-auto w-full max-w-6xl px-6 pb-14 pt-28 ${styles.content}`}>
         <section className={styles.hero}>
           <p className={styles.eyebrow}>Features</p>
           <h1 className={styles.title}>Trinity in One Platform Capabilities</h1>
@@ -216,7 +216,8 @@ export default function FeaturesPage() {
             </Link>
           </div>
         </section>
-      </main>
+        </main>
+      </div>
 
       <MarketingFooter />
     </div>

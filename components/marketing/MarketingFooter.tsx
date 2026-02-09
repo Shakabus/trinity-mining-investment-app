@@ -18,7 +18,7 @@ export default function MarketingFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className={styles.footer}>
+    <footer className={`${styles.footer} marketing-footer-reveal`}>
       <div className={styles.shell}>
         <div className={styles.brandPane}>
           <div className={styles.logo}>Trinity in One</div>

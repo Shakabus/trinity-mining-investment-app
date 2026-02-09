@@ -89,12 +89,13 @@ export default function AboutUsPage() {
   const bodyHighlightCount = Math.max(0, highlightedCount - titleChars.length)
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-6">
-        <BitryxHeader />
-      </div>
+    <div className="min-h-screen bg-black text-white marketing-page">
+      <div className="marketing-page-content">
+        <div className="mx-auto w-full max-w-6xl px-6 pt-6">
+          <BitryxHeader />
+        </div>
 
-      <main className="mx-auto w-full max-w-5xl space-y-10 px-6 pb-12 pt-28">
+        <main className="mx-auto w-full max-w-5xl space-y-10 px-6 pb-12 pt-28">
         <section className="w-full py-16 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
             About Us
@@ -142,7 +143,8 @@ export default function AboutUsPage() {
         <AboutWhyChooseTrinitySnake />
         <TestimonialsCarousel />
         <AboutFaqSection />
-      </main>
+        </main>
+      </div>
 
       <MarketingFooter />
     </div>

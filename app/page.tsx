@@ -13,12 +13,13 @@ import Link from 'next/link'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="mx-auto w-full max-w-6xl px-6 pt-6">
-        <BitryxHeader />
-      </div>
+    <div className="min-h-screen bg-black text-white marketing-page">
+      <div className="marketing-page-content">
+        <div className="mx-auto w-full max-w-6xl px-6 pt-6">
+          <BitryxHeader />
+        </div>
 
-      <main className="mx-auto w-full max-w-6xl px-6 pb-12 pt-28">
+        <main className="mx-auto w-full max-w-6xl px-6 pb-12 pt-28">
         <section className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/70">
             A Stable Trading Investment and Mining Platform
@@ -267,7 +268,8 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-      </main>
+        </main>
+      </div>
       <MarketingFooter />
     </div>
   )
