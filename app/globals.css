@@ -26,6 +26,11 @@ body {
   font-family: "Noto Sans", "Noto Sans Arabic", "Noto Sans Devanagari",
     "Noto Sans JP", "Noto Sans SC", Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 a,
@@ -112,10 +117,12 @@ a[aria-disabled="true"],
 
 .bitryx-header {
   position: fixed;
-  top: 5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(1200px, calc(100% - 48px));
+  top: max(5px, env(safe-area-inset-top));
+  left: 24px;
+  right: 24px;
+  width: auto;
+  max-width: 1200px;
+  margin-inline: auto;
   z-index: 999;
   font-family: "Poppins", sans-serif;
   background: linear-gradient(
@@ -244,7 +251,7 @@ a[aria-disabled="true"],
 .bitryx-mobile-menu {
   position: fixed;
   top: 70px;
-  right: -300px;
+  right: 20px;
   width: 250px;
   height: auto;
   padding: 32px 32px 36px;
@@ -262,12 +269,12 @@ a[aria-disabled="true"],
   display: flex;
   flex-direction: column;
   gap: 26px;
-  transition: right 0.35s ease, opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease;
   z-index: 20000;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-6px);
+  transform: translateX(calc(100% + 24px)) translateY(-6px);
 }
 
 .bitryx-login-btn.mobile {
@@ -286,11 +293,10 @@ a[aria-disabled="true"],
 }
 
 .bitryx-header.active .bitryx-mobile-menu {
-  right: 20px;
   pointer-events: auto;
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateX(0) translateY(0);
 }
 
 .bitryx-header.active .bitryx-toggle span:nth-child(1) {

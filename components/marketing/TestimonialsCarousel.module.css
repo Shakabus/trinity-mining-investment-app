@@ -21,11 +21,13 @@
   width: min(100%, 940px);
   margin: 0 auto;
   min-height: 370px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   touch-action: pan-y;
   user-select: none;
+  overflow: hidden;
 }
 
 .cardStack {
@@ -260,8 +262,7 @@
 @media (max-width: 900px) {
   .shell {
     min-height: 405px;
-    padding: 0 40px;
-    overflow: visible;
+    padding: 0 28px;
   }
 
   .cardStack {
