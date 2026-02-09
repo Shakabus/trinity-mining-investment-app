@@ -534,6 +534,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'ritz-carlton-las-colinas',
+    title: 'The Ritz-Carlton Dallas, Las Colinas',
+    location: 'Irving, Texas, USA',
+    tag: 'Luxury Resort & Golf Asset',
+    summary:
+      'A premium resort and golf hospitality asset in Las Colinas with strong corporate, leisure, and event demand. Trinity structures this property as a managed participation lane with monthly performance-linked distributions.',
+    imageSrc: '/properties/ritz-carlton-las-colinas.jpg',
+    imageAlternates: [
+      '/properties/the-ritz-carlton-dallas-las-colinas.jpg',
+      '/properties/ritz-carlton-dallas-las-colinas.jpg',
+      '/properties/ritz-carlton-irving-texas.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/ritz-carlton-las-colinas.jpg',
+    facts: [
+      { label: 'Address', value: '4150 N MacArthur Boulevard' },
+      { label: 'City', value: 'Irving, TX 75038' },
+      { label: 'Asset Scale', value: '431-room luxury resort profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + events + resort spend participation' },
+    ],
+    modalTitle: 'The Ritz-Carlton Dallas, Las Colinas',
+    modalLocation: '4150 N MacArthur Blvd, Irving, Texas 75038, United States',
+    overview:
+      'The Ritz-Carlton Dallas, Las Colinas is a large-format luxury resort asset positioned in the Dallas-Fort Worth corridor. Trinity presents this property through structured buy-in tiers connected to monthly hospitality performance cycles across rooms, events, and resort-led spend.',
+    highlights: [
+      'Strategic Las Colinas location near major DFW business corridors',
+      '431-key luxury resort profile with meetings and events demand',
+      'Diversified operating mix across rooms, F&B, and resort amenities',
+      'Monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Las Colinas Entry Allocation',
+        minimum: '$9,500',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '150% - 215% total cycle',
+        illustrativeOutcome: '$9,500 -> $23,750-$30,425 in 12 months',
+      },
+      {
+        tier: 'Resort Revenue Pool',
+        minimum: '$28,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + event surplus participation',
+        projectedBand: '185% - 260% total cycle',
+        illustrativeOutcome: '$28,000 -> $79,800-$100,800 over 18 months',
+      },
+      {
+        tier: 'Executive Resort Plus',
+        minimum: '$62,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, events, and resort spend split',
+        projectedBand: '230% - 315% total cycle',
+        illustrativeOutcome: '$62,000 -> $204,600-$257,300 over 24 months',
+      },
+      {
+        tier: 'Institutional DFW Allocation',
+        minimum: '$130,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '275% - 365% total cycle',
+        illustrativeOutcome: '$130,000 -> $487,500-$604,500 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
