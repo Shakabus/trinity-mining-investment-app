@@ -1,4 +1,5 @@
 import BitryxHeader from '@/components/marketing/BitryxHeader'
+import MarketingFooter from '@/components/marketing/MarketingFooter'
 
 export default function HowItWorksPage() {
   return (
@@ -7,15 +8,19 @@ export default function HowItWorksPage() {
         <BitryxHeader />
       </div>
       <main className="mx-auto w-full max-w-5xl px-6 pb-24 pt-28">
-        <div className="rounded-[32px] border border-white/10 bg-white/5 p-10 backdrop-blur-2xl">
-          <h1 className="text-3xl font-semibold">How It Works</h1>
-          <ol className="mt-6 space-y-4 text-sm text-white/70">
-            <li>Select a plan and submit payment proof to begin onboarding.</li>
-            <li>Admins verify payment before activation and monitoring begins.</li>
-            <li>Track performance in your dashboard and request withdrawals once the plan completes.</li>
-          </ol>
-        </div>
+        <section className="w-full py-16 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
+            How It Works
+          </p>
+          <h1 className="mt-4 text-4xl font-semibold leading-tight md:text-6xl">
+            Trinity in One
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-sm text-white/70 md:text-base">
+            Understand the complete flow from activation to monitored performance and payout.
+          </p>
+        </section>
       </main>
+      <MarketingFooter />
     </div>
   )
 }
