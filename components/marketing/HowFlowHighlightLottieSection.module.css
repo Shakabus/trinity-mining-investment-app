@@ -5,13 +5,14 @@
 
 .row {
   width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   align-items: center;
 }
 
 .left {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -54,45 +55,8 @@
   margin-top: 6px;
 }
 
-.right {
-  width: 100%;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lottieBox {
-  width: 100%;
-  max-width: 500px;
-  height: 380px;
-  min-height: 260px;
-}
-
-.lottieBox canvas,
-.lottieBox svg {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-@media (max-width: 1024px) {
-  .lottieBox {
-    height: 320px;
-  }
-}
-
 @media (max-width: 768px) {
-  .row {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-
   .section {
     padding-top: 132px;
-  }
-
-  .lottieBox {
-    max-width: 340px;
-    height: 260px;
   }
 }

@@ -59,7 +59,6 @@ function renderHighlightedText(text: string, highlightedCount: number, keyPrefix
 
 export default function HowFlowHighlightLottieSection() {
   const sectionRef = useRef<HTMLElement | null>(null)
-  const lottieRef = useRef<HTMLDivElement | null>(null)
   const [progress, setProgress] = useState(0)
 
   const titleChars = useMemo(() => Array.from(TITLE_TEXT), [])
@@ -83,49 +82,6 @@ export default function HowFlowHighlightLottieSection() {
     return () => {
       window.removeEventListener('scroll', updateProgress)
       window.removeEventListener('resize', updateProgress)
-    }
-  }, [])
-
-  useEffect(() => {
-    let animation: { destroy: () => void } | null = null
-    let cancelled = false
-
-    const candidatePaths = ['/lottie/Revenue.json', '/lottie/revenue.json', '/lottie/REVENUE.json']
-
-    const start = async () => {
-      if (!lottieRef.current || cancelled) return
-
-      const lottie = (await import('lottie-web')).default
-      let animationData: unknown = null
-
-      for (const candidatePath of candidatePaths) {
-        try {
-          const response = await fetch(candidatePath, { cache: 'no-store' })
-          if (!response.ok) continue
-          animationData = await response.json()
-          break
-        } catch {
-          // try next path
-        }
-      }
-
-      if (!animationData || !lottieRef.current || cancelled) return
-
-      lottieRef.current.innerHTML = ''
-      animation = lottie.loadAnimation({
-        container: lottieRef.current,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        animationData,
-      })
-    }
-
-    void start()
-
-    return () => {
-      cancelled = true
-      animation?.destroy()
     }
   }, [])
 
@@ -156,9 +112,6 @@ export default function HowFlowHighlightLottieSection() {
           </div>
         </div>
 
-        <div className={styles.right}>
-          <div ref={lottieRef} className={styles.lottieBox} aria-hidden="true" />
-        </div>
       </div>
     </section>
   )
