@@ -1121,6 +1121,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'kahala-hotel-resort-oahu',
+    title: 'The Kahala Hotel & Resort',
+    location: 'Oahu, Hawaii, USA',
+    tag: 'Luxury Beachfront Resort Asset',
+    summary:
+      'A landmark beachfront luxury resort in Oahu with premium leisure demand and high-value guest spend patterns. Trinity structures this property as a managed participation lane with monthly reporting and payout cycles.',
+    imageSrc: '/properties/kahala-hotel-resort-oahu.jpg',
+    imageAlternates: [
+      '/properties/the-kahala-hotel-resort.jpg',
+      '/properties/kahala-hotel-hawaii.jpg',
+      '/properties/kahala-oahu.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/kahala-hotel-resort-oahu.jpg',
+    facts: [
+      { label: 'Address', value: '5000 Kahala Avenue' },
+      { label: 'City', value: 'Honolulu, HI 96816' },
+      { label: 'Asset Scale', value: '330+ room luxury resort profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + premium leisure spend participation' },
+    ],
+    modalTitle: 'The Kahala Hotel & Resort, Oahu',
+    modalLocation: '5000 Kahala Ave, Honolulu, Hawaii 96816, United States',
+    overview:
+      'The Kahala Hotel and Resort is a flagship Oahu hospitality asset known for premium beachfront positioning and high-value leisure demand. Trinity maps this property into structured buy-in tiers tied to recurring monthly operating windows across rooms, dining, and resort experiences.',
+    highlights: [
+      'Prime Kahala beachfront location with premium travel demand',
+      'Luxury resort profile with strong leisure occupancy cycles',
+      'Diversified revenue mix across rooms, dining, and resort amenities',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Kahala Entry Allocation',
+        minimum: '$9,000',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '150% - 210% total cycle',
+        illustrativeOutcome: '$9,000 -> $22,500-$27,900 in 12 months',
+      },
+      {
+        tier: 'Luxury Yield Pool',
+        minimum: '$29,500',
+        duration: '18 months',
+        payoutModel: 'Monthly room + resort surplus participation',
+        projectedBand: '190% - 265% total cycle',
+        illustrativeOutcome: '$29,500 -> $85,550-$107,675 over 18 months',
+      },
+      {
+        tier: 'Beachfront Performance Plus',
+        minimum: '$65,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy and premium spend split',
+        projectedBand: '235% - 320% total cycle',
+        illustrativeOutcome: '$65,000 -> $217,750-$273,000 over 24 months',
+      },
+      {
+        tier: 'Institutional Oahu Allocation',
+        minimum: '$142,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '280% - 365% total cycle',
+        illustrativeOutcome: '$142,000 -> $539,600-$660,300 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
