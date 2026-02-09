@@ -5,6 +5,7 @@ import InteractiveKnowledgeHub from '@/components/marketing/InteractiveKnowledge
 import MiningInvestmentFramework from '@/components/marketing/MiningInvestmentFramework'
 import HowFlowHighlightLottieSection from '@/components/marketing/HowFlowHighlightLottieSection'
 import MiningPlansSection from '@/components/marketing/MiningPlansSection'
+import InvestmentTradingPlansSection from '@/components/marketing/InvestmentTradingPlansSection'
 
 export default function HowItWorksPage() {
   return (
@@ -29,6 +30,7 @@ export default function HowItWorksPage() {
         <HowFlowHighlightLottieSection />
         <InteractiveKnowledgeHub />
         <MiningInvestmentFramework />
+        <InvestmentTradingPlansSection />
         <MiningPlansSection />
       </main>
       <MarketingFooter />
