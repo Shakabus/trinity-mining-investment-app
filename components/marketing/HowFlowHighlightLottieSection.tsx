@@ -4,21 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import styles from '@/components/marketing/HowFlowHighlightLottieSection.module.css'
 
-declare global {
-  interface Window {
-    lottie?: {
-      loadAnimation: (options: {
-        container: HTMLElement
-        renderer: 'svg' | 'canvas' | 'html'
-        loop: boolean
-        autoplay: boolean
-        path?: string
-        animationData?: unknown
-      }) => { destroy: () => void }
-    }
-  }
-}
-
 const TITLE_TEXT = 'Built for Measurable Growth'
 const SUBTITLE_TEXT =
   'Trinity in One is designed as a full operating system for multi-asset participation, not a single-purpose tool. Mining infrastructure, structured investment cycles, and portfolio-level visibility are connected in one platform so users can track activation, execution, and payout with clear status flow and disciplined decision points.'
@@ -108,32 +93,29 @@ export default function HowFlowHighlightLottieSection() {
 
     const candidatePaths = ['/lottie/Revenue.json', '/lottie/revenue.json', '/lottie/REVENUE.json']
 
-    const resolveAnimationData = async () => {
+    const resolvePath = async () => {
       for (const candidate of candidatePaths) {
         try {
           const res = await fetch(candidate, { cache: 'no-store' })
-          if (!res.ok) continue
-          return await res.json()
+          if (res.ok) return candidate
         } catch {
           // try next
         }
       }
-      return null
+      return candidatePaths[0]
     }
 
     const start = async () => {
       if (!lottieRef.current || !window.lottie || cancelled) return
-      const animationData = await resolveAnimationData()
+      const path = await resolvePath()
       if (!lottieRef.current || !window.lottie || cancelled) return
-
-      if (!animationData) return
 
       animation = window.lottie.loadAnimation({
         container: lottieRef.current,
         renderer: 'svg',
         loop: true,
         autoplay: true,
-        animationData,
+        path,
       })
     }
 
