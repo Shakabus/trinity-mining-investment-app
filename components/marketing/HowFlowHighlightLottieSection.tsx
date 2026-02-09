@@ -93,44 +93,58 @@ export default function HowFlowHighlightLottieSection() {
 
     const candidatePaths = ['/lottie/Revenue.json', '/lottie/revenue.json', '/lottie/REVENUE.json']
 
-    const resolvePath = async () => {
-      for (const candidate of candidatePaths) {
-        try {
-          const res = await fetch(candidate, { cache: 'no-store' })
-          if (res.ok) return candidate
-        } catch {
-          // try next
+    const start = () => {
+      if (!lottieRef.current || !window.lottie || cancelled) return
+
+      const loadByIndex = (index: number) => {
+        if (!lottieRef.current || !window.lottie || cancelled) return
+        if (index >= candidatePaths.length) return
+
+        const anim = window.lottie.loadAnimation({
+          container: lottieRef.current,
+          renderer: 'canvas',
+          loop: true,
+          autoplay: true,
+          path: candidatePaths[index],
+        })
+
+        animation = anim
+
+        const animWithEvents = anim as unknown as {
+          addEventListener?: (name: string, cb: () => void) => void
         }
+
+        let resolved = false
+
+        animWithEvents.addEventListener?.('DOMLoaded', () => {
+          resolved = true
+        })
+
+        const onFail = () => {
+          if (resolved || cancelled) return
+          anim.destroy()
+          loadByIndex(index + 1)
+        }
+
+        animWithEvents.addEventListener?.('data_failed', onFail)
+        animWithEvents.addEventListener?.('error', onFail)
       }
-      return candidatePaths[0]
-    }
 
-    const start = async () => {
-      if (!lottieRef.current || !window.lottie || cancelled) return
-      const path = await resolvePath()
-      if (!lottieRef.current || !window.lottie || cancelled) return
-
-      animation = window.lottie.loadAnimation({
-        container: lottieRef.current,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        path,
-      })
+      loadByIndex(0)
     }
 
     if (window.lottie) {
-      void start()
+      start()
     } else {
       scriptEl = document.createElement('script')
       scriptEl.src = 'https://unpkg.com/lottie-web/build/player/lottie.min.js'
       scriptEl.async = true
-      scriptEl.onload = () => void start()
+      scriptEl.onload = start
       scriptEl.onerror = () => {
         const fallback = document.createElement('script')
         fallback.src = 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js'
         fallback.async = true
-        fallback.onload = () => void start()
+        fallback.onload = start
         document.body.appendChild(fallback)
         scriptEl = fallback
       }
