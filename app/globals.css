@@ -117,7 +117,8 @@ a[aria-disabled="true"],
 
 .bitryx-header {
   position: fixed;
-  top: max(5px, env(safe-area-inset-top));
+  top: 5px;
+  top: calc(env(safe-area-inset-top) + 5px);
   left: 24px;
   right: 24px;
   width: auto;
