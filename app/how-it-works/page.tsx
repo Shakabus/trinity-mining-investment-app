@@ -2,6 +2,7 @@ import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import TrinityFlowTimeline from '@/components/marketing/TrinityFlowTimeline'
 import InteractiveKnowledgeHub from '@/components/marketing/InteractiveKnowledgeHub'
+import MiningInvestmentFramework from '@/components/marketing/MiningInvestmentFramework'
 
 export default function HowItWorksPage() {
   return (
@@ -24,6 +25,7 @@ export default function HowItWorksPage() {
 
         <TrinityFlowTimeline />
         <InteractiveKnowledgeHub />
+        <MiningInvestmentFramework />
       </main>
       <MarketingFooter />
     </div>
