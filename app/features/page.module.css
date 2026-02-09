@@ -174,12 +174,15 @@
 .compareWrap {
   margin-top: 16px;
   border-radius: 20px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .compareTable {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
 }
