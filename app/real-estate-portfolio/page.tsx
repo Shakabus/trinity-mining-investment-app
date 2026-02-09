@@ -1,5 +1,6 @@
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
+import RealEstatePropertySpotlight from '@/components/marketing/RealEstatePropertySpotlight'
 
 const PARTICIPATION_MODELS = [
   {
@@ -81,6 +82,8 @@ export default function RealEstatePortfolioPage() {
               users can compare opportunities with clarity before entering a position.
             </p>
           </section>
+
+          <RealEstatePropertySpotlight />
         </main>
       </div>
 
