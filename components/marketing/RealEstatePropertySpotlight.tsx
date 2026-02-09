@@ -990,6 +990,72 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'jw-marriott-phoenix-desert-ridge',
+    title: 'JW Marriott Phoenix Desert Ridge Resort & Spa',
+    location: 'Phoenix, Arizona, USA',
+    tag: 'Luxury Resort & Convention Asset',
+    summary:
+      'A high-capacity destination resort in North Phoenix with strong group, leisure, and events demand. Trinity structures this property as a managed participation lane with monthly performance reporting and payout cycles.',
+    imageSrc: '/properties/jw-marriott-phoenix-desert-ridge.jpg',
+    imageAlternates: [
+      '/properties/jw-marriott-desert-ridge.jpg',
+      '/properties/jw-marriott-phoenix-resort-spa.jpg',
+      '/properties/desert-ridge-jw-marriott.jpg',
+    ],
+    imageFallback:
+      'Add property image: /public/properties/jw-marriott-phoenix-desert-ridge.jpg',
+    facts: [
+      { label: 'Address', value: '5350 E Marriott Drive' },
+      { label: 'City', value: 'Phoenix, AZ 85054' },
+      { label: 'Asset Scale', value: '950+ room resort profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + events + amenity revenue participation' },
+    ],
+    modalTitle: 'JW Marriott Phoenix Desert Ridge Resort & Spa',
+    modalLocation: '5350 E Marriott Dr, Phoenix, Arizona 85054, United States',
+    overview:
+      'JW Marriott Phoenix Desert Ridge is a large-format resort asset with strong conference demand, premium leisure occupancy, and diversified on-site revenue channels. Trinity maps this property into structured buy-in tiers tied to recurring monthly operating windows and controlled payout cycles.',
+    highlights: [
+      'Large-scale resort footprint with strong conference and group demand',
+      'High-value leisure and destination occupancy profile',
+      'Diversified revenue mix across rooms, events, dining, and resort amenities',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Desert Entry Allocation',
+        minimum: '$9,500',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '150% - 215% total cycle',
+        illustrativeOutcome: '$9,500 -> $23,750-$29,925 in 12 months',
+      },
+      {
+        tier: 'Convention Yield Pool',
+        minimum: '$30,500',
+        duration: '18 months',
+        payoutModel: 'Monthly room + event surplus participation',
+        projectedBand: '190% - 265% total cycle',
+        illustrativeOutcome: '$30,500 -> $88,450-$111,325 over 18 months',
+      },
+      {
+        tier: 'Resort Performance Plus',
+        minimum: '$68,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, events, and amenity spend split',
+        projectedBand: '235% - 320% total cycle',
+        illustrativeOutcome: '$68,000 -> $227,800-$285,600 over 24 months',
+      },
+      {
+        tier: 'Institutional Phoenix Allocation',
+        minimum: '$150,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '280% - 365% total cycle',
+        illustrativeOutcome: '$150,000 -> $570,000-$697,500 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
