@@ -925,6 +925,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'hilton-los-cabos-beach-golf',
+    title: 'Hilton Los Cabos Beach & Golf Resort',
+    location: 'Cabo San Lucas, Mexico',
+    tag: 'Beachfront Resort Asset',
+    summary:
+      'A beachfront luxury resort in Los Cabos with strong international leisure demand and premium seasonal occupancy. Trinity structures this property as a managed participation lane with monthly reporting and payout cycles.',
+    imageSrc: '/properties/hilton-los-cabos.jpg',
+    imageAlternates: [
+      '/properties/hilton-los-cabos-beach-golf-resort.jpg',
+      '/properties/hilton-los-cabos-beach-resort.jpg',
+      '/properties/hilton-cabo-san-lucas.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/hilton-los-cabos.jpg',
+    facts: [
+      { label: 'Address', value: 'Carretera Transpeninsular Km 19.5' },
+      { label: 'City', value: 'Los Cabos, BCS 23447' },
+      { label: 'Asset Scale', value: '260+ room beachfront resort profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + resort + leisure spend participation' },
+    ],
+    modalTitle: 'Hilton Los Cabos Beach & Golf Resort',
+    modalLocation: 'Carretera Transpeninsular Km 19.5, Los Cabos, Baja California Sur 23447, Mexico',
+    overview:
+      'Hilton Los Cabos Beach and Golf Resort is a high-demand coastal hospitality asset positioned between key Los Cabos destinations. Trinity maps this property into structured buy-in tiers tied to recurring monthly operating windows across room demand, resort experiences, and premium guest spend.',
+    highlights: [
+      'Prime beachfront positioning in the Los Cabos corridor',
+      'Strong leisure-driven occupancy with premium seasonal demand',
+      'Diversified revenue mix across rooms, dining, and resort experiences',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Cabo Entry Allocation',
+        minimum: '$9,000',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '150% - 215% total cycle',
+        illustrativeOutcome: '$9,000 -> $22,500-$28,350 in 12 months',
+      },
+      {
+        tier: 'Beachfront Yield Pool',
+        minimum: '$28,500',
+        duration: '18 months',
+        payoutModel: 'Monthly room + resort surplus participation',
+        projectedBand: '190% - 265% total cycle',
+        illustrativeOutcome: '$28,500 -> $82,650-$104,025 over 18 months',
+      },
+      {
+        tier: 'Resort Performance Plus',
+        minimum: '$63,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, resort, and outlet revenue split',
+        projectedBand: '235% - 320% total cycle',
+        illustrativeOutcome: '$63,000 -> $211,050-$264,600 over 24 months',
+      },
+      {
+        tier: 'Institutional Cabo Allocation',
+        minimum: '$140,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '280% - 365% total cycle',
+        illustrativeOutcome: '$140,000 -> $532,000-$651,000 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
