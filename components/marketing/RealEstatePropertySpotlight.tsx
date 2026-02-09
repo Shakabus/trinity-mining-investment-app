@@ -794,6 +794,72 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'grande-lakes-orlando-jw-ritz',
+    title: 'Grande Lakes Orlando (JW Marriott & Ritz-Carlton)',
+    location: 'Orlando, Florida, USA',
+    tag: 'Dual-Brand Resort Mega Asset',
+    summary:
+      'A large integrated resort complex combining JW Marriott and The Ritz-Carlton at Grande Lakes. Trinity structures this as a managed participation lane linked to monthly performance across rooms, events, golf, and resort experiences.',
+    imageSrc: '/properties/grande-lakes-orlando.jpg',
+    imageAlternates: [
+      '/properties/grande-lakes-orlando-jw-marriott-ritz-carlton.jpg',
+      '/properties/jw-marriott-ritz-carlton-grande-lakes.jpg',
+      '/properties/ritz-carlton-orlando-grande-lakes.jpg',
+      '/properties/jw-marriott-orlando-grande-lakes.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/grande-lakes-orlando.jpg',
+    facts: [
+      { label: 'Address', value: '4040 Central Florida Parkway' },
+      { label: 'City', value: 'Orlando, FL 32837' },
+      { label: 'Asset Scale', value: '1,500+ key dual-brand resort footprint' },
+      { label: 'Income Logic', value: 'Monthly rooms + events + resort revenue participation' },
+    ],
+    modalTitle: 'Grande Lakes Orlando (JW Marriott & The Ritz-Carlton)',
+    modalLocation: '4040 Central Florida Pkwy, Orlando, Florida 32837, United States',
+    overview:
+      'Grande Lakes Orlando is a large-scale luxury hospitality ecosystem anchored by JW Marriott and The Ritz-Carlton. Trinity maps this asset into structured buy-in tiers linked to recurring monthly operating windows across room demand, conferences, leisure traffic, golf programming, and premium resort spend.',
+    highlights: [
+      'Dual-brand luxury positioning with large combined key count',
+      'Strong conference, family-leisure, and destination event demand',
+      'Diversified operating mix across rooms, F&B, events, and resort amenities',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Grande Lakes Entry Allocation',
+        minimum: '$10,000',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '150% - 215% total cycle',
+        illustrativeOutcome: '$10,000 -> $25,000-$31,500 in 12 months',
+      },
+      {
+        tier: 'Dual-Brand Yield Pool',
+        minimum: '$30,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + event surplus participation',
+        projectedBand: '190% - 265% total cycle',
+        illustrativeOutcome: '$30,000 -> $87,000-$109,500 over 18 months',
+      },
+      {
+        tier: 'Resort Performance Plus',
+        minimum: '$66,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, events, and amenity spend split',
+        projectedBand: '235% - 320% total cycle',
+        illustrativeOutcome: '$66,000 -> $221,100-$277,200 over 24 months',
+      },
+      {
+        tier: 'Institutional Orlando Allocation',
+        minimum: '$145,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '280% - 365% total cycle',
+        illustrativeOutcome: '$145,000 -> $551,000-$674,250 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
