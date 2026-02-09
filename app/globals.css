@@ -582,7 +582,7 @@ a[aria-disabled="true"],
 .marketing-page {
   position: relative;
   isolation: isolate;
-  --footer-reveal-space: 360px;
+  --footer-reveal-space: 520px;
   padding-bottom: var(--footer-reveal-space);
 }
 
@@ -605,6 +605,6 @@ a[aria-disabled="true"],
 
 @media (max-width: 980px) {
   .marketing-page {
-    --footer-reveal-space: 520px;
+    --footer-reveal-space: 760px;
   }
 }
