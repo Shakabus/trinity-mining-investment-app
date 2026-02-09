@@ -1,5 +1,6 @@
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
+import TrinityFlowTimeline from '@/components/marketing/TrinityFlowTimeline'
 
 export default function HowItWorksPage() {
   return (
@@ -19,6 +20,8 @@ export default function HowItWorksPage() {
             Understand the complete flow from activation to monitored performance and payout.
           </p>
         </section>
+
+        <TrinityFlowTimeline />
       </main>
       <MarketingFooter />
     </div>
