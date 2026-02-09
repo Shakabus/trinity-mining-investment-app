@@ -18,7 +18,7 @@ export default function HomePage() {
         <BitryxHeader />
       </div>
 
-      <main className="mx-auto w-full max-w-6xl px-6 pb-24 pt-28">
+      <main className="mx-auto w-full max-w-6xl px-6 pb-12 pt-28">
         <section className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/70">
             A Stable Trading Investment and Mining Platform

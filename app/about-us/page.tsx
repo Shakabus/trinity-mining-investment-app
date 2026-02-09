@@ -94,7 +94,7 @@ export default function AboutUsPage() {
         <BitryxHeader />
       </div>
 
-      <main className="mx-auto w-full max-w-5xl space-y-10 px-6 pb-24 pt-28">
+      <main className="mx-auto w-full max-w-5xl space-y-10 px-6 pb-12 pt-28">
         <section className="w-full py-16 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
             About Us

@@ -14,7 +14,7 @@ export default function HowItWorksPage() {
       <div className="mx-auto w-full max-w-6xl px-6 pt-6">
         <BitryxHeader />
       </div>
-      <main className="mx-auto w-full max-w-5xl px-6 pb-24 pt-28">
+      <main className="mx-auto w-full max-w-5xl px-6 pb-12 pt-28">
         <section className="w-full py-16 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
             How It Works
