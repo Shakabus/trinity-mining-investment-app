@@ -38,6 +38,7 @@
   -webkit-backdrop-filter: blur(22px);
   backdrop-filter: blur(22px);
   pointer-events: none;
+  z-index: 1;
 }
 
 .layerOne {
@@ -67,6 +68,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
   overflow: hidden;
   transform-style: preserve-3d;
+  z-index: 2;
 }
 
 .card::before {
@@ -94,18 +96,22 @@
 }
 
 .quote {
-  margin: 0;
+  margin: 0 auto;
+  max-width: 680px;
   font-family: Inter, sans-serif;
   font-size: clamp(1rem, 1.7vw, 1.25rem);
   line-height: 1.72;
   color: rgba(255, 255, 255, 0.96);
   text-wrap: pretty;
+  text-align: center;
 }
 
 .meta {
   margin-top: 18px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   gap: 10px;
   font-family: Poppins, sans-serif;
   font-size: 0.96rem;
@@ -136,6 +142,7 @@
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4);
+  z-index: 5;
 }
 
 .control:hover {
@@ -202,6 +209,8 @@
 @media (max-width: 900px) {
   .shell {
     min-height: 405px;
+    padding: 0 40px;
+    overflow: visible;
   }
 
   .card {
@@ -219,10 +228,10 @@
   }
 
   .controlLeft {
-    left: 0;
+    left: 6px;
   }
 
   .controlRight {
-    right: 0;
+    right: 6px;
   }
 }
