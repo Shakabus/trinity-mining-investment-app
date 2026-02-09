@@ -729,6 +729,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'w-hollywood-los-angeles',
+    title: 'W Hollywood',
+    location: 'Los Angeles, California, USA',
+    tag: 'Urban Lifestyle Hospitality Asset',
+    summary:
+      'A high-visibility Hollywood hospitality asset positioned for entertainment, business travel, and premium leisure demand. Trinity structures this property as a managed participation lane with monthly performance-linked distributions.',
+    imageSrc: '/properties/w-hollywood-los-angeles.jpg',
+    imageAlternates: [
+      '/properties/w-hollywood.jpg',
+      '/properties/w-hotel-hollywood.jpg',
+      '/properties/w-hollywood-california.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/w-hollywood-los-angeles.jpg',
+    facts: [
+      { label: 'Address', value: '6250 Hollywood Boulevard' },
+      { label: 'City', value: 'Los Angeles, CA 90028' },
+      { label: 'Asset Scale', value: '319-room urban lifestyle hotel profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + events + venue revenue participation' },
+    ],
+    modalTitle: 'W Hollywood, Los Angeles',
+    modalLocation: '6250 Hollywood Blvd, Los Angeles, California 90028, United States',
+    overview:
+      'W Hollywood is an anchor hospitality asset in one of Los Angeles most active entertainment corridors. Trinity maps this property into structured buy-in tiers tied to recurring monthly operating windows across rooms, events, and high-traffic venue activity.',
+    highlights: [
+      'Prime Hollywood location with strong entertainment and tourism demand',
+      'Urban lifestyle profile with event and premium-nightstay exposure',
+      'Diversified operating mix across rooms, venues, and food-and-beverage outlets',
+      'Managed monthly reporting and distribution framework under Trinity oversight',
+    ],
+    options: [
+      {
+        tier: 'Hollywood Entry Allocation',
+        minimum: '$9,000',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '150% - 210% total cycle',
+        illustrativeOutcome: '$9,000 -> $22,500-$27,900 in 12 months',
+      },
+      {
+        tier: 'Lifestyle Yield Pool',
+        minimum: '$27,500',
+        duration: '18 months',
+        payoutModel: 'Monthly room + events surplus participation',
+        projectedBand: '185% - 260% total cycle',
+        illustrativeOutcome: '$27,500 -> $79,750-$99,000 over 18 months',
+      },
+      {
+        tier: 'Urban Performance Plus',
+        minimum: '$60,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy, events, and venue spend split',
+        projectedBand: '230% - 315% total cycle',
+        illustrativeOutcome: '$60,000 -> $198,000-$249,000 over 24 months',
+      },
+      {
+        tier: 'Institutional Hollywood Allocation',
+        minimum: '$132,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '275% - 360% total cycle',
+        illustrativeOutcome: '$132,000 -> $495,000-$607,200 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
