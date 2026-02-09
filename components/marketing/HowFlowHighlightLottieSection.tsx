@@ -12,7 +12,8 @@ declare global {
         renderer: 'svg' | 'canvas' | 'html'
         loop: boolean
         autoplay: boolean
-        path: string
+        path?: string
+        animationData?: unknown
       }) => { destroy: () => void }
     }
   }
@@ -105,31 +106,34 @@ export default function HowFlowHighlightLottieSection() {
     let scriptEl: HTMLScriptElement | null = null
     let cancelled = false
 
-    const candidatePaths = ['/lottie/Revenue.json', '/lottie/revenue.json']
+    const candidatePaths = ['/lottie/Revenue.json', '/lottie/revenue.json', '/lottie/REVENUE.json']
 
-    const resolvePath = async () => {
+    const resolveAnimationData = async () => {
       for (const candidate of candidatePaths) {
         try {
           const res = await fetch(candidate, { cache: 'no-store' })
-          if (res.ok) return candidate
+          if (!res.ok) continue
+          return await res.json()
         } catch {
           // try next
         }
       }
-      return candidatePaths[0]
+      return null
     }
 
     const start = async () => {
       if (!lottieRef.current || !window.lottie || cancelled) return
-      const path = await resolvePath()
+      const animationData = await resolveAnimationData()
       if (!lottieRef.current || !window.lottie || cancelled) return
+
+      if (!animationData) return
 
       animation = window.lottie.loadAnimation({
         container: lottieRef.current,
-        renderer: 'canvas',
+        renderer: 'svg',
         loop: true,
         autoplay: true,
-        path,
+        animationData,
       })
     }
 
