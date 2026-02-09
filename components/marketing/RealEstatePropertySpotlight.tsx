@@ -469,6 +469,71 @@ const PROPERTIES: PropertyItem[] = [
       },
     ],
   },
+  {
+    id: 'hyatt-regency-greenwich',
+    title: 'Hyatt Regency Greenwich',
+    location: 'Greenwich, Connecticut, USA',
+    tag: 'Business & Events Hospitality Asset',
+    summary:
+      'A premium Connecticut hospitality asset serving corporate travel, weekend leisure, and event demand. Trinity structures this property as a managed income participation lane with monthly reporting and payout cycles.',
+    imageSrc: '/properties/hyatt-regency-greenwich.jpg',
+    imageAlternates: [
+      '/properties/hyatt-greenwich.jpg',
+      '/properties/hyatt-regency-greenwich-connecticut.jpg',
+      '/properties/hyatt-regency-old-greenwich.jpg',
+    ],
+    imageFallback: 'Add property image: /public/properties/hyatt-regency-greenwich.jpg',
+    facts: [
+      { label: 'Address', value: '1800 E Putnam Avenue' },
+      { label: 'City', value: 'Old Greenwich, CT 06870' },
+      { label: 'Asset Scale', value: '373-room full-service hotel profile' },
+      { label: 'Income Logic', value: 'Monthly rooms + venue revenue participation' },
+    ],
+    modalTitle: 'Hyatt Regency Greenwich',
+    modalLocation: '1800 E Putnam Ave, Old Greenwich, Connecticut 06870, United States',
+    overview:
+      'Hyatt Regency Greenwich is positioned within a high-income corridor between New York and coastal Connecticut, with reliable demand from corporate stays, private events, and destination travel. Trinity maps this asset into structured buy-in tiers tied to monthly operating performance windows.',
+    highlights: [
+      'Strategic Greenwich location with strong corporate and commuter demand',
+      'Conference and social-event revenue contribution with 35k+ sq ft meeting space',
+      'Balanced seasonal profile across business and weekend travel segments',
+      'Monthly reporting and payout framework under Trinity management',
+    ],
+    options: [
+      {
+        tier: 'Greenwich Entry Allocation',
+        minimum: '$8,500',
+        duration: '12 months',
+        payoutModel: 'Monthly room-revenue participation',
+        projectedBand: '145% - 205% total cycle',
+        illustrativeOutcome: '$8,500 -> $20,825-$25,925 in 12 months',
+      },
+      {
+        tier: 'Corporate Yield Pool',
+        minimum: '$25,000',
+        duration: '18 months',
+        payoutModel: 'Monthly room + events surplus participation',
+        projectedBand: '180% - 255% total cycle',
+        illustrativeOutcome: '$25,000 -> $70,000-$88,750 over 18 months',
+      },
+      {
+        tier: 'Regency Performance Plus',
+        minimum: '$54,000',
+        duration: '24 months',
+        payoutModel: 'Blended occupancy and venue revenue split',
+        projectedBand: '225% - 305% total cycle',
+        illustrativeOutcome: '$54,000 -> $175,500-$218,700 over 24 months',
+      },
+      {
+        tier: 'Institutional Greenwich Allocation',
+        minimum: '$115,000',
+        duration: '36 months',
+        payoutModel: 'Priority weighted monthly yield participation',
+        projectedBand: '270% - 355% total cycle',
+        illustrativeOutcome: '$115,000 -> $425,500-$523,250 over 36 months',
+      },
+    ],
+  },
 ]
 
 export default function RealEstatePropertySpotlight() {
