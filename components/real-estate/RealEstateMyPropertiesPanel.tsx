@@ -21,6 +21,12 @@ const statusStyle: Record<string, { bg: string; border: string; color: string; l
     color: '#86efac',
     label: 'Approved',
   },
+  rejected: {
+    bg: 'rgba(239, 68, 68, 0.16)',
+    border: '1px solid rgba(239, 68, 68, 0.35)',
+    color: '#fca5a5',
+    label: 'Rejected',
+  },
 }
 
 function formatUsd(value: number) {
@@ -34,7 +40,7 @@ function formatDate(date: string) {
 export default function RealEstateMyPropertiesPanel({ positions }: { positions: RealEstatePosition[] }) {
   const totalAllocation = positions.reduce((sum, item) => sum + item.allocationUsd, 0)
   const approvedCount = positions.filter(item => item.status === 'approved').length
-  const pendingCount = positions.filter(item => item.status !== 'approved').length
+  const pendingCount = positions.filter(item => item.status === 'submitted' || item.status === 'under_review').length
   const latestSubmission = positions[0]?.submittedAt
 
   return (

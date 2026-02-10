@@ -104,7 +104,7 @@ interface UserDetailProps {
       projectedBand: string
       monthlyIncomeUsd: number
       submittedAt: string
-      status: 'submitted' | 'under_review' | 'approved'
+      status: 'submitted' | 'under_review' | 'approved' | 'rejected'
     }[]
     withdrawals: {
       id: string
@@ -187,9 +187,10 @@ export default function UserDetail({
     [tradingEarnings]
   )
   const [tradingEarningsInputs, setTradingEarningsInputs] = useState(tradingEarningsState)
-  const mapPositionStatusToTicketStatus = (status: 'submitted' | 'under_review' | 'approved') => {
+  const mapPositionStatusToTicketStatus = (status: 'submitted' | 'under_review' | 'approved' | 'rejected') => {
     if (status === 'approved') return 'closed'
     if (status === 'under_review') return 'waiting'
+    if (status === 'rejected') return 'rejected'
     return 'open'
   }
   const mapWithdrawalStatusToTicketStatus = (
@@ -375,7 +376,7 @@ export default function UserDetail({
 
   const handleRealEstateTicketStatus = async (
     ticketId: number | string,
-    status: 'open' | 'waiting' | 'closed',
+    status: 'open' | 'waiting' | 'closed' | 'rejected',
   ) => {
     setIsBusy(true)
     try {
@@ -1201,6 +1202,8 @@ export default function UserDetail({
                                   ? 'Approved'
                                   : position.status === 'under_review'
                                   ? 'Under Review'
+                                  : position.status === 'rejected'
+                                  ? 'Rejected'
                                   : 'Submitted'}
                               </span>
                             </td>

@@ -36,6 +36,7 @@ interface SupportInboxClientProps {
 const statusLabel = (status: string) => {
   if (status === 'closed') return 'Closed'
   if (status === 'waiting') return 'Waiting on user'
+  if (status === 'rejected') return 'Rejected'
   return 'Open'
 }
 

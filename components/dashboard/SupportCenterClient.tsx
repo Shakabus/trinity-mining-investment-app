@@ -31,6 +31,7 @@ interface SupportCenterClientProps {
 const statusLabel = (status: string) => {
   if (status === 'closed') return 'Closed'
   if (status === 'waiting') return 'Waiting on you'
+  if (status === 'rejected') return 'Rejected'
   return 'Open'
 }
 

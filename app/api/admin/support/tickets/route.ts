@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 
-const ALLOWED_STATUSES = ['open', 'waiting', 'closed']
+const ALLOWED_STATUSES = ['open', 'waiting', 'closed', 'rejected']
 
 export async function PATCH(req: Request) {
   try {
@@ -62,6 +62,14 @@ export async function PATCH(req: Request) {
         userId: ticket.userId,
         action: 'SupportTicketReopened',
         detail: `Ticket reopened: ${ticket.subject}.`,
+      })
+    }
+
+    if (status === 'rejected') {
+      await logUserActivity({
+        userId: ticket.userId,
+        action: 'SupportTicketRejected',
+        detail: `Ticket rejected: ${ticket.subject}.`,
       })
     }
 

@@ -43,7 +43,7 @@ export async function POST(req: Request) {
             startsWith: REAL_ESTATE_BUY_IN_TICKET_PREFIX,
           },
           status: {
-            not: 'closed',
+            notIn: ['closed', 'rejected'],
           },
         },
       })

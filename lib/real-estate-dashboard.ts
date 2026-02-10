@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 export const REAL_ESTATE_BUY_IN_TICKET_PREFIX = 'Real Estate Buy-In Proof -'
 export const REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX = 'Real Estate Withdrawal Request -'
 
-export type RealEstatePositionStatus = 'submitted' | 'under_review' | 'approved'
+export type RealEstatePositionStatus = 'submitted' | 'under_review' | 'approved' | 'rejected'
 
 export type RealEstatePosition = {
   id: number
@@ -126,6 +126,7 @@ const addMonths = (date: Date, months: number) => {
 const mapBuyInTicketStatus = (status: string): RealEstatePositionStatus => {
   if (status === 'closed') return 'approved'
   if (status === 'waiting') return 'under_review'
+  if (status === 'rejected') return 'rejected'
   return 'submitted'
 }
 
@@ -328,7 +329,9 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
     ? firstMaturityDate.toISOString()
     : null
 
-  const hasPendingBuyIn = positions.some(position => position.status !== 'approved')
+  const hasPendingBuyIn = positions.some(
+    position => position.status === 'submitted' || position.status === 'under_review',
+  )
 
   return {
     positions,
