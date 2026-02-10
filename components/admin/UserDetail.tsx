@@ -83,12 +83,53 @@ interface UserDetailProps {
     isAdminOverride?: boolean
     planName: string
   }[]
+  realEstate?: {
+    summary: {
+      totalAllocationUsd: number
+      approvedCount: number
+      pendingCount: number
+      availableWithdrawalUsd: number
+      monthlyRealizedUsd: number
+      canRequestWithdrawal: boolean
+      nextWithdrawalEligibleAt: string | null
+      canCreateNewBuyIn: boolean
+    }
+    positions: {
+      id: number
+      property: string
+      location: string
+      tier: string
+      allocationUsd: number
+      duration: string
+      projectedBand: string
+      monthlyIncomeUsd: number
+      submittedAt: string
+      status: 'submitted' | 'under_review' | 'approved'
+    }[]
+    withdrawals: {
+      id: string
+      reference: string
+      requestedAt: string
+      amountUsd: number
+      method: string
+      destination: string
+      status: 'pending' | 'processing' | 'paid' | 'rejected'
+    }[]
+  }
 }
 
 function formatDate(value: string | null) {
   if (!value) return '—'
   const date = new Date(value)
   return date.toLocaleString()
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 
 export default function UserDetail({
@@ -100,6 +141,7 @@ export default function UserDetail({
   tradingPlan,
   tradingStats,
   tradingEarnings = [],
+  realEstate,
 }: UserDetailProps) {
   const router = useRouter()
   const { showToast } = useToast()
@@ -145,6 +187,18 @@ export default function UserDetail({
     [tradingEarnings]
   )
   const [tradingEarningsInputs, setTradingEarningsInputs] = useState(tradingEarningsState)
+  const mapPositionStatusToTicketStatus = (status: 'submitted' | 'under_review' | 'approved') => {
+    if (status === 'approved') return 'closed'
+    if (status === 'under_review') return 'waiting'
+    return 'open'
+  }
+  const mapWithdrawalStatusToTicketStatus = (
+    status: 'pending' | 'processing' | 'paid' | 'rejected',
+  ) => {
+    if (status === 'paid') return 'closed'
+    if (status === 'processing') return 'waiting'
+    return 'open'
+  }
 
   const handleMiningUpdate = async () => {
     if (!miningStats) return
@@ -319,6 +373,31 @@ export default function UserDetail({
     }
   }
 
+  const handleRealEstateTicketStatus = async (
+    ticketId: number | string,
+    status: 'open' | 'waiting' | 'closed',
+  ) => {
+    setIsBusy(true)
+    try {
+      const response = await fetch('/api/admin/support/tickets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId: Number(ticketId),
+          status,
+        }),
+      })
+      if (!response.ok) {
+        showToast('Failed to update real-estate ticket status.', 'error')
+      } else {
+        showToast('Real-estate ticket status updated.', 'success')
+        router.refresh()
+      }
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
   const handleAccountStatus = async (status: string) => {
     setIsBusy(true)
     try {
@@ -390,7 +469,9 @@ export default function UserDetail({
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">User Detail</h1>
-          <p className="text-white/70">Manage account settings, mining controls, and earnings overrides.</p>
+          <p className="text-white/70">
+            Manage account settings, mining/trading controls, real-estate approvals, and earnings overrides.
+          </p>
         </div>
         <div className="text-white/50 text-sm">Joined {formatDate(user.createdAt)}</div>
       </div>
@@ -1025,6 +1106,214 @@ export default function UserDetail({
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
+        {realEstate && (
+          <div className="space-y-6 mb-6">
+            <div>
+              <h2 className="text-white font-semibold text-lg">Real Estate Controls</h2>
+              <p className="text-white/60 text-sm mt-1">
+                Manage real-estate approvals, track user portfolio metrics, and control payout flow.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-xs text-white/50 mb-1">Approved Lanes</div>
+                <div className="text-lg text-white font-semibold">{realEstate.summary.approvedCount}</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-xs text-white/50 mb-1">Pending Lanes</div>
+                <div className="text-lg text-white font-semibold">{realEstate.summary.pendingCount}</div>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-xs text-white/50 mb-1">Total Allocation</div>
+                <div className="text-lg text-white font-semibold">
+                  {formatUsd(realEstate.summary.totalAllocationUsd)}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-xs text-white/50 mb-1">Available To Withdraw</div>
+                <div className="text-lg text-white font-semibold">
+                  {formatUsd(realEstate.summary.availableWithdrawalUsd)}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-xs text-white/50 mb-1">Realized This Month</div>
+                <div className="text-xl text-white font-semibold">
+                  {formatUsd(realEstate.summary.monthlyRealizedUsd)}
+                </div>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="text-xs text-white/50 mb-1">Buy-In Gate</div>
+                <div className="text-sm text-white/85">
+                  {realEstate.summary.canCreateNewBuyIn
+                    ? 'Open: user can submit a new buy-in.'
+                    : 'Locked: user has a pending buy-in awaiting approval.'}
+                </div>
+                {!realEstate.summary.canRequestWithdrawal && realEstate.summary.nextWithdrawalEligibleAt && (
+                  <div className="text-xs text-amber-200 mt-2">
+                    Withdrawal window opens: {formatDate(realEstate.summary.nextWithdrawalEligibleAt)}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-white font-semibold">Buy-In Approval Queue</h3>
+              {realEstate.positions.length === 0 ? (
+                <div className="text-white/60 text-sm p-4 rounded-2xl bg-white/5 border border-white/10">
+                  No real-estate buy-in tickets found for this user.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
+                  <table className="min-w-[1100px] w-full text-left">
+                    <thead>
+                      <tr className="text-xs uppercase tracking-[0.08em] text-white/55">
+                        <th className="py-3 px-4">Property</th>
+                        <th className="py-3 px-4">Tier</th>
+                        <th className="py-3 px-4">Allocation</th>
+                        <th className="py-3 px-4">Monthly Income</th>
+                        <th className="py-3 px-4">Duration</th>
+                        <th className="py-3 px-4">Submitted</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {realEstate.positions.map(position => {
+                        const ticketStatus = mapPositionStatusToTicketStatus(position.status)
+                        return (
+                          <tr key={position.id} className="border-t border-white/10">
+                            <td className="py-3 px-4 text-white">
+                              <div className="font-semibold">{position.property}</div>
+                              <div className="text-xs text-white/60">{position.location}</div>
+                            </td>
+                            <td className="py-3 px-4 text-white/85">{position.tier}</td>
+                            <td className="py-3 px-4 text-white">{formatUsd(position.allocationUsd)}</td>
+                            <td className="py-3 px-4 text-white">{formatUsd(position.monthlyIncomeUsd)}</td>
+                            <td className="py-3 px-4 text-white/80">{position.duration}</td>
+                            <td className="py-3 px-4 text-white/80">{formatDate(position.submittedAt)}</td>
+                            <td className="py-3 px-4">
+                              <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 text-white">
+                                {position.status === 'approved'
+                                  ? 'Approved'
+                                  : position.status === 'under_review'
+                                  ? 'Under Review'
+                                  : 'Submitted'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-200 border border-sky-400/35 disabled:opacity-50"
+                                  disabled={isBusy || ticketStatus === 'waiting'}
+                                  onClick={() => handleRealEstateTicketStatus(position.id, 'waiting')}
+                                >
+                                  Set Review
+                                </button>
+                                <button
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/35 disabled:opacity-50"
+                                  disabled={isBusy || ticketStatus === 'closed'}
+                                  onClick={() => handleRealEstateTicketStatus(position.id, 'closed')}
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-400/35 disabled:opacity-50"
+                                  disabled={isBusy || ticketStatus === 'open'}
+                                  onClick={() => handleRealEstateTicketStatus(position.id, 'open')}
+                                >
+                                  Reopen
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-white font-semibold">Withdrawal Request Queue</h3>
+              {realEstate.withdrawals.length === 0 ? (
+                <div className="text-white/60 text-sm p-4 rounded-2xl bg-white/5 border border-white/10">
+                  No real-estate withdrawal requests found for this user.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
+                  <table className="min-w-[1020px] w-full text-left">
+                    <thead>
+                      <tr className="text-xs uppercase tracking-[0.08em] text-white/55">
+                        <th className="py-3 px-4">Reference</th>
+                        <th className="py-3 px-4">Requested</th>
+                        <th className="py-3 px-4">Amount</th>
+                        <th className="py-3 px-4">Method</th>
+                        <th className="py-3 px-4">Destination</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {realEstate.withdrawals.map(withdrawal => {
+                        const ticketStatus = mapWithdrawalStatusToTicketStatus(withdrawal.status)
+                        return (
+                          <tr key={withdrawal.id} className="border-t border-white/10">
+                            <td className="py-3 px-4 text-white">{withdrawal.reference}</td>
+                            <td className="py-3 px-4 text-white/80">{formatDate(withdrawal.requestedAt)}</td>
+                            <td className="py-3 px-4 text-white">{formatUsd(withdrawal.amountUsd)}</td>
+                            <td className="py-3 px-4 text-white/80">{withdrawal.method}</td>
+                            <td className="py-3 px-4 text-white/70">{withdrawal.destination}</td>
+                            <td className="py-3 px-4">
+                              <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 text-white">
+                                {withdrawal.status === 'paid'
+                                  ? 'Paid'
+                                  : withdrawal.status === 'processing'
+                                  ? 'Processing'
+                                  : withdrawal.status === 'rejected'
+                                  ? 'Rejected'
+                                  : 'Pending'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/20 text-sky-200 border border-sky-400/35 disabled:opacity-50"
+                                  disabled={isBusy || ticketStatus === 'waiting'}
+                                  onClick={() => handleRealEstateTicketStatus(withdrawal.id, 'waiting')}
+                                >
+                                  Set Processing
+                                </button>
+                                <button
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/35 disabled:opacity-50"
+                                  disabled={isBusy || ticketStatus === 'closed'}
+                                  onClick={() => handleRealEstateTicketStatus(withdrawal.id, 'closed')}
+                                >
+                                  Mark Paid
+                                </button>
+                                <button
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/20 text-amber-200 border border-amber-400/35 disabled:opacity-50"
+                                  disabled={isBusy || ticketStatus === 'open'}
+                                  onClick={() => handleRealEstateTicketStatus(withdrawal.id, 'open')}
+                                >
+                                  Reopen
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         <h2 className="text-white font-semibold text-lg mb-4">Activity Log</h2>
         {activity.length === 0 ? (
           <div className="text-white/60 text-sm">No activity recorded yet.</div>

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import UserDetail from '@/components/admin/UserDetail'
 import { notFound } from 'next/navigation'
+import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +62,22 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
   if (!user) {
     notFound()
   }
+
+  const realEstateData = await getRealEstateDashboardData(user.clerkUserId)
+  const now = new Date()
+  const realEstateMonthlyRealizedUsd = realEstateData.payouts
+    .filter(item => item.status === 'paid')
+    .filter(item => {
+      const payoutDate = new Date(item.payoutDate)
+      return payoutDate.getFullYear() === now.getFullYear() && payoutDate.getMonth() === now.getMonth()
+    })
+    .reduce((sum, item) => sum + item.netUsd, 0)
+  const realEstateTotalAllocationUsd = realEstateData.positions.reduce(
+    (sum, item) => sum + item.allocationUsd,
+    0,
+  )
+  const realEstateApprovedCount = realEstateData.positions.filter(item => item.status === 'approved').length
+  const realEstatePendingCount = realEstateData.positions.filter(item => item.status !== 'approved').length
 
   const currentPlan = user.userPlans.find(plan => plan.status === 'active') ?? user.userPlans[0]
   const activeMining = user.miningStats.find(stat => stat.isActive) ?? user.miningStats[0]
@@ -235,6 +252,39 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           isAdminOverride: record.isAdminOverride,
           planName: record.tradingUserPlan?.plan?.name ?? 'Unknown Plan',
         }))}
+        realEstate={{
+          summary: {
+            totalAllocationUsd: realEstateTotalAllocationUsd,
+            approvedCount: realEstateApprovedCount,
+            pendingCount: realEstatePendingCount,
+            availableWithdrawalUsd: realEstateData.availableWithdrawalUsd,
+            monthlyRealizedUsd: realEstateMonthlyRealizedUsd,
+            canRequestWithdrawal: realEstateData.canRequestWithdrawal,
+            nextWithdrawalEligibleAt: realEstateData.nextWithdrawalEligibleAt,
+            canCreateNewBuyIn: realEstateData.canCreateNewBuyIn,
+          },
+          positions: realEstateData.positions.map(position => ({
+            id: position.id,
+            property: position.property,
+            location: position.location,
+            tier: position.tier,
+            allocationUsd: position.allocationUsd,
+            duration: position.duration,
+            projectedBand: position.projectedBand,
+            monthlyIncomeUsd: position.monthlyIncomeUsd,
+            submittedAt: position.submittedAt,
+            status: position.status,
+          })),
+          withdrawals: realEstateData.withdrawals.map(withdrawal => ({
+            id: withdrawal.id,
+            reference: withdrawal.reference,
+            requestedAt: withdrawal.requestedAt,
+            amountUsd: withdrawal.amountUsd,
+            method: withdrawal.method,
+            destination: withdrawal.destination,
+            status: withdrawal.status,
+          })),
+        }}
         activity={activityLog}
       />
     </div>
