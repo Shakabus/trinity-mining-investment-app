@@ -1,5 +1,5 @@
 import { CalendarClock, CircleDollarSign, LineChart, TrendingUp } from 'lucide-react'
-import { realEstatePayoutEvents, realEstatePositions } from '@/components/real-estate/realEstatePortfolioData'
+import type { RealEstatePayoutEvent, RealEstatePosition } from '@/lib/real-estate-dashboard'
 
 function formatUsd(value: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -9,24 +9,21 @@ function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const paidEvents = realEstatePayoutEvents.filter(item => item.status === 'paid')
-const scheduledEvents = realEstatePayoutEvents.filter(item => item.status === 'scheduled')
-const totalPaid = paidEvents.reduce((sum, item) => sum + item.netUsd, 0)
-const upcomingNet = scheduledEvents.reduce((sum, item) => sum + item.netUsd, 0)
-const monthlyRunRate = realEstatePositions.reduce(
-  (sum, item) => sum + (item.allocationUsd * item.monthlyYieldPct) / 100,
-  0,
-)
-const avgYield = realEstatePositions.reduce((sum, item) => sum + item.monthlyYieldPct, 0) / realEstatePositions.length
+type RealEstateEarningsPanelProps = {
+  positions: RealEstatePosition[]
+  payouts: RealEstatePayoutEvent[]
+}
 
-const laneBreakdown = [
-  { label: 'Hotels', value: realEstatePositions.filter(item => item.category === 'Hotel').length },
-  { label: 'Resorts', value: realEstatePositions.filter(item => item.category === 'Resort').length },
-  { label: 'Urban', value: realEstatePositions.filter(item => item.category === 'Urban').length },
-  { label: 'Mixed', value: realEstatePositions.filter(item => item.category === 'Mixed').length },
-]
+export default function RealEstateEarningsPanel({ positions, payouts }: RealEstateEarningsPanelProps) {
+  const paidEvents = payouts.filter(item => item.status === 'paid')
+  const scheduledEvents = payouts.filter(item => item.status === 'scheduled')
+  const totalPaid = paidEvents.reduce((sum, item) => sum + item.netUsd, 0)
+  const upcomingNet = scheduledEvents.reduce((sum, item) => sum + item.netUsd, 0)
+  const monthlyRunRate = 0
+  const avgYield = 0
+  const approved = positions.filter(item => item.status === 'approved').length
+  const pending = positions.filter(item => item.status !== 'approved').length
 
-export default function RealEstateEarningsPanel() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -51,7 +48,12 @@ export default function RealEstateEarningsPanel() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2 rounded-3xl p-6" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <h2 className="text-white text-xl font-semibold mb-4">Earnings Ledger</h2>
-          <div className="overflow-x-auto">
+          {payouts.length === 0 ? (
+            <div className="text-white/65 text-sm border border-white/10 rounded-2xl p-4 bg-white/[0.03]">
+              No realized real-estate payout entries yet. Earnings will appear after allocations are approved and complete their first payout cycle.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
             <table className="min-w-[760px] w-full text-left">
               <thead>
                 <tr className="text-xs uppercase tracking-[0.08em] text-white/55">
@@ -65,7 +67,7 @@ export default function RealEstateEarningsPanel() {
                 </tr>
               </thead>
               <tbody>
-                {realEstatePayoutEvents.map(item => (
+                {payouts.map(item => (
                   <tr key={item.id} className="border-t border-white/10">
                     <td className="py-4 pr-4 text-white">{item.property}</td>
                     <td className="py-4 pr-4 text-white/80">{item.periodLabel}</td>
@@ -89,33 +91,27 @@ export default function RealEstateEarningsPanel() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          )}
         </div>
 
         <div className="rounded-3xl p-6 space-y-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
-          <h2 className="text-white text-xl font-semibold">Lane Mix</h2>
-          {laneBreakdown.map(item => {
-            const total = realEstatePositions.length || 1
-            const pct = (item.value / total) * 100
-            return (
-              <div key={item.label}>
-                <div className="flex items-center justify-between text-sm text-white/80 mb-1">
-                  <span>{item.label}</span>
-                  <span>{item.value} lanes ({pct.toFixed(0)}%)</span>
-                </div>
-                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #582dff, #7c3aed)' }} />
-                </div>
-              </div>
-            )
-          })}
+          <h2 className="text-white text-xl font-semibold">Earnings Readiness</h2>
+          <div className="text-sm text-white/80">
+            Approved allocations: <span className="text-white font-semibold">{approved}</span>
+          </div>
+          <div className="text-sm text-white/80">
+            Pending verification: <span className="text-white font-semibold">{pending}</span>
+          </div>
+          <div className="text-sm text-white/80">
+            Current monthly run rate: <span className="text-white font-semibold">{formatUsd(monthlyRunRate)}</span>
+          </div>
           <div className="pt-3 border-t border-white/10 text-sm text-white/70 leading-6">
-            Payout windows are grouped by property cycle date, net of operational and settlement fees.
-            Use this panel to monitor realized performance versus projected yield bands.
+            This panel is user-specific. It only reflects payouts recorded against your own
+            approved real-estate allocations. No seeded or global sample values are included.
           </div>
         </div>
       </div>
     </div>
   )
 }
-

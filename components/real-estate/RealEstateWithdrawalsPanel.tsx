@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { BanknoteArrowDown, Clock3, ShieldCheck, Wallet } from 'lucide-react'
-import { realEstateAvailableWithdrawalUsd, realEstateWithdrawals } from '@/components/real-estate/realEstatePortfolioData'
+import type { RealEstateWithdrawal } from '@/lib/real-estate-dashboard'
 
 function formatUsd(value: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -37,7 +37,15 @@ const statusStyle: Record<string, { bg: string; border: string; color: string; l
   },
 }
 
-export default function RealEstateWithdrawalsPanel() {
+type RealEstateWithdrawalsPanelProps = {
+  availableWithdrawalUsd: number
+  withdrawals: RealEstateWithdrawal[]
+}
+
+export default function RealEstateWithdrawalsPanel({
+  availableWithdrawalUsd,
+  withdrawals,
+}: RealEstateWithdrawalsPanelProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -45,13 +53,13 @@ export default function RealEstateWithdrawalsPanel() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-white/70 text-sm"><Wallet size={16} /> Available to Withdraw</div>
-              <div className="text-white text-3xl font-semibold mt-2">{formatUsd(realEstateAvailableWithdrawalUsd)}</div>
+              <div className="text-white text-3xl font-semibold mt-2">{formatUsd(availableWithdrawalUsd)}</div>
               <p className="text-white/60 text-sm mt-2">Funds become withdrawable after cycle close, verification, and settlement window clearance.</p>
             </div>
             <button
               type="button"
               className="px-5 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={realEstateAvailableWithdrawalUsd <= 0}
+              disabled={availableWithdrawalUsd <= 0}
               style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)' }}
             >
               Request Withdrawal
@@ -81,40 +89,46 @@ export default function RealEstateWithdrawalsPanel() {
       <div className="rounded-3xl p-6 md:p-7" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
         <h2 className="text-white text-xl font-semibold mb-4">Withdrawal History</h2>
         <div className="overflow-x-auto">
-          <table className="min-w-[820px] w-full text-left">
-            <thead>
-              <tr className="text-xs uppercase tracking-[0.08em] text-white/55">
-                <th className="pb-3 pr-4">Reference</th>
-                <th className="pb-3 pr-4">Requested</th>
-                <th className="pb-3 pr-4">Amount</th>
-                <th className="pb-3 pr-4">Method</th>
-                <th className="pb-3 pr-4">Destination</th>
-                <th className="pb-3 pr-0">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {realEstateWithdrawals.map(item => {
-                const status = statusStyle[item.status]
-                return (
-                  <tr key={item.id} className="border-t border-white/10">
-                    <td className="py-4 pr-4 text-white font-medium">{item.reference}</td>
-                    <td className="py-4 pr-4 text-white/80">{formatDate(item.requestedAt)}</td>
-                    <td className="py-4 pr-4 text-white">{formatUsd(item.amountUsd)}</td>
-                    <td className="py-4 pr-4 text-white/80">{item.method}</td>
-                    <td className="py-4 pr-4 text-white/70">{item.destination}</td>
-                    <td className="py-4 pr-0">
-                      <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: status.bg, border: status.border, color: status.color }}>
-                        {status.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          {withdrawals.length === 0 ? (
+            <div className="text-white/65 text-sm border border-white/10 rounded-2xl p-4 bg-white/[0.03]">
+              No real-estate withdrawal records yet. Once earnings are posted and become withdrawable,
+              requests and statuses will appear here.
+            </div>
+          ) : (
+            <table className="min-w-[820px] w-full text-left">
+              <thead>
+                <tr className="text-xs uppercase tracking-[0.08em] text-white/55">
+                  <th className="pb-3 pr-4">Reference</th>
+                  <th className="pb-3 pr-4">Requested</th>
+                  <th className="pb-3 pr-4">Amount</th>
+                  <th className="pb-3 pr-4">Method</th>
+                  <th className="pb-3 pr-4">Destination</th>
+                  <th className="pb-3 pr-0">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {withdrawals.map(item => {
+                  const status = statusStyle[item.status]
+                  return (
+                    <tr key={item.id} className="border-t border-white/10">
+                      <td className="py-4 pr-4 text-white font-medium">{item.reference}</td>
+                      <td className="py-4 pr-4 text-white/80">{formatDate(item.requestedAt)}</td>
+                      <td className="py-4 pr-4 text-white">{formatUsd(item.amountUsd)}</td>
+                      <td className="py-4 pr-4 text-white/80">{item.method}</td>
+                      <td className="py-4 pr-4 text-white/70">{item.destination}</td>
+                      <td className="py-4 pr-0">
+                        <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold" style={{ background: status.bg, border: status.border, color: status.color }}>
+                          {status.label}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
   )
 }
-
