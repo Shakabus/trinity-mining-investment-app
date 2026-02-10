@@ -1,4 +1,5 @@
 import { DollarSign, TrendingUp, CalendarClock } from 'lucide-react'
+import RealEstateEarningsPanel from '@/components/real-estate/RealEstateEarningsPanel'
 
 export default function RealEstatePropertyEarningsPage() {
   return (
@@ -51,6 +52,8 @@ export default function RealEstatePropertyEarningsPage() {
           <div className="text-white text-2xl font-semibold mt-2">Not Scheduled</div>
         </div>
       </div>
+
+      <RealEstateEarningsPanel />
     </div>
   )
 }

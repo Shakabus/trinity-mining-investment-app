@@ -1,4 +1,5 @@
 import { Wallet, ShieldCheck, BanknoteArrowDown } from 'lucide-react'
+import RealEstateWithdrawalsPanel from '@/components/real-estate/RealEstateWithdrawalsPanel'
 
 export default function RealEstateWithdrawalsPage() {
   return (
@@ -33,6 +34,8 @@ export default function RealEstateWithdrawalsPage() {
           </div>
         </div>
       </div>
+
+      <RealEstateWithdrawalsPanel />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Building2, ArrowRight } from 'lucide-react'
+import RealEstateMyPropertiesPanel from '@/components/real-estate/RealEstateMyPropertiesPanel'
 
 export default function RealEstateMyPropertiesPage() {
   return (
@@ -37,6 +38,8 @@ export default function RealEstateMyPropertiesPage() {
           <ArrowRight size={14} />
         </Link>
       </div>
+
+      <RealEstateMyPropertiesPanel />
     </div>
   )
 }
