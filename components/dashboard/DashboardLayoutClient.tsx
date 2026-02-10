@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import DashboardNav from './DashboardNav'
 import DashboardSidebar from './DashboardSidebar'
+import UserPresenceTracker from './UserPresenceTracker'
 import { CurrencyProvider } from '@/components/currency/CurrencyProvider'
 import { LanguageProvider } from '@/components/i18n/LanguageProvider'
 import type { LanguageCode } from '@/lib/i18n'
@@ -41,6 +42,7 @@ export default function DashboardLayoutClient({
         className="h-screen overflow-hidden"
         style={{ background: '#000000' }}
       >
+        <UserPresenceTracker />
         <div className="h-full flex">
           {/* Sidebar */}
           <DashboardSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />

@@ -13,6 +13,9 @@ interface UserDetailProps {
     role: string
     accountStatus: string
     createdAt: string
+    lastSeenAt: string | null
+    currentSessionStartedAt: string | null
+    totalSessionSeconds: number
     btcWalletAddress?: string | null
     ethWalletAddress?: string | null
     ltcWalletAddress?: string | null
@@ -132,6 +135,24 @@ function formatUsd(value: number) {
   }).format(value)
 }
 
+function formatDuration(seconds: number) {
+  if (seconds <= 0) return '0m'
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const mins = Math.floor((seconds % 3600) / 60)
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h ${mins}m`
+  return `${mins}m`
+}
+
+function getPresenceState(lastSeenAt: string | null) {
+  if (!lastSeenAt) return 'offline' as const
+  const diff = Date.now() - new Date(lastSeenAt).getTime()
+  if (diff <= 90 * 1000) return 'online' as const
+  if (diff <= 10 * 60 * 1000) return 'away' as const
+  return 'offline' as const
+}
+
 export default function UserDetail({
   user,
   currentPlan,
@@ -153,6 +174,16 @@ export default function UserDetail({
   const [portfolioCadence, setPortfolioCadence] = useState(tradingStats?.botSpeed ?? 1)
   const [portfolioStrategy, setPortfolioStrategy] = useState(tradingStats?.strategy ?? 'Portfolio Balance')
   const [portfolioRisk, setPortfolioRisk] = useState(tradingStats?.riskLevel ?? 'balanced')
+  const presenceState = getPresenceState(user.lastSeenAt)
+  const currentSessionSeconds =
+    presenceState === 'online' && user.currentSessionStartedAt
+      ? Math.floor((Date.now() - new Date(user.currentSessionStartedAt).getTime()) / 1000)
+      : 0
+  const trackedSessionSeconds = user.totalSessionSeconds + Math.max(0, currentSessionSeconds)
+  const presenceLabel =
+    presenceState === 'online' ? 'Online' : presenceState === 'away' ? 'Away' : 'Offline'
+  const presenceDot =
+    presenceState === 'online' ? '#22c55e' : presenceState === 'away' ? '#f59e0b' : '#6b7280'
 
   const poolOptions = ['AntPool', 'Foundry USA', 'ViaBTC', 'F2Pool', 'Luxor']
   const locationOptions = [
@@ -492,6 +523,15 @@ export default function UserDetail({
             <div className="text-white/60">{user.email}</div>
             <div className="text-white/60 text-sm mt-2">Role: {user.role}</div>
             <div className="text-white/60 text-sm">Status: {user.accountStatus}</div>
+            <div className="text-white/60 text-sm flex items-center gap-2 mt-1">
+              Presence:
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: presenceDot }} />
+                <span>{presenceLabel}</span>
+              </span>
+            </div>
+            <div className="text-white/50 text-xs mt-1">Last Seen: {formatDate(user.lastSeenAt)}</div>
+            <div className="text-white/50 text-xs">Tracked Session Time: {formatDuration(trackedSessionSeconds)}</div>
             <div className="text-white/50 text-xs mt-3">BTC: {user.btcWalletAddress || 'Not set'}</div>
             <div className="text-white/50 text-xs">ETH: {user.ethWalletAddress || 'Not set'}</div>
             <div className="text-white/50 text-xs">LTC: {user.ltcWalletAddress || 'Not set'}</div>

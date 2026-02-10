@@ -154,6 +154,11 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           role: user.role,
           accountStatus: user.accountStatus,
           createdAt: user.createdAt.toISOString(),
+          lastSeenAt: user.lastSeenAt ? user.lastSeenAt.toISOString() : null,
+          currentSessionStartedAt: user.currentSessionStartedAt
+            ? user.currentSessionStartedAt.toISOString()
+            : null,
+          totalSessionSeconds: user.totalSessionSeconds,
           btcWalletAddress: user.btcWalletAddress,
           ethWalletAddress: user.ethWalletAddress,
           ltcWalletAddress: user.ltcWalletAddress,

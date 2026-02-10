@@ -23,6 +23,9 @@ model User {
   accountStatus String        @default("inactive") @map("account_status")
   preferredCurrency String    @default("USD") @map("preferred_currency")
   preferredLanguage String    @default("en") @map("preferred_language")
+  lastSeenAt    DateTime?     @map("last_seen_at")
+  currentSessionStartedAt DateTime? @map("current_session_started_at")
+  totalSessionSeconds Int     @default(0) @map("total_session_seconds")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
   earnings      Earnings[]
@@ -49,6 +52,7 @@ model User {
   tradingWithdrawals    TradingWithdrawal[] @relation("UserTradingWithdrawals")
   processedTradingWithdrawals TradingWithdrawal[] @relation("AdminProcessedTradingWithdrawals")
 
+  @@index([lastSeenAt], map: "users_last_seen_at_idx")
   @@map("users")
 }
 

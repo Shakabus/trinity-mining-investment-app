@@ -5,6 +5,35 @@ import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 const DEFAULT_PAGE_SIZE = 50
+const ONLINE_WINDOW_MS = 90 * 1000
+const AWAY_WINDOW_MS = 10 * 60 * 1000
+
+function getPresenceState(lastSeenAt: Date | null) {
+  if (!lastSeenAt) return 'offline' as const
+  const diff = Date.now() - lastSeenAt.getTime()
+  if (diff <= ONLINE_WINDOW_MS) return 'online' as const
+  if (diff <= AWAY_WINDOW_MS) return 'away' as const
+  return 'offline' as const
+}
+
+function formatDuration(seconds: number) {
+  if (seconds <= 0) return '0m'
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const mins = Math.floor((seconds % 3600) / 60)
+  if (days > 0) return `${days}d ${hours}h`
+  if (hours > 0) return `${hours}h ${mins}m`
+  return `${mins}m`
+}
+
+function formatSince(iso: Date | null) {
+  if (!iso) return 'Never'
+  const diffSec = Math.max(0, Math.floor((Date.now() - iso.getTime()) / 1000))
+  if (diffSec < 60) return `${diffSec}s ago`
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`
+  return `${Math.floor(diffSec / 86400)}d ago`
+}
 
 export default async function AdminUsersPage({
   searchParams,
@@ -25,6 +54,9 @@ export default async function AdminUsersPage({
         email: true,
         accountStatus: true,
         role: true,
+        lastSeenAt: true,
+        currentSessionStartedAt: true,
+        totalSessionSeconds: true,
         userPlans: {
           where: {
             status: { in: ['active', 'awaiting_payment'] },
@@ -71,6 +103,8 @@ export default async function AdminUsersPage({
                 <th className="text-left p-4 text-white/70 font-semibold text-sm hidden md:table-cell">Email</th>
                 <th className="text-left p-4 text-white/70 font-semibold text-sm">Status</th>
                 <th className="text-left p-4 text-white/70 font-semibold text-sm hidden lg:table-cell">Plan</th>
+                <th className="text-left p-4 text-white/70 font-semibold text-sm hidden xl:table-cell">Presence</th>
+                <th className="text-left p-4 text-white/70 font-semibold text-sm hidden xl:table-cell">Tracked Time</th>
                 <th className="text-left p-4 text-white/70 font-semibold text-sm">Role</th>
                 <th className="text-left p-4 text-white/70 font-semibold text-sm">Actions</th>
               </tr>
@@ -78,6 +112,14 @@ export default async function AdminUsersPage({
             <tbody>
               {users.map(user => {
                 const currentPlan = user.userPlans[0]
+                const presenceState = getPresenceState(user.lastSeenAt)
+                const presenceLabel =
+                  presenceState === 'online' ? 'Online' : presenceState === 'away' ? 'Away' : 'Offline'
+                const currentSessionSeconds =
+                  presenceState === 'online' && user.currentSessionStartedAt
+                    ? Math.floor((Date.now() - user.currentSessionStartedAt.getTime()) / 1000)
+                    : 0
+                const trackedSeconds = user.totalSessionSeconds + Math.max(0, currentSessionSeconds)
 
                 return (
                   <tr
@@ -131,6 +173,30 @@ export default async function AdminUsersPage({
                     {/* Plan */}
                     <td className="p-4 hidden lg:table-cell">
                       <div className="text-white/80 text-sm">{currentPlan?.plan?.name || 'No active plan'}</div>
+                    </td>
+
+                    {/* Presence */}
+                    <td className="p-4 hidden xl:table-cell">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span
+                          className="inline-block w-2.5 h-2.5 rounded-full"
+                          style={{
+                            background:
+                              presenceState === 'online'
+                                ? '#22c55e'
+                                : presenceState === 'away'
+                                ? '#f59e0b'
+                                : '#6b7280',
+                          }}
+                        />
+                        <span className="text-white">{presenceLabel}</span>
+                      </div>
+                      <div className="text-xs text-white/50 mt-1">Last seen {formatSince(user.lastSeenAt)}</div>
+                    </td>
+
+                    {/* Tracked Time */}
+                    <td className="p-4 hidden xl:table-cell">
+                      <div className="text-white text-sm">{formatDuration(trackedSeconds)}</div>
                     </td>
 
                     {/* Role */}
