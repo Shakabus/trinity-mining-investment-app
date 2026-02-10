@@ -266,7 +266,9 @@
   margin-top: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .options table {
@@ -325,4 +327,19 @@
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.optionActionButton {
+  white-space: nowrap;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1;
+  min-width: 125px;
+}
+
+.flowHint {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin-right: auto;
 }

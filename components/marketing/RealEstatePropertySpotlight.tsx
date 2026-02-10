@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import styles from '@/components/marketing/RealEstatePropertySpotlight.module.css'
 
@@ -1197,6 +1198,7 @@ export default function RealEstatePropertySpotlight({
   buyInLabel = 'Buy In From Dashboard',
   enableBuyInFlow = false,
 }: RealEstatePropertySpotlightProps) {
+  const router = useRouter()
   const [openId, setOpenId] = useState<string | null>(null)
 
   const openProperty = useMemo(
@@ -1332,9 +1334,13 @@ export default function RealEstatePropertySpotlight({
                         <td>{option.illustrativeOutcome}</td>
                         {enableBuyInFlow && (
                           <td>
-                            <Link href={buildBuyInHref(openProperty, option)} className={styles.optionSelect}>
+                            <button
+                              type="button"
+                              className={`${styles.btnPrimary} ${styles.optionActionButton}`}
+                              onClick={() => router.push(buildBuyInHref(openProperty, option))}
+                            >
                               Buy This Tier
-                            </Link>
+                            </button>
                           </td>
                         )}
                       </tr>
