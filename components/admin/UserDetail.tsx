@@ -478,7 +478,7 @@ export default function UserDetail({
 
 
       <div
-        className="p-6 rounded-3xl"
+        className="mt-6 p-6 rounded-3xl"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
