@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Gem, Pickaxe, DollarSign, Settings, TrendingUp } from 'lucide-react'
 import { autoUpdateEarnings } from '@/lib/earnings'
 import { simulateTradingProgress } from '@/lib/trading'
+import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
@@ -171,7 +172,26 @@ export default async function DashboardPage() {
   const tradingTotalUsd = tradingEarningsComputed
     ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
     : 0
+  const realEstateData = await getRealEstateDashboardData(userId)
+  const realEstateMonthlyRealizedUsd = realEstateData.payouts
+    .filter(item => item.status === 'paid')
+    .filter(item => {
+      const payoutDate = new Date(item.payoutDate)
+      return payoutDate.getFullYear() === now.getFullYear() && payoutDate.getMonth() === now.getMonth()
+    })
+    .reduce((sum, item) => sum + item.netUsd, 0)
   const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
+  const totalEarnedOverviewUsd = totalEarnedUsd + realEstateMonthlyRealizedUsd
+  const realEstateTotalAllocationUsd = realEstateData.positions.reduce(
+    (sum, position) => sum + position.allocationUsd,
+    0,
+  )
+  const realEstateApprovedCount = realEstateData.positions.filter(
+    position => position.status === 'approved',
+  ).length
+  const realEstatePendingCount = realEstateData.positions.filter(
+    position => position.status !== 'approved',
+  ).length
   const completedMiningAvailable = updatedEarnings.some(
     record => record.isWithdrawable && record.userPlan?.status === 'completed'
   )
@@ -477,8 +497,11 @@ export default async function DashboardPage() {
             }}
           >
             <div className="text-xs md:text-sm text-white/60 mb-2">Total Earned</div>
-            <div className="text-lg md:text-2xl font-bold text-white truncate" title={formatMoney(totalEarnedUsd)}>
-              {formatMoney(totalEarnedUsd)}
+            <div
+              className="text-lg md:text-2xl font-bold text-white truncate"
+              title={formatMoney(totalEarnedOverviewUsd)}
+            >
+              {formatMoney(totalEarnedOverviewUsd)}
             </div>
             {pendingReleaseUsd > 0 && (
               <div
@@ -486,6 +509,14 @@ export default async function DashboardPage() {
                 title={`Pending system release: ${formatMoney(pendingReleaseUsd)}`}
               >
                 Pending system release: {formatMoney(pendingReleaseUsd)}
+              </div>
+            )}
+            {realEstateMonthlyRealizedUsd > 0 && (
+              <div
+                className="text-xs text-emerald-200 mt-2 truncate"
+                title={`Includes this month's real-estate realized profit: ${formatMoney(realEstateMonthlyRealizedUsd)}`}
+              >
+                Real-estate realized this month: {formatMoney(realEstateMonthlyRealizedUsd)}
               </div>
             )}
           </div>
@@ -544,6 +575,86 @@ export default async function DashboardPage() {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
               <div className="text-base md:text-xl font-bold text-white">Online</div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="p-4 md:p-6 rounded-3xl min-w-0"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-lg md:text-xl font-semibold text-white">Real Estate Snapshot</h2>
+              <p className="text-xs md:text-sm text-white/65 mt-1">
+                Portfolio signals pulled directly from your real-estate activity.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/real-estate"
+              className="inline-block px-3 py-1.5 rounded-full text-xs md:text-sm font-semibold text-white"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+              }}
+            >
+              Open Portfolio
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div className="text-xs text-white/60 mb-1">Approved Properties</div>
+              <div className="text-base md:text-xl font-bold text-white">{realEstateApprovedCount}</div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div className="text-xs text-white/60 mb-1">Pending Verification</div>
+              <div className="text-base md:text-xl font-bold text-white">{realEstatePendingCount}</div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div className="text-xs text-white/60 mb-1">Portfolio Allocation</div>
+              <div
+                className="text-base md:text-xl font-bold text-white truncate"
+                title={formatMoney(realEstateTotalAllocationUsd)}
+              >
+                {formatMoney(realEstateTotalAllocationUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div className="text-xs text-white/60 mb-1">Available To Withdraw</div>
+              <div
+                className="text-base md:text-xl font-bold text-white truncate"
+                title={formatMoney(realEstateData.availableWithdrawalUsd)}
+              >
+                {formatMoney(realEstateData.availableWithdrawalUsd)}
+              </div>
             </div>
           </div>
         </div>
