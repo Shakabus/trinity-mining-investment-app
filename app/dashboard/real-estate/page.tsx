@@ -60,8 +60,9 @@ export default function RealEstatePortfolioDashboardPage() {
         </Link>
       </div>
 
-      <RealEstatePropertySpotlight buyInLabel="Buy In" />
+      <RealEstatePropertySpotlight buyInLabel="Buy In" enableBuyInFlow />
     </div>
   )
 }
+
 

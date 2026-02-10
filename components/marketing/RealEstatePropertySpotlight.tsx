@@ -1190,10 +1190,12 @@ const PROPERTIES: PropertyItem[] = [
 
 type RealEstatePropertySpotlightProps = {
   buyInLabel?: string
+  enableBuyInFlow?: boolean
 }
 
 export default function RealEstatePropertySpotlight({
   buyInLabel = 'Buy In From Dashboard',
+  enableBuyInFlow = false,
 }: RealEstatePropertySpotlightProps) {
   const [openId, setOpenId] = useState<string | null>(null)
 
@@ -1201,6 +1203,22 @@ export default function RealEstatePropertySpotlight({
     () => PROPERTIES.find(property => property.id === openId) ?? null,
     [openId],
   )
+
+  const buildBuyInHref = (property: PropertyItem, option: BuyInOption) => {
+    const params = new URLSearchParams({
+      propertyId: property.id,
+      title: property.modalTitle,
+      location: property.modalLocation,
+      tier: option.tier,
+      minimum: option.minimum,
+      duration: option.duration,
+      payoutModel: option.payoutModel,
+      projectedBand: option.projectedBand,
+      illustrativeOutcome: option.illustrativeOutcome,
+    })
+
+    return '/dashboard/real-estate/payment?' + params.toString()
+  }
 
   return (
     <section className={styles.section}>
@@ -1251,7 +1269,7 @@ export default function RealEstatePropertySpotlight({
                 >
                   View Full Details
                 </button>
-                <Link href="/dashboard/real-estate" className={styles.btnPrimary}>
+                <Link href={enableBuyInFlow ? '#' : '/dashboard/real-estate'} className={styles.btnPrimary} onClick={event => { if (enableBuyInFlow) { event.preventDefault(); setOpenId(property.id) } }}>
                   {buyInLabel}
                 </Link>
               </div>
@@ -1300,6 +1318,7 @@ export default function RealEstatePropertySpotlight({
                       <th>Payout Basis</th>
                       <th>Projected Return Band</th>
                       <th>Illustrative Outcome</th>
+                      {enableBuyInFlow && <th>Action</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -1311,6 +1330,13 @@ export default function RealEstatePropertySpotlight({
                         <td>{option.payoutModel}</td>
                         <td>{option.projectedBand}</td>
                         <td>{option.illustrativeOutcome}</td>
+                        {enableBuyInFlow && (
+                          <td>
+                            <Link href={buildBuyInHref(openProperty, option)} className={styles.optionSelect}>
+                              Buy This Tier
+                            </Link>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -1319,9 +1345,12 @@ export default function RealEstatePropertySpotlight({
 
 
               <div className={styles.modalActions}>
-                <Link href="/dashboard/real-estate" className={styles.btnPrimary}>
-                  Continue To Buy-In Flow
-                </Link>
+                {!enableBuyInFlow && (
+                  <Link href="/dashboard/real-estate" className={styles.btnPrimary}>
+                    Continue To Buy-In Flow
+                  </Link>
+                )}
+                {enableBuyInFlow && <p className={styles.flowHint}>Select a buy-in tier above to continue to payment instructions.</p>}
                 <button type="button" className={styles.btnGhost} onClick={() => setOpenId(null)}>
                   Close
                 </button>
@@ -1333,3 +1362,7 @@ export default function RealEstatePropertySpotlight({
     </section>
   )
 }
+
+
+
+
