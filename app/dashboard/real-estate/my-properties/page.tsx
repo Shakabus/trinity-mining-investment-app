@@ -1,8 +1,21 @@
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Building2, ArrowRight } from 'lucide-react'
 import RealEstateMyPropertiesPanel from '@/components/real-estate/RealEstateMyPropertiesPanel'
+import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 
-export default function RealEstateMyPropertiesPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function RealEstateMyPropertiesPage() {
+  const { userId } = await auth()
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  const { positions } = await getRealEstateDashboardData(userId)
+  const hasPositions = positions.length > 0
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       <div>
@@ -21,12 +34,21 @@ export default function RealEstateMyPropertiesPage() {
       >
         <div className="flex items-center gap-3 text-white">
           <Building2 size={18} />
-          <h2 className="text-xl font-semibold">No property allocations yet</h2>
+          <h2 className="text-xl font-semibold">
+            {hasPositions ? 'Portfolio tracking is live' : 'No property allocations yet'}
+          </h2>
         </div>
-        <p className="text-white/70 mt-3 max-w-2xl">
-          Start from the portfolio listing page to select a property lane and enter your
-          buy-in flow. Once activated, allocations and cycle status will be tracked here.
-        </p>
+        {hasPositions ? (
+          <p className="text-white/70 mt-3 max-w-2xl">
+            This view is tied to your submitted buy-in proofs and approval flow. Allocation lanes,
+            status updates, and timeline progression are shown per property.
+          </p>
+        ) : (
+          <p className="text-white/70 mt-3 max-w-2xl">
+            Start from the portfolio listing page to select a property lane and enter your
+            buy-in flow. Once activated, allocations and cycle status will be tracked here.
+          </p>
+        )}
         <Link
           href="/dashboard/real-estate"
           className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-xl text-sm font-semibold text-white"
@@ -39,7 +61,7 @@ export default function RealEstateMyPropertiesPage() {
         </Link>
       </div>
 
-      <RealEstateMyPropertiesPanel />
+      <RealEstateMyPropertiesPanel positions={positions} />
     </div>
   )
 }

@@ -1,7 +1,18 @@
-import { Wallet, ShieldCheck, BanknoteArrowDown } from 'lucide-react'
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
 import RealEstateWithdrawalsPanel from '@/components/real-estate/RealEstateWithdrawalsPanel'
+import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 
-export default function RealEstateWithdrawalsPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function RealEstateWithdrawalsPage() {
+  const { userId } = await auth()
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  const { availableWithdrawalUsd, withdrawals } = await getRealEstateDashboardData(userId)
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       <div>
@@ -12,30 +23,10 @@ export default function RealEstateWithdrawalsPage() {
         </p>
       </div>
 
-      <div
-        className="rounded-3xl p-6 space-y-4"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))',
-          border: '1px solid rgba(255,255,255,0.18)',
-        }}
-      >
-        <div className="flex items-center gap-3 text-white">
-          <Wallet size={18} />
-          <h2 className="text-xl font-semibold">No available withdrawals yet</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white/70">
-          <div className="flex items-start gap-2">
-            <ShieldCheck size={16} className="mt-0.5 text-white/80" />
-            <p>Completed cycle verification is required before funds become withdrawable.</p>
-          </div>
-          <div className="flex items-start gap-2">
-            <BanknoteArrowDown size={16} className="mt-0.5 text-white/80" />
-            <p>Once active, this page will show payout history and withdrawal status tracking.</p>
-          </div>
-        </div>
-      </div>
-
-      <RealEstateWithdrawalsPanel />
+      <RealEstateWithdrawalsPanel
+        availableWithdrawalUsd={availableWithdrawalUsd}
+        withdrawals={withdrawals}
+      />
     </div>
   )
 }

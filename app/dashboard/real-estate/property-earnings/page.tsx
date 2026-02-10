@@ -1,7 +1,21 @@
-import { DollarSign, TrendingUp, CalendarClock } from 'lucide-react'
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import RealEstateEarningsPanel from '@/components/real-estate/RealEstateEarningsPanel'
+import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 
-export default function RealEstatePropertyEarningsPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function RealEstatePropertyEarningsPage() {
+  const { userId } = await auth()
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  const { positions, payouts } = await getRealEstateDashboardData(userId)
+  const hasPositions = positions.length > 0
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       <div>
@@ -11,49 +25,31 @@ export default function RealEstatePropertyEarningsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {!hasPositions && (
         <div
-          className="rounded-2xl p-4"
+          className="rounded-3xl p-6 md:p-7"
           style={{
             background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))',
             border: '1px solid rgba(255,255,255,0.18)',
           }}
         >
-          <div className="flex items-center gap-2 text-white/70 text-sm">
-            <DollarSign size={16} />
-            <span>Total Earned</span>
-          </div>
-          <div className="text-white text-2xl font-semibold mt-2">$0.00</div>
+          <h2 className="text-xl font-semibold text-white">No active allocation yet</h2>
+          <p className="text-white/70 mt-3 max-w-2xl">
+            Earnings are generated from your approved real-estate allocations. Submit your first
+            buy-in proof to activate this ledger.
+          </p>
+          <Link
+            href="/dashboard/real-estate"
+            className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)' }}
+          >
+            Start Buy-In Flow
+            <ArrowRight size={14} />
+          </Link>
         </div>
-        <div
-          className="rounded-2xl p-4"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))',
-            border: '1px solid rgba(255,255,255,0.18)',
-          }}
-        >
-          <div className="flex items-center gap-2 text-white/70 text-sm">
-            <TrendingUp size={16} />
-            <span>Current Monthly Run Rate</span>
-          </div>
-          <div className="text-white text-2xl font-semibold mt-2">$0.00</div>
-        </div>
-        <div
-          className="rounded-2xl p-4"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))',
-            border: '1px solid rgba(255,255,255,0.18)',
-          }}
-        >
-          <div className="flex items-center gap-2 text-white/70 text-sm">
-            <CalendarClock size={16} />
-            <span>Next Payout Window</span>
-          </div>
-          <div className="text-white text-2xl font-semibold mt-2">Not Scheduled</div>
-        </div>
-      </div>
+      )}
 
-      <RealEstateEarningsPanel />
+      <RealEstateEarningsPanel positions={positions} payouts={payouts} />
     </div>
   )
 }
