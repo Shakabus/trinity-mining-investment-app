@@ -5,14 +5,9 @@ import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 const DEFAULT_PAGE_SIZE = 50
-const ONLINE_WINDOW_MS = 90 * 1000
-const AWAY_WINDOW_MS = 10 * 60 * 1000
-
-function getPresenceState(lastSeenAt: Date | null) {
-  if (!lastSeenAt) return 'offline' as const
-  const diff = Date.now() - lastSeenAt.getTime()
-  if (diff <= ONLINE_WINDOW_MS) return 'online' as const
-  if (diff <= AWAY_WINDOW_MS) return 'away' as const
+function getPresenceState(currentSessionStartedAt: Date | null, lastSeenAt: Date | null) {
+  if (currentSessionStartedAt) return 'online' as const
+  if (lastSeenAt) return 'away' as const
   return 'offline' as const
 }
 
@@ -28,11 +23,7 @@ function formatDuration(seconds: number) {
 
 function formatSince(iso: Date | null) {
   if (!iso) return 'Never'
-  const diffSec = Math.max(0, Math.floor((Date.now() - iso.getTime()) / 1000))
-  if (diffSec < 60) return `${diffSec}s ago`
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`
-  return `${Math.floor(diffSec / 86400)}d ago`
+  return iso.toLocaleString()
 }
 
 export default async function AdminUsersPage({
@@ -112,14 +103,10 @@ export default async function AdminUsersPage({
             <tbody>
               {users.map(user => {
                 const currentPlan = user.userPlans[0]
-                const presenceState = getPresenceState(user.lastSeenAt)
+                const presenceState = getPresenceState(user.currentSessionStartedAt, user.lastSeenAt)
                 const presenceLabel =
                   presenceState === 'online' ? 'Online' : presenceState === 'away' ? 'Away' : 'Offline'
-                const currentSessionSeconds =
-                  presenceState === 'online' && user.currentSessionStartedAt
-                    ? Math.floor((Date.now() - user.currentSessionStartedAt.getTime()) / 1000)
-                    : 0
-                const trackedSeconds = user.totalSessionSeconds + Math.max(0, currentSessionSeconds)
+                const trackedSeconds = user.totalSessionSeconds
 
                 return (
                   <tr
