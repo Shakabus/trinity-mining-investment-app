@@ -613,7 +613,7 @@ export default function UserDetail({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div
           className="p-6 rounded-3xl"
           style={{
@@ -878,14 +878,14 @@ export default function UserDetail({
       </div>
 
       <div
-        className="p-6 rounded-3xl"
+        className="mt-8 p-6 rounded-3xl"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div
           className="p-6 rounded-3xl"
           style={{
@@ -1029,7 +1029,7 @@ export default function UserDetail({
       </div>
 
       <div
-        className="p-6 rounded-3xl"
+        className="mt-8 p-6 rounded-3xl"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           backdropFilter: 'blur(20px)',
