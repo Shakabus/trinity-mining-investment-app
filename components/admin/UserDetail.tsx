@@ -1107,7 +1107,7 @@ export default function UserDetail({
         )}
       </div>
         {realEstate && (
-          <div className="space-y-6 mb-6">
+          <div className="mt-8 space-y-6 mb-6">
             <div>
               <h2 className="text-white font-semibold text-lg">Real Estate Controls</h2>
               <p className="text-white/60 text-sm mt-1">
