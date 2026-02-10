@@ -147,11 +147,28 @@ export async function POST(req: Request) {
       },
     })
 
-    await logUserActivity({
-      userId: user.id,
-      action: 'SupportTicketCreated',
-      detail: `New support request created: ${subject}.`,
-    })
+    const isRealEstateBuyIn = subject.startsWith(REAL_ESTATE_BUY_IN_TICKET_PREFIX)
+    const isRealEstateWithdrawal = subject.startsWith(REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX)
+
+    if (isRealEstateBuyIn) {
+      await logUserActivity({
+        userId: user.id,
+        action: 'RealEstateBuyInSubmitted',
+        detail: `Real-estate buy-in proof submitted: ${subject.replace(REAL_ESTATE_BUY_IN_TICKET_PREFIX, '').trim() || subject}.`,
+      })
+    } else if (isRealEstateWithdrawal) {
+      await logUserActivity({
+        userId: user.id,
+        action: 'RealEstateWithdrawalRequested',
+        detail: `Real-estate withdrawal request submitted: ${subject.replace(REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX, '').trim() || subject}.`,
+      })
+    } else {
+      await logUserActivity({
+        userId: user.id,
+        action: 'SupportTicketCreated',
+        detail: `New support request created: ${subject}.`,
+      })
+    }
 
     return NextResponse.json({
       success: true,
