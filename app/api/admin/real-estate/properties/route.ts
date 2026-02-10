@@ -118,9 +118,8 @@ function parseInput(body: PropertyInput) {
       summary: body.summary.trim(),
       overview: sanitizeText(body.overview),
       imagePath: sanitizeText(body.imagePath),
-      keyCount: body.keyCount == null || body.keyCount === '' ? null : Number(body.keyCount),
-      occupancyRate:
-        body.occupancyRate == null || body.occupancyRate === '' ? null : Number(body.occupancyRate),
+      keyCount: body.keyCount == null ? null : Number(body.keyCount),
+      occupancyRate: body.occupancyRate == null ? null : Number(body.occupancyRate),
       status: sanitizeText(body.status) ?? 'active',
       sortOrder: Number.isFinite(Number(body.sortOrder)) ? Number(body.sortOrder) : 0,
       isFeatured: Boolean(body.isFeatured),
