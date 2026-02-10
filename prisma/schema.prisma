@@ -488,3 +488,48 @@ model TradingWithdrawal {
   @@index([tradingUserPlanId], map: "trading_withdrawals_plan_id_fkey")
   @@map("trading_withdrawals")
 }
+
+model RealEstateProperty {
+  id            Int                      @id @default(autoincrement())
+  title         String
+  slug          String                   @unique
+  market        String?
+  city          String?
+  country       String?
+  assetType     String                   @default("hotel") @map("asset_type")
+  operatorName  String?                  @map("operator_name")
+  address       String?                  @db.Text
+  summary       String                   @db.Text
+  overview      String?                  @db.Text
+  imagePath     String?                  @map("image_path")
+  keyCount      Int?                     @map("key_count")
+  occupancyRate Decimal?                 @map("occupancy_rate") @db.Decimal(5, 2)
+  status        String                   @default("active")
+  sortOrder     Int                      @default(0) @map("sort_order")
+  isFeatured    Boolean                  @default(false) @map("is_featured")
+  createdAt     DateTime                 @default(now()) @map("created_at")
+  updatedAt     DateTime                 @updatedAt @map("updated_at")
+  tiers         RealEstatePropertyTier[]
+
+  @@map("real_estate_properties")
+}
+
+model RealEstatePropertyTier {
+  id                   Int                @id @default(autoincrement())
+  propertyId           Int                @map("property_id")
+  tierName             String             @map("tier_name")
+  minimumUsd           Decimal            @map("minimum_usd") @db.Decimal(12, 2)
+  durationMonths       Int                @map("duration_months")
+  payoutModel          String             @map("payout_model")
+  projectedReturnMin   Decimal            @map("projected_return_min") @db.Decimal(6, 2)
+  projectedReturnMax   Decimal            @map("projected_return_max") @db.Decimal(6, 2)
+  projectedOutcomeText String?            @map("projected_outcome_text") @db.Text
+  displayOrder         Int                @default(0) @map("display_order")
+  isActive             Boolean            @default(true) @map("is_active")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  property             RealEstateProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId], map: "real_estate_property_tiers_property_id_fkey")
+  @@map("real_estate_property_tiers")
+}

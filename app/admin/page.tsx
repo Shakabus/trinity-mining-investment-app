@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
-import { Users, CreditCard, TrendingUp, Activity, Banknote } from 'lucide-react'
+import { Users, CreditCard, TrendingUp, Activity, Banknote, Building2 } from 'lucide-react'
 import AdminAnalytics from '@/components/admin/AdminAnalytics'
 
 export const dynamic = 'force-dynamic'
@@ -289,6 +289,32 @@ export default async function AdminPage() {
             <h3 className="text-white font-semibold mb-2">Withdrawals</h3>
             <p className="text-sm text-white/60">
               {pendingWithdrawals} earnings pending, {pendingReferralWithdrawals} referral pending
+            </p>
+          </Link>
+
+          <Link
+            href="/admin/real-estate"
+            className="p-6 rounded-2xl transition-all hover:scale-105"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <div
+              className="p-3 rounded-xl mb-3 float-soft"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(14px)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+                width: 'fit-content',
+              }}
+            >
+              <Building2 size={28} className="text-white" />
+            </div>
+            <h3 className="text-white font-semibold mb-2">Manage Properties</h3>
+            <p className="text-sm text-white/60">
+              Create, edit, and remove real-estate listings
             </p>
           </Link>
 

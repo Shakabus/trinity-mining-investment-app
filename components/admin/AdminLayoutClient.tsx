@@ -1,16 +1,17 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
-import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, Building2, ChevronsLeft, ChevronsRight } from 'lucide-react'
 
 const menuItems = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Payments', href: '/admin/payments', icon: CreditCard },
   { name: 'Withdrawals', href: '/admin/withdrawals', icon: Banknote },
+  { name: 'Properties', href: '/admin/real-estate', icon: Building2 },
   { name: 'Referrals', href: '/admin/referrals', icon: Link2 },
   { name: 'Support', href: '/admin/settings', icon: LifeBuoy },
 ]
@@ -172,7 +173,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                   href="/dashboard"
                   className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all text-sm"
                 >
-                  ← Back to Dashboard
+                  â† Back to Dashboard
                 </Link>
               </div>
             )}
@@ -245,3 +246,4 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
     </div>
   )
 }
+
