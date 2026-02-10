@@ -173,25 +173,12 @@ export default async function DashboardPage() {
     ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
     : 0
   const realEstateData = await getRealEstateDashboardData(userId)
-  const realEstateMonthlyRealizedUsd = realEstateData.payouts
-    .filter(item => item.status === 'paid')
-    .filter(item => {
-      const payoutDate = new Date(item.payoutDate)
-      return payoutDate.getFullYear() === now.getFullYear() && payoutDate.getMonth() === now.getMonth()
-    })
-    .reduce((sum, item) => sum + item.netUsd, 0)
+  const realEstateMonthlyRealizedUsd = realEstateData.summary.thisMonthRealizedUsd
   const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
   const totalEarnedOverviewUsd = totalEarnedUsd + realEstateMonthlyRealizedUsd
-  const realEstateTotalAllocationUsd = realEstateData.positions.reduce(
-    (sum, position) => sum + position.allocationUsd,
-    0,
-  )
-  const realEstateApprovedCount = realEstateData.positions.filter(
-    position => position.status === 'approved',
-  ).length
-  const realEstatePendingCount = realEstateData.positions.filter(
-    position => position.status !== 'approved',
-  ).length
+  const realEstateTotalAllocationUsd = realEstateData.summary.portfolioAllocationUsd
+  const realEstateApprovedCount = realEstateData.summary.approvedCount
+  const realEstatePendingCount = realEstateData.summary.pendingCount
   const completedMiningAvailable = updatedEarnings.some(
     record => record.isWithdrawable && record.userPlan?.status === 'completed'
   )

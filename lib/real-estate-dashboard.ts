@@ -17,7 +17,13 @@ export type RealEstatePosition = {
   txid: string
   projectedBand: string
   monthlyIncomeUsd: number
+  monthlyNetUsd: number
+  realizedNetUsd: number
+  elapsedMonths: number
+  remainingMonths: number
   submittedAt: string
+  activatedAt: string | null
+  nextPayoutDate: string | null
   status: RealEstatePositionStatus
 }
 
@@ -40,6 +46,21 @@ export type RealEstateWithdrawal = {
   destination: string
   status: 'pending' | 'processing' | 'paid' | 'rejected'
   reference: string
+}
+
+export type RealEstateEarningsSummary = {
+  totalRealizedUsd: number
+  thisMonthRealizedUsd: number
+  monthlyRunRateUsd: number
+  avgYieldPerMonthPct: number
+  nextPayoutNetUsd: number
+  nextPayoutDate: string | null
+  nextPayoutProperty: string | null
+  upcomingPayoutsNetUsd: number
+  approvedCount: number
+  activeApprovedCount: number
+  pendingCount: number
+  portfolioAllocationUsd: number
 }
 
 type ParsedTicketBody = {
@@ -144,6 +165,7 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
   positions: RealEstatePosition[]
   payouts: RealEstatePayoutEvent[]
   withdrawals: RealEstateWithdrawal[]
+  summary: RealEstateEarningsSummary
   availableWithdrawalUsd: number
   canRequestWithdrawal: boolean
   nextWithdrawalEligibleAt: string | null
@@ -176,6 +198,20 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
       positions: [],
       payouts: [],
       withdrawals: [],
+      summary: {
+        totalRealizedUsd: 0,
+        thisMonthRealizedUsd: 0,
+        monthlyRunRateUsd: 0,
+        avgYieldPerMonthPct: 0,
+        nextPayoutNetUsd: 0,
+        nextPayoutDate: null,
+        nextPayoutProperty: null,
+        upcomingPayoutsNetUsd: 0,
+        approvedCount: 0,
+        activeApprovedCount: 0,
+        pendingCount: 0,
+        portfolioAllocationUsd: 0,
+      },
       availableWithdrawalUsd: 0,
       canRequestWithdrawal: false,
       nextWithdrawalEligibleAt: null,
@@ -189,6 +225,7 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
   const withdrawalTickets = user.supportTickets.filter(ticket =>
     ticket.subject.startsWith(REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX),
   )
+  const now = new Date()
 
   const positions: RealEstatePosition[] = buyInTickets.map(ticket => {
     const userMessage = ticket.messages.find(message => message.senderRole === 'user')
@@ -199,6 +236,18 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
     const allocationUsd = parseAmount(parsed.minimum)
     const totalCycleIncome = allocationUsd * (midpointPct / 100)
     const monthlyIncomeUsd = cycleMonths > 0 ? totalCycleIncome / cycleMonths : 0
+    const monthlyNetUsd = monthlyIncomeUsd * (1 - PAYOUT_FEE_RATE)
+    const status = mapBuyInTicketStatus(ticket.status)
+    const activatedAt = status === 'approved' ? ticket.updatedAt : null
+    const earningsStart = activatedAt ?? ticket.createdAt
+    const elapsedMonths =
+      status === 'approved' && cycleMonths > 0 ? Math.min(monthsBetween(earningsStart, now), cycleMonths) : 0
+    const remainingMonths = cycleMonths > 0 ? Math.max(cycleMonths - elapsedMonths, 0) : 0
+    const realizedNetUsd = elapsedMonths * monthlyNetUsd
+    const nextPayoutDate =
+      status === 'approved' && cycleMonths > 0 && elapsedMonths < cycleMonths
+        ? addMonths(earningsStart, elapsedMonths + 1).toISOString()
+        : null
     const txidCompact = parsed.txid ? `${parsed.txid.slice(0, 10)}...${parsed.txid.slice(-6)}` : '-'
 
     return {
@@ -213,20 +262,25 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
       txid: txidCompact,
       projectedBand: parsed.projectedBand || '-',
       monthlyIncomeUsd,
+      monthlyNetUsd,
+      realizedNetUsd,
+      elapsedMonths,
+      remainingMonths,
       submittedAt: ticket.createdAt.toISOString(),
-      status: mapBuyInTicketStatus(ticket.status),
+      activatedAt: activatedAt?.toISOString() ?? null,
+      nextPayoutDate,
+      status,
     }
   })
 
   const approvedPositions = positions.filter(position => position.status === 'approved')
-  const now = new Date()
 
   const payouts: RealEstatePayoutEvent[] = []
   for (const position of approvedPositions) {
     if (position.cycleMonths <= 0 || position.monthlyIncomeUsd <= 0) continue
 
-    const startedAt = new Date(position.submittedAt)
-    const elapsedMonths = Math.min(monthsBetween(startedAt, now), position.cycleMonths)
+    const startedAt = new Date(position.activatedAt ?? position.submittedAt)
+    const elapsedMonths = Math.min(position.elapsedMonths, position.cycleMonths)
 
     for (let month = 1; month <= elapsedMonths; month += 1) {
       const payoutDate = addMonths(startedAt, month)
@@ -289,7 +343,7 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
   withdrawals.sort((a, b) => +new Date(b.requestedAt) - +new Date(a.requestedAt))
 
   const earliestMaturityDates = approvedPositions.map(position =>
-    addMonths(new Date(position.submittedAt), WITHDRAWAL_WINDOW_MONTHS),
+    addMonths(new Date(position.activatedAt ?? position.submittedAt), WITHDRAWAL_WINDOW_MONTHS),
   )
   const firstMaturityDate =
     earliestMaturityDates.length > 0
@@ -301,13 +355,12 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
   const unlockedNetIncome = approvedPositions.reduce((sum, position) => {
     if (position.cycleMonths <= 0 || position.monthlyIncomeUsd <= 0) return sum
 
-    const startedAt = new Date(position.submittedAt)
+    const startedAt = new Date(position.activatedAt ?? position.submittedAt)
     const maturedAt = addMonths(startedAt, WITHDRAWAL_WINDOW_MONTHS)
     if (maturedAt > now) return sum
 
-    const elapsedMonths = Math.min(monthsBetween(startedAt, now), position.cycleMonths)
-    const monthlyNet = position.monthlyIncomeUsd * (1 - PAYOUT_FEE_RATE)
-    return sum + elapsedMonths * monthlyNet
+    const elapsedMonths = Math.min(position.elapsedMonths, position.cycleMonths)
+    return sum + elapsedMonths * position.monthlyNetUsd
   }, 0)
 
   const lockedOrPaidWithdrawals = withdrawals
@@ -333,10 +386,49 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
     position => position.status === 'submitted' || position.status === 'under_review',
   )
 
+  const paidEvents = payouts.filter(item => item.status === 'paid')
+  const scheduledEvents = payouts.filter(item => item.status === 'scheduled')
+  const nextScheduledEvent = [...scheduledEvents].sort(
+    (a, b) => +new Date(a.payoutDate) - +new Date(b.payoutDate),
+  )[0]
+  const activeApprovedPositions = approvedPositions.filter(position => position.remainingMonths > 0)
+  const activeApprovedAllocationUsd = activeApprovedPositions.reduce(
+    (sum, position) => sum + position.allocationUsd,
+    0,
+  )
+  const monthlyRunRateUsd = activeApprovedPositions.reduce(
+    (sum, position) => sum + position.monthlyNetUsd,
+    0,
+  )
+
+  const summary: RealEstateEarningsSummary = {
+    totalRealizedUsd: paidEvents.reduce((sum, item) => sum + item.netUsd, 0),
+    thisMonthRealizedUsd: paidEvents
+      .filter(item => {
+        const payoutDate = new Date(item.payoutDate)
+        return payoutDate.getFullYear() === now.getFullYear() && payoutDate.getMonth() === now.getMonth()
+      })
+      .reduce((sum, item) => sum + item.netUsd, 0),
+    monthlyRunRateUsd,
+    avgYieldPerMonthPct:
+      activeApprovedAllocationUsd > 0 ? (monthlyRunRateUsd / activeApprovedAllocationUsd) * 100 : 0,
+    nextPayoutNetUsd: nextScheduledEvent?.netUsd ?? 0,
+    nextPayoutDate: nextScheduledEvent?.payoutDate ?? null,
+    nextPayoutProperty: nextScheduledEvent?.property ?? null,
+    upcomingPayoutsNetUsd: scheduledEvents.reduce((sum, item) => sum + item.netUsd, 0),
+    approvedCount: approvedPositions.length,
+    activeApprovedCount: activeApprovedPositions.length,
+    pendingCount: positions.filter(
+      position => position.status === 'submitted' || position.status === 'under_review',
+    ).length,
+    portfolioAllocationUsd: positions.reduce((sum, position) => sum + position.allocationUsd, 0),
+  }
+
   return {
     positions,
     payouts,
     withdrawals,
+    summary,
     availableWithdrawalUsd,
     canRequestWithdrawal,
     nextWithdrawalEligibleAt,

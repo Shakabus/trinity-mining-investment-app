@@ -1,5 +1,8 @@
 import { CalendarClock, CircleDollarSign, LineChart, TrendingUp } from 'lucide-react'
-import type { RealEstatePayoutEvent, RealEstatePosition } from '@/lib/real-estate-dashboard'
+import type {
+  RealEstateEarningsSummary,
+  RealEstatePayoutEvent,
+} from '@/lib/real-estate-dashboard'
 
 function formatUsd(value: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -10,40 +13,37 @@ function formatDate(date: string) {
 }
 
 type RealEstateEarningsPanelProps = {
-  positions: RealEstatePosition[]
   payouts: RealEstatePayoutEvent[]
+  summary: RealEstateEarningsSummary
 }
 
-export default function RealEstateEarningsPanel({ positions, payouts }: RealEstateEarningsPanelProps) {
-  const paidEvents = payouts.filter(item => item.status === 'paid')
-  const scheduledEvents = payouts.filter(item => item.status === 'scheduled')
-  const totalPaid = paidEvents.reduce((sum, item) => sum + item.netUsd, 0)
-  const upcomingNet = scheduledEvents.reduce((sum, item) => sum + item.netUsd, 0)
-  const approvedPositions = positions.filter(item => item.status === 'approved')
-  const approved = approvedPositions.length
-  const pending = positions.filter(item => item.status !== 'approved').length
-  const monthlyRunRate = approvedPositions.reduce((sum, item) => sum + item.monthlyIncomeUsd * 0.94, 0)
-  const approvedAllocation = approvedPositions.reduce((sum, item) => sum + item.allocationUsd, 0)
-  const avgYield = approvedAllocation > 0 ? (monthlyRunRate / approvedAllocation) * 100 : 0
+export default function RealEstateEarningsPanel({ payouts, summary }: RealEstateEarningsPanelProps) {
+  const approved = summary.approvedCount
+  const pending = summary.pendingCount
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><CircleDollarSign size={16} /> Realized Earnings</div>
-          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(totalPaid)}</div>
+          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(summary.totalRealizedUsd)}</div>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><TrendingUp size={16} /> Monthly Run Rate</div>
-          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(monthlyRunRate)}</div>
+          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(summary.monthlyRunRateUsd)}</div>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><LineChart size={16} /> Avg Yield / Month</div>
-          <div className="text-white text-2xl font-semibold mt-2">{avgYield.toFixed(2)}%</div>
+          <div className="text-white text-2xl font-semibold mt-2">{summary.avgYieldPerMonthPct.toFixed(2)}%</div>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
-          <div className="flex items-center gap-2 text-white/70 text-sm"><CalendarClock size={16} /> Next Payouts (Net)</div>
-          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(upcomingNet)}</div>
+          <div className="flex items-center gap-2 text-white/70 text-sm"><CalendarClock size={16} /> Next Payout (Net)</div>
+          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(summary.nextPayoutNetUsd)}</div>
+          <div className="text-white/60 text-xs mt-2">
+            {summary.nextPayoutDate
+              ? `${formatDate(summary.nextPayoutDate)}${summary.nextPayoutProperty ? ` - ${summary.nextPayoutProperty}` : ''}`
+              : 'No scheduled payout yet'}
+          </div>
         </div>
       </div>
 
@@ -106,11 +106,14 @@ export default function RealEstateEarningsPanel({ positions, payouts }: RealEsta
             Pending verification: <span className="text-white font-semibold">{pending}</span>
           </div>
           <div className="text-sm text-white/80">
-            Current monthly run rate: <span className="text-white font-semibold">{formatUsd(monthlyRunRate)}</span>
+            Current monthly run rate: <span className="text-white font-semibold">{formatUsd(summary.monthlyRunRateUsd)}</span>
+          </div>
+          <div className="text-sm text-white/80">
+            Upcoming payouts queued: <span className="text-white font-semibold">{formatUsd(summary.upcomingPayoutsNetUsd)}</span>
           </div>
           <div className="pt-3 border-t border-white/10 text-sm text-white/70 leading-6">
             This panel is user-specific. It only reflects payouts recorded against your own
-            approved real-estate allocations. No seeded or global sample values are included.
+            approved real-estate allocations and updates automatically from your approved buy-ins.
           </div>
         </div>
       </div>

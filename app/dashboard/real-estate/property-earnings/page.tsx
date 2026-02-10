@@ -13,7 +13,7 @@ export default async function RealEstatePropertyEarningsPage() {
     redirect('/sign-in')
   }
 
-  const { positions, payouts } = await getRealEstateDashboardData(userId)
+  const { positions, payouts, summary } = await getRealEstateDashboardData(userId)
   const hasPositions = positions.length > 0
 
   return (
@@ -49,7 +49,7 @@ export default async function RealEstatePropertyEarningsPage() {
         </div>
       )}
 
-      <RealEstateEarningsPanel positions={positions} payouts={payouts} />
+      <RealEstateEarningsPanel payouts={payouts} summary={summary} />
     </div>
   )
 }
