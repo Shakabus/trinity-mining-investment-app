@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { Copy, Check, AlertCircle } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
@@ -343,6 +344,27 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
               <li>• Sending other cryptocurrencies may result in permanent loss</li>
               <li>• Keep your transaction ID (TXID) for reference</li>
             </ul>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="p-6 rounded-3xl"
+        style={{
+          background: 'rgba(59, 130, 246, 0.12)',
+          border: '1px solid rgba(59, 130, 246, 0.28)',
+        }}
+      >
+        <div className="flex gap-3 items-start">
+          <AlertCircle size={22} className="text-blue-300 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-blue-200 mb-2">Need another payment option?</h3>
+            <p className="text-sm text-blue-100/85 leading-6">
+              If you cannot use the listed payment channels, contact support and request a dedicated settlement option.
+            </p>
+            <Link href="/dashboard/support" className="inline-block mt-3 text-sm font-semibold text-white underline underline-offset-4">
+              Open Support Center
+            </Link>
           </div>
         </div>
       </div>
