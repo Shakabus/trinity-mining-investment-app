@@ -80,13 +80,15 @@ export default function RealEstateMyPropertiesPanel({ positions }: { positions: 
           </div>
         ) : (
           <div className="overflow-x-auto">
-          <table className="min-w-[980px] w-full text-left">
+          <table className="min-w-[1180px] w-full text-left">
             <thead>
               <tr className="text-xs uppercase tracking-[0.08em] text-white/55">
                 <th className="pb-3 pr-4">Property</th>
                 <th className="pb-3 pr-4">Tier</th>
                 <th className="pb-3 pr-4">Allocation</th>
+                <th className="pb-3 pr-4">Monthly Income</th>
                 <th className="pb-3 pr-4">Duration</th>
+                <th className="pb-3 pr-4">Projected Band</th>
                 <th className="pb-3 pr-4">Coin</th>
                 <th className="pb-3 pr-4">TXID</th>
                 <th className="pb-3 pr-4">Submitted</th>
@@ -106,7 +108,9 @@ export default function RealEstateMyPropertiesPanel({ positions }: { positions: 
                       <div className="text-white/90">{position.tier}</div>
                     </td>
                     <td className="py-4 pr-4 text-white">{formatUsd(position.allocationUsd)}</td>
+                    <td className="py-4 pr-4 text-white">{formatUsd(position.monthlyIncomeUsd)}</td>
                     <td className="py-4 pr-4 text-white/90">{position.duration}</td>
+                    <td className="py-4 pr-4 text-white/90">{position.projectedBand}</td>
                     <td className="py-4 pr-4 text-white/90">{position.coinType}</td>
                     <td className="py-4 pr-4 text-white/90 font-mono text-xs">{position.txid}</td>
                     <td className="py-4 pr-4 text-white">{formatDate(position.submittedAt)}</td>

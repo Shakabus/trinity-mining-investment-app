@@ -1,8 +1,29 @@
-﻿import Link from 'next/link'
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Building2, LineChart, Wallet } from 'lucide-react'
 import RealEstatePropertySpotlight from '@/components/marketing/RealEstatePropertySpotlight'
+import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 
-export default function RealEstatePortfolioDashboardPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function RealEstatePortfolioDashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ buyin?: string | string[] }>
+}) {
+  const { userId } = await auth()
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  const data = await getRealEstateDashboardData(userId)
+  const hasPendingBuyIn = !data.canCreateNewBuyIn
+  const resolvedParams = searchParams ? await searchParams : undefined
+  const buyInFlag = Array.isArray(resolvedParams?.buyin)
+    ? resolvedParams?.buyin[0]
+    : resolvedParams?.buyin
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <div>
@@ -12,6 +33,19 @@ export default function RealEstatePortfolioDashboardPage() {
           payout basis, and buy-in structure before entering your property flow.
         </p>
       </div>
+
+      {(hasPendingBuyIn || buyInFlag === 'pending') && (
+        <div
+          className="rounded-2xl p-4 text-sm text-white/85"
+          style={{
+            background: 'rgba(250, 204, 21, 0.14)',
+            border: '1px solid rgba(250, 204, 21, 0.35)',
+          }}
+        >
+          You already have a real-estate buy-in pending verification. One buy-in must be approved
+          before you can submit the next property or tier allocation.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Link
@@ -64,5 +98,3 @@ export default function RealEstatePortfolioDashboardPage() {
     </div>
   )
 }
-
-

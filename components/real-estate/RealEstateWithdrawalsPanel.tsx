@@ -40,12 +40,18 @@ const statusStyle: Record<string, { bg: string; border: string; color: string; l
 type RealEstateWithdrawalsPanelProps = {
   availableWithdrawalUsd: number
   withdrawals: RealEstateWithdrawal[]
+  canRequestWithdrawal: boolean
+  nextWithdrawalEligibleAt: string | null
 }
 
 export default function RealEstateWithdrawalsPanel({
   availableWithdrawalUsd,
   withdrawals,
+  canRequestWithdrawal,
+  nextWithdrawalEligibleAt,
 }: RealEstateWithdrawalsPanelProps) {
+  const nextEligibleLabel = nextWithdrawalEligibleAt ? formatDate(nextWithdrawalEligibleAt) : null
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -54,16 +60,33 @@ export default function RealEstateWithdrawalsPanel({
             <div>
               <div className="flex items-center gap-2 text-white/70 text-sm"><Wallet size={16} /> Available to Withdraw</div>
               <div className="text-white text-3xl font-semibold mt-2">{formatUsd(availableWithdrawalUsd)}</div>
-              <p className="text-white/60 text-sm mt-2">Funds become withdrawable after cycle close, verification, and settlement window clearance.</p>
+              <p className="text-white/60 text-sm mt-2">
+                Withdrawals open after 6 months from approved allocation start, with one request permitted every 6 months.
+              </p>
+              {!canRequestWithdrawal && nextEligibleLabel && (
+                <p className="text-amber-200/90 text-xs mt-2">
+                  Next withdrawal window opens on {nextEligibleLabel}.
+                </p>
+              )}
             </div>
-            <button
-              type="button"
-              className="px-5 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={availableWithdrawalUsd <= 0}
-              style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)' }}
-            >
-              Request Withdrawal
-            </button>
+            {canRequestWithdrawal && availableWithdrawalUsd > 0 ? (
+              <Link
+                href="/dashboard/support"
+                className="px-5 py-3 rounded-xl text-sm font-semibold text-white"
+                style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)' }}
+              >
+                Request Withdrawal
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="px-5 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled
+                style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)' }}
+              >
+                Request Locked
+              </button>
+            )}
           </div>
         </div>
 

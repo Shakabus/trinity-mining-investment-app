@@ -1,6 +1,7 @@
 ﻿import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import RealEstatePaymentInstructions from '@/components/real-estate/RealEstatePaymentInstructions'
+import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,6 +45,11 @@ export default async function RealEstatePaymentPage({
 
   if (!selection.propertyId || !selection.title || !selection.tier || !selection.minimum) {
     redirect('/dashboard/real-estate')
+  }
+
+  const realEstateData = await getRealEstateDashboardData(userId)
+  if (!realEstateData.canCreateNewBuyIn) {
+    redirect('/dashboard/real-estate?buyin=pending')
   }
 
   return (

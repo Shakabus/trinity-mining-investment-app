@@ -19,10 +19,12 @@ export default function RealEstateEarningsPanel({ positions, payouts }: RealEsta
   const scheduledEvents = payouts.filter(item => item.status === 'scheduled')
   const totalPaid = paidEvents.reduce((sum, item) => sum + item.netUsd, 0)
   const upcomingNet = scheduledEvents.reduce((sum, item) => sum + item.netUsd, 0)
-  const monthlyRunRate = 0
-  const avgYield = 0
-  const approved = positions.filter(item => item.status === 'approved').length
+  const approvedPositions = positions.filter(item => item.status === 'approved')
+  const approved = approvedPositions.length
   const pending = positions.filter(item => item.status !== 'approved').length
+  const monthlyRunRate = approvedPositions.reduce((sum, item) => sum + item.monthlyIncomeUsd * 0.94, 0)
+  const approvedAllocation = approvedPositions.reduce((sum, item) => sum + item.allocationUsd, 0)
+  const avgYield = approvedAllocation > 0 ? (monthlyRunRate / approvedAllocation) * 100 : 0
 
   return (
     <div className="space-y-6">

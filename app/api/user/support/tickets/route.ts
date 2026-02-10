@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  REAL_ESTATE_BUY_IN_TICKET_PREFIX,
+  REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
+} from '@/lib/real-estate-dashboard'
 
 export async function POST(req: Request) {
   try {
@@ -29,6 +33,60 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
+    }
+
+    if (subject.startsWith(REAL_ESTATE_BUY_IN_TICKET_PREFIX)) {
+      const existingPendingBuyIn = await prisma.supportTicket.findFirst({
+        where: {
+          userId: user.id,
+          subject: {
+            startsWith: REAL_ESTATE_BUY_IN_TICKET_PREFIX,
+          },
+          status: {
+            not: 'closed',
+          },
+        },
+      })
+
+      if (existingPendingBuyIn) {
+        return NextResponse.json(
+          {
+            error:
+              'You already have a pending real-estate buy-in verification. It must be approved before you submit another property buy-in.',
+          },
+          { status: 409 },
+        )
+      }
+    }
+
+    if (subject.startsWith(REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX)) {
+      const sixMonthsAgo = new Date()
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+      const recentWithdrawalRequest = await prisma.supportTicket.findFirst({
+        where: {
+          userId: user.id,
+          subject: {
+            startsWith: REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
+          },
+          createdAt: {
+            gte: sixMonthsAgo,
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+
+      if (recentWithdrawalRequest) {
+        return NextResponse.json(
+          {
+            error:
+              'Real-estate withdrawals are limited to one request every 6 months. Your next request window will open after the current cooldown.',
+          },
+          { status: 409 },
+        )
+      }
     }
 
     let attachmentData: {

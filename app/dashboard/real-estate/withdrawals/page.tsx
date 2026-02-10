@@ -11,7 +11,8 @@ export default async function RealEstateWithdrawalsPage() {
     redirect('/sign-in')
   }
 
-  const { availableWithdrawalUsd, withdrawals } = await getRealEstateDashboardData(userId)
+  const { availableWithdrawalUsd, withdrawals, canRequestWithdrawal, nextWithdrawalEligibleAt } =
+    await getRealEstateDashboardData(userId)
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
@@ -26,6 +27,8 @@ export default async function RealEstateWithdrawalsPage() {
       <RealEstateWithdrawalsPanel
         availableWithdrawalUsd={availableWithdrawalUsd}
         withdrawals={withdrawals}
+        canRequestWithdrawal={canRequestWithdrawal}
+        nextWithdrawalEligibleAt={nextWithdrawalEligibleAt}
       />
     </div>
   )
