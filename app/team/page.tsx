@@ -1,6 +1,7 @@
-﻿import Link from 'next/link'
+import Link from 'next/link'
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
+import TeamMemberShowcase from '@/components/marketing/TeamMemberShowcase'
 
 const TEAM_PODS = [
   {
@@ -69,18 +70,28 @@ export default function TeamPage() {
         <main className="mx-auto w-full max-w-6xl px-6 pb-14 pt-28">
           <section className="rounded-3xl border border-white/15 bg-gradient-to-br from-white/10 via-white/5 to-white/[0.02] p-6 md:p-10">
             <p className="text-xs uppercase tracking-[0.22em] text-white/60">Team</p>
-            <h1 className="mt-3 text-4xl font-bold leading-tight md:text-6xl">People Behind Trinity in One</h1>
+            <h1 className="mt-3 text-4xl font-bold leading-tight md:text-6xl">
+              People Behind Trinity in One
+            </h1>
             <p className="mt-4 max-w-4xl text-sm leading-7 text-white/80 md:text-base">
               Trinity in One is built by specialized teams across infrastructure, trading, product,
               compliance, and asset management. We operate as one coordinated system focused on
               execution quality, transparency, and sustainable performance.
             </p>
             <div className="mt-6 flex flex-wrap gap-2 text-xs uppercase tracking-wide text-white/80">
-              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">Multi-desk operations</span>
-              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">Execution accountability</span>
-              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">Global coordination</span>
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                Multi-desk operations
+              </span>
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                Execution accountability
+              </span>
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">
+                Global coordination
+              </span>
             </div>
           </section>
+
+          <TeamMemberShowcase />
 
           <section className="mt-10">
             <h2 className="text-2xl font-semibold md:text-3xl">Operating teams</h2>
@@ -131,3 +142,4 @@ export default function TeamPage() {
     </div>
   )
 }
+
