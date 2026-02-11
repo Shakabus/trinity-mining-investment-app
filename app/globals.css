@@ -49,12 +49,7 @@ html[data-theme="light"] body {
 
 html[data-theme="light"] img,
 html[data-theme="light"] video,
-html[data-theme="light"] picture,
-html[data-theme="light"] canvas,
-html[data-theme="light"] svg,
-html[data-theme="light"] iframe,
-html[data-theme="light"] dotlottie-player,
-html[data-theme="light"] lottie-player {
+html[data-theme="light"] picture {
   filter: invert(1) hue-rotate(180deg);
 }
 
