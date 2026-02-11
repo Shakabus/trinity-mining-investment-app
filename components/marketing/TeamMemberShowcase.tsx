@@ -368,6 +368,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She received her undergraduate BA from the University of Pennsylvania.',
     ],
   },
+  {
+    id: 'theodore-lindsay',
+    name: 'Theodore Lindsay',
+    role: 'Associate',
+    image: '/images/team/theodore-lindsay.jpg',
+    bio: [
+      'Mr. Lindsay is an Associate at Trinity Investments.',
+      'He is primarily responsible for sourcing, underwriting, and executing Trinity investment activities across Europe.',
+      'Prior to joining Trinity, Mr. Lindsay worked for Savills Hotel Capital Markets, PKF Hospitality Group, and Soho House Group.',
+      'Mr. Lindsay received a Bachelor of Science degree with Honors in International Hospitality Management from EHL Hospitality Business School in Switzerland, with a concentration in real estate.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
