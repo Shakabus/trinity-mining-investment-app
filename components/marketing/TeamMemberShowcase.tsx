@@ -405,6 +405,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is a Certified Public Accountant.',
     ],
   },
+  {
+    id: 'jennifer-martin',
+    name: 'Jennifer Martin',
+    role: 'Director of Finance',
+    image: '/images/team/jennifer-martin.jpg',
+    bio: [
+      'Ms. Martin is Director of Finance at Trinity Investments.',
+      'She supports Trinity corporate accounting and tax functions.',
+      'Prior to joining Trinity, Ms. Martin worked at The Queens Health Systems and Servco Pacific, Inc.',
+      'Ms. Martin received a Bachelor of Arts degree in Business Economics with an emphasis in Accounting from the University of California, Santa Barbara.',
+      'She is a Certified Public Accountant.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
