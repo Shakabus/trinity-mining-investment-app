@@ -354,6 +354,20 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Denby-Jones received a Bachelors degree from the University of Oxford and a Masters degree from the University of Cambridge.',
     ],
   },
+  {
+    id: 'genevieve-lieber',
+    name: 'Genevieve Lieber',
+    role: 'Associate',
+    image: '/images/team/genevieve-lieber.jpg',
+    bio: [
+      'Ms. Lieber is an Associate at Trinity Investments.',
+      'She is responsible for providing asset management services across Trinity portfolio.',
+      'Prior to joining Trinity Investments, Ms. Lieber received an MBA from The Wharton School where she majored in Real Estate.',
+      'Over the course of her MBA, she gained valuable experience working with hospitality-focused companies.',
+      'Before pivoting into hospitality, Ms. Lieber was a consultant at Accenture Strategy.',
+      'She received her undergraduate BA from the University of Pennsylvania.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
