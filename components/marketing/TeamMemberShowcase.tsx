@@ -183,6 +183,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Antonioudaki holds a Master of Science in Advanced Architectural Design from Columbia University and a Master in Architecture from National Technical University of Athens.',
     ],
   },
+  {
+    id: 'dempsey-banks',
+    name: 'Dempsey Banks',
+    role: 'Vice President of Investor Relations',
+    image: '/images/team/dempsey-banks.jpg',
+    bio: [
+      'Ms. Banks is a Vice President at Trinity Investments.',
+      'She is responsible for overseeing investor relations with limited partners and strategic co-investors around the world.',
+      'Prior to joining Trinity, Ms. Banks worked for CIM Group and Starwood Capital Group.',
+      'Ms. Banks received a Bachelor of Science degree in Hotel Administration from Cornell University, with a minor in real estate.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
