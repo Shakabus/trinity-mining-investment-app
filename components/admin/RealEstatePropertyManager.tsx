@@ -114,11 +114,10 @@ const makeDefaultPropertyForm = (): PropertyFormState => ({
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
+  'image/jpg',
   'image/png',
   'image/webp',
   'image/avif',
-  'image/heic',
-  'image/heif',
 ])
 
 const propertyToForm = (property: AdminRealEstateProperty): PropertyFormState => ({
@@ -212,8 +211,12 @@ export default function RealEstatePropertyManager({
   }
 
   const handleImageUpload = async (file: File) => {
+    if (file.type === 'image/heic' || file.type === 'image/heif') {
+      showToast('HEIC/HEIF is not supported here yet. Please upload JPG, PNG, WebP, or AVIF.', 'error')
+      return
+    }
     if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      showToast('Unsupported image format. Use JPG, PNG, WebP, AVIF, or HEIC.', 'error')
+      showToast('Unsupported image format. Use JPG, PNG, WebP, or AVIF.', 'error')
       return
     }
     if (file.size > MAX_IMAGE_SIZE) {
@@ -235,9 +238,10 @@ export default function RealEstatePropertyManager({
         method: 'POST',
         body: formData,
       })
-      const data = await response.json().catch(() => null)
+      const isJson = response.headers.get('content-type')?.includes('application/json')
+      const data = isJson ? await response.json().catch(() => null) : null
       if (!response.ok) {
-        showToast(data?.error || 'Failed to upload image.', 'error')
+        showToast(data?.error || `Failed to upload image (HTTP ${response.status}).`, 'error')
         return
       }
 
@@ -552,7 +556,7 @@ export default function RealEstatePropertyManager({
                   <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 text-xs text-white/80 cursor-pointer hover:bg-white/10">
                     <input
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/avif"
                       className="hidden"
                       onChange={onImageFileChange}
                       disabled={isUploadingImage}
@@ -561,7 +565,7 @@ export default function RealEstatePropertyManager({
                   </label>
                 </div>
                 <p className="mt-2 text-xs text-white/60">
-                  Choose an image from your phone or computer. We upload it and fill the path automatically.
+                  Choose an image from your phone or computer (JPG, PNG, WebP, AVIF). We upload it and fill the path automatically.
                 </p>
                 <input
                   value={form.imagePath}
