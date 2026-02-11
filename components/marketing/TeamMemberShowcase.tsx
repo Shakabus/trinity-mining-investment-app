@@ -159,6 +159,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Mr. Lynch received a Bachelor of Arts in Hotel Management from Royal Roads University in Victoria, Canada, and a Master of Management degree from the School of Hotel Administration at Cornell University, with a minor in real estate.',
     ],
   },
+  {
+    id: 'samantha-sugarman',
+    name: 'Samantha Sugarman',
+    role: 'Senior Vice President of Strategic Operations',
+    image: '/images/team/samantha-sugarman.jpg',
+    bio: [
+      'Ms. Sugarman is a Senior Vice President of Strategic Operations at Trinity Investments.',
+      'She is responsible for overseeing Trinity asset management function by executing value-add operational strategies and providing oversight of hotel financial performance.',
+      'Prior to joining Trinity, Ms. Sugarman worked for CPG Hospitality, Alojica, Four Seasons Hotels and Resorts, and Ernst and Young LLP.',
+      'Ms. Sugarman received a Bachelor of Science degree in Hotel Administration from Cornell University, with a minor in Latin American Studies.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
