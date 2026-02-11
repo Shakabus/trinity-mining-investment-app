@@ -50,6 +50,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'He is a member of the Advisory Board of The Real Estate Institute of New York University.',
     ],
   },
+  {
+    id: 'ryan-donn',
+    name: 'Ryan Donn',
+    role: 'Managing Partner, Chief Investment Officer & Head of Europe',
+    image: '/images/team/ryan-donn.jpg',
+    bio: [
+      'Mr. Donn is a Managing Partner, Chief Investment Officer, and Head of Europe at Trinity Investments.',
+      'He is responsible for leading Trinity transactional activity, including due diligence, acquisitions, dispositions, and financings.',
+      'Prior to joining Trinity, Mr. Donn worked for Hotel Capital Advisers, Inc., Lehman Brothers, and PricewaterhouseCoopers LLP. He is a former instructor of New York University graduate hospitality program.',
+      'Mr. Donn received a Bachelor of Science degree in Hotel Administration from Cornell University, with a concentration in real estate.',
+      'He is a Cornell Tradition Fellow, a past member of the Cornell University Council, a former chair of the Deans Council of Young Alumni for the Cornell Hotel School, and a Pacific Century Fellow.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
