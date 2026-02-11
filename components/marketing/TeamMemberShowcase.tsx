@@ -444,6 +444,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'He is a Certified Public Accountant.',
     ],
   },
+  {
+    id: 'kayla-hiroe',
+    name: 'Kayla Hiroe',
+    role: 'Partnership Controller',
+    image: '/images/team/kayla-hiroe.jpg',
+    bio: [
+      'Ms. Hiroe is a Partnership Controller at Trinity Investments.',
+      'She is responsible for Trinity partnership accounting and tax matters.',
+      'Prior to joining Trinity, Ms. Hiroe worked for Ernst and Young LLP.',
+      'Ms. Hiroe received a Bachelors degree in Business Administration from Boston University, with concentrations in Accounting, Management Information Systems, and Business Law.',
+      'She is a Certified Public Accountant.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
