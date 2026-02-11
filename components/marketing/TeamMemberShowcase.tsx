@@ -88,6 +88,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Mr. Barry received a Bachelor of Science degree in Business Administration in Accounting from The Ohio State University, a Juris Doctor from Boston University School of Law, and a Master of Laws in Taxation from New York University School of Law.',
     ],
   },
+  {
+    id: 'amin-khorasanee',
+    name: 'Amin Khorasanee',
+    role: 'Chief Compliance Officer & Chief Technology Officer',
+    image: '/images/team/amin-khorasanee.jpg',
+    bio: [
+      'Mr. Khorasanee is the Chief Compliance Officer and Chief Technology Officer of Trinity Investments.',
+      'He leads the strategic implementation and oversight of the firm compliance and technology programs.',
+      'Prior to joining Trinity, Mr. Khorasanee worked for Tikehau Capital, BNP Paribas, Bank of the West, and Citi.',
+      'Mr. Khorasanee received a Bachelor of Science degree in Corporate Finance from San Jose State University.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
