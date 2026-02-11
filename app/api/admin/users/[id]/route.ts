@@ -4,8 +4,10 @@ import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import {
   InputValidationError,
+  readBooleanField,
   isInputValidationError,
   readJsonObject,
+  readNumberField,
   readStringField,
 } from '@/lib/requestValidation'
 
@@ -82,23 +84,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       })
 
       const maxHashrate = latestPlan ? Number(latestPlan.plan.baseHashrate) : null
-      const assignedHashrate = Number(body.assignedHashrate)
-      const counterSpeed = Number(body.counterSpeed)
-
-      if (!Number.isFinite(assignedHashrate) || assignedHashrate <= 0) {
-        return NextResponse.json({ error: 'Assigned hashrate must be greater than 0.' }, { status: 400 })
-      }
+      const assignedHashrate = readNumberField(body, 'assignedHashrate', { required: true, min: 0.0001 })!
+      const counterSpeed = readNumberField(body, 'counterSpeed', { required: true, min: 0.0001, max: 0.01 })!
+      const miningPool = readStringField(body, 'miningPool', { maxLength: 50 })
+      const dataCenterLocation = readStringField(body, 'dataCenterLocation', { maxLength: 100 })
 
       if (maxHashrate !== null && assignedHashrate > maxHashrate) {
         return NextResponse.json(
           { error: `Assigned hashrate cannot exceed plan max (${maxHashrate}).` },
-          { status: 400 }
-        )
-      }
-
-      if (!Number.isFinite(counterSpeed) || counterSpeed < 0.0001 || counterSpeed > 0.01) {
-        return NextResponse.json(
-          { error: 'Counter speed must be between 0.0001 and 0.01.' },
           { status: 400 }
         )
       }
@@ -112,11 +105,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         'Germany (Grid)',
       ]
 
-      if (body.miningPool && !allowedPools.includes(body.miningPool)) {
+      if (miningPool && !allowedPools.includes(miningPool)) {
         return NextResponse.json({ error: 'Invalid mining pool selection.' }, { status: 400 })
       }
 
-      if (body.dataCenterLocation && !allowedLocations.includes(body.dataCenterLocation)) {
+      if (dataCenterLocation && !allowedLocations.includes(dataCenterLocation)) {
         return NextResponse.json({ error: 'Invalid data center location selection.' }, { status: 400 })
       }
 
@@ -125,8 +118,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         data: {
           assignedHashrate,
           counterSpeed,
-          miningPool: typeof body.miningPool === 'string' ? body.miningPool : undefined,
-          dataCenterLocation: typeof body.dataCenterLocation === 'string' ? body.dataCenterLocation : undefined,
+          miningPool: miningPool || undefined,
+          dataCenterLocation: dataCenterLocation || undefined,
         },
       })
 
@@ -152,10 +145,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         return NextResponse.json({ error: 'Mining stats not found' }, { status: 404 })
       }
 
+      const isActive = readBooleanField(body, 'isActive', { required: true })!
+
       await prisma.miningStats.update({
         where: { id: activeMining.id },
         data: {
-          isActive: Boolean(body.isActive),
+          isActive,
         },
       })
 
@@ -164,7 +159,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           actorAdminId: adminUser.id,
           targetUserId: userId,
           action: 'toggleMining',
-          detail: `Mining ${body.isActive ? 'resumed' : 'paused'}.`,
+          detail: `Mining ${isActive ? 'resumed' : 'paused'}.`,
         },
       })
 
@@ -172,10 +167,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     if (action === 'updateEarnings') {
-      const earningsId = Number(body.earningsId)
-      if (Number.isNaN(earningsId)) {
-        return NextResponse.json({ error: 'Invalid earnings id' }, { status: 400 })
-      }
+      const earningsId = readNumberField(body, 'earningsId', { required: true, integer: true, min: 1 })!
+      const dailyEstimateUsd = readNumberField(body, 'dailyEstimateUsd', { required: true, min: 0 })!
+      const dailyEstimateCrypto = readNumberField(body, 'dailyEstimateCrypto', { required: true, min: 0 })!
+      const totalEarnedUsd = readNumberField(body, 'totalEarnedUsd', { required: true, min: 0 })!
+      const totalEarnedCrypto = readNumberField(body, 'totalEarnedCrypto', { required: true, min: 0 })!
 
       const earningsRecord = await prisma.earnings.findFirst({
         where: { id: earningsId, userId },
@@ -188,15 +184,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       await prisma.earnings.update({
         where: { id: earningsRecord.id },
         data: {
-          dailyEstimateUsd: body.dailyEstimateUsd,
-          dailyEstimateCrypto: body.dailyEstimateCrypto,
-          totalEarnedUsd: body.totalEarnedUsd,
-          totalEarnedCrypto: body.totalEarnedCrypto,
+          dailyEstimateUsd,
+          dailyEstimateCrypto,
+          totalEarnedUsd,
+          totalEarnedCrypto,
           isAdminOverride:
-            Number(body.dailyEstimateUsd || 0) > 0 ||
-            Number(body.dailyEstimateCrypto || 0) > 0 ||
-            Number(body.totalEarnedUsd || 0) > 0 ||
-            Number(body.totalEarnedCrypto || 0) > 0,
+            dailyEstimateUsd > 0 ||
+            dailyEstimateCrypto > 0 ||
+            totalEarnedUsd > 0 ||
+            totalEarnedCrypto > 0,
           lastEstimateUpdateAt: null,
           lastUsdUpdateAt: null,
         },
@@ -224,19 +220,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         return NextResponse.json({ error: 'Trading stats not found' }, { status: 404 })
       }
 
-      const botSpeed = Number(body.botSpeed)
-      if (!Number.isFinite(botSpeed) || botSpeed < 0.5 || botSpeed > 2.5) {
-        return NextResponse.json({ error: 'Portfolio cadence must be between 0.5x and 2.5x.' }, { status: 400 })
-      }
+      const botSpeed = readNumberField(body, 'botSpeed', { required: true, min: 0.5, max: 2.5 })!
+      const strategy = readStringField(body, 'strategy', { required: true, maxLength: 60 })!
+      const riskLevel = readStringField(body, 'riskLevel', { required: true, maxLength: 30 })!
 
       const allowedStrategies = ['Portfolio Balance', 'Macro Rotation', 'Yield Capture', 'Risk Parity', 'Momentum Blend']
       const allowedRisk = ['conservative', 'balanced', 'growth', 'aggressive']
 
-      if (body.strategy && !allowedStrategies.includes(body.strategy)) {
+      if (!allowedStrategies.includes(strategy)) {
         return NextResponse.json({ error: 'Invalid strategy selection.' }, { status: 400 })
       }
 
-      if (body.riskLevel && !allowedRisk.includes(body.riskLevel)) {
+      if (!allowedRisk.includes(riskLevel)) {
         return NextResponse.json({ error: 'Invalid risk level selection.' }, { status: 400 })
       }
 
@@ -244,8 +239,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         where: { id: activeTrading.id },
         data: {
           botSpeed,
-          strategy: body.strategy,
-          riskLevel: body.riskLevel,
+          strategy,
+          riskLevel,
         },
       })
 
@@ -254,7 +249,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           actorAdminId: adminUser.id,
           targetUserId: userId,
           action: 'updateTrading',
-          detail: `Portfolio cadence ${botSpeed}x, strategy ${body.strategy}, risk ${body.riskLevel}.`,
+          detail: `Portfolio cadence ${botSpeed}x, strategy ${strategy}, risk ${riskLevel}.`,
         },
       })
 
@@ -271,9 +266,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         return NextResponse.json({ error: 'Trading stats not found' }, { status: 404 })
       }
 
+      const isActive = readBooleanField(body, 'isActive', { required: true })!
+
       await prisma.tradingStat.update({
         where: { id: activeTrading.id },
-        data: { isActive: Boolean(body.isActive) },
+        data: { isActive },
       })
 
       await prisma.adminActivityLog.create({
@@ -281,7 +278,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           actorAdminId: adminUser.id,
           targetUserId: userId,
           action: 'toggleTrading',
-          detail: `Trading ${body.isActive ? 'resumed' : 'paused'}.`,
+          detail: `Trading ${isActive ? 'resumed' : 'paused'}.`,
         },
       })
 
@@ -289,10 +286,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     if (action === 'updateTradingEarnings') {
-      const earningsId = Number(body.earningsId)
-      if (Number.isNaN(earningsId)) {
-        return NextResponse.json({ error: 'Invalid earnings id' }, { status: 400 })
-      }
+      const earningsId = readNumberField(body, 'earningsId', { required: true, integer: true, min: 1 })!
+      const dailyEstimateUsd = readNumberField(body, 'dailyEstimateUsd', { required: true, min: 0 })!
+      const totalEarnedUsd = readNumberField(body, 'totalEarnedUsd', { required: true, min: 0 })!
 
       const tradingEarning = await prisma.tradingEarning.findFirst({
         where: { id: earningsId, userId },
@@ -305,9 +301,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       await prisma.tradingEarning.update({
         where: { id: tradingEarning.id },
         data: {
-          dailyEstimateUsd: body.dailyEstimateUsd,
-          totalEarnedUsd: body.totalEarnedUsd,
-          isAdminOverride: Number(body.dailyEstimateUsd || 0) > 0 || Number(body.totalEarnedUsd || 0) > 0,
+          dailyEstimateUsd,
+          totalEarnedUsd,
+          isAdminOverride: dailyEstimateUsd > 0 || totalEarnedUsd > 0,
           lastCalculatedAt: null,
         },
       })
@@ -325,10 +321,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     if (action === 'unlockHistorical') {
-      const earningsId = Number(body.earningsId)
-      if (Number.isNaN(earningsId)) {
-        return NextResponse.json({ error: 'Invalid earnings id' }, { status: 400 })
-      }
+      const earningsId = readNumberField(body, 'earningsId', { required: true, integer: true, min: 1 })!
 
       const earningsRecord = await prisma.earnings.findFirst({
         where: { id: earningsId, userId },
@@ -364,11 +357,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     if (action === 'updateUser') {
+      const role = readStringField(body, 'role', { required: true, enumValues: ['user', 'admin'] })!
+      const accountStatus = readStringField(body, 'accountStatus', {
+        required: true,
+        enumValues: ['inactive', 'pending', 'active', 'suspended'],
+      })!
+
       await prisma.user.update({
         where: { id: userId },
         data: {
-          role: body.role ?? undefined,
-          accountStatus: body.accountStatus ?? undefined,
+          role,
+          accountStatus,
         },
       })
 
@@ -377,7 +376,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           actorAdminId: adminUser.id,
           targetUserId: userId,
           action: 'updateUser',
-          detail: `Role: ${body.role ?? 'unchanged'}, Status: ${body.accountStatus ?? 'unchanged'}.`,
+          detail: `Role: ${role}, Status: ${accountStatus}.`,
         },
       })
 
