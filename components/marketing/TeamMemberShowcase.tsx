@@ -147,6 +147,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Mr. Ishida received a Bachelors degree, summa cum laude, from the Dyson School of Applied Economics and Management at Cornell University.',
     ],
   },
+  {
+    id: 'jake-lynch',
+    name: 'Jake Lynch',
+    role: 'Senior Vice President of Strategic Operations',
+    image: '/images/team/jake-lynch.jpg',
+    bio: [
+      'Mr. Lynch is a Senior Vice President of Strategic Operations at Trinity Investments.',
+      'He is responsible for providing asset management services to Trinity investments with a focus on value creation.',
+      'Prior to joining Trinity, Mr. Lynch worked at BRE Hotels and Resorts, Marriott International, and Starwood Hotels and Resorts.',
+      'Mr. Lynch received a Bachelor of Arts in Hotel Management from Royal Roads University in Victoria, Canada, and a Master of Management degree from the School of Hotel Administration at Cornell University, with a minor in real estate.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
