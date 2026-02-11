@@ -380,6 +380,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Mr. Lindsay received a Bachelor of Science degree with Honors in International Hospitality Management from EHL Hospitality Business School in Switzerland, with a concentration in real estate.',
     ],
   },
+  {
+    id: 'kaylee-miki',
+    name: 'Kaylee Miki',
+    role: 'Associate',
+    image: '/images/team/kaylee-miki.jpg',
+    bio: [
+      'Ms. Miki is an Associate at Trinity Investments.',
+      'She focuses on Trinity asset and portfolio management.',
+      'Prior to joining Trinity, Ms. Miki worked for Kamehameha Schools.',
+      'Ms. Miki received a Bachelor of Business Administration in Finance and International Business from the University of Hawaii at Manoa.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
