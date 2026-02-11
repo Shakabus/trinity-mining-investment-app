@@ -24,6 +24,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'He is a board member of the Hawaii Business Roundtable, the Hawaii Chapter of The Nature Conservancy, and an active member of the Young Presidents Organization.',
     ],
   },
+  {
+    id: 'greg-dickhens',
+    name: 'Greg Dickhens',
+    role: 'Principal & Managing Partner',
+    image: '/images/team/greg-dickhens.jpg',
+    bio: [
+      'Mr. Dickhens is a Principal and Managing Partner of Trinity Investments.',
+      'He is responsible for overseeing and managing Trinity investment strategies.',
+      'Prior to joining Trinity, Mr. Dickhens served on the Board of Directors of Seibu Properties and Kyo-ya Pacific Company, and worked for Prince Resorts Hawaii, Kyo-ya Company LLC, Vail Resorts Development Company, Hilton Hotels Corporation, and Marriott International.',
+      'Mr. Dickhens received a Bachelor of Science degree in Hotel Administration from Cornell University and a Master of Business Administration, with Honors, from the Anderson School of Business at UCLA.',
+      'He is a member of the Young Presidents Organization and serves on the Board of Trustees of Punahou School.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
