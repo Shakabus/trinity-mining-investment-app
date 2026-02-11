@@ -318,6 +318,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Mr. Hobbs received a Bachelor of Arts degree in English from Dartmouth College, with a minor in Markets, Management, and the Economy.',
     ],
   },
+  {
+    id: 'brittney-lewin',
+    name: 'Brittney Lewin',
+    role: 'Director of Strategic Operations',
+    image: '/images/team/brittney-lewin.jpg',
+    bio: [
+      'Ms. Lewin is a Director of Strategic Operations at Trinity Investments.',
+      'She is responsible for providing asset management services for Trinity existing portfolio.',
+      'Prior to joining Trinity, Ms. Lewin worked for L+R Hotels and Crescent Hotels and Resorts.',
+      'Ms. Lewin received a Bachelor of Science degree in Hotel Administration from Cornell University, with a minor in real estate.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
