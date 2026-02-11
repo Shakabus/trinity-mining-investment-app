@@ -26,10 +26,6 @@ export function SiteThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<SiteTheme>(getInitialTheme)
 
   useEffect(() => {
-    setThemeState(getInitialTheme())
-  }, [])
-
-  useEffect(() => {
     document.documentElement.dataset.theme = theme
     window.localStorage.setItem(THEME_STORAGE_KEY, theme)
   }, [theme])
@@ -65,4 +61,3 @@ export function useSiteTheme() {
   }
   return context
 }
-
