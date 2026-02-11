@@ -418,6 +418,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is a Certified Public Accountant.',
     ],
   },
+  {
+    id: 'courtney-yang',
+    name: 'Courtney Yang',
+    role: 'Fund Controller',
+    image: '/images/team/courtney-yang.jpg',
+    bio: [
+      'Ms. Yang is a Fund Controller at Trinity Investments.',
+      'She is responsible for overseeing the accounting operations of investment funds.',
+      'Prior to joining Trinity, Ms. Yang worked for Deloitte and Touche LLP.',
+      'Ms. Yang received a Bachelor of Science degree in Accounting from Santa Clara University.',
+      'She is a Certified Public Accountant.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
