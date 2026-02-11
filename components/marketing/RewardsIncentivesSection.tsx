@@ -1,6 +1,6 @@
 'use client'
 
-import { createElement, useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styles from '@/components/marketing/RewardsIncentivesSection.module.css'
 
 type RewardKey = 'mining' | 'loyalty' | 'referral'
@@ -10,7 +10,7 @@ type RewardItem = {
   title: string
   subtitle: string
   description: string
-  lottieUrl: string
+  animationPath: string
 }
 
 const REWARD_ITEMS: RewardItem[] = [
@@ -20,7 +20,7 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Rewards based on real network output',
     description:
       'Trinity in One distributes mining rewards from active hash allocations and live network conditions. Payout values reflect hashrate, difficulty movement, and uptime instead of fixed promises.',
-    lottieUrl: 'https://lottie.host/84206bae-69a7-46fb-9d0e-364385cecea9/sOei6HhFFJ.lottie',
+    animationPath: '/lottie/Cryptocurrency.json',
   },
   {
     key: 'loyalty',
@@ -28,7 +28,7 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Added value for consistent participation',
     description:
       'Accounts that stay active across cycles may unlock reduced operational friction, earlier access to plan windows, and periodic loyalty incentives tied to platform activity and compliance.',
-    lottieUrl: 'https://lottie.host/7a282bbb-33e7-4e2f-9b6c-e6e300db401d/anmxJQX1Ae.lottie',
+    animationPath: '/lottie/Crypto%20Wallet.json',
   },
   {
     key: 'referral',
@@ -36,32 +36,65 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Earn by introducing quality users',
     description:
       'Referral rewards are triggered when invited users activate qualifying plans. Credits are capped, auditable, and designed to complement real mining and trading activity inside the dashboard.',
-    lottieUrl: 'https://lottie.host/11dad5d5-fa1d-431a-9254-f6e712c6d4dc/bF2Hcu7i3h.lottie',
+    animationPath: '/lottie/crypto%20bitcoin.json',
   },
 ]
 
-function DotLottiePlayer({ src }: { src: string }) {
-  return createElement('dotlottie-wc', {
-    src,
-    autoplay: true,
-    loop: true,
-    style: { width: '100%', height: '100%' },
-  } as Record<string, unknown>)
+function LottiePlayer({ path }: { path: string }) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    let animation: { destroy: () => void } | null = null
+
+    const initAnimation = () => {
+      const lottieLib = (window as Window & { lottie?: any }).lottie
+      if (!containerRef.current || !lottieLib || cancelled) return
+
+      animation = lottieLib.loadAnimation({
+        container: containerRef.current,
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path,
+      })
+    }
+
+    const existingLottie = (window as Window & { lottie?: any }).lottie
+    if (existingLottie) {
+      initAnimation()
+    } else {
+      const existingScript = document.querySelector('script[data-lottie-web-global]')
+      if (!existingScript) {
+        const script = document.createElement('script')
+        script.src = 'https://unpkg.com/lottie-web@5.12.2/build/player/lottie.min.js'
+        script.async = true
+        script.setAttribute('data-lottie-web-global', 'true')
+        script.onload = initAnimation
+        script.onerror = () => {
+          const fallback = document.createElement('script')
+          fallback.src = 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js'
+          fallback.async = true
+          fallback.onload = initAnimation
+          document.head.appendChild(fallback)
+        }
+        document.head.appendChild(script)
+      } else {
+        existingScript.addEventListener('load', initAnimation, { once: true })
+      }
+    }
+
+    return () => {
+      cancelled = true
+      if (animation) animation.destroy()
+    }
+  }, [path])
+
+  return <div ref={containerRef} className={styles.player} aria-hidden="true" />
 }
 
 export default function RewardsIncentivesSection() {
   const [activeKey, setActiveKey] = useState<RewardKey>('mining')
-
-  useEffect(() => {
-    const existing = document.querySelector('script[data-dotlottie-wc]')
-    if (existing) return
-
-    const script = document.createElement('script')
-    script.type = 'module'
-    script.src = 'https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.11/dist/dotlottie-wc.js'
-    script.setAttribute('data-dotlottie-wc', 'true')
-    document.head.appendChild(script)
-  }, [])
 
   return (
     <section id="incentives" className={styles.section}>
@@ -89,7 +122,7 @@ export default function RewardsIncentivesSection() {
                 <p className={styles.rewardDescription}>{item.description}</p>
 
                 <div className={`${styles.mobileLottie} ${isActive ? styles.show : ''}`}>
-                  <DotLottiePlayer src={item.lottieUrl} />
+                  <LottiePlayer path={item.animationPath} />
                 </div>
               </article>
             )
@@ -104,7 +137,7 @@ export default function RewardsIncentivesSection() {
                 activeKey === item.key ? styles.active : ''
               }`}
             >
-              <DotLottiePlayer src={item.lottieUrl} />
+              <LottiePlayer path={item.animationPath} />
             </div>
           ))}
         </div>
