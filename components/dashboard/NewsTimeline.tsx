@@ -1,18 +1,16 @@
 'use client'
 
 import { memo, useEffect, useRef } from 'react'
+import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 function NewsTimeline() {
   const hostRef = useRef<HTMLDivElement>(null)
+  const { theme } = useSiteTheme()
+  const widgetTheme = theme === 'light' ? 'light' : 'dark'
 
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
-
-    // Prevent duplicate injection
-    if (host.querySelector('iframe') || host.querySelector('script[src*="embed-widget-timeline"]')) {
-      return
-    }
 
     // Hard reset before embed
     host.innerHTML = ''
@@ -24,7 +22,7 @@ function NewsTimeline() {
     script.innerHTML = JSON.stringify({
       feedMode: 'market',
       market: 'crypto',
-      colorTheme: 'dark',
+      colorTheme: widgetTheme,
       isTransparent: true,
       displayMode: 'regular',
       width: '100%',
@@ -35,10 +33,9 @@ function NewsTimeline() {
     host.appendChild(script)
 
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      if (hostRef.current) hostRef.current.innerHTML = ''
+      host.innerHTML = ''
     }
-  }, [])
+  }, [widgetTheme])
 
   return (
     <div

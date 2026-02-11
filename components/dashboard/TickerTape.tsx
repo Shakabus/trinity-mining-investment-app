@@ -1,21 +1,16 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 export default function TickerTape() {
   const hostRef = useRef<HTMLDivElement>(null)
+  const { theme } = useSiteTheme()
+  const widgetTheme = theme === 'light' ? 'light' : 'dark'
 
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
-
-    // Prevent duplicate injection (dev / StrictMode)
-    if (
-      host.querySelector('iframe') ||
-      host.querySelector('script[src*="embed-widget-ticker-tape"]')
-    ) {
-      return
-    }
 
     host.innerHTML = ''
 
@@ -32,7 +27,7 @@ export default function TickerTape() {
         { proName: 'BINANCE:SOLUSDT', title: 'Solana' },
       ],
       showSymbolLogo: true,
-      colorTheme: 'dark',
+      colorTheme: widgetTheme,
       isTransparent: true,
       displayMode: 'adaptive',
       locale: 'en',
@@ -41,9 +36,9 @@ export default function TickerTape() {
     host.appendChild(script)
 
     return () => {
-      if (hostRef.current) hostRef.current.innerHTML = ''
+      host.innerHTML = ''
     }
-  }, [])
+  }, [widgetTheme])
 
   return (
     <div

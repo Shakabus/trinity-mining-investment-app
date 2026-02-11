@@ -1,12 +1,17 @@
  'use client'
 
  import React, { memo, useEffect, useRef } from 'react'
+ import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
  function TradingViewWidget() {
    const containerRef = useRef<HTMLDivElement | null>(null)
+   const { theme } = useSiteTheme()
+   const widgetTheme = theme === 'light' ? 'light' : 'dark'
 
    useEffect(() => {
      if (!containerRef.current) return
+     const host = containerRef.current
+     host.innerHTML = ''
 
      const script = document.createElement('script')
      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-quotes.js'
@@ -14,12 +19,12 @@
      script.async = true
      script.innerHTML = `
        {
-         "colorTheme": "dark",
+         "colorTheme": "${widgetTheme}",
          "locale": "en",
          "largeChartUrl": "",
          "isTransparent": true,
          "showSymbolLogo": true,
-         "backgroundColor": "#0F0F0F",
+         "backgroundColor": "${widgetTheme === 'light' ? '#FFFFFF' : '#0F0F0F'}",
          "support_host": "https://www.tradingview.com",
          "width": "100%",
          "height": "900",
@@ -61,14 +66,12 @@
          ]
        }`
 
-     containerRef.current.appendChild(script)
+     host.appendChild(script)
 
      return () => {
-       if (containerRef.current) {
-         containerRef.current.innerHTML = ''
-       }
+       host.innerHTML = ''
      }
-   }, [])
+   }, [widgetTheme])
 
   return (
     <div
