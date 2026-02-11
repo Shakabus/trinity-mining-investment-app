@@ -135,6 +135,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Mr. DiCello received a Bachelor of Science degree in Accounting from The University of Indiana of Pennsylvania.',
     ],
   },
+  {
+    id: 'harrison-ishida',
+    name: "Harrison 'Jeeter' Ishida",
+    role: 'Senior Vice President of Acquisitions',
+    image: '/images/team/harrison-ishida.jpg',
+    bio: [
+      'Mr. Ishida is a Senior Vice President of Acquisitions at Trinity Investments.',
+      'He is responsible for sourcing, underwriting, and execution of Trinity investment activities.',
+      'Prior to joining Trinity, Mr. Ishida worked for Jones Lang LaSalle Hotel and Hospitality Group and GCA Savvian Advisors.',
+      'Mr. Ishida received a Bachelors degree, summa cum laude, from the Dyson School of Applied Economics and Management at Cornell University.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
