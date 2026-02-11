@@ -42,8 +42,8 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
 
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="text-base sm:text-lg md:text-xl font-semibold text-white leading-tight whitespace-nowrap">
-              Trinity in One
+            <div className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-tight whitespace-nowrap">
+              Trinity
             </div>
           </Link>
         </div>
