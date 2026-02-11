@@ -8,6 +8,7 @@ import TradingOnboardingSnake from '@/components/marketing/TradingOnboardingSnak
 import FeaturesOrbitSection from '@/components/marketing/FeaturesOrbitSection'
 import RewardsIncentivesSection from '@/components/marketing/RewardsIncentivesSection'
 import OrderPayoutList from '@/components/marketing/OrderPayoutList'
+import HomeRealEstateIntroSection from '@/components/marketing/HomeRealEstateIntroSection'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import Link from 'next/link'
 
@@ -110,6 +111,8 @@ export default function HomePage() {
           variant="trading"
           title="Trading Investment Order & Payout List"
         />
+
+        <HomeRealEstateIntroSection />
 
         <section className="mt-20 space-y-10 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-white/60">
