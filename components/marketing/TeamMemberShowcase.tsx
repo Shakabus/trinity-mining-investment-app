@@ -281,6 +281,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is fluent in Mandarin.',
     ],
   },
+  {
+    id: 'liane-fujii',
+    name: 'Liane Fujii',
+    role: 'Director of Finance - Development',
+    image: '/images/team/liane-fujii.jpg',
+    bio: [
+      'Ms. Fujii is a Director of Finance - Development at Trinity Investments.',
+      'She is responsible for overseeing development financial operations for capital plans across various assets.',
+      'Prior to joining Trinity Investments, Ms. Fujii worked for Rider Levett Bucknall and Kiewit Building Group.',
+      'Ms. Fujii received a Bachelor of Science degree in Civil Engineering from the University of Washington.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
