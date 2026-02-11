@@ -63,6 +63,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'He is a Cornell Tradition Fellow, a past member of the Cornell University Council, a former chair of the Deans Council of Young Alumni for the Cornell Hotel School, and a Pacific Century Fellow.',
     ],
   },
+  {
+    id: 'joanne-halligan',
+    name: 'JoAnne Halligan',
+    role: 'Chief Financial Officer',
+    image: '/images/team/joanne-halligan.jpg',
+    bio: [
+      'Ms. Halligan is the Chief Financial Officer at Trinity Investments.',
+      'She is responsible for overseeing the firm financial management, accounting operations, and strategic financial planning.',
+      'She also leads initiatives to enhance operational efficiency and support the firm growth and investment objectives.',
+      'Prior to joining Trinity, Ms. Halligan worked for Oaktree Capital Management and KPMG LLP.',
+      'Ms. Halligan received a Bachelor of Arts degree in Business Economics with an emphasis in Accounting from the University of California, Santa Barbara.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
