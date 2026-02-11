@@ -97,24 +97,15 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
               appearance={{
                 elements: {
                   avatarBox: 'w-8 h-8 md:w-10 md:h-10',
-                  userButtonPopoverCard: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                  },
-                  userButtonPopoverActionButton: {
-                    color: '#1f2937',
-                  },
-                  userButtonPopoverActionButtonText: {
-                    color: '#1f2937',
-                  },
-                  userButtonPopoverActionButtonIcon: {
-                    color: '#6b7280',
-                  },
-                  userButtonPopoverFooter: {
-                    display: 'none',
-                  },
+                  userButtonPopoverCard:
+                    'bg-white text-gray-900 border border-gray-200 shadow-2xl backdrop-blur-none',
+                  userButtonPopoverMain: 'bg-white',
+                  userButtonPopoverActionButton: 'text-gray-800 hover:bg-gray-100',
+                  userButtonPopoverActionButtonText: 'text-gray-800',
+                  userButtonPopoverActionButtonIcon: 'text-gray-500',
+                  userButtonPopoverUserPreviewMainIdentifier: 'text-gray-900',
+                  userButtonPopoverUserPreviewSecondaryIdentifier: 'text-gray-600',
+                  userButtonPopoverFooter: 'hidden',
                 },
               }}
             />
