@@ -207,6 +207,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Connelly received a Bachelor of Science in Finance from Georgetown University and a Master of Science in Real Estate Development from Columbia University.',
     ],
   },
+  {
+    id: 'andrea-hendrick',
+    name: 'Andrea Hendrick',
+    role: 'Vice President of Finance',
+    image: '/images/team/andrea-hendrick.jpg',
+    bio: [
+      'Ms. Hendrick is a Vice President of Finance at Trinity Investments.',
+      'She is responsible for financial operations and management of Trinity European investments and partnerships.',
+      'Prior to joining Trinity Investments, Ms. Hendrick worked for Oaktree Capital Management (UK) LLP and H.I.G. Capital.',
+      'Ms. Hendrick received a Bachelor of Arts (Honours) in Accounting from the National College of Ireland and is a member of the Association of Chartered Certified Accountants.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
