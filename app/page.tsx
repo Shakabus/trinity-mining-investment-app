@@ -10,6 +10,7 @@ import RewardsIncentivesSection from '@/components/marketing/RewardsIncentivesSe
 import OrderPayoutList from '@/components/marketing/OrderPayoutList'
 import HomeRealEstateIntroSection from '@/components/marketing/HomeRealEstateIntroSection'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 import Link from 'next/link'
 
 export default function HomePage() {
@@ -18,6 +19,9 @@ export default function HomePage() {
       <div className="marketing-page-content">
         <div className="mx-auto w-full max-w-6xl px-6 pt-6">
           <BitryxHeader />
+          <div className="mt-3 flex justify-end">
+            <ThemeToggle compact />
+          </div>
         </div>
 
         <main className="mx-auto w-full max-w-6xl px-6 pb-12 pt-28">

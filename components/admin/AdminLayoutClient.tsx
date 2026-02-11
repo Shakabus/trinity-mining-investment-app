@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
 import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, Building2, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 const menuItems = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
@@ -71,13 +72,15 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               </Link>
             </div>
 
-            <div className="flex items-center gap-3 md:gap-6">
-              <div className="hidden md:block text-right">
-                <div className="text-sm font-medium text-white">{user.fullName || 'Admin'}</div>
-                <div className="text-xs text-white/60">{user.email}</div>
-              </div>
+	            <div className="flex items-center gap-3 md:gap-6">
+	              <div className="hidden md:block text-right">
+	                <div className="text-sm font-medium text-white">{user.fullName || 'Admin'}</div>
+	                <div className="text-xs text-white/60">{user.email}</div>
+	              </div>
 
-              <UserButton
+	              <ThemeToggle compact />
+
+	              <UserButton
                 appearance={{
                   elements: {
                     avatarBox: 'w-8 h-8 md:w-10 md:h-10',

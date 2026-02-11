@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Menu } from 'lucide-react'
 import { useState } from 'react'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 interface DashboardNavProps {
   user: {
@@ -91,9 +92,10 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
             </div>
           </div>
 
-          {/* Clerk User Button */}
-          {isMounted ? (
-            <UserButton
+	          {/* Clerk User Button */}
+	          <ThemeToggle compact />
+	          {isMounted ? (
+	            <UserButton
               appearance={{
                 elements: {
                   avatarBox: 'w-8 h-8 md:w-10 md:h-10',
