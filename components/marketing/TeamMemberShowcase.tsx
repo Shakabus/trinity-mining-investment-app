@@ -244,6 +244,17 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Lam received a Bachelor of Property Economics (Honours) from the University of Technology Sydney.',
     ],
   },
+  {
+    id: 'sean-mcnaboe',
+    name: 'Sean McNaboe',
+    role: 'Vice President of Development',
+    image: '/images/team/sean-mcnaboe.jpg',
+    bio: [
+      'Mr. McNaboe is a Vice President of Development at Trinity Investments.',
+      'He is responsible for the design, construction, and development of Trinity assets on the East Coast.',
+      'Prior to joining Trinity, Mr. McNaboe worked for Sunstone Hotel Investors.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
