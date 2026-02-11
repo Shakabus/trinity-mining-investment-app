@@ -195,6 +195,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Banks received a Bachelor of Science degree in Hotel Administration from Cornell University, with a minor in real estate.',
     ],
   },
+  {
+    id: 'kelly-connelly',
+    name: 'Kelly Connelly',
+    role: 'Vice President of Strategic Operations',
+    image: '/images/team/kelly-connelly.jpg',
+    bio: [
+      'Ms. Connelly is a Vice President of Strategic Operations at Trinity Investments.',
+      'She is responsible for asset management and investment services across the portfolio.',
+      'Prior to joining Trinity, Ms. Connelly worked for Henderson Park Capital, Dwight Capital, and JPMorgan Chase.',
+      'Ms. Connelly received a Bachelor of Science in Finance from Georgetown University and a Master of Science in Real Estate Development from Columbia University.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
