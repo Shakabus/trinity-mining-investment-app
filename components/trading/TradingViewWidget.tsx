@@ -1,12 +1,9 @@
  'use client'
 
  import React, { memo, useEffect, useRef } from 'react'
- import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
  function TradingViewWidget() {
    const containerRef = useRef<HTMLDivElement | null>(null)
-   const { theme } = useSiteTheme()
-   const widgetTheme = theme === 'light' ? 'light' : 'dark'
 
    useEffect(() => {
      if (!containerRef.current) return
@@ -19,12 +16,12 @@
      script.async = true
      script.innerHTML = `
        {
-         "colorTheme": "${widgetTheme}",
+         "colorTheme": "dark",
          "locale": "en",
          "largeChartUrl": "",
          "isTransparent": true,
          "showSymbolLogo": true,
-         "backgroundColor": "${widgetTheme === 'light' ? '#FFFFFF' : '#0F0F0F'}",
+         "backgroundColor": "#0F0F0F",
          "support_host": "https://www.tradingview.com",
          "width": "100%",
          "height": "900",
@@ -71,7 +68,7 @@
      return () => {
        host.innerHTML = ''
      }
-   }, [widgetTheme])
+   }, [])
 
   return (
     <div

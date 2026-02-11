@@ -1,12 +1,9 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 export default function TickerTape() {
   const hostRef = useRef<HTMLDivElement>(null)
-  const { theme } = useSiteTheme()
-  const widgetTheme = theme === 'light' ? 'light' : 'dark'
 
   useEffect(() => {
     const host = hostRef.current
@@ -27,7 +24,7 @@ export default function TickerTape() {
         { proName: 'BINANCE:SOLUSDT', title: 'Solana' },
       ],
       showSymbolLogo: true,
-      colorTheme: widgetTheme,
+      colorTheme: 'dark',
       isTransparent: true,
       displayMode: 'adaptive',
       locale: 'en',
@@ -38,7 +35,7 @@ export default function TickerTape() {
     return () => {
       host.innerHTML = ''
     }
-  }, [widgetTheme])
+  }, [])
 
   return (
     <div

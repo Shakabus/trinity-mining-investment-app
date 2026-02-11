@@ -1,12 +1,9 @@
 'use client'
 
 import { memo, useEffect, useRef } from 'react'
-import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 function NewsTimeline() {
   const hostRef = useRef<HTMLDivElement>(null)
-  const { theme } = useSiteTheme()
-  const widgetTheme = theme === 'light' ? 'light' : 'dark'
 
   useEffect(() => {
     const host = hostRef.current
@@ -22,7 +19,7 @@ function NewsTimeline() {
     script.innerHTML = JSON.stringify({
       feedMode: 'market',
       market: 'crypto',
-      colorTheme: widgetTheme,
+      colorTheme: 'dark',
       isTransparent: true,
       displayMode: 'regular',
       width: '100%',
@@ -35,7 +32,7 @@ function NewsTimeline() {
     return () => {
       host.innerHTML = ''
     }
-  }, [widgetTheme])
+  }, [])
 
   return (
     <div
