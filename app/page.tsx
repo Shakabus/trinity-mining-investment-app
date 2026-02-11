@@ -10,7 +10,6 @@ import RewardsIncentivesSection from '@/components/marketing/RewardsIncentivesSe
 import OrderPayoutList from '@/components/marketing/OrderPayoutList'
 import HomeRealEstateIntroSection from '@/components/marketing/HomeRealEstateIntroSection'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
-import ThemeToggle from '@/components/ui/ThemeToggle'
 import Link from 'next/link'
 
 export default function HomePage() {
@@ -22,9 +21,6 @@ export default function HomePage() {
         </div>
 
         <main className="mx-auto w-full max-w-6xl px-6 pb-12 pt-28">
-        <div className="relative z-20 mb-4 flex justify-end">
-          <ThemeToggle compact />
-        </div>
         <section className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/70">
             A Stable Trading Investment and Mining Platform
