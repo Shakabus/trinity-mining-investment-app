@@ -76,6 +76,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Halligan received a Bachelor of Arts degree in Business Economics with an emphasis in Accounting from the University of California, Santa Barbara.',
     ],
   },
+  {
+    id: 'jeffrey-barry',
+    name: 'Jeffrey Barry',
+    role: 'General Counsel & Chief Administrative Officer',
+    image: '/images/team/jeffrey-barry.jpg',
+    bio: [
+      'Mr. Barry is the General Counsel and Chief Administrative Officer of Trinity Investments.',
+      'He is responsible for management of Trinity legal and corporate governance, human resources, and IT functions.',
+      'Prior to joining Trinity, Mr. Barry worked for Schottenstein Stores Corporation and Goodwin Procter LLP.',
+      'Mr. Barry received a Bachelor of Science degree in Business Administration in Accounting from The Ohio State University, a Juris Doctor from Boston University School of Law, and a Master of Laws in Taxation from New York University School of Law.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
