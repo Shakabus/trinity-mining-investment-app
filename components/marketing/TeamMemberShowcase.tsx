@@ -111,6 +111,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Prior to joining Trinity, Mr. Lovett worked for Medland Metropolis Engineers, WSP, Prince Resorts Hawaii, and Starwood Hotels and Resorts.',
     ],
   },
+  {
+    id: 'stephany-chen',
+    name: 'Stephany Chen',
+    role: 'Senior Vice President of Investor Relations',
+    image: '/images/team/stephany-chen.jpg',
+    bio: [
+      'Ms. Chen is a Senior Vice President of Investor Relations at Trinity Investments.',
+      'She develops, manages, and oversees the firm investor relations strategy, serving as the primary contact between Trinity and its investment community.',
+      'Prior to joining Trinity Investments, Ms. Chen worked for JLL Hotels and Hospitality Group and Burba Hotel Network (BHN).',
+      'Ms. Chen graduated with a Bachelors degree from The School of Hospitality Business at Michigan State University, where she specialized in real estate.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
