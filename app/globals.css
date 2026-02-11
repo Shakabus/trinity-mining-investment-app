@@ -4,7 +4,6 @@
 :root {
   --background: #000000;
   --foreground: #e5e7eb;
-  --marketing-scroll-y: 0px;
 }
 
 @theme inline {
@@ -40,12 +39,13 @@ html[data-theme="dark"] {
 
 html[data-theme="light"] {
   color-scheme: light;
+  background: #f5f7fb !important;
+  filter: invert(1) hue-rotate(180deg);
 }
 
 html[data-theme="light"] body {
-  background: #f5f7fb !important;
+  background: transparent !important;
   color: #0f172a !important;
-  filter: invert(1) hue-rotate(180deg);
 }
 
 html[data-theme="light"] img,
@@ -416,11 +416,6 @@ a[aria-disabled="true"],
 .bitryx-header {
   position: fixed !important;
   top: calc(env(safe-area-inset-top) + 5px) !important;
-}
-
-/* Keep header visually fixed in light mode even with global inversion filter */
-html[data-theme="light"] .bitryx-header {
-  transform: translateY(var(--marketing-scroll-y));
 }
 
 .glass-panel {
