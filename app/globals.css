@@ -373,6 +373,14 @@ a[aria-disabled="true"],
   opacity: 1;
 }
 
+.bitryx-theme-toggle {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 78px);
+  right: clamp(12px, 2.6vw, 26px);
+  z-index: 1001;
+  pointer-events: auto;
+}
+
 .bitryx-header.active .bitryx-mobile-menu {
   pointer-events: auto;
   opacity: 1;
@@ -395,6 +403,11 @@ a[aria-disabled="true"],
 
   .bitryx-toggle {
     display: flex;
+  }
+
+  .bitryx-theme-toggle {
+    top: calc(env(safe-area-inset-top) + 74px);
+    right: 14px;
   }
 }
 

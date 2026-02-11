@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 const NAV_ITEMS = [
   { label: 'Features', href: '/features' },
@@ -60,6 +61,10 @@ export default function BitryxHeader() {
         >
           Login
         </Link>
+      </div>
+
+      <div className="bitryx-theme-toggle" aria-label="Theme mode toggle">
+        <ThemeToggle compact />
       </div>
     </header>
   )
