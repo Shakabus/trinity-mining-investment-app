@@ -219,6 +219,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Hendrick received a Bachelor of Arts (Honours) in Accounting from the National College of Ireland and is a member of the Association of Chartered Certified Accountants.',
     ],
   },
+  {
+    id: 'mai-kawashima',
+    name: 'Mai Kawashima',
+    role: 'Vice President of Acquisitions',
+    image: '/images/team/mai-kawashima.jpg',
+    bio: [
+      'Ms. Kawashima is a Vice President of Acquisitions at Trinity Investments.',
+      'She is responsible for sourcing, underwriting, and execution of Trinity investment activities across Europe.',
+      'Prior to joining Trinity, Ms. Kawashima worked for Savills Hotel Capital Markets, Jones Lang LaSalle Hotel and Hospitality Group, and Merrill Lynch Japan Securities.',
+      'Ms. Kawashima received a Bachelor degree from the School of International Liberal Studies at Waseda University, Tokyo.',
+      'She is fluent in Japanese, German, and English.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
