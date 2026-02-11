@@ -255,6 +255,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Prior to joining Trinity, Mr. McNaboe worked for Sunstone Hotel Investors.',
     ],
   },
+  {
+    id: 'hari-yoon',
+    name: 'Hari Yoon',
+    role: 'Vice President of Strategic Planning',
+    image: '/images/team/hari-yoon.jpg',
+    bio: [
+      'Ms. Yoon is a Vice President of Strategic Planning at Trinity Investments.',
+      'She is responsible for overseeing strategic asset management projects for Trinity growing portfolio, including planning and operations of food and beverage, retail, club, spa, and other value-add capital and operational initiatives.',
+      'Prior to joining Trinity, Ms. Yoon worked for Kimpton Hotels and Restaurants, HVS International, Starwood Hotels and Resorts, and Hillstone Restaurant Group.',
+      'Ms. Yoon received a Bachelor of Arts degree in Mass Communications and Political Science from the University of California, Berkeley, and a Masters degree from the School of Hotel Administration at Cornell University, where she specialized in hotel real estate finance.',
+      'She is fluent in Korean.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
