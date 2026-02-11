@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { unstable_noStore as noStore } from 'next/cache'
 import { REAL_ESTATE_PROPERTIES, type PropertyItem } from '@/lib/real-estate-property-catalog'
 
 function formatCurrency(value: number) {
@@ -42,6 +43,8 @@ function buildIllustrativeOutcome(
 }
 
 export async function getRealEstatePropertySpotlightItems(): Promise<PropertyItem[]> {
+  noStore()
+
   const properties = await prisma.realEstateProperty.findMany({
     where: { status: { not: 'archived' } },
     include: {

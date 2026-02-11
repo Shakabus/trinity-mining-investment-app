@@ -3,6 +3,8 @@ import MarketingFooter from '@/components/marketing/MarketingFooter'
 import RealEstatePropertySpotlight from '@/components/marketing/RealEstatePropertySpotlight'
 import { getRealEstatePropertySpotlightItems } from '@/lib/real-estate-property-spotlight'
 
+export const dynamic = 'force-dynamic'
+
 const PARTICIPATION_MODELS = [
   {
     title: 'Residential Income Access',

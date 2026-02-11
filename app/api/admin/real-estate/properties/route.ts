@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 
 type PropertyTierInput = {
@@ -210,6 +211,9 @@ export async function POST(req: Request) {
         },
       },
     })
+
+    revalidatePath('/real-estate-portfolio')
+    revalidatePath('/dashboard/real-estate')
 
     return NextResponse.json({ property }, { status: 201 })
   } catch (error) {

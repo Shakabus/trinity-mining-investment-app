@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
 
 type PropertyTierInput = {
@@ -204,6 +205,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       })
     })
 
+    revalidatePath('/real-estate-portfolio')
+    revalidatePath('/dashboard/real-estate')
+
     return NextResponse.json({ property })
   } catch (error) {
     console.error('PATCH real-estate property error:', error)
@@ -233,6 +237,10 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     }
 
     await prisma.realEstateProperty.delete({ where: { id: propertyId } })
+
+    revalidatePath('/real-estate-portfolio')
+    revalidatePath('/dashboard/real-estate')
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE real-estate property error:', error)
