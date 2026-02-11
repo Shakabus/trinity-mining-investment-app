@@ -37,6 +37,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'He is a member of the Young Presidents Organization and serves on the Board of Trustees of Punahou School.',
     ],
   },
+  {
+    id: 'lee-neibart',
+    name: 'Lee Neibart',
+    role: 'Chairman & Senior Partner',
+    image: '/images/team/lee-neibart.jpg',
+    bio: [
+      'Mr. Neibart is the Chairman and Senior Partner of Trinity Investments.',
+      'He is responsible for developing and advancing Trinity global investment strategies and fundraising efforts.',
+      'Prior to joining Trinity, Mr. Neibart worked for Ares Management LLC Real Estate Group, Apollo Real Estate Advisors, NRDC Equity Partners, and Robert Martin Company.',
+      'Mr. Neibart received a Bachelor of Arts degree from the University of Wisconsin and a Master of Business Administration from New York University.',
+      'He is a member of the Advisory Board of The Real Estate Institute of New York University.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
