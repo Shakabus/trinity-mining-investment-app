@@ -72,7 +72,7 @@
 
   return (
     <div
-      className="tradingview-widget-container h-[780px] md:h-[920px] w-full"
+      className="tradingview-widget-container h-[780px] md:h-[920px] w-full no-theme-invert"
       ref={containerRef}
     >
       <div className="tradingview-widget-container__widget h-full w-full"></div>
