@@ -20,7 +20,7 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Rewards based on real network output',
     description:
       'Trinity in One distributes mining rewards from active hash allocations and live network conditions. Payout values reflect hashrate, difficulty movement, and uptime instead of fixed promises.',
-    animationPath: '/lottie/rewards/mining-payouts.json',
+    animationPath: '/lottie/Bitcoin%20Cryptocurrency%20city.json',
   },
   {
     key: 'loyalty',
