@@ -171,6 +171,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Sugarman received a Bachelor of Science degree in Hotel Administration from Cornell University, with a minor in Latin American Studies.',
     ],
   },
+  {
+    id: 'elia-antonioudaki',
+    name: 'Elia Antonioudaki',
+    role: 'Vice President of Development',
+    image: '/images/team/elia-antonioudaki.jpg',
+    bio: [
+      'Ms. Antonioudaki is a Vice President of Development at Trinity Investments.',
+      'She is responsible for Trinity design, construction, and development activities across Europe.',
+      'Prior to joining Trinity Investments, Ms. Antonioudaki worked for London and Regional Hotels and Hilton Worldwide.',
+      'Ms. Antonioudaki holds a Master of Science in Advanced Architectural Design from Columbia University and a Master in Architecture from National Technical University of Athens.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
