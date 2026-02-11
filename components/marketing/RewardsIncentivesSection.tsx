@@ -66,18 +66,16 @@ function DotLottiePlayer({ src, ready }: { src: string; ready: boolean }) {
 
 export default function RewardsIncentivesSection() {
   const [activeKey, setActiveKey] = useState<RewardKey>('mining')
-  const [isPlayerReady, setIsPlayerReady] = useState(false)
+  const [isPlayerReady, setIsPlayerReady] = useState(() =>
+    typeof window !== 'undefined' ? Boolean(window.customElements?.get('dotlottie-wc')) : false,
+  )
 
   useEffect(() => {
+    if (isPlayerReady) return
+
     let cancelled = false
 
     const markReady = () => {
-      if (cancelled) return
-      if (window.customElements?.get('dotlottie-wc')) {
-        setIsPlayerReady(true)
-        return
-      }
-
       window.customElements
         ?.whenDefined('dotlottie-wc')
         .then(() => {
@@ -97,7 +95,7 @@ export default function RewardsIncentivesSection() {
     }
 
     if (window.customElements?.get('dotlottie-wc')) {
-      setIsPlayerReady(true)
+      markReady()
       return () => {
         cancelled = true
       }
@@ -128,7 +126,7 @@ export default function RewardsIncentivesSection() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isPlayerReady])
 
   return (
     <section id="incentives" className={styles.section}>
