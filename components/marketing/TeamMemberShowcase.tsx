@@ -470,6 +470,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is a Certified Public Accountant.',
     ],
   },
+  {
+    id: 'karyn-komatsu',
+    name: 'Karyn Komatsu',
+    role: 'Assistant Controller',
+    image: '/images/team/karyn-komatsu.jpg',
+    bio: [
+      'Ms. Komatsu is the Assistant Controller of Trinity Investments.',
+      'She supports Trinity partnership controllers and is responsible for bookkeeping, distribution payments, and compliance across Trinity entities.',
+      'Prior to joining Trinity, Ms. Komatsu worked in the healthcare and hospitality industries.',
+      'Ms. Komatsu received a Bachelor of Business Administration degree in Accounting from the University of Hawaii at Manoa.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
