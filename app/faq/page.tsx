@@ -17,6 +17,7 @@ const CATEGORIES = [
   'Getting Started',
   'Mining',
   'Investment Trading',
+  'Real Estate Portfolio',
   'Payments & Withdrawals',
   'Security & Compliance',
   'Platform & Support',
@@ -127,6 +128,62 @@ const FAQ_ITEMS: FaqItem[] = [
     question: 'What is a good way to combine mining and trading plans?',
     answer:
       'Many users keep mining as a steady infrastructure allocation and use trading plans for cycle based growth. Rebalancing after completed cycles helps maintain better control of risk and liquidity.',
+  },
+  {
+    id: 're-1',
+    category: 'Real Estate Portfolio',
+    question: 'How does the real estate buy-in process work?',
+    answer:
+      'Choose a property, select a tier, and submit payment proof from your dashboard flow. After admin review and approval, the position becomes active and starts tracking monthly earnings metrics in your property earnings view.',
+  },
+  {
+    id: 're-2',
+    category: 'Real Estate Portfolio',
+    question: 'Can I hold multiple real estate positions at the same time?',
+    answer:
+      'Yes, but additional positions follow approval logic. Your first position must be approved and active before scaling into more properties or additional tiers for the same property.',
+  },
+  {
+    id: 're-3',
+    category: 'Real Estate Portfolio',
+    question: 'What do realized earnings and monthly run rate mean?',
+    answer:
+      'Realized earnings shows accrued income already recognized in your active positions. Monthly run rate is a current monthly projection based on your live approved allocations and active tier structure.',
+  },
+  {
+    id: 're-4',
+    category: 'Real Estate Portfolio',
+    question: 'When do real estate withdrawals become available?',
+    answer:
+      'Real estate withdrawal windows open after six months of active cycle time. Once eligible, one withdrawal request is allowed every six months based on available eligible balance and compliance state.',
+  },
+  {
+    id: 're-5',
+    category: 'Real Estate Portfolio',
+    question: 'Why is my property earnings page showing projected and realized values separately?',
+    answer:
+      'Projected values are model-based estimates from your active tier and cycle settings, while realized values reflect actual accrued results. Keeping both visible helps you compare expected and live performance behavior.',
+  },
+  {
+    id: 're-6',
+    category: 'Real Estate Portfolio',
+    question: 'Can property terms change after I already bought in?',
+    answer:
+      'Core cycle records for approved positions remain tied to your confirmed purchase context. New properties, edits, or removals made by admins affect future selections and listings, while your active records stay auditable.',
+  },
+  {
+    id: 're-7',
+    category: 'Real Estate Portfolio',
+    question: 'How do approvals and rejections appear in my account?',
+    answer:
+      'Approval and rejection outcomes are posted to your real estate activity flow and reflected in dashboard status markers, so you can see whether a request is pending, approved, or rejected without contacting support first.',
+  },
+  {
+    id: 're-8',
+    category: 'Real Estate Portfolio',
+    question: 'What is the best way to scale real estate exposure responsibly?',
+    answer:
+      'Start with one approved tier, monitor at least one reporting cycle, then add positions progressively. This gives better control over liquidity, timing, and withdrawal planning versus over-allocating too early.',
   },
   {
     id: 'pay-1',
