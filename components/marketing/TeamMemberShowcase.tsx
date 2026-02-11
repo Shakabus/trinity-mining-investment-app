@@ -431,6 +431,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is a Certified Public Accountant.',
     ],
   },
+  {
+    id: 'david-lopez',
+    name: 'David Lopez',
+    role: 'Fund Controller',
+    image: '/images/team/david-lopez.jpg',
+    bio: [
+      'Mr. Lopez is a Fund Controller at Trinity Investments.',
+      'He is responsible for overseeing the accounting operations of investment funds.',
+      'Prior to joining Trinity, Mr. Lopez worked for Deloitte and Touche LLP.',
+      'Mr. Lopez received a Master of Accounting degree from the University of Hawaii at Manoa.',
+      'He is a Certified Public Accountant.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
