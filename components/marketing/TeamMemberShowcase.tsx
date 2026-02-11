@@ -3,12 +3,43 @@
 import { useState } from 'react'
 import styles from '@/components/marketing/TeamMemberShowcase.module.css'
 
+type TeamCategory =
+  | 'Administrative'
+  | 'Finance & Accounting'
+  | 'Legal and Compliance'
+  | 'Management & Investment'
+
 type TeamMember = {
   id: string
   name: string
   role: string
   image: string
   bio: string[]
+}
+
+const CATEGORY_TABS: TeamCategory[] = [
+  'Administrative',
+  'Finance & Accounting',
+  'Legal and Compliance',
+  'Management & Investment',
+]
+
+const getCategory = (member: TeamMember): TeamCategory => {
+  const role = member.role.toLowerCase()
+
+  if (role.includes('office manager') || role.includes('executive assistant') || role.includes('administrative')) {
+    return 'Administrative'
+  }
+
+  if (role.includes('counsel') || role.includes('compliance')) {
+    return 'Legal and Compliance'
+  }
+
+  if (role.includes('finance') || role.includes('controller') || role.includes('accounting')) {
+    return 'Finance & Accounting'
+  }
+
+  return 'Management & Investment'
 }
 
 const TEAM_MEMBERS: TeamMember[] = [
@@ -514,6 +545,8 @@ const TEAM_MEMBERS: TeamMember[] = [
 
 export default function TeamMemberShowcase() {
   const [openId, setOpenId] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<TeamCategory>('Management & Investment')
+  const filteredMembers = TEAM_MEMBERS.filter(member => getCategory(member) === selectedCategory)
   const openMember = TEAM_MEMBERS.find(member => member.id === openId) ?? null
 
   return (
@@ -525,8 +558,26 @@ export default function TeamMemberShowcase() {
         </p>
       </div>
 
+      <div className={styles.tabs} role="tablist" aria-label="Team categories">
+        {CATEGORY_TABS.map(category => (
+          <button
+            key={category}
+            type="button"
+            role="tab"
+            aria-selected={selectedCategory === category}
+            className={`${styles.tabBtn} ${selectedCategory === category ? styles.tabBtnActive : ''}`}
+            onClick={() => {
+              setOpenId(null)
+              setSelectedCategory(category)
+            }}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+
       <div className={styles.grid}>
-        {TEAM_MEMBERS.map(member => (
+        {filteredMembers.map(member => (
           <button
             key={member.id}
             type="button"
