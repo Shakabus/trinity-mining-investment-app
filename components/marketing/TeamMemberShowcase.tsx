@@ -330,6 +330,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Lewin received a Bachelor of Science degree in Hotel Administration from Cornell University, with a minor in real estate.',
     ],
   },
+  {
+    id: 'kelly-weldon',
+    name: 'Kelly Fricke Weldon',
+    role: 'Director of Acquisitions',
+    image: '/images/team/kelly-weldon.jpg',
+    bio: [
+      'Mrs. Weldon is a Director of Acquisitions at Trinity Investments.',
+      'She is primarily responsible for the sourcing, underwriting, and execution of Trinity investment activities, in addition to assisting with management of Trinity portfolio.',
+      'Prior to joining Trinity, Mrs. Weldon worked for Wells Fargo Securities.',
+      'Mrs. Weldon received a Bachelor of Business Administration degree from the University of Notre Dame, where she double majored in Finance and Chinese.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
