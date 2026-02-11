@@ -93,7 +93,7 @@ export default function AboutWhatWeDoSection() {
       <div className={styles.row}>
         <div className={styles.lottieWrap}>
           <h2 className={styles.title}>What we do</h2>
-          <div ref={containerRef} className={styles.lottieBox} aria-hidden="true" />
+          <div ref={containerRef} className={`no-theme-invert ${styles.lottieBox}`} aria-hidden="true" />
         </div>
 
         <div className={styles.content}>

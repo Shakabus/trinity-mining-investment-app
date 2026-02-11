@@ -71,5 +71,10 @@ export default function WalletLottie() {
     }
   }, [])
 
-  return <div ref={containerRef} className="h-[320px] w-full max-w-[560px] md:h-[420px]" />
+  return (
+    <div
+      ref={containerRef}
+      className="no-theme-invert h-[320px] w-full max-w-[560px] md:h-[420px]"
+    />
+  )
 }

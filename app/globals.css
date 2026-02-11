@@ -58,11 +58,16 @@ html[data-theme="light"] .lottie,
 html[data-theme="light"] .player,
 html[data-theme="light"] .lottieBox,
 html[data-theme="light"] .bgLottie,
+html[data-theme="light"] .no-theme-invert,
 html[data-theme="light"] lottie-player,
 html[data-theme="light"] dotlottie-player,
 html[data-theme="light"] [class*="lottie"] canvas,
 html[data-theme="light"] [class*="lottie"] svg {
   filter: invert(1) hue-rotate(180deg) !important;
+}
+
+html[data-theme="light"] .no-theme-invert * {
+  filter: inherit !important;
 }
 
 .theme-toggle {

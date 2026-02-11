@@ -184,7 +184,7 @@ export default function FeaturesOrbitSection() {
       </div>
 
       <div className={styles.featuresContainer}>
-        <div ref={lottieRef} className={styles.bgLottie} aria-hidden="true" />
+        <div ref={lottieRef} className={`no-theme-invert ${styles.bgLottie}`} aria-hidden="true" />
         {FEATURES.map(item => (
           <div
             key={item.title}

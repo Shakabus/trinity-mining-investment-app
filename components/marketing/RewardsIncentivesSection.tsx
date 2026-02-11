@@ -92,7 +92,7 @@ function LottiePlayer({ path }: { path: string }) {
     }
   }, [path])
 
-  return <div ref={containerRef} className={styles.player} aria-hidden="true" />
+  return <div ref={containerRef} className={`no-theme-invert ${styles.player}`} aria-hidden="true" />
 }
 
 export default function RewardsIncentivesSection() {

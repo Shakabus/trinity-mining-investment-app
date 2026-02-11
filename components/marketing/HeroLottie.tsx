@@ -52,5 +52,5 @@ export default function HeroLottie() {
     }
   }, [])
 
-  return <div ref={containerRef} className="h-[420px] w-full md:h-[520px]" />
+  return <div ref={containerRef} className="no-theme-invert h-[420px] w-full md:h-[520px]" />
 }
