@@ -496,6 +496,20 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is fluent in Spanish and conversational in Portuguese.',
     ],
   },
+  {
+    id: 'ijeoma-njaka',
+    name: 'Ijeoma EJ Njaka',
+    role: 'Office Manager and Executive Assistant',
+    image: '/images/team/ijeoma-njaka.jpg',
+    bio: [
+      'Ms. Njaka is Office Manager and Executive Assistant of Trinity Los Angeles office.',
+      'She is responsible for overseeing office operations and providing executive support and project management assistance to Trinity Partners.',
+      'Ms. Njaka also serves as liaison between executives and internal and external stakeholders.',
+      'Prior to joining Trinity, Ms. Njaka worked for Beachbody, LLC.',
+      'Ms. Njaka received a Bachelor of Arts degree in Psychology from West Virginia University and holds a California Real Estate License.',
+      'Ms. Njaka has toured the world as a professional singer and is fluent in Italian and conversational in Spanish and French.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
