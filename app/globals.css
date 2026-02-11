@@ -4,6 +4,7 @@
 :root {
   --background: #000000;
   --foreground: #e5e7eb;
+  --marketing-scroll-y: 0px;
 }
 
 @theme inline {
@@ -417,10 +418,9 @@ a[aria-disabled="true"],
   top: calc(env(safe-area-inset-top) + 5px) !important;
 }
 
-/* In light mode body filter can affect fixed positioning; use sticky fallback */
+/* Keep header visually fixed in light mode even with global inversion filter */
 html[data-theme="light"] .bitryx-header {
-  position: sticky !important;
-  top: calc(env(safe-area-inset-top) + 5px) !important;
+  transform: translateY(var(--marketing-scroll-y));
 }
 
 .glass-panel {
