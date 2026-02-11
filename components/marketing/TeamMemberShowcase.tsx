@@ -342,6 +342,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Mrs. Weldon received a Bachelor of Business Administration degree from the University of Notre Dame, where she double majored in Finance and Chinese.',
     ],
   },
+  {
+    id: 'isobel-denby-jones',
+    name: 'Isobel Denby-Jones',
+    role: 'Associate',
+    image: '/images/team/isobel-denby-jones.jpg',
+    bio: [
+      'Ms. Denby-Jones is an Associate at Trinity Investments.',
+      'She is responsible for the sourcing, underwriting, and execution of investment opportunities across Europe, as well as portfolio management.',
+      'Prior to joining Trinity, Ms. Denby-Jones worked at Northwood Investors and Goldman Sachs.',
+      'Ms. Denby-Jones received a Bachelors degree from the University of Oxford and a Masters degree from the University of Cambridge.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
