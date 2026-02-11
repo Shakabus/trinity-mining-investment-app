@@ -10,7 +10,7 @@ type RewardItem = {
   title: string
   subtitle: string
   description: string
-  animationPath: string
+  lottieUrl: string
 }
 
 const REWARD_ITEMS: RewardItem[] = [
@@ -20,7 +20,7 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Rewards based on real network output',
     description:
       'Trinity in One distributes mining rewards from active hash allocations and live network conditions. Payout values reflect hashrate, difficulty movement, and uptime instead of fixed promises.',
-    animationPath: '/lottie/Cryptocurrency.json',
+    lottieUrl: 'https://lottie.host/84206bae-69a7-46fb-9d0e-364385cecea9/sOei6HhFFJ.lottie',
   },
   {
     key: 'loyalty',
@@ -28,7 +28,7 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Added value for consistent participation',
     description:
       'Accounts that stay active across cycles may unlock reduced operational friction, earlier access to plan windows, and periodic loyalty incentives tied to platform activity and compliance.',
-    animationPath: '/lottie/Crypto%20Wallet.json',
+    lottieUrl: 'https://lottie.host/7a282bbb-33e7-4e2f-9b6c-e6e300db401d/anmxJQX1Ae.lottie',
   },
   {
     key: 'referral',
@@ -36,65 +36,99 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Earn by introducing quality users',
     description:
       'Referral rewards are triggered when invited users activate qualifying plans. Credits are capped, auditable, and designed to complement real mining and trading activity inside the dashboard.',
-    animationPath: '/lottie/crypto%20bitcoin.json',
+    lottieUrl: 'https://lottie.host/11dad5d5-fa1d-431a-9254-f6e712c6d4dc/bF2Hcu7i3h.lottie',
   },
 ]
 
-function LottiePlayer({ path }: { path: string }) {
+function DotLottiePlayer({ src, ready }: { src: string; ready: boolean }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    let cancelled = false
-    let animation: { destroy: () => void } | null = null
+    if (!ready || !containerRef.current) return
 
-    const initAnimation = () => {
-      const lottieLib = (window as Window & { lottie?: any }).lottie
-      if (!containerRef.current || !lottieLib || cancelled) return
-
-      animation = lottieLib.loadAnimation({
-        container: containerRef.current,
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        path,
-      })
-    }
-
-    const existingLottie = (window as Window & { lottie?: any }).lottie
-    if (existingLottie) {
-      initAnimation()
-    } else {
-      const existingScript = document.querySelector('script[data-lottie-web-global]')
-      if (!existingScript) {
-        const script = document.createElement('script')
-        script.src = 'https://unpkg.com/lottie-web@5.12.2/build/player/lottie.min.js'
-        script.async = true
-        script.setAttribute('data-lottie-web-global', 'true')
-        script.onload = initAnimation
-        script.onerror = () => {
-          const fallback = document.createElement('script')
-          fallback.src = 'https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js'
-          fallback.async = true
-          fallback.onload = initAnimation
-          document.head.appendChild(fallback)
-        }
-        document.head.appendChild(script)
-      } else {
-        existingScript.addEventListener('load', initAnimation, { once: true })
-      }
-    }
+    const host = containerRef.current
+    host.replaceChildren()
+    const player = document.createElement('dotlottie-wc')
+    player.setAttribute('src', src)
+    player.setAttribute('autoplay', '')
+    player.setAttribute('loop', '')
+    player.style.width = '100%'
+    player.style.height = '100%'
+    host.appendChild(player)
 
     return () => {
-      cancelled = true
-      if (animation) animation.destroy()
+      host.replaceChildren()
     }
-  }, [path])
+  }, [ready, src])
 
   return <div ref={containerRef} className={styles.player} aria-hidden="true" />
 }
 
 export default function RewardsIncentivesSection() {
   const [activeKey, setActiveKey] = useState<RewardKey>('mining')
+  const [isPlayerReady, setIsPlayerReady] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const markReady = () => {
+      if (cancelled) return
+      if (window.customElements?.get('dotlottie-wc')) {
+        setIsPlayerReady(true)
+        return
+      }
+
+      window.customElements
+        ?.whenDefined('dotlottie-wc')
+        .then(() => {
+          if (!cancelled) setIsPlayerReady(true)
+        })
+        .catch(() => {})
+    }
+
+    const loadFallback = () => {
+      if (document.querySelector('script[data-dotlottie-wc-fallback]')) return
+      const fallback = document.createElement('script')
+      fallback.type = 'module'
+      fallback.src = 'https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.14/dist/dotlottie-wc.js'
+      fallback.setAttribute('data-dotlottie-wc-fallback', 'true')
+      fallback.onload = markReady
+      document.head.appendChild(fallback)
+    }
+
+    if (window.customElements?.get('dotlottie-wc')) {
+      setIsPlayerReady(true)
+      return () => {
+        cancelled = true
+      }
+    }
+
+    const existing = document.querySelector('script[data-dotlottie-wc]')
+    if (existing) {
+      markReady()
+      const timer = window.setTimeout(() => {
+        if (!window.customElements?.get('dotlottie-wc')) {
+          loadFallback()
+        }
+      }, 2000)
+      return () => {
+        cancelled = true
+        window.clearTimeout(timer)
+      }
+    }
+
+    const primary = document.createElement('script')
+    primary.type = 'module'
+    primary.src = 'https://cdn.jsdelivr.net/npm/@lottiefiles/dotlottie-wc@0.8.14/dist/dotlottie-wc.js'
+    primary.setAttribute('data-dotlottie-wc', 'true')
+    primary.onload = markReady
+    primary.onerror = loadFallback
+    document.head.appendChild(primary)
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <section id="incentives" className={styles.section}>
@@ -122,7 +156,7 @@ export default function RewardsIncentivesSection() {
                 <p className={styles.rewardDescription}>{item.description}</p>
 
                 <div className={`${styles.mobileLottie} ${isActive ? styles.show : ''}`}>
-                  <LottiePlayer path={item.animationPath} />
+                  <DotLottiePlayer src={item.lottieUrl} ready={isPlayerReady} />
                 </div>
               </article>
             )
@@ -137,7 +171,7 @@ export default function RewardsIncentivesSection() {
                 activeKey === item.key ? styles.active : ''
               }`}
             >
-              <LottiePlayer path={item.animationPath} />
+              <DotLottiePlayer src={item.lottieUrl} ready={isPlayerReady} />
             </div>
           ))}
         </div>
