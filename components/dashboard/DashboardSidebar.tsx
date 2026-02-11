@@ -147,7 +147,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
           </button>
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">
           {menuItems.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -285,6 +285,30 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
             )
           })}
         </nav>
+
+        <div className="pt-4 mt-4 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.12)' }}>
+          <Link
+            href="/"
+            className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-3 rounded-lg transition-all group`}
+            style={{
+              color: 'rgba(255, 255, 255, 0.75)',
+              border: '1px solid transparent',
+            }}
+            title={isCollapsed ? 'Return to Main Site' : undefined}
+          >
+            <div
+              className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <Home size={18} strokeWidth={2} />
+            </div>
+            {!isCollapsed && <span className="font-medium">Return to Main Site</span>}
+          </Link>
+        </div>
       </aside>
 
       {/* Mobile/Tablet Slide-out Menu (unchanged) */}
@@ -437,6 +461,30 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
             )
           })}
         </nav>
+
+        <div className="pt-5 mt-5 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.12)' }}>
+          <Link
+            href="/"
+            onClick={onClose}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
+            style={{
+              color: 'rgba(255, 255, 255, 0.78)',
+              border: '1px solid transparent',
+            }}
+          >
+            <div
+              className="p-1.5 rounded-lg transition-all"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02))',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <Home size={18} strokeWidth={2} />
+            </div>
+            <span className="font-medium">Return to Main Site</span>
+          </Link>
+        </div>
       </aside>
     </>
   )
