@@ -4,13 +4,16 @@ type RateLimitResult = {
   resetAt: number
 }
 
-type RateLimitOptions = {
+export type RateLimitOptions = {
   key: string
   limit: number
   windowSec: number
 }
 
 const memoryStore = new Map<string, { count: number; resetAt: number }>()
+
+// The app runs on both local dev and serverless. We use Upstash when configured,
+// then transparently fall back to in-memory buckets for development.
 
 const getUpstashConfig = () => {
   const url = process.env.UPSTASH_REDIS_REST_URL
@@ -81,4 +84,25 @@ export const checkRateLimit = async (options: RateLimitOptions): Promise<RateLim
   } catch {
     return fromMemory(options)
   }
+}
+
+export const getClientIp = (headers: Headers): string => {
+  const forwardedFor = headers.get('x-forwarded-for')
+  if (forwardedFor) {
+    const first = forwardedFor.split(',')[0]?.trim()
+    if (first) return first
+  }
+
+  const realIp = headers.get('x-real-ip')?.trim()
+  if (realIp) return realIp
+
+  const cfConnectingIp = headers.get('cf-connecting-ip')?.trim()
+  if (cfConnectingIp) return cfConnectingIp
+
+  return 'unknown'
+}
+
+export const getRetryAfterSec = (resetAt: number) => {
+  const ms = Math.max(0, resetAt - Date.now())
+  return Math.max(1, Math.ceil(ms / 1000))
 }
