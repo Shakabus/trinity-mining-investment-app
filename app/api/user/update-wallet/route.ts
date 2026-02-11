@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readStringField,
+} from '@/lib/requestValidation'
+
+const UPDATE_WALLET_ALLOWED_FIELDS = ['btcAddress', 'ethAddress', 'ltcAddress'] as const
 
 function validateAddress(label: string, value: string) {
   if (!value) return null
@@ -27,10 +34,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const btcAddress = typeof body.btcAddress === 'string' ? body.btcAddress.trim() : ''
-    const ethAddress = typeof body.ethAddress === 'string' ? body.ethAddress.trim() : ''
-    const ltcAddress = typeof body.ltcAddress === 'string' ? body.ltcAddress.trim() : ''
+    const body = await readJsonObject(req, { allowedKeys: UPDATE_WALLET_ALLOWED_FIELDS })
+    const btcAddress = readStringField(body, 'btcAddress', { maxLength: 120 }) || ''
+    const ethAddress = readStringField(body, 'ethAddress', { maxLength: 120 }) || ''
+    const ltcAddress = readStringField(body, 'ltcAddress', { maxLength: 120 }) || ''
 
     const btcError = validateAddress('BTC', btcAddress)
     const ethError = validateAddress('ETH', ethAddress)
@@ -70,6 +77,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Update wallet error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

@@ -2,6 +2,34 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  InputValidationError,
+  isInputValidationError,
+  readJsonObject,
+  readStringField,
+} from '@/lib/requestValidation'
+
+const USER_ACTIONS = [
+  'updateMining',
+  'toggleMining',
+  'updateEarnings',
+  'updateTrading',
+  'toggleTrading',
+  'updateTradingEarnings',
+  'unlockHistorical',
+  'updateUser',
+] as const
+
+const USER_ACTION_ALLOWED_FIELDS: Record<(typeof USER_ACTIONS)[number], readonly string[]> = {
+  updateMining: ['action', 'assignedHashrate', 'counterSpeed', 'miningPool', 'dataCenterLocation'],
+  toggleMining: ['action', 'isActive'],
+  updateEarnings: ['action', 'earningsId', 'dailyEstimateUsd', 'dailyEstimateCrypto', 'totalEarnedUsd', 'totalEarnedCrypto'],
+  updateTrading: ['action', 'botSpeed', 'strategy', 'riskLevel'],
+  toggleTrading: ['action', 'isActive'],
+  updateTradingEarnings: ['action', 'earningsId', 'dailyEstimateUsd', 'totalEarnedUsd'],
+  unlockHistorical: ['action', 'earningsId'],
+  updateUser: ['action', 'role', 'accountStatus'],
+}
 
 async function requireAdmin() {
   const { userId } = await auth()
@@ -24,8 +52,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Invalid user id' }, { status: 400 })
     }
 
-    const body = await req.json()
-    const action = body?.action as string
+    const body = await readJsonObject(req)
+    const action = readStringField(body, 'action', {
+      required: true,
+      enumValues: USER_ACTIONS,
+    }) as (typeof USER_ACTIONS)[number]
+
+    const allowed = USER_ACTION_ALLOWED_FIELDS[action]
+    for (const key of Object.keys(body)) {
+      if (!allowed.includes(key)) {
+        throw new InputValidationError(`Unexpected field: ${key}`)
+      }
+    }
 
     if (action === 'updateMining') {
       const activeMining = await prisma.miningStats.findFirst({
@@ -348,6 +386,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Admin user update error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

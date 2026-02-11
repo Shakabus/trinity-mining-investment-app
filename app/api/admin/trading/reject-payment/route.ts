@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+} from '@/lib/requestValidation'
+
+const REJECT_TRADING_PAYMENT_FIELDS = ['tradingUserPlanId'] as const
 
 export async function POST(req: Request) {
   try {
@@ -18,7 +25,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { tradingUserPlanId } = await req.json()
+    const body = await readJsonObject(req, { allowedKeys: REJECT_TRADING_PAYMENT_FIELDS })
+    const tradingUserPlanId = readNumberField(body, 'tradingUserPlanId', {
+      required: true,
+      integer: true,
+      min: 1,
+    })!
 
     const tradingPlan = await prisma.tradingUserPlan.findUnique({
       where: { id: tradingUserPlanId },
@@ -65,6 +77,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Error rejecting trading payment:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

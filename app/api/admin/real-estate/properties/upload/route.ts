@@ -3,6 +3,12 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { put } from '@vercel/blob'
 import { prisma } from '@/lib/db'
+import {
+  isInputValidationError,
+  readFormDataStrict,
+  readFormFile,
+  readFormString,
+} from '@/lib/requestValidation'
 
 export const runtime = 'nodejs'
 
@@ -14,6 +20,7 @@ const ALLOWED_TYPES = new Set([
   'image/webp',
   'image/avif',
 ])
+const PROPERTY_UPLOAD_FIELDS = ['file', 'slug'] as const
 
 function slugify(value: string) {
   return value
@@ -40,22 +47,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const formData = await req.formData()
-    const file = formData.get('file')
-    const rawSlug = String(formData.get('slug') || '').trim()
+    const formData = await readFormDataStrict(req, { allowedKeys: PROPERTY_UPLOAD_FIELDS })
+    const file = readFormFile(formData, 'file', {
+      required: true,
+      maxBytes: MAX_FILE_SIZE,
+      allowedTypes: [...ALLOWED_TYPES],
+    })!
+    const rawSlug = readFormString(formData, 'slug', { maxLength: 120 }) || ''
     const slug = slugify(rawSlug) || 'property'
-
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: 'Image file is required.' }, { status: 400 })
-    }
-
-    if (!ALLOWED_TYPES.has(file.type)) {
-      return NextResponse.json({ error: 'Unsupported image format.' }, { status: 400 })
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'Image must be under 10MB.' }, { status: 400 })
-    }
 
     const extension = file.type.split('/')[1] || 'jpg'
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -67,6 +66,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ imagePath: blob.url }, { status: 201 })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Admin real estate image upload error:', error)
     return NextResponse.json(
       { error: 'Image upload failed. Confirm Blob storage is configured.' },

@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+} from '@/lib/requestValidation'
+
+const UPGRADE_PLAN_ALLOWED_FIELDS = ['planId', 'durationDays'] as const
 
 function getRemainingDays(startDate: Date | null, endDate: Date | null, totalDays: number) {
   if (endDate) {
@@ -25,7 +32,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { planId, durationDays } = await req.json()
+    const body = await readJsonObject(req, { allowedKeys: UPGRADE_PLAN_ALLOWED_FIELDS })
+    const planId = readNumberField(body, 'planId', { required: true, integer: true, min: 1 })!
+    const durationDays = readNumberField(body, 'durationDays', { required: true, integer: true, min: 1 })!
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -145,6 +154,9 @@ export async function POST(req: Request) {
       userPlanId: userPlan.id,
     })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Error upgrading plan:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

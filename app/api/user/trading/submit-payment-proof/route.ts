@@ -4,6 +4,13 @@ import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { randomUUID } from 'crypto'
 import { put } from '@vercel/blob'
+import {
+  isInputValidationError,
+  readFormDataStrict,
+  readFormFile,
+  readFormNumber,
+  readFormString,
+} from '@/lib/requestValidation'
 
 export const runtime = 'nodejs'
 
@@ -15,6 +22,7 @@ const WALLET_MAP: Record<string, string> = {
   LTC: 'LdP8Qox1VAhCzLJNqrr74YovaWYyNBUWvL',
   USDT: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
 }
+const TRADING_PAYMENT_PROOF_FIELDS = ['tradingUserPlanId', 'txid', 'coinType', 'file'] as const
 
 export async function POST(req: Request) {
   try {
@@ -23,24 +31,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const formData = await req.formData()
-    const tradingUserPlanId = Number(formData.get('tradingUserPlanId'))
-    const txid = String(formData.get('txid') || '').trim()
-    const coinType = String(formData.get('coinType') || '').trim().toUpperCase()
-    const file = formData.get('file') as File | null
-
-    if (!tradingUserPlanId || Number.isNaN(tradingUserPlanId)) {
-      return NextResponse.json({ error: 'Invalid plan.' }, { status: 400 })
-    }
-
-    const allowedCoins = new Set(['BTC', 'ETH', 'LTC', 'USDT'])
-    if (!allowedCoins.has(coinType)) {
-      return NextResponse.json({ error: 'Unsupported coin type.' }, { status: 400 })
-    }
-
-    if (!txid) {
-      return NextResponse.json({ error: 'Transaction ID is required.' }, { status: 400 })
-    }
+    const formData = await readFormDataStrict(req, { allowedKeys: TRADING_PAYMENT_PROOF_FIELDS })
+    const tradingUserPlanId = readFormNumber(formData, 'tradingUserPlanId', {
+      required: true,
+      integer: true,
+      min: 1,
+    })!
+    const txid = readFormString(formData, 'txid', { required: true, maxLength: 80 })!
+    const coinType = readFormString(formData, 'coinType', {
+      required: true,
+      toUpperCase: true,
+      enumValues: ['BTC', 'ETH', 'LTC', 'USDT'],
+    })!
+    const file = readFormFile(formData, 'file', {
+      required: true,
+      maxBytes: MAX_FILE_SIZE,
+      allowedTypes: [...ALLOWED_TYPES],
+    })!
 
     const isHex64 = /^[a-fA-F0-9]{64}$/.test(txid)
     const isEthTx = /^0x[a-fA-F0-9]{64}$/.test(txid)
@@ -49,18 +56,6 @@ export async function POST(req: Request) {
     }
     if ((coinType === 'BTC' || coinType === 'LTC') && !isHex64) {
       return NextResponse.json({ error: 'TXID format looks invalid for BTC/LTC.' }, { status: 400 })
-    }
-
-    if (!file) {
-      return NextResponse.json({ error: 'Payment proof file is required.' }, { status: 400 })
-    }
-
-    if (!ALLOWED_TYPES.has(file.type)) {
-      return NextResponse.json({ error: 'Unsupported file type.' }, { status: 400 })
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File size must be under 5MB.' }, { status: 400 })
     }
 
     const user = await prisma.user.findUnique({
@@ -154,6 +149,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Trading payment proof error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

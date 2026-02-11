@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+} from '@/lib/requestValidation'
+
+const SELECT_PLAN_ALLOWED_FIELDS = ['planId', 'durationDays', 'finalPrice'] as const
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +18,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { planId, durationDays, finalPrice } = await req.json()
+    const body = await readJsonObject(req, { allowedKeys: SELECT_PLAN_ALLOWED_FIELDS })
+    const planId = readNumberField(body, 'planId', { required: true, integer: true, min: 1 })!
+    const durationDays = readNumberField(body, 'durationDays', { required: true, integer: true, min: 1 })!
+    const finalPrice = readNumberField(body, 'finalPrice', { required: true, min: 0.01 })!
 
     const selectedPlan = await prisma.plan.findUnique({
       where: { id: planId },
@@ -44,9 +54,9 @@ export async function POST(req: Request) {
     const userPlan = await prisma.userPlan.create({
       data: {
         userId: user.id,
-        planId: planId,
+        planId,
         selectedDurationDays: durationDays,
-        finalPrice: finalPrice,
+        finalPrice,
         status: 'awaiting_payment',
         paymentStatus: 'pending'
       }
@@ -72,6 +82,9 @@ export async function POST(req: Request) {
     })
 
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Error selecting plan:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

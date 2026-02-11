@@ -6,8 +6,15 @@ import {
   REAL_ESTATE_BUY_IN_TICKET_PREFIX,
   REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
 } from '@/lib/real-estate-dashboard'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+  readStringField,
+} from '@/lib/requestValidation'
 
 const ALLOWED_STATUSES = ['open', 'waiting', 'closed', 'rejected']
+const ADMIN_SUPPORT_TICKET_FIELDS = ['ticketId', 'status'] as const
 
 export async function PATCH(req: Request) {
   try {
@@ -24,17 +31,12 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await req.json()
-    const ticketId = Number(body?.ticketId)
-    const status = String(body?.status || '').trim()
-
-    if (!ticketId || Number.isNaN(ticketId)) {
-      return NextResponse.json({ error: 'Invalid ticket.' }, { status: 400 })
-    }
-
-    if (!ALLOWED_STATUSES.includes(status)) {
-      return NextResponse.json({ error: 'Invalid status.' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: ADMIN_SUPPORT_TICKET_FIELDS })
+    const ticketId = readNumberField(body, 'ticketId', { required: true, integer: true, min: 1 })!
+    const status = readStringField(body, 'status', {
+      required: true,
+      enumValues: ALLOWED_STATUSES,
+    })!
 
     const ticket = await prisma.supportTicket.update({
       where: { id: ticketId },
@@ -134,6 +136,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true, status })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Support ticket update error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

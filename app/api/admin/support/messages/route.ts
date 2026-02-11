@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+  readStringField,
+} from '@/lib/requestValidation'
+
+const ADMIN_SUPPORT_MESSAGE_FIELDS = ['ticketId', 'message'] as const
 
 export async function POST(req: Request) {
   try {
@@ -18,17 +26,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await req.json()
-    const ticketId = Number(body?.ticketId)
-    const message = String(body?.message || '').trim()
-
-    if (!ticketId || Number.isNaN(ticketId)) {
-      return NextResponse.json({ error: 'Invalid ticket.' }, { status: 400 })
-    }
-
-    if (!message) {
-      return NextResponse.json({ error: 'Message cannot be empty.' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: ADMIN_SUPPORT_MESSAGE_FIELDS })
+    const ticketId = readNumberField(body, 'ticketId', { required: true, integer: true, min: 1 })!
+    const message = readStringField(body, 'message', { required: true, maxLength: 2000 })!
 
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: ticketId },
@@ -82,6 +82,9 @@ export async function POST(req: Request) {
       },
     })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Support reply error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

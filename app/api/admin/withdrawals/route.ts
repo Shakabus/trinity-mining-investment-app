@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+  readStringField,
+} from '@/lib/requestValidation'
+
+const ADMIN_WITHDRAWAL_FIELDS = ['withdrawalId', 'status', 'transactionId'] as const
+const ALLOWED_STATUSES = ['pending', 'approved', 'processed', 'rejected'] as const
 
 export async function PATCH(req: Request) {
   try {
@@ -19,18 +28,17 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await req.json()
-    const withdrawalId = Number(body.withdrawalId)
-    const status = body.status as string
-
-    if (!withdrawalId || Number.isNaN(withdrawalId)) {
-      return NextResponse.json({ error: 'Invalid withdrawal id' }, { status: 400 })
-    }
-
-    const allowedStatuses = ['pending', 'approved', 'processed', 'rejected']
-    if (!allowedStatuses.includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: ADMIN_WITHDRAWAL_FIELDS })
+    const withdrawalId = readNumberField(body, 'withdrawalId', {
+      required: true,
+      integer: true,
+      min: 1,
+    })!
+    const status = readStringField(body, 'status', {
+      required: true,
+      enumValues: ALLOWED_STATUSES,
+    })!
+    const transactionId = readStringField(body, 'transactionId', { maxLength: 120 })
 
     const updateData: {
       status: string
@@ -39,7 +47,7 @@ export async function PATCH(req: Request) {
       processedByAdminId?: number | null
     } = {
       status,
-      transactionId: body.transactionId ?? null,
+      transactionId: transactionId || null,
     }
 
     if (status === 'processed') {
@@ -69,6 +77,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Update withdrawal error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

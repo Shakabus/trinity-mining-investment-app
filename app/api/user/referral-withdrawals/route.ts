@@ -3,6 +3,12 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { getCryptoPricesUsd } from '@/lib/earnings'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+  readStringField,
+} from '@/lib/requestValidation'
 
 const DEFAULT_REFERRAL_SETTINGS = {
   isEnabled: true,
@@ -10,6 +16,7 @@ const DEFAULT_REFERRAL_SETTINGS = {
 }
 
 const SUPPORTED_COINS = ['BTC', 'ETH', 'LTC'] as const
+const REFERRAL_WITHDRAWAL_ALLOWED_FIELDS = ['coinType', 'amountUsd'] as const
 
 export async function POST(req: Request) {
   try {
@@ -19,17 +26,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const coinType = body?.coinType as (typeof SUPPORTED_COINS)[number]
-    const amountUsd = Number(body?.amountUsd)
-
-    if (!SUPPORTED_COINS.includes(coinType)) {
-      return NextResponse.json({ error: 'Unsupported coin.' }, { status: 400 })
-    }
-
-    if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
-      return NextResponse.json({ error: 'Invalid withdrawal amount.' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: REFERRAL_WITHDRAWAL_ALLOWED_FIELDS })
+    const coinType = readStringField(body, 'coinType', {
+      required: true,
+      toUpperCase: true,
+      enumValues: SUPPORTED_COINS,
+    }) as (typeof SUPPORTED_COINS)[number]
+    const amountUsd = readNumberField(body, 'amountUsd', { required: true, min: 0.01 })!
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -111,6 +114,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, withdrawalId: withdrawal.id })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Referral withdrawal request error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

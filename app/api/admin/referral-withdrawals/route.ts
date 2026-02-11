@@ -2,8 +2,15 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+  readStringField,
+} from '@/lib/requestValidation'
 
 const ALLOWED_STATUSES = ['pending', 'approved', 'processed', 'rejected']
+const ADMIN_REFERRAL_WITHDRAWAL_FIELDS = ['id', 'status', 'transactionId'] as const
 
 export async function PATCH(req: Request) {
   try {
@@ -21,18 +28,13 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await req.json()
-    const id = Number(body?.id)
-    const status = typeof body?.status === 'string' ? body.status : null
-    const transactionId = typeof body?.transactionId === 'string' ? body.transactionId.trim() : ''
-
-    if (!Number.isFinite(id)) {
-      return NextResponse.json({ error: 'Invalid withdrawal id.' }, { status: 400 })
-    }
-
-    if (!status || !ALLOWED_STATUSES.includes(status)) {
-      return NextResponse.json({ error: 'Invalid status.' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: ADMIN_REFERRAL_WITHDRAWAL_FIELDS })
+    const id = readNumberField(body, 'id', { required: true, integer: true, min: 1 })!
+    const status = readStringField(body, 'status', {
+      required: true,
+      enumValues: ALLOWED_STATUSES,
+    })!
+    const transactionId = readStringField(body, 'transactionId', { maxLength: 120 }) || ''
 
     const updated = await prisma.referralWithdrawal.update({
       where: { id },
@@ -61,6 +63,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Update referral withdrawal error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

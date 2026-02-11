@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/db'
+import {
+  isInputValidationError,
+  readJsonObject,
+} from '@/lib/requestValidation'
 
 type PropertyTierInput = {
   tierName: string
@@ -27,13 +31,33 @@ type PropertyInput = {
   summary: string
   overview?: string
   imagePath?: string
-  keyCount?: number | null
-  occupancyRate?: number | null
+  keyCount?: number | string | null
+  occupancyRate?: number | string | null
   status?: string
   sortOrder?: number
   isFeatured?: boolean
   tiers?: PropertyTierInput[]
 }
+
+const PROPERTY_ALLOWED_FIELDS = [
+  'title',
+  'slug',
+  'market',
+  'city',
+  'country',
+  'assetType',
+  'operatorName',
+  'address',
+  'summary',
+  'overview',
+  'imagePath',
+  'keyCount',
+  'occupancyRate',
+  'status',
+  'sortOrder',
+  'isFeatured',
+  'tiers',
+] as const
 
 function slugify(value: string) {
   return value
@@ -44,8 +68,8 @@ function slugify(value: string) {
     .replace(/-+/g, '-')
 }
 
-function sanitizeText(value?: string) {
-  if (!value) return null
+function sanitizeText(value?: unknown) {
+  if (typeof value !== 'string') return null
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : null
 }
@@ -105,6 +129,18 @@ function parseInput(body: PropertyInput) {
     }
   })
 
+  const keyCount =
+    body.keyCount == null || body.keyCount === '' ? null : Number(body.keyCount)
+  if (keyCount != null && (!Number.isFinite(keyCount) || keyCount < 0)) {
+    return { error: 'Key count is invalid.' }
+  }
+
+  const occupancyRate =
+    body.occupancyRate == null || body.occupancyRate === '' ? null : Number(body.occupancyRate)
+  if (occupancyRate != null && (!Number.isFinite(occupancyRate) || occupancyRate < 0 || occupancyRate > 100)) {
+    return { error: 'Occupancy rate must be between 0 and 100.' }
+  }
+
   return {
     slug,
     data: {
@@ -119,8 +155,8 @@ function parseInput(body: PropertyInput) {
       summary: body.summary.trim(),
       overview: sanitizeText(body.overview),
       imagePath: sanitizeText(body.imagePath),
-      keyCount: body.keyCount == null ? null : Number(body.keyCount),
-      occupancyRate: body.occupancyRate == null ? null : Number(body.occupancyRate),
+      keyCount,
+      occupancyRate,
       status: sanitizeText(body.status) ?? 'active',
       sortOrder: Number.isFinite(Number(body.sortOrder)) ? Number(body.sortOrder) : 0,
       isFeatured: Boolean(body.isFeatured),
@@ -167,7 +203,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = (await req.json()) as PropertyInput
+    const body = (await readJsonObject(req, { allowedKeys: PROPERTY_ALLOWED_FIELDS })) as PropertyInput
     const parsed = parseInput(body)
     if ('error' in parsed) {
       return NextResponse.json({ error: parsed.error }, { status: 400 })
@@ -217,6 +253,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ property }, { status: 201 })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('POST real-estate properties error:', error)
     if (error instanceof Error && error.message.startsWith('Tier #')) {
       return NextResponse.json({ error: error.message }, { status: 400 })

@@ -4,6 +4,18 @@ import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { isSupportedCurrency } from '@/lib/forex'
 import { isSupportedLanguage } from '@/lib/i18n'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readStringField,
+} from '@/lib/requestValidation'
+
+const UPDATE_PROFILE_ALLOWED_FIELDS = [
+  'fullName',
+  'phone',
+  'preferredCurrency',
+  'preferredLanguage',
+] as const
 
 export async function POST(req: Request) {
   try {
@@ -13,27 +25,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : ''
-    const phone = typeof body.phone === 'string' ? body.phone.trim() : ''
-    const preferredCurrency = typeof body.preferredCurrency === 'string'
-      ? body.preferredCurrency.trim().toUpperCase()
-      : 'USD'
-    const preferredLanguage = typeof body.preferredLanguage === 'string'
-      ? body.preferredLanguage.trim().toLowerCase()
-      : undefined
-
-    if (fullName.length === 0) {
-      return NextResponse.json({ error: 'Full name is required.' }, { status: 400 })
-    }
-
-    if (fullName.length < 2) {
-      return NextResponse.json({ error: 'Full name must be at least 2 characters.' }, { status: 400 })
-    }
-
-    if (fullName.length > 80) {
-      return NextResponse.json({ error: 'Full name is too long.' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: UPDATE_PROFILE_ALLOWED_FIELDS })
+    const fullName = readStringField(body, 'fullName', {
+      required: true,
+      minLength: 2,
+      maxLength: 80,
+    })!
+    const phone = readStringField(body, 'phone', { maxLength: 30 }) || ''
+    const preferredCurrency =
+      readStringField(body, 'preferredCurrency', {
+        toUpperCase: true,
+        maxLength: 10,
+      }) || 'USD'
+    const preferredLanguage = readStringField(body, 'preferredLanguage', {
+      toLowerCase: true,
+      maxLength: 10,
+    })
 
     if (phone.length > 0) {
       if (phone.length < 7) {
@@ -98,6 +105,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Update profile error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

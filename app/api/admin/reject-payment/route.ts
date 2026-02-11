@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+} from '@/lib/requestValidation'
+
+const REJECT_PAYMENT_FIELDS = ['userPlanId'] as const
 
 export async function POST(req: Request) {
   try {
@@ -20,7 +27,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { userPlanId } = await req.json()
+    const body = await readJsonObject(req, { allowedKeys: REJECT_PAYMENT_FIELDS })
+    const userPlanId = readNumberField(body, 'userPlanId', { required: true, integer: true, min: 1 })!
 
     // Get the user plan
     const userPlan = await prisma.userPlan.findUnique({
@@ -64,6 +72,9 @@ export async function POST(req: Request) {
     })
 
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Error rejecting payment:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
+import {
+  isInputValidationError,
+  readBooleanField,
+  readJsonObject,
+  readNumberField,
+} from '@/lib/requestValidation'
+
+const REFERRAL_SETTINGS_FIELDS = ['isEnabled', 'bonusPercent', 'minPaymentUsd', 'minWithdrawalUsd'] as const
 
 export async function PATCH(req: Request) {
   try {
@@ -18,23 +26,15 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await req.json()
-    const isEnabled = Boolean(body?.isEnabled)
-    const bonusPercent = Number(body?.bonusPercent)
-    const minPaymentUsd = Number(body?.minPaymentUsd)
-    const minWithdrawalUsd = Number(body?.minWithdrawalUsd)
-
-    if (!Number.isFinite(bonusPercent) || bonusPercent < 0 || bonusPercent > 100) {
-      return NextResponse.json({ error: 'Bonus percent must be between 0 and 100.' }, { status: 400 })
-    }
-
-    if (!Number.isFinite(minPaymentUsd) || minPaymentUsd < 0) {
-      return NextResponse.json({ error: 'Minimum payment must be a positive number.' }, { status: 400 })
-    }
-
-    if (!Number.isFinite(minWithdrawalUsd) || minWithdrawalUsd < 0) {
-      return NextResponse.json({ error: 'Minimum withdrawal must be a positive number.' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: REFERRAL_SETTINGS_FIELDS })
+    const isEnabled = readBooleanField(body, 'isEnabled', { required: true })!
+    const bonusPercent = readNumberField(body, 'bonusPercent', {
+      required: true,
+      min: 0,
+      max: 100,
+    })!
+    const minPaymentUsd = readNumberField(body, 'minPaymentUsd', { required: true, min: 0 })!
+    const minWithdrawalUsd = readNumberField(body, 'minWithdrawalUsd', { required: true, min: 0 })!
 
     const settings = await prisma.referralSettings.upsert({
       where: { id: 1 },
@@ -55,6 +55,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true, settings })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Update referral settings error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

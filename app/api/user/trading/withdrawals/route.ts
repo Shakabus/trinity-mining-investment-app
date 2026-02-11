@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+  readStringField,
+} from '@/lib/requestValidation'
+
+const TRADING_WITHDRAWAL_ALLOWED_FIELDS = ['amountUsd', 'walletAddress'] as const
 
 export async function POST(req: Request) {
   try {
@@ -10,17 +18,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const amountUsd = Number(body.amountUsd)
-    const walletAddress = String(body.walletAddress || '').trim()
-
-    if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
-      return NextResponse.json({ error: 'Invalid amount.' }, { status: 400 })
-    }
-
-    if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address is required.' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: TRADING_WITHDRAWAL_ALLOWED_FIELDS })
+    const amountUsd = readNumberField(body, 'amountUsd', { required: true, min: 0.01 })!
+    const walletAddress = readStringField(body, 'walletAddress', {
+      required: true,
+      minLength: 10,
+      maxLength: 120,
+    })!
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -72,6 +76,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, withdrawalId: withdrawal.id })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Trading withdrawal error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

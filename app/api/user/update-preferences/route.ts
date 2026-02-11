@@ -3,6 +3,13 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { isSupportedLanguage } from '@/lib/i18n'
 import { isSupportedCurrency } from '@/lib/forex'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readStringField,
+} from '@/lib/requestValidation'
+
+const UPDATE_PREFERENCES_ALLOWED_FIELDS = ['preferredLanguage', 'preferredCurrency'] as const
 
 export async function POST(req: Request) {
   try {
@@ -12,11 +19,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json().catch(() => ({}))
-    const preferredLanguage =
-      typeof body.preferredLanguage === 'string' ? body.preferredLanguage.trim().toLowerCase() : undefined
-    const preferredCurrency =
-      typeof body.preferredCurrency === 'string' ? body.preferredCurrency.trim().toUpperCase() : undefined
+    const body = await readJsonObject(req, { allowedKeys: UPDATE_PREFERENCES_ALLOWED_FIELDS })
+    const preferredLanguage = readStringField(body, 'preferredLanguage', {
+      toLowerCase: true,
+      maxLength: 10,
+    })
+    const preferredCurrency = readStringField(body, 'preferredCurrency', {
+      toUpperCase: true,
+      maxLength: 10,
+    })
 
     if (preferredLanguage && !isSupportedLanguage(preferredLanguage)) {
       return NextResponse.json({ error: 'Unsupported language selection.' }, { status: 400 })
@@ -35,6 +46,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Update preferences error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

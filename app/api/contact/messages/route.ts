@@ -1,38 +1,54 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readStringField,
+} from '@/lib/requestValidation'
 
 const CONTACT_PREFIX = 'Contact Form:'
 const CONTACT_INBOX_CLERK_ID = 'public_contact_inbox'
 const CONTACT_INBOX_EMAIL = 'public-contact-inbox@system.trinity.local'
 const MAX_BODY_LENGTH = 5000
-
-function cleanText(value: unknown) {
-  return String(value || '').trim()
-}
+const CONTACT_ALLOWED_FIELDS = ['fullName', 'email', 'phone', 'subject', 'message', 'sourcePage'] as const
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => null)
-    const fullName = cleanText(body?.fullName)
-    const email = cleanText(body?.email).toLowerCase()
-    const phone = cleanText(body?.phone)
-    const subject = cleanText(body?.subject) || 'General inquiry'
-    const message = cleanText(body?.message)
-    const sourcePage = cleanText(body?.sourcePage) || '/contact'
-
-    if (!fullName || !email || !message) {
-      return NextResponse.json(
-        { error: 'Full name, email, and message are required.' },
-        { status: 400 },
-      )
-    }
+    const body = await readJsonObject(req, { allowedKeys: CONTACT_ALLOWED_FIELDS })
+    const fullName = readStringField(body, 'fullName', {
+      required: true,
+      minLength: 2,
+      maxLength: 120,
+    })!
+    const email = readStringField(body, 'email', {
+      required: true,
+      toLowerCase: true,
+      maxLength: 254,
+    })!
+    const phone = readStringField(body, 'phone', {
+      maxLength: 30,
+      pattern: /^[+()\-.\s\d]*$/,
+    })
+    const subject =
+      readStringField(body, 'subject', {
+        maxLength: 140,
+      }) || 'General inquiry'
+    const message = readStringField(body, 'message', {
+      required: true,
+      minLength: 3,
+      maxLength: MAX_BODY_LENGTH,
+    })!
+    const sourcePage =
+      readStringField(body, 'sourcePage', {
+        maxLength: 200,
+      }) || '/contact'
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Invalid email address.' }, { status: 400 })
     }
 
-    if (message.length > MAX_BODY_LENGTH) {
-      return NextResponse.json({ error: 'Message is too long.' }, { status: 400 })
+    if (phone && phone.replace(/\D/g, '').length > 0 && phone.replace(/\D/g, '').length < 7) {
+      return NextResponse.json({ error: 'Phone number must include at least 7 digits.' }, { status: 400 })
     }
 
     let inboxUser = await prisma.user.findUnique({
@@ -83,6 +99,9 @@ export async function POST(req: Request) {
       message: 'Message sent successfully.',
     })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Public contact message error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

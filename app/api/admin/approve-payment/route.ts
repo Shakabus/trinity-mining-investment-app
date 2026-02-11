@@ -2,12 +2,19 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+  readStringField,
+} from '@/lib/requestValidation'
 
 const DEFAULT_REFERRAL_SETTINGS = {
   isEnabled: true,
   bonusPercent: 5,
   minPaymentUsd: 100,
 }
+const APPROVE_PAYMENT_FIELDS = ['userPlanId', 'txid'] as const
 
 export async function POST(req: Request) {
   try {
@@ -26,7 +33,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { userPlanId, txid } = await req.json()
+    const body = await readJsonObject(req, { allowedKeys: APPROVE_PAYMENT_FIELDS })
+    const userPlanId = readNumberField(body, 'userPlanId', { required: true, integer: true, min: 1 })!
+    const txid = readStringField(body, 'txid', { maxLength: 80 })
 
     // Get the user plan
     const userPlan = await prisma.userPlan.findUnique({
@@ -255,6 +264,9 @@ export async function POST(req: Request) {
     })
 
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Error approving payment:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

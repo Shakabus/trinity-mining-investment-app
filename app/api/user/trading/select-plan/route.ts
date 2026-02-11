@@ -3,9 +3,15 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { pickTradingPlanReturn } from '@/lib/trading'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readJsonObject,
+  readNumberField,
+} from '@/lib/requestValidation'
 
 const DEFAULT_CRYPTO = 'USDT'
 const DEFAULT_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+const TRADING_SELECT_ALLOWED_FIELDS = ['planId', 'investmentUsd'] as const
 
 export async function POST(req: Request) {
   try {
@@ -14,17 +20,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const planId = Number(body.planId)
-    const investmentUsd = Number(body.investmentUsd)
-
-    if (!planId || Number.isNaN(planId)) {
-      return NextResponse.json({ error: 'Invalid plan.' }, { status: 400 })
-    }
-
-    if (!Number.isFinite(investmentUsd) || investmentUsd <= 0) {
-      return NextResponse.json({ error: 'Invalid investment amount.' }, { status: 400 })
-    }
+    const body = await readJsonObject(req, { allowedKeys: TRADING_SELECT_ALLOWED_FIELDS })
+    const planId = readNumberField(body, 'planId', { required: true, integer: true, min: 1 })!
+    const investmentUsd = readNumberField(body, 'investmentUsd', { required: true, min: 0.01 })!
 
     const user = await prisma.user.findUnique({ where: { clerkUserId: userId } })
     if (!user) {
@@ -92,6 +90,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, tradingUserPlanId: tradingUserPlan.id })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Trading plan selection error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

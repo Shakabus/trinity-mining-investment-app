@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  isInputValidationError,
+  readFormDataStrict,
+  readFormFile,
+  readFormNumber,
+  readFormString,
+} from '@/lib/requestValidation'
+
+const SUPPORT_MESSAGE_FIELDS = ['ticketId', 'message', 'file'] as const
 
 export async function POST(req: Request) {
   try {
@@ -10,22 +19,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const formData = await req.formData()
-    const ticketId = Number(formData.get('ticketId'))
-    const message = String(formData.get('message') || '').trim()
-    const file = formData.get('file') as File | null
-
-    if (!ticketId || Number.isNaN(ticketId)) {
-      return NextResponse.json({ error: 'Invalid ticket.' }, { status: 400 })
-    }
-
-    if (!message) {
-      return NextResponse.json({ error: 'Message cannot be empty.' }, { status: 400 })
-    }
-
-    if (message.length > 2000) {
-      return NextResponse.json({ error: 'Message is too long.' }, { status: 400 })
-    }
+    const formData = await readFormDataStrict(req, { allowedKeys: SUPPORT_MESSAGE_FIELDS })
+    const ticketId = readFormNumber(formData, 'ticketId', { required: true, integer: true, min: 1 })!
+    const message = readFormString(formData, 'message', { required: true, maxLength: 2000 })!
+    const file = readFormFile(formData, 'file', {
+      maxBytes: 5 * 1024 * 1024,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    })
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -51,15 +51,6 @@ export async function POST(req: Request) {
     } | null = null
 
     if (file) {
-      const maxSize = 5 * 1024 * 1024
-      const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-      if (!allowed.has(file.type)) {
-        return NextResponse.json({ error: 'Unsupported file type.' }, { status: 400 })
-      }
-      if (file.size > maxSize) {
-        return NextResponse.json({ error: 'File must be under 5MB.' }, { status: 400 })
-      }
-
       const { randomUUID } = await import('crypto')
       const { mkdir, writeFile } = await import('fs/promises')
       const path = await import('path')
@@ -117,6 +108,9 @@ export async function POST(req: Request) {
       },
     })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Send support message error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

@@ -6,6 +6,14 @@ import {
   REAL_ESTATE_BUY_IN_TICKET_PREFIX,
   REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
 } from '@/lib/real-estate-dashboard'
+import {
+  isInputValidationError,
+  readFormDataStrict,
+  readFormFile,
+  readFormString,
+} from '@/lib/requestValidation'
+
+const SUPPORT_TICKET_FIELDS = ['subject', 'message', 'file'] as const
 
 export async function POST(req: Request) {
   try {
@@ -14,18 +22,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const formData = await req.formData()
-    const subject = String(formData.get('subject') || '').trim()
-    const message = String(formData.get('message') || '').trim()
-    const file = formData.get('file') as File | null
-
-    if (!subject || !message) {
-      return NextResponse.json({ error: 'Subject and message are required.' }, { status: 400 })
-    }
-
-    if (subject.length > 200 || message.length > 2000) {
-      return NextResponse.json({ error: 'Message is too long.' }, { status: 400 })
-    }
+    const formData = await readFormDataStrict(req, { allowedKeys: SUPPORT_TICKET_FIELDS })
+    const subject = readFormString(formData, 'subject', { required: true, maxLength: 200 })!
+    const message = readFormString(formData, 'message', { required: true, maxLength: 2000 })!
+    const file = readFormFile(formData, 'file', {
+      maxBytes: 5 * 1024 * 1024,
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+    })
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -97,15 +100,6 @@ export async function POST(req: Request) {
     } | null = null
 
     if (file) {
-      const maxSize = 5 * 1024 * 1024
-      const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
-      if (!allowed.has(file.type)) {
-        return NextResponse.json({ error: 'Unsupported file type.' }, { status: 400 })
-      }
-      if (file.size > maxSize) {
-        return NextResponse.json({ error: 'File must be under 5MB.' }, { status: 400 })
-      }
-
       const { randomUUID } = await import('crypto')
       const { mkdir, writeFile } = await import('fs/promises')
       const path = await import('path')
@@ -190,6 +184,9 @@ export async function POST(req: Request) {
       },
     })
   } catch (error) {
+    if (isInputValidationError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     console.error('Create support ticket error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
