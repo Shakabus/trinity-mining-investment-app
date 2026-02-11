@@ -293,6 +293,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Fujii received a Bachelor of Science degree in Civil Engineering from the University of Washington.',
     ],
   },
+  {
+    id: 'catherine-han',
+    name: 'Catherine Han',
+    role: 'Director of Acquisitions',
+    image: '/images/team/catherine-han.jpg',
+    bio: [
+      'Ms. Han is a Director of Acquisitions at Trinity Investments.',
+      'She is primarily responsible for the sourcing, underwriting, and execution of Trinity investment activities.',
+      'Prior to joining Trinity, Ms. Han worked for Ohana Real Estate Investors.',
+      'Ms. Han received a Bachelor of Arts degree in Hospitality Management from Sookmyung Womens University and a Masters degree from the School of Hotel Administration at Cornell University, with a minor in real estate.',
+      'She is fluent in Korean.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
