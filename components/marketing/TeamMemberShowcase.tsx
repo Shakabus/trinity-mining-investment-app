@@ -268,6 +268,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is fluent in Korean.',
     ],
   },
+  {
+    id: 'merilyn-hu',
+    name: 'Merilyn Hu',
+    role: 'Director of Development',
+    image: '/images/team/merilyn-hu.jpg',
+    bio: [
+      'Ms. Hu is a Director at Trinity Investments.',
+      'She is responsible for executing value-add renovations of Trinity investments, with a focus on design and construction, by providing management through all stages of development.',
+      'Prior to joining Trinity, Ms. Hu worked for Boardwalk Investments and AECOM.',
+      'Ms. Hu received a Bachelor of Architectural Studies from the University of Auckland and a Master of Architecture from the Southern California Institute of Architecture.',
+      'She is fluent in Mandarin.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
