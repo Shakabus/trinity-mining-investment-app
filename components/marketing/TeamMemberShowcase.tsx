@@ -306,6 +306,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is fluent in Korean.',
     ],
   },
+  {
+    id: 'slater-hobbs',
+    name: "Slater 'Kamana' Hobbs",
+    role: 'Director of Investor Relations',
+    image: '/images/team/slater-hobbs.jpg',
+    bio: [
+      'Mr. Hobbs is a Director of Investor Relations at Trinity Investments.',
+      'He is responsible for overseeing investor relations with limited partners and strategic co-investors around the world.',
+      'Prior to joining Trinity Investments, Mr. Hobbs worked for Kroll.',
+      'Mr. Hobbs received a Bachelor of Arts degree in English from Dartmouth College, with a minor in Markets, Management, and the Economy.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
