@@ -232,6 +232,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is fluent in Japanese, German, and English.',
     ],
   },
+  {
+    id: 'caroline-lam',
+    name: 'Caroline Lam',
+    role: 'Vice President of Strategic Operations',
+    image: '/images/team/caroline-lam.jpg',
+    bio: [
+      'Ms. Lam is a Vice President of Strategic Operations at Trinity Investments.',
+      'She is responsible for asset managing Trinity portfolio in Europe with a focus on value creation.',
+      'Prior to joining Trinity, Ms. Lam worked for Blackstone Europe LLP, Blackstone Australia, and Cushman and Wakefield.',
+      'Ms. Lam received a Bachelor of Property Economics (Honours) from the University of Technology Sydney.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
