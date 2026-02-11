@@ -482,6 +482,20 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Komatsu received a Bachelor of Business Administration degree in Accounting from the University of Hawaii at Manoa.',
     ],
   },
+  {
+    id: 'shontae-negron',
+    name: 'Shontae Negron',
+    role: 'Office Manager and Executive Assistant',
+    image: '/images/team/shontae-negron.jpg',
+    bio: [
+      'Ms. Negron is the Office Manager and Executive Assistant.',
+      'She is responsible for overseeing office operations, as well as providing extensive administrative support and project management assistance to Trinity Partners.',
+      'Ms. Negron also serves as liaison between executives and internal and external stakeholders.',
+      'Prior to joining Trinity, Ms. Negron worked in a variety of industries in the private sector within New York and Washington, DC.',
+      'Ms. Negron has a background in Business Management.',
+      'She is fluent in Spanish and conversational in Portuguese.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
