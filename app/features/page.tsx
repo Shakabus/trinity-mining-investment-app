@@ -69,6 +69,33 @@ const EXPERIENCE_FEATURES = [
   },
 ]
 
+const REAL_ESTATE_FEATURES = [
+  {
+    tag: 'Portfolio',
+    title: 'Tier-based property participation',
+    body: 'Users buy into selected assets through structured tiers, so each entry point maps clearly to a defined cycle, payout model, and performance band.',
+    delay: styles.delay1,
+  },
+  {
+    tag: 'Profitability',
+    title: 'Income-focused payout architecture',
+    body: 'Each property is configured around operating income behavior, with monthly realization tracking, cycle-level summaries, and clean view of realized vs projected flow.',
+    delay: styles.delay2,
+  },
+  {
+    tag: 'Control',
+    title: 'Approval-gated scaling logic',
+    body: 'Additional buy-ins and parallel property allocations can be expanded through controlled approvals to keep portfolio growth disciplined and auditable.',
+    delay: styles.delay3,
+  },
+  {
+    tag: 'Lifecycle',
+    title: 'End-to-end property workflow',
+    body: 'From buy-in request to admin approval, activation, earnings accrual, and withdrawal windows, every stage is surfaced in a single operational timeline.',
+    delay: styles.delay4,
+  },
+]
+
 const PRODUCT_COMPARISON = [
   {
     lane: 'Mining Plans',
@@ -156,6 +183,39 @@ export default function FeaturesPage() {
                 <p>{feature.body}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Real Estate Portfolio features</h2>
+          <p className={styles.sectionText}>
+            The real estate lane is built to prioritize profitability through structured buy-in tiers,
+            disciplined activation controls, and live earnings visibility. Instead of static listings,
+            each property behaves as a managed income engine with clear cycle logic and measurable
+            outcome tracking.
+          </p>
+          <div className={styles.gridTwo}>
+            {REAL_ESTATE_FEATURES.map(feature => (
+              <article key={feature.title} className={`${styles.featureCard} ${feature.delay}`}>
+                <span className={styles.pill}>{feature.tag}</span>
+                <h3>{feature.title}</h3>
+                <p>{feature.body}</p>
+              </article>
+            ))}
+          </div>
+          <div className={styles.realEstateStrip}>
+            <article className={styles.realEstateMetric}>
+              <p>Property-level cycle control</p>
+              <span>Activation, accrual, payout windows</span>
+            </article>
+            <article className={styles.realEstateMetric}>
+              <p>Profitability visibility</p>
+              <span>Realized earnings and monthly run-rate view</span>
+            </article>
+            <article className={styles.realEstateMetric}>
+              <p>Governed scaling</p>
+              <span>Approval-led expansion across multiple assets</span>
+            </article>
           </div>
         </section>
 

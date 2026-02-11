@@ -215,6 +215,44 @@
   gap: 12px;
 }
 
+.realEstateStrip {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.realEstateMetric {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  padding: 12px 12px 13px;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  animation: metricPulse 5s ease-in-out infinite;
+}
+
+.realEstateMetric:nth-child(2) {
+  animation-delay: 0.9s;
+}
+
+.realEstateMetric:nth-child(3) {
+  animation-delay: 1.8s;
+}
+
+.realEstateMetric p {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 650;
+  color: rgba(232, 247, 255, 0.96);
+}
+
+.realEstateMetric span {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .statCard {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
@@ -366,6 +404,18 @@
   }
 }
 
+@keyframes metricPulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+  50% {
+    transform: translateY(-3px);
+    border-color: rgba(200, 235, 255, 0.34);
+  }
+}
+
 @media (max-width: 1080px) {
   .gridThree {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -373,6 +423,10 @@
 
   .statsRow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .realEstateStrip {
+    grid-template-columns: 1fr;
   }
 }
 
