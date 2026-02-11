@@ -98,13 +98,13 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
                 elements: {
                   avatarBox: 'w-8 h-8 md:w-10 md:h-10',
                   userButtonPopoverCard:
-                    'bg-white text-gray-900 border border-gray-200 shadow-2xl backdrop-blur-none',
-                  userButtonPopoverMain: 'bg-white',
-                  userButtonPopoverActionButton: 'text-gray-800 hover:bg-gray-100',
+                    'bg-white/75 text-gray-900 border border-white/45 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-white/70',
+                  userButtonPopoverMain: 'bg-transparent',
+                  userButtonPopoverActionButton: 'text-gray-800 hover:bg-white/60',
                   userButtonPopoverActionButtonText: 'text-gray-800',
                   userButtonPopoverActionButtonIcon: 'text-gray-500',
                   userButtonPopoverUserPreviewMainIdentifier: 'text-gray-900',
-                  userButtonPopoverUserPreviewSecondaryIdentifier: 'text-gray-600',
+                  userButtonPopoverUserPreviewSecondaryIdentifier: 'text-gray-700',
                   userButtonPopoverFooter: 'hidden',
                 },
               }}
