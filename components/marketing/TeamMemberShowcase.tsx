@@ -457,6 +457,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'She is a Certified Public Accountant.',
     ],
   },
+  {
+    id: 'kelly-sano',
+    name: 'Kelly Sano',
+    role: 'Partnership Controller',
+    image: '/images/team/kelly-sano.jpg',
+    bio: [
+      'Ms. Sano is a Partnership Controller at Trinity Investments.',
+      'She is responsible for Trinity partnership accounting and tax matters.',
+      'Prior to joining Trinity Investments, Ms. Sano worked for Deloitte and Touche LLP.',
+      'Ms. Sano received a Bachelor of Science degree in Accounting from Loyola Marymount University.',
+      'She is a Certified Public Accountant.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
