@@ -83,7 +83,7 @@ export default function HomeRealEstateIntroSection() {
           </div>
 
           <div className={styles.actions}>
-            <Link href="/real-estate-portfolio" className="glass-button">
+            <Link href="/real-estate-portfolio" className={`glass-button ${styles.cta}`}>
               Explore Real Estate Portfolio
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -117,4 +117,3 @@ export default function HomeRealEstateIntroSection() {
     </section>
   )
 }
-

@@ -75,6 +75,10 @@
   margin-top: 1.1rem;
 }
 
+.cta {
+  max-width: 100%;
+}
+
 .grid {
   display: grid;
   gap: 0.9rem;
@@ -172,5 +176,15 @@
   .grid {
     grid-template-columns: 1fr;
   }
-}
 
+  .cta {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0.8rem 0.9rem !important;
+    font-size: 0.88rem !important;
+    line-height: 1.25;
+    white-space: normal !important;
+    text-align: center;
+    gap: 0.45rem;
+  }
+}
