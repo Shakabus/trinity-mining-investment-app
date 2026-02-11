@@ -392,6 +392,19 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Miki received a Bachelor of Business Administration in Finance and International Business from the University of Hawaii at Manoa.',
     ],
   },
+  {
+    id: 'amber-lam',
+    name: 'Amber Lam',
+    role: 'Director of Partnership Accounting',
+    image: '/images/team/amber-lam.jpg',
+    bio: [
+      'Ms. Lam is Director of Partnership Accounting at Trinity Investments.',
+      'She is responsible for Trinity partnership accounting and tax matters.',
+      'Prior to joining Trinity, Ms. Lam worked for Liliuokalani Trust and Kamehameha Schools.',
+      'Ms. Lam received a Bachelor of Business Administration degree in Accounting from the University of Hawaii.',
+      'She is a Certified Public Accountant.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
