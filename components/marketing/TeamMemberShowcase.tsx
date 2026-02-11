@@ -123,6 +123,18 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Ms. Chen graduated with a Bachelors degree from The School of Hospitality Business at Michigan State University, where she specialized in real estate.',
     ],
   },
+  {
+    id: 'matt-dicello',
+    name: 'Matt DiCello',
+    role: 'Senior Vice President of Strategic Operations',
+    image: '/images/team/matt-dicello.jpg',
+    bio: [
+      'Mr. DiCello is a Senior Vice President of Strategic Operations at Trinity Investments.',
+      'He is responsible for providing asset management services to Trinity investments with a focus on value creation.',
+      'Prior to joining Trinity, Mr. DiCello worked for Arthur Andersen LLP, Marriott International, Park Hotels and Resorts, Inc., Starwood Capital Group, and Brookfield Properties.',
+      'Mr. DiCello received a Bachelor of Science degree in Accounting from The University of Indiana of Pennsylvania.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
