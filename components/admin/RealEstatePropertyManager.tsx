@@ -151,6 +151,7 @@ export default function RealEstatePropertyManager({
   const [form, setForm] = useState<PropertyFormState>(makeDefaultPropertyForm)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
 
   const totals = useMemo(() => {
     const active = properties.filter(item => item.status === 'active').length
@@ -286,6 +287,32 @@ export default function RealEstatePropertyManager({
     }
   }
 
+  const handleImportDefaults = async () => {
+    if (isImporting) return
+    setIsImporting(true)
+    try {
+      const response = await fetch('/api/admin/real-estate/properties/import-defaults', {
+        method: 'POST',
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        showToast(data?.error || 'Failed to import hardcoded properties.', 'error')
+        return
+      }
+
+      setProperties((data?.properties as AdminRealEstateProperty[]) ?? [])
+      showToast(
+        `Imported ${data?.createdCount ?? 0} properties, skipped ${data?.skippedCount ?? 0}.`,
+        'success'
+      )
+    } catch (error) {
+      console.error('Import hardcoded properties error:', error)
+      showToast('Network error while importing hardcoded properties.', 'error')
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -293,18 +320,33 @@ export default function RealEstatePropertyManager({
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Real Estate Properties</h1>
           <p className="text-white/70">Create, edit, and remove portfolio properties and buy-in tiers.</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
-          style={{
-            background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.25))',
-            border: '1px solid rgba(88, 45, 255, 0.5)',
-            color: '#ffffff',
-          }}
-        >
-          <Plus size={16} />
-          Add Property
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <LoadingButton
+            isLoading={isImporting}
+            loadingText="Importing..."
+            onClick={handleImportDefaults}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04))',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: '#ffffff',
+            }}
+          >
+            Import Hardcoded
+          </LoadingButton>
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.25))',
+              border: '1px solid rgba(88, 45, 255, 0.5)',
+              color: '#ffffff',
+            }}
+          >
+            <Plus size={16} />
+            Add Property
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

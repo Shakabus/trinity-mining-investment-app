@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Building2, LineChart, Wallet } from 'lucide-react'
 import RealEstatePropertySpotlight from '@/components/marketing/RealEstatePropertySpotlight'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
+import { getRealEstatePropertySpotlightItems } from '@/lib/real-estate-property-spotlight'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,7 @@ export default async function RealEstatePortfolioDashboardPage({
   }
 
   const data = await getRealEstateDashboardData(userId)
+  const spotlightProperties = await getRealEstatePropertySpotlightItems()
   const hasPendingBuyIn = !data.canCreateNewBuyIn
   const resolvedParams = searchParams ? await searchParams : undefined
   const buyInFlag = Array.isArray(resolvedParams?.buyin)
@@ -94,7 +96,11 @@ export default async function RealEstatePortfolioDashboardPage({
         </Link>
       </div>
 
-      <RealEstatePropertySpotlight buyInLabel="Buy In" enableBuyInFlow />
+      <RealEstatePropertySpotlight
+        buyInLabel="Buy In"
+        enableBuyInFlow
+        properties={spotlightProperties}
+      />
     </div>
   )
 }

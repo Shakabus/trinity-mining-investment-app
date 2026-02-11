@@ -1,6 +1,7 @@
 import BitryxHeader from '@/components/marketing/BitryxHeader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import RealEstatePropertySpotlight from '@/components/marketing/RealEstatePropertySpotlight'
+import { getRealEstatePropertySpotlightItems } from '@/lib/real-estate-property-spotlight'
 
 const PARTICIPATION_MODELS = [
   {
@@ -24,7 +25,9 @@ const WHY_THIS_LAYER = [
   'Multi-category property options for diversified allocation planning',
 ]
 
-export default function RealEstatePortfolioPage() {
+export default async function RealEstatePortfolioPage() {
+  const spotlightProperties = await getRealEstatePropertySpotlightItems()
+
   return (
     <div className="min-h-screen bg-black text-white marketing-page">
       <div className="marketing-page-content">
@@ -83,7 +86,7 @@ export default function RealEstatePortfolioPage() {
             </p>
           </section>
 
-          <RealEstatePropertySpotlight />
+          <RealEstatePropertySpotlight properties={spotlightProperties} />
         </main>
       </div>
 
