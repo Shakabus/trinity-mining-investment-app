@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { type ChangeEvent, useMemo, useState } from 'react'
 import { Building2, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useToast } from '@/components/ui/ToastProvider'
 import LoadingButton from '@/components/ui/LoadingButton'
@@ -111,6 +111,16 @@ const makeDefaultPropertyForm = (): PropertyFormState => ({
   tiers: [makeDefaultTier(0)],
 })
 
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024
+const ALLOWED_IMAGE_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/heic',
+  'image/heif',
+])
+
 const propertyToForm = (property: AdminRealEstateProperty): PropertyFormState => ({
   title: property.title,
   slug: property.slug,
@@ -150,6 +160,7 @@ export default function RealEstatePropertyManager({
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<PropertyFormState>(makeDefaultPropertyForm)
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [isImporting, setIsImporting] = useState(false)
 
@@ -198,6 +209,59 @@ export default function RealEstatePropertyManager({
       ...prev,
       tiers: prev.tiers.filter((_, idx) => idx !== index),
     }))
+  }
+
+  const handleImageUpload = async (file: File) => {
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      showToast('Unsupported image format. Use JPG, PNG, WebP, AVIF, or HEIC.', 'error')
+      return
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      showToast('Image must be under 10MB.', 'error')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('file', file)
+    if (form.slug.trim()) {
+      formData.append('slug', form.slug.trim())
+    } else if (form.title.trim()) {
+      formData.append('slug', form.title.trim())
+    }
+
+    setIsUploadingImage(true)
+    try {
+      const response = await fetch('/api/admin/real-estate/properties/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        showToast(data?.error || 'Failed to upload image.', 'error')
+        return
+      }
+
+      const uploadedImagePath = String(data?.imagePath || '')
+      if (!uploadedImagePath) {
+        showToast('Upload succeeded but image URL was missing.', 'error')
+        return
+      }
+
+      setForm(prev => ({ ...prev, imagePath: uploadedImagePath }))
+      showToast('Property image uploaded.', 'success')
+    } catch (error) {
+      console.error('Property image upload error:', error)
+      showToast('Network error while uploading image.', 'error')
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
+  const onImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0]
+    if (!selectedFile) return
+    void handleImageUpload(selectedFile)
+    event.target.value = ''
   }
 
   const handleSave = async () => {
@@ -478,11 +542,44 @@ export default function RealEstatePropertyManager({
               <input value={form.city} onChange={e => setForm(prev => ({ ...prev, city: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="City" />
               <input value={form.country} onChange={e => setForm(prev => ({ ...prev, country: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Country" />
               <input value={form.operatorName} onChange={e => setForm(prev => ({ ...prev, operatorName: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Operator / brand" />
-              <input value={form.imagePath} onChange={e => setForm(prev => ({ ...prev, imagePath: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Image path (/images/...)" />
               <input value={form.keyCount} onChange={e => setForm(prev => ({ ...prev, keyCount: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Key count (optional)" />
               <input value={form.occupancyRate} onChange={e => setForm(prev => ({ ...prev, occupancyRate: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Occupancy % (optional)" />
               <input value={form.sortOrder} onChange={e => setForm(prev => ({ ...prev, sortOrder: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Sort order" />
               <input value={form.status} onChange={e => setForm(prev => ({ ...prev, status: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Status (active/draft/archived)" />
+              <div className="md:col-span-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="text-sm text-white/80 font-medium">Property image</label>
+                  <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 text-xs text-white/80 cursor-pointer hover:bg-white/10">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif"
+                      className="hidden"
+                      onChange={onImageFileChange}
+                      disabled={isUploadingImage}
+                    />
+                    {isUploadingImage ? 'Uploading...' : 'Upload from device'}
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-white/60">
+                  Choose an image from your phone or computer. We upload it and fill the path automatically.
+                </p>
+                <input
+                  value={form.imagePath}
+                  onChange={e => setForm(prev => ({ ...prev, imagePath: e.target.value }))}
+                  className="mt-3 w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white"
+                  placeholder="Image path / URL"
+                />
+                {form.imagePath && (
+                  <a
+                    href={form.imagePath}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-xs text-cyan-300 hover:text-cyan-200 break-all"
+                  >
+                    Preview: {form.imagePath}
+                  </a>
+                )}
+              </div>
               <textarea value={form.address} onChange={e => setForm(prev => ({ ...prev, address: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white md:col-span-2 min-h-[70px]" placeholder="Address" />
               <textarea value={form.summary} onChange={e => setForm(prev => ({ ...prev, summary: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white md:col-span-2 min-h-[80px]" placeholder="Summary (required)" />
               <textarea value={form.overview} onChange={e => setForm(prev => ({ ...prev, overview: e.target.value }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white md:col-span-2 min-h-[100px]" placeholder="Full overview text" />
