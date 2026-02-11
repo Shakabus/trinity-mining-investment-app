@@ -20,7 +20,7 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Rewards based on real network output',
     description:
       'Trinity in One distributes mining rewards from active hash allocations and live network conditions. Payout values reflect hashrate, difficulty movement, and uptime instead of fixed promises.',
-    animationPath: 'https://assets10.lottiefiles.com/packages/lf20_y6vhQSMgX6.json',
+    animationPath: '/lottie/rewards/referral-rewards.json',
   },
   {
     key: 'loyalty',
@@ -36,7 +36,7 @@ const REWARD_ITEMS: RewardItem[] = [
     subtitle: 'Earn by introducing quality users',
     description:
       'Referral rewards are triggered when invited users activate qualifying plans. Credits are capped, auditable, and designed to complement real mining and trading activity inside the dashboard.',
-    animationPath: '/lottie/rewards/referral-rewards.json',
+    animationPath: '/lottie/rewards/mining-payouts.json',
   },
 ]
 
