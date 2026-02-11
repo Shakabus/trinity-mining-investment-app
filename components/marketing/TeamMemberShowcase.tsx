@@ -100,6 +100,17 @@ const TEAM_MEMBERS: TeamMember[] = [
       'Mr. Khorasanee received a Bachelor of Science degree in Corporate Finance from San Jose State University.',
     ],
   },
+  {
+    id: 'craig-lovett',
+    name: 'Craig Lovett',
+    role: 'Managing Director of Development',
+    image: '/images/team/craig-lovett.jpg',
+    bio: [
+      'Mr. Lovett is a Managing Director of Development at Trinity Investments.',
+      'He oversees Trinity development management team and is responsible for formulating strategy and delivery of all design, construction, and development activities.',
+      'Prior to joining Trinity, Mr. Lovett worked for Medland Metropolis Engineers, WSP, Prince Resorts Hawaii, and Starwood Hotels and Resorts.',
+    ],
+  },
 ]
 
 export default function TeamMemberShowcase() {
