@@ -1,25 +1,9 @@
 'use client'
 
-import { memo, useEffect, useRef, useState } from 'react'
-
-function readTheme(): 'dark' | 'light' {
-  if (typeof document === 'undefined') return 'dark'
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
-}
+import { memo, useEffect, useRef } from 'react'
 
 function NewsTimeline() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [theme, setTheme] = useState<'dark' | 'light'>(readTheme)
-
-  useEffect(() => {
-    const root = document.documentElement
-    const syncTheme = () => setTheme(readTheme())
-    const observer = new MutationObserver(syncTheme)
-
-    syncTheme()
-    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] })
-    return () => observer.disconnect()
-  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -39,7 +23,7 @@ function NewsTimeline() {
     script.innerHTML = `{
       "feedMode": "market",
       "market": "crypto",
-      "colorTheme": "${theme}",
+      "colorTheme": "dark",
       "isTransparent": true,
       "displayMode": "regular",
       "width": "100%",
@@ -53,19 +37,16 @@ function NewsTimeline() {
       container.querySelectorAll('script[data-tradingview-embed="news-timeline"]').forEach(node => node.remove())
       widgetRoot.innerHTML = ''
     }
-  }, [theme])
+  }, [])
 
   return (
     <div
-      className="rounded-3xl overflow-hidden w-full h-full no-theme-invert"
+      className="rounded-3xl overflow-hidden w-full h-full"
       style={{
-        background:
-          theme === 'light'
-            ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.78))'
-            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
         backdropFilter: 'blur(20px)',
-        border: theme === 'light' ? '1px solid rgba(15, 23, 42, 0.16)' : '1px solid rgba(255, 255, 255, 0.18)',
-        boxShadow: theme === 'light' ? '0 8px 22px rgba(15, 23, 42, 0.14)' : '0 4px 24px rgba(0, 0, 0, 0.2)',
+        border: '1px solid rgba(255, 255, 255, 0.18)',
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
       }}
     >
       {/* Page controls height; widget should fill parent */}
