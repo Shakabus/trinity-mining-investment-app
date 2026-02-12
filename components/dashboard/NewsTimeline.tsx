@@ -1,24 +1,26 @@
 'use client'
 
 import { memo, useEffect, useRef } from 'react'
-import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 function NewsTimeline() {
-  const hostRef = useRef<HTMLDivElement>(null)
-  const { theme } = useSiteTheme()
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const host = hostRef.current
-    if (!host) return
+    const container = containerRef.current
+    if (!container) return
 
-    // Hard reset before embed
-    host.innerHTML = ''
+    const widgetRoot = container.querySelector('.tradingview-widget-container__widget') as HTMLDivElement | null
+    if (!widgetRoot) return
+
+    widgetRoot.innerHTML = ''
+    container.querySelectorAll('script[data-tradingview-embed="news-timeline"]').forEach(node => node.remove())
 
     const script = document.createElement('script')
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js'
     script.type = 'text/javascript'
     script.async = true
-    script.innerHTML = JSON.stringify({
+    script.dataset.tradingviewEmbed = 'news-timeline'
+    script.textContent = JSON.stringify({
       feedMode: 'market',
       market: 'crypto',
       colorTheme: 'dark',
@@ -29,12 +31,13 @@ function NewsTimeline() {
       locale: 'en',
     })
 
-    host.appendChild(script)
+    container.appendChild(script)
 
     return () => {
-      host.innerHTML = ''
+      container.querySelectorAll('script[data-tradingview-embed="news-timeline"]').forEach(node => node.remove())
+      widgetRoot.innerHTML = ''
     }
-  }, [theme])
+  }, [])
 
   return (
     <div
@@ -47,9 +50,8 @@ function NewsTimeline() {
       }}
     >
       {/* Page controls height; widget should fill parent */}
-      <div className="tradingview-widget-container w-full h-full p-4">
-        {/* Only mutation target */}
-        <div ref={hostRef} className="w-full h-full" />
+      <div ref={containerRef} className="tradingview-widget-container w-full h-full p-4">
+        <div className="tradingview-widget-container__widget w-full h-full" />
       </div>
     </div>
   )

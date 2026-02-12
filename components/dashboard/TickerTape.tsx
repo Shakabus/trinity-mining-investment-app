@@ -1,23 +1,26 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 export default function TickerTape() {
-  const hostRef = useRef<HTMLDivElement>(null)
-  const { theme } = useSiteTheme()
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const host = hostRef.current
-    if (!host) return
+    const container = containerRef.current
+    if (!container) return
 
-    host.innerHTML = ''
+    const widgetRoot = container.querySelector('.tradingview-widget-container__widget') as HTMLDivElement | null
+    if (!widgetRoot) return
+
+    widgetRoot.innerHTML = ''
+    container.querySelectorAll('script[data-tradingview-embed="ticker-tape"]').forEach(node => node.remove())
 
     const script = document.createElement('script')
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js'
     script.type = 'text/javascript'
     script.async = true
-    script.innerHTML = JSON.stringify({
+    script.dataset.tradingviewEmbed = 'ticker-tape'
+    script.textContent = JSON.stringify({
       symbols: [
         { proName: 'BITSTAMP:BTCUSD', title: 'Bitcoin' },
         { proName: 'BITSTAMP:ETHUSD', title: 'Ethereum' },
@@ -32,12 +35,13 @@ export default function TickerTape() {
       locale: 'en',
     })
 
-    host.appendChild(script)
+    container.appendChild(script)
 
     return () => {
-      host.innerHTML = ''
+      container.querySelectorAll('script[data-tradingview-embed="ticker-tape"]').forEach(node => node.remove())
+      widgetRoot.innerHTML = ''
     }
-  }, [theme])
+  }, [])
 
   return (
     <div
@@ -49,8 +53,8 @@ export default function TickerTape() {
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
       }}
     >
-      <div className="tradingview-widget-container w-full">
-        <div ref={hostRef} className="w-full" />
+      <div ref={containerRef} className="tradingview-widget-container w-full">
+        <div className="tradingview-widget-container__widget w-full" />
       </div>
     </div>
   )
