@@ -202,11 +202,13 @@ export async function autoUpdateEarnings({
       }
 
       const isActivePlan = record.userPlan.status === 'active' && !isCompleted
+      let earnedTicked = false
       if (miningStats?.isActive && isActivePlan && dailyEstimateCrypto > 0) {
         const lastCalc = record.lastCalculatedAt ?? now
         const elapsedSeconds = Math.max(0, (now.getTime() - lastCalc.getTime()) / 1000)
         if (elapsedSeconds > 0) {
           totalEarnedCrypto += (dailyEstimateCrypto / 86400) * elapsedSeconds
+          earnedTicked = true
           await prisma.earnings.update({
             where: { id: record.id },
             data: {
@@ -220,7 +222,7 @@ export async function autoUpdateEarnings({
       const usdAgeHours = record.lastUsdUpdateAt
         ? (now.getTime() - record.lastUsdUpdateAt.getTime()) / (1000 * 60 * 60)
         : 999
-      if (usdAgeHours >= 1) {
+      if (earnedTicked || usdAgeHours >= 1) {
         const price = prices[record.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
         if (price > 0) {
           totalEarnedUsd = totalEarnedCrypto * price

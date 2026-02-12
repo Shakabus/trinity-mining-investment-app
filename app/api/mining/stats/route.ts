@@ -262,6 +262,13 @@ export async function GET() {
           )
         : 0
       const totalEarnedCrypto = parseFloat(earningsRecord.totalEarnedCrypto.toString()) + earnedIncrement
+      const estimateCrypto = parseFloat(earningsRecord.dailyEstimateCrypto.toString())
+      const estimateUsd = parseFloat(earningsRecord.dailyEstimateUsd.toString())
+      const effectivePrice = estimateCrypto > 0 ? estimateUsd / estimateCrypto : 0
+      const totalEarnedUsd =
+        effectivePrice > 0
+          ? totalEarnedCrypto * effectivePrice
+          : parseFloat(earningsRecord.totalEarnedUsd.toString())
       const estimatedDailyCrypto = (() => {
         const recordEstimate = parseFloat(earningsRecord.dailyEstimateCrypto.toString())
         if (recordEstimate > 0) {
@@ -277,7 +284,9 @@ export async function GET() {
           where: { id: earningsRecord.id },
           data: {
             totalEarnedCrypto,
+            totalEarnedUsd,
             lastCalculatedAt: now,
+            lastUsdUpdateAt: now,
           },
         })
       }
@@ -329,6 +338,13 @@ export async function GET() {
         )
       : 0
     totalEarnedCrypto = parseFloat(earningsRecord.totalEarnedCrypto.toString()) + earnedIncrement
+    const estimateCrypto = parseFloat(earningsRecord.dailyEstimateCrypto.toString())
+    const estimateUsd = parseFloat(earningsRecord.dailyEstimateUsd.toString())
+    const effectivePrice = estimateCrypto > 0 ? estimateUsd / estimateCrypto : 0
+    const totalEarnedUsd =
+      effectivePrice > 0
+        ? totalEarnedCrypto * effectivePrice
+        : parseFloat(earningsRecord.totalEarnedUsd.toString())
     estimatedDailyCrypto = (() => {
       const recordEstimate = parseFloat(earningsRecord.dailyEstimateCrypto.toString())
       if (recordEstimate > 0) {
@@ -343,7 +359,9 @@ export async function GET() {
         where: { id: earningsRecord.id },
         data: {
           totalEarnedCrypto,
+          totalEarnedUsd,
           lastCalculatedAt: now,
+          lastUsdUpdateAt: now,
         },
       })
     }

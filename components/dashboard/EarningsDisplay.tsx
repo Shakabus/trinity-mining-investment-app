@@ -166,7 +166,7 @@ export default function EarningsDisplay({
       const elapsed = Math.max(0, (now - lastCalcMs) / 1000)
       const rateCrypto = record.dailyEstimateCrypto / 86400
       const rateUsd = record.dailyEstimateUsd / 86400
-      const canTick = !record.isHistorical && record.isWithdrawable
+      const canTick = !record.isHistorical
       return {
         ...record,
         liveTotalCrypto: canTick ? record.totalEarnedCrypto + rateCrypto * elapsed : record.totalEarnedCrypto,

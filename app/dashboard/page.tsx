@@ -15,6 +15,7 @@ import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import TickerTape from '@/components/dashboard/TickerTape'
 import AdvancedChart from '@/components/dashboard/AdvancedChart'
 import NewsTimeline from '@/components/dashboard/NewsTimeline'
+import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -275,6 +276,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="w-full">
+      <DashboardAutoRefresh intervalMs={60000} />
       {/* Sticky Ticker Tape (must remain inside Overview content) */}
       <TickerTape />
 
