@@ -41,7 +41,7 @@ function NewsTimeline() {
 
   return (
     <div
-      className="rounded-3xl overflow-hidden w-full h-full"
+      className="rounded-3xl overflow-hidden w-full h-full no-theme-invert"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
         backdropFilter: 'blur(20px)',

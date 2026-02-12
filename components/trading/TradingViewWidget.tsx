@@ -1,26 +1,9 @@
 'use client'
 
-import { memo, useEffect, useRef, useState } from 'react'
-
-function readTheme(): 'dark' | 'light' {
-  if (typeof document === 'undefined') return 'dark'
-  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
-}
+import { memo, useEffect, useRef } from 'react'
 
 function TradingViewWidget() {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [theme, setTheme] = useState<'dark' | 'light'>(readTheme)
-
-  useEffect(() => {
-    const root = document.documentElement
-    const syncTheme = () => setTheme(readTheme())
-    const observer = new MutationObserver(syncTheme)
-
-    syncTheme()
-    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] })
-
-    return () => observer.disconnect()
-  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -38,7 +21,7 @@ function TradingViewWidget() {
     script.async = true
     script.dataset.tradingviewEmbed = 'market-quotes'
     script.innerHTML = JSON.stringify({
-      colorTheme: theme,
+      colorTheme: 'dark',
       locale: 'en',
       largeChartUrl: '',
       isTransparent: true,
@@ -90,11 +73,11 @@ function TradingViewWidget() {
       container.querySelectorAll('script[data-tradingview-embed="market-quotes"]').forEach(node => node.remove())
       widgetRoot.innerHTML = ''
     }
-  }, [theme])
+  }, [])
 
   return (
     <div
-      className="tradingview-widget-container h-[780px] md:h-[920px] w-full rounded-3xl overflow-hidden"
+      className="tradingview-widget-container h-[780px] md:h-[920px] w-full rounded-3xl overflow-hidden no-theme-invert"
       ref={containerRef}
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',

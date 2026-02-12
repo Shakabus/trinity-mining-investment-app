@@ -45,7 +45,7 @@ export default function TickerTape() {
 
   return (
     <div
-      className="sticky top-0 z-20 w-full overflow-hidden"
+      className="sticky top-0 z-20 w-full overflow-hidden no-theme-invert"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
         backdropFilter: 'blur(28px)',

@@ -49,7 +49,7 @@ function AdvancedChart() {
 
   return (
     <div
-      className="w-full h-full rounded-3xl overflow-hidden"
+      className="w-full h-full rounded-3xl overflow-hidden no-theme-invert"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
         backdropFilter: 'blur(24px)',
