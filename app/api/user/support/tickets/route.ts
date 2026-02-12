@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { randomUUID } from 'crypto'
+import { put } from '@vercel/blob'
 import {
   REAL_ESTATE_BUY_IN_TICKET_PREFIX,
   REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
@@ -14,6 +16,7 @@ import {
 } from '@/lib/requestValidation'
 
 const SUPPORT_TICKET_FIELDS = ['subject', 'message', 'file'] as const
+export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
   try {
@@ -100,19 +103,16 @@ export async function POST(req: Request) {
     } | null = null
 
     if (file) {
-      const { randomUUID } = await import('crypto')
-      const { mkdir, writeFile } = await import('fs/promises')
-      const path = await import('path')
-
       const buffer = Buffer.from(await file.arrayBuffer())
       const extension = file.type === 'application/pdf' ? 'pdf' : file.type.split('/')[1] || 'bin'
       const filename = `support_${user.id}_${randomUUID()}.${extension}`
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'support')
-      await mkdir(uploadDir, { recursive: true })
-      await writeFile(path.join(uploadDir, filename), buffer)
+      const blob = await put(`support-tickets/${filename}`, buffer, {
+        access: 'public',
+        contentType: file.type,
+      })
 
       attachmentData = {
-        attachmentUrl: `/uploads/support/${filename}`,
+        attachmentUrl: blob.url,
         attachmentName: file.name,
         attachmentType: file.type,
         attachmentSize: file.size,
