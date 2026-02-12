@@ -1,11 +1,9 @@
 'use client'
 
 import { memo, useEffect, useRef } from 'react'
-import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 function NewsTimeline() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { theme } = useSiteTheme()
 
   useEffect(() => {
     const container = containerRef.current
@@ -25,7 +23,7 @@ function NewsTimeline() {
     script.innerHTML = `{
       "feedMode": "market",
       "market": "crypto",
-      "colorTheme": "${theme}",
+      "colorTheme": "dark",
       "isTransparent": true,
       "displayMode": "regular",
       "width": "100%",
@@ -39,11 +37,11 @@ function NewsTimeline() {
       container.querySelectorAll('script[data-tradingview-embed="news-timeline"]').forEach(node => node.remove())
       widgetRoot.innerHTML = ''
     }
-  }, [theme])
+  }, [])
 
   return (
     <div
-      className="rounded-3xl overflow-hidden w-full h-full no-theme-invert"
+      className="rounded-3xl overflow-hidden w-full h-full"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
         backdropFilter: 'blur(20px)',
