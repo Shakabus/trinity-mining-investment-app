@@ -213,7 +213,7 @@ export async function POST(req: Request) {
             userPlanId: userPlan.id,
             amountUsd: userPlan.finalPrice,
             cryptoType: userPlan.plan.coinType,
-            walletAddress: 'Admin Approved',
+            walletAddress: 'Approved',
             transactionId: txid || 'Manual Approval',
             status: 'confirmed',
             confirmations: 999,

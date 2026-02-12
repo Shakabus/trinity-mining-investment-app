@@ -52,7 +52,7 @@ const EXPERIENCE_FEATURES = [
   {
     tag: 'Automation',
     title: 'Operationally efficient plan flow',
-    body: 'Systemized status transitions, approval logic, and payout sequencing reduce manual friction while keeping admin governance and traceability intact.',
+    body: 'Systemized status transitions, approval logic, and payout sequencing reduce manual friction while keeping governance and traceability intact.',
     delay: styles.delay4,
   },
   {
@@ -91,7 +91,7 @@ const REAL_ESTATE_FEATURES = [
   {
     tag: 'Lifecycle',
     title: 'End-to-end property workflow',
-    body: 'From buy-in request to admin approval, activation, earnings accrual, and withdrawal windows, every stage is surfaced in a single operational timeline.',
+    body: 'From buy-in request to approval, activation, earnings accrual, and withdrawal windows, every stage is surfaced in a single operational timeline.',
     delay: styles.delay4,
   },
 ]
@@ -173,7 +173,7 @@ export default function FeaturesPage() {
           <h2 className={styles.sectionTitle}>Operational experience features</h2>
           <p className={styles.sectionText}>
             Beyond product mechanics, Trinity in One emphasizes usability, monitoring clarity, and
-            scalable workflow control across user-facing and admin-facing operations.
+            scalable workflow control across user-facing and operations-facing systems.
           </p>
           <div className={styles.gridTwo}>
             {EXPERIENCE_FEATURES.map(feature => (

@@ -134,7 +134,7 @@ const FAQ_ITEMS: FaqItem[] = [
     category: 'Real Estate Portfolio',
     question: 'How does the real estate buy-in process work?',
     answer:
-      'Choose a property, select a tier, and submit payment proof from your dashboard flow. After admin review and approval, the position becomes active and starts tracking monthly earnings metrics in your property earnings view.',
+      'Choose a property, select a tier, and submit payment proof from your dashboard flow. After review and approval, the position becomes active and starts tracking monthly earnings metrics in your property earnings view.',
   },
   {
     id: 're-2',
@@ -169,7 +169,7 @@ const FAQ_ITEMS: FaqItem[] = [
     category: 'Real Estate Portfolio',
     question: 'Can property terms change after I already bought in?',
     answer:
-      'Core cycle records for approved positions remain tied to your confirmed purchase context. New properties, edits, or removals made by admins affect future selections and listings, while your active records stay auditable.',
+      'Core cycle records for approved positions remain tied to your confirmed purchase context. New properties, edits, or removals in listings affect future selections, while your active records stay auditable.',
   },
   {
     id: 're-7',

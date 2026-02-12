@@ -22,7 +22,7 @@ const TEAM_PODS = [
   {
     name: 'Product & Engineering',
     summary:
-      'Builds dashboard systems, activity tracking, payout flows, and reliability upgrades for user and admin tools.',
+      'Builds dashboard systems, activity tracking, payout flows, and reliability upgrades for user and operations tools.',
   },
   {
     name: 'Client Success & Support',
@@ -142,4 +142,3 @@ export default function TeamPage() {
     </div>
   )
 }
-

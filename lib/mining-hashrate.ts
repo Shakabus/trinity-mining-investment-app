@@ -1,5 +1,5 @@
 // Keeps mining plan hashrate scaling in one place so display, approvals,
-// and limits stay consistent across dashboard and admin flows.
+// and limits stay consistent across dashboard and operations flows.
 export const MINING_PLAN_HASHRATE_SCALE = 200
 
 export function scalePlanHashrate(baseHashrate: number) {

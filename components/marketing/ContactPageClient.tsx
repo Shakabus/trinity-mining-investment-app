@@ -123,7 +123,7 @@ export default function ContactPageClient() {
         <div className={styles.formCard}>
           <h2 className={styles.sectionTitle}>Send a message</h2>
           <p className={styles.sectionText}>
-            Your message is routed to the admin support inbox. Include the best email so our team
+            Your message is routed to the support inbox. Include the best email so our team
             can reply quickly.
           </p>
 

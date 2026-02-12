@@ -57,35 +57,30 @@ export async function PATCH(req: Request) {
 
     const isRealEstateBuyIn = ticket.subject.startsWith(REAL_ESTATE_BUY_IN_TICKET_PREFIX)
     const isRealEstateWithdrawal = ticket.subject.startsWith(REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX)
-    const subjectLabel = ticket.subject
-      .replace(REAL_ESTATE_BUY_IN_TICKET_PREFIX, '')
-      .replace(REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX, '')
-      .trim()
-
     if (isRealEstateBuyIn) {
       if (status === 'closed') {
         await logUserActivity({
           userId: ticket.userId,
           action: 'RealEstateBuyInApproved',
-          detail: `Admin approved your real-estate buy-in: ${subjectLabel || ticket.subject}.`,
+          detail: `Real estate buy-in approved.`,
         })
       } else if (status === 'waiting') {
         await logUserActivity({
           userId: ticket.userId,
           action: 'RealEstateBuyInUnderReview',
-          detail: `Admin moved your real-estate buy-in to review: ${subjectLabel || ticket.subject}.`,
+          detail: `Real estate buy-in under review.`,
         })
       } else if (status === 'rejected') {
         await logUserActivity({
           userId: ticket.userId,
           action: 'RealEstateBuyInRejected',
-          detail: `Admin rejected your real-estate buy-in: ${subjectLabel || ticket.subject}.`,
+          detail: `Real estate buy-in rejected.`,
         })
       } else if (status === 'open') {
         await logUserActivity({
           userId: ticket.userId,
           action: 'RealEstateBuyInReopened',
-          detail: `Admin reopened your real-estate buy-in ticket: ${subjectLabel || ticket.subject}.`,
+          detail: `Real estate buy-in reopened.`,
         })
       }
     } else if (isRealEstateWithdrawal) {
@@ -93,25 +88,25 @@ export async function PATCH(req: Request) {
         await logUserActivity({
           userId: ticket.userId,
           action: 'RealEstateWithdrawalPaid',
-          detail: `Admin approved and marked paid your real-estate withdrawal: ${subjectLabel || ticket.subject}.`,
+          detail: `Real estate withdrawal approved.`,
         })
       } else if (status === 'waiting') {
         await logUserActivity({
           userId: ticket.userId,
           action: 'RealEstateWithdrawalProcessing',
-          detail: `Admin moved your real-estate withdrawal to processing: ${subjectLabel || ticket.subject}.`,
+          detail: `Real estate withdrawal processing.`,
         })
       } else if (status === 'rejected') {
         await logUserActivity({
           userId: ticket.userId,
           action: 'RealEstateWithdrawalRejected',
-          detail: `Admin rejected your real-estate withdrawal: ${subjectLabel || ticket.subject}.`,
+          detail: `Real estate withdrawal rejected.`,
         })
       } else if (status === 'open') {
         await logUserActivity({
           userId: ticket.userId,
           action: 'RealEstateWithdrawalReopened',
-          detail: `Admin reopened your real-estate withdrawal ticket: ${subjectLabel || ticket.subject}.`,
+          detail: `Real estate withdrawal reopened.`,
         })
       }
     } else if (status === 'closed') {
