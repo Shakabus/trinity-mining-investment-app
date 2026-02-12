@@ -42,10 +42,10 @@ function AdvancedChart() {
       allow_symbol_change: true,
       save_image: false,
       calendar: false,
-      isTransparent: false,
-      backgroundColor: theme === 'light' ? '#ffffff' : '#0b0f16',
+      isTransparent: true,
+      backgroundColor: 'rgba(0, 0, 0, 0)',
       overrides: {
-        'paneProperties.background': theme === 'light' ? '#ffffff' : '#0b0f16',
+        'paneProperties.background': 'rgba(0, 0, 0, 0)',
         'paneProperties.backgroundType': 'solid',
         'paneProperties.vertGridProperties.color':
           theme === 'light' ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)',
