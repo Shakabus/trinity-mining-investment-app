@@ -2,8 +2,9 @@
 
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { Menu } from 'lucide-react'
-import { useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { Bell, Menu } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 
@@ -16,10 +17,75 @@ interface DashboardNavProps {
   onMenuClick?: () => void
 }
 
+const ACTIVITY_SEEN_KEY_PREFIX = 'dashboard_activity_seen_id:'
+
+function getSeenActivityId(storageKey: string) {
+  if (typeof window === 'undefined') return 0
+  const rawValue = window.localStorage.getItem(storageKey)
+  const numericValue = Number(rawValue)
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : 0
+}
+
+function markActivityAsSeen(storageKey: string, latestActivityId: number) {
+  if (typeof window === 'undefined' || latestActivityId <= 0) return
+  window.localStorage.setItem(storageKey, String(latestActivityId))
+}
+
 export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
   const [isMounted] = useState(true)
+  const [latestActivityId, setLatestActivityId] = useState(0)
   const { t } = useLanguage()
+  const pathname = usePathname()
   const statusKey = user?.accountStatus === 'active' ? 'active' : user?.accountStatus === 'pending' ? 'pending' : 'inactive'
+  const activityStorageKey = user?.email
+    ? `${ACTIVITY_SEEN_KEY_PREFIX}${user.email.toLowerCase()}`
+    : null
+
+  useEffect(() => {
+    if (!user?.email) return
+
+    let cancelled = false
+
+    const loadActivityMeta = async () => {
+      try {
+        const response = await fetch('/api/user/activity/meta', { cache: 'no-store' })
+        if (!response.ok) return
+
+        const data = (await response.json()) as { latestActivityId?: number | null }
+        const parsedActivityId = Number(data.latestActivityId ?? 0)
+
+        if (!cancelled && Number.isFinite(parsedActivityId)) {
+          setLatestActivityId(parsedActivityId > 0 ? parsedActivityId : 0)
+        }
+      } catch {
+        // Silent failure keeps the nav usable when polling fails.
+      }
+    }
+
+    void loadActivityMeta()
+    const intervalId = window.setInterval(loadActivityMeta, 30000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [user?.email])
+
+  useEffect(() => {
+    if (!activityStorageKey) return
+    if (!pathname.startsWith('/dashboard/activity')) return
+    if (latestActivityId <= 0) return
+
+    markActivityAsSeen(activityStorageKey, latestActivityId)
+  }, [activityStorageKey, latestActivityId, pathname])
+
+  const hasUnreadActivity = useMemo(() => {
+    if (!activityStorageKey) return false
+    if (pathname.startsWith('/dashboard/activity')) return false
+    if (latestActivityId <= 0) return false
+
+    return latestActivityId > getSeenActivityId(activityStorageKey)
+  }, [activityStorageKey, latestActivityId, pathname])
 
   return (
     <nav
@@ -31,9 +97,7 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
       }}
     >
       <div className="px-4 md:px-8 py-4 flex items-center justify-between">
-        {/* Left side - Menu button + Logo */}
         <div className="flex items-center gap-3">
-          {/* Mobile Menu Button */}
           <button
             onClick={onMenuClick}
             className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -41,7 +105,6 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
             <Menu size={20} className="text-white" />
           </button>
 
-          {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-tight whitespace-nowrap">
               Trinity
@@ -49,9 +112,7 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
           </Link>
         </div>
 
-        {/* Right side */}
         <div className="flex items-center gap-3 md:gap-6">
-          {/* Account Status Badge */}
           <div className="hidden md:flex items-center gap-2">
             <span className="text-sm text-white/70">{t('status')}:</span>
             <span
@@ -82,7 +143,6 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
             </span>
           </div>
 
-          {/* User Info - Hidden on Mobile */}
           <div className="hidden md:block text-right">
             <div className="text-sm font-medium text-white">
               {user?.fullName || 'User'}
@@ -92,10 +152,29 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
             </div>
           </div>
 
-	          {/* Clerk User Button */}
-	          <ThemeToggle compact />
-	          {isMounted ? (
-	            <UserButton
+          <Link
+            href="/dashboard/activity"
+            onClick={() => {
+              if (activityStorageKey && latestActivityId > 0) {
+                markActivityAsSeen(activityStorageKey, latestActivityId)
+              }
+            }}
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 md:h-10 md:w-10"
+            aria-label="Open activity"
+            title="Open activity"
+          >
+            <Bell size={18} />
+            {hasUnreadActivity ? (
+              <span className="absolute right-1.5 top-1.5 flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
+              </span>
+            ) : null}
+          </Link>
+
+          <ThemeToggle compact />
+          {isMounted ? (
+            <UserButton
               appearance={{
                 elements: {
                   avatarBox: 'w-8 h-8 md:w-10 md:h-10',
