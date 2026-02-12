@@ -2,15 +2,20 @@
 
 import { useCallback, useMemo, useState } from 'react'
 
-const NETWORK_HASHRATE = 750000
-const DAILY_BTC = 450
+const DAILY_YIELD_PER_TH_BTC = 0.00000022
+const TH_PER_PH = 1000
+const MAX_OFFERED_HASHRATE_PH = 200
 
 export default function RevenueCalculator() {
-  const [hashrate, setHashrate] = useState('1.0')
+  const [hashrate, setHashrate] = useState('2.0')
   const [days, setDays] = useState('1')
   const [result, setResult] = useState<string | null>(null)
 
-  const btcPerPhPerDay = useMemo(() => DAILY_BTC / NETWORK_HASHRATE, [])
+  // Keep calculator aligned with the same BTC yield model used in mining earnings logic.
+  const btcPerPhPerDay = useMemo(
+    () => DAILY_YIELD_PER_TH_BTC * TH_PER_PH,
+    [],
+  )
 
   const calculate = useCallback(() => {
     const hashrateValue = Number.parseFloat(hashrate)
@@ -21,7 +26,8 @@ export default function RevenueCalculator() {
       return
     }
 
-    const revenue = hashrateValue * btcPerPhPerDay * daysValue
+    const clampedHashrate = Math.min(hashrateValue, MAX_OFFERED_HASHRATE_PH)
+    const revenue = clampedHashrate * btcPerPhPerDay * daysValue
     setResult(revenue.toFixed(8))
   }, [hashrate, days, btcPerPhPerDay])
 
@@ -34,7 +40,7 @@ export default function RevenueCalculator() {
           will Earn?
         </h2>
         <p className="mt-3 text-sm text-white/70">
-          We offer up to 1PH/s in mining hashrates.
+          We currently support up to {MAX_OFFERED_HASHRATE_PH} PH/s in mining hashrate allocations.
         </p>
       </div>
 
@@ -46,8 +52,9 @@ export default function RevenueCalculator() {
               className="h-12 w-40 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white placeholder:text-white/40 focus:border-white/40 focus:outline-none"
               inputMode="decimal"
               min="0"
+              max={MAX_OFFERED_HASHRATE_PH}
               onChange={event => setHashrate(event.target.value)}
-              placeholder="1.0"
+              placeholder="2.0"
               step="0.01"
               type="number"
               value={hashrate}
@@ -80,7 +87,7 @@ export default function RevenueCalculator() {
 
         <div className="min-w-[200px] text-center lg:text-left">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-            Estimated 24 hour revenue
+            Estimated revenue for selected duration
           </p>
           <p className="mt-2 text-2xl font-semibold text-white">
             {result ? (
@@ -88,7 +95,7 @@ export default function RevenueCalculator() {
                 {result} <span className="text-lg text-white/80">BTC</span>
               </>
             ) : (
-              '—'
+              '--'
             )}
           </p>
         </div>
