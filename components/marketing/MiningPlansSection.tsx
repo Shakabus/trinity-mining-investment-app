@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -37,7 +37,7 @@ const PLANS: Plan[] = [
     subtitle: 'Low-risk entry and system familiarization',
     price: '$50',
     features: [
-      '10 TH/s Hash Rate',
+      '2 PH/s (2,000 TH/s) Hash Rate',
       'SHA-256 Allocation',
       '30 / 60 / 90 day duration',
       'Real-time monitoring',
@@ -49,7 +49,7 @@ const PLANS: Plan[] = [
       {
         title: 'Technical Allocation',
         items: [
-          'Hash Rate: 10 TH/s',
+          'Hash Rate: 2 PH/s (2,000 TH/s)',
           'Hardware Tier: Shared fractional Antminer S19-class allocation',
           'Efficiency Profile: Optimized for stable baseline output',
           'Cooling Layer: Industrial airflow controls',
@@ -81,7 +81,7 @@ const PLANS: Plan[] = [
     subtitle: 'Balanced efficiency and moderate scale',
     price: '$120',
     features: [
-      '30 TH/s Hash Rate',
+      '6 PH/s (6,000 TH/s) Hash Rate',
       'Antminer S19 Pro-class routing',
       '90 / 180 day duration',
       'Priority pool routing',
@@ -93,7 +93,7 @@ const PLANS: Plan[] = [
       {
         title: 'Technical Allocation',
         items: [
-          'Hash Rate: 30 TH/s',
+          'Hash Rate: 6 PH/s (6,000 TH/s)',
           'Hardware Tier: S19 Pro-class allocation pool',
           'Power Profile: Improved efficiency versus Starter tier',
           'Uptime Target: 99.7%',
@@ -124,7 +124,7 @@ const PLANS: Plan[] = [
     subtitle: 'Long-term consistency and optimized fees',
     price: '$200',
     features: [
-      '50 TH/s Hash Rate',
+      '10 PH/s (10,000 TH/s) Hash Rate',
       'Antminer S19 XP-class efficiency',
       '180 / 365 day duration',
       '+10% renewal bonus',
@@ -136,7 +136,7 @@ const PLANS: Plan[] = [
       {
         title: 'Technical Allocation',
         items: [
-          'Hash Rate: 50 TH/s',
+          'Hash Rate: 10 PH/s (10,000 TH/s)',
           'Hardware Tier: S19 XP-class routing',
           'Efficiency Layer: Lower energy-per-TH profile',
           'Uptime Target: 99.8%',
@@ -167,7 +167,7 @@ const PLANS: Plan[] = [
     subtitle: 'Serious miners optimizing long-term output',
     price: '$800',
     features: [
-      '200 TH/s Hash Rate',
+      '40 PH/s (40,000 TH/s) Hash Rate',
       'S21 / S19 XP Hydro-class access',
       '1 / 2 / 3 year duration',
       'Intelligent pool optimization',
@@ -179,7 +179,7 @@ const PLANS: Plan[] = [
       {
         title: 'Technical Allocation',
         items: [
-          'Hash Rate: 200 TH/s',
+          'Hash Rate: 40 PH/s (40,000 TH/s)',
           'Hardware Tier: S21 and hydro-capable clusters',
           'Cooling: Advanced hydro and controlled thermal systems',
           'Uptime Target: 99.9%',
@@ -210,9 +210,9 @@ const PLANS: Plan[] = [
     subtitle: 'Institutional-grade mining exposure',
     price: 'From $5,000',
     features: [
-      '1 PH/s (1,000 TH/s) Hash Rate',
+      '200 PH/s (200,000 TH/s) Hash Rate',
       'Enterprise ASIC cluster allocation',
-      'Custom 2–5 year duration',
+      'Custom 2-5 year duration',
       'Dedicated account management',
       'SLA-backed uptime controls',
     ],
@@ -222,7 +222,7 @@ const PLANS: Plan[] = [
       {
         title: 'Technical Allocation',
         items: [
-          'Hash Rate: 1 PH/s baseline',
+          'Hash Rate: 200 PH/s baseline',
           'Enterprise ASIC cluster routing',
           'Redundant power, network, and cooling controls',
           'Uptime Target: 99.95%',
@@ -231,7 +231,7 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: custom 2–5 years',
+          'Duration: custom 2-5 years',
           'Entry Cost: from $5,000',
           'Plan economics tuned for scale commitments',
           'Custom payout and reporting cadence options',
@@ -253,10 +253,10 @@ const PLANS: Plan[] = [
     subtitle: 'Diversified BTC, ETH & LTC mining exposure',
     price: 'From $12,000',
     features: [
-      '1 PH/s BTC allocation',
+      '200 PH/s BTC allocation',
       'ETH-equivalent + LTC mining routing',
       'Enterprise ASIC + GPU clusters',
-      'Custom 2–5 year duration',
+      'Custom 2-5 year duration',
       'Priority payout and reporting',
     ],
     modalSubtitle:
@@ -265,7 +265,7 @@ const PLANS: Plan[] = [
       {
         title: 'Technical Allocation',
         items: [
-          'BTC: 1 PH/s SHA-256 routing',
+          'BTC: 200 PH/s SHA-256 routing',
           'ETH-equivalent GPU allocation layer',
           'LTC: Scrypt-capable miner routing',
           'Cross-network capacity managed from one cycle dashboard',
@@ -274,7 +274,7 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: custom 2–5 years',
+          'Duration: custom 2-5 years',
           'Entry Cost: from $12,000',
           'Network-specific cost components disclosed in-plan',
           'Custom reporting granularity and payout controls',
@@ -406,3 +406,4 @@ export default function MiningPlansSection() {
     </section>
   )
 }
+
