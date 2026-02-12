@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "migrate:mining-hashrate-scale": "node scripts/scale-existing-mining-hashrate.js",
     "postinstall": "prisma generate"
   },
   "prisma": {

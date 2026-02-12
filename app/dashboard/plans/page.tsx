@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Clock } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { scalePlanHashrate } from '@/lib/mining-hashrate'
 
 export default async function PlansPage() {
   const { userId } = await auth()
@@ -91,9 +92,17 @@ export default async function PlansPage() {
   const plans = plansData
     .map(plan => {
       const basePrice = parseFloat(plan.basePrice.toString())
+      const baseHashrate = scalePlanHashrate(parseFloat(plan.baseHashrate.toString()))
       const isUpgradeMode = Boolean(activePlan)
       const currentPlanPrice = activePlan ? Number(activePlan.plan.basePrice) : 0
       const isSamePlan = activePlan ? activePlan.planId === plan.id : false
+      const features = plan.features.map(feature => ({ ...feature }))
+      if (features.length > 0) {
+        features[0] = {
+          ...features[0],
+          featureText: `${baseHashrate.toLocaleString()} ${plan.hashrateUnit} Hash Rate`,
+        }
+      }
 
       const durationOptions = plan.durationOptions.map(opt => {
         const priceMultiplier = parseFloat(opt.priceMultiplier.toString())
@@ -145,11 +154,11 @@ export default async function PlansPage() {
         slug: plan.slug,
         basePrice,
         coinType: plan.coinType,
-        baseHashrate: parseFloat(plan.baseHashrate.toString()),
+        baseHashrate,
         hashrateUnit: plan.hashrateUnit,
         algorithm: plan.algorithm,
         hardwareModel: plan.hardwareModel,
-        features: plan.features,
+        features,
         durationOptions,
         isUpgradeMode,
         hasEligibleOption,

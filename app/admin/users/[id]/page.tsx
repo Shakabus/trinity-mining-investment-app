@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import UserDetail from '@/components/admin/UserDetail'
 import { notFound } from 'next/navigation'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
+import { scalePlanHashrate } from '@/lib/mining-hashrate'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,9 +90,11 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
   const allocationMap = new Map<string, { hashrate: number; hashrateUnit: string; ratio: number | null }>()
   for (const plan of user.userPlans) {
     for (const allocation of plan.multiAssetAllocations) {
-      const planHashrate = parseFloat(plan.plan.baseHashrate.toString())
+      const planHashrateRaw = parseFloat(plan.plan.baseHashrate.toString())
+      const planHashrateScaled = scalePlanHashrate(planHashrateRaw)
       const allocationHashrate = parseFloat(allocation.hashrate.toString())
-      const ratio = planHashrate > 0 ? allocationHashrate / planHashrate : null
+      const ratioBase = allocationHashrate > planHashrateRaw ? planHashrateScaled : planHashrateRaw
+      const ratio = ratioBase > 0 ? allocationHashrate / ratioBase : null
       allocationMap.set(`${plan.id}-${allocation.coinType}`, {
         hashrate: allocationHashrate,
         hashrateUnit: allocation.hashrateUnit,
@@ -170,7 +173,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
                 name: currentPlan.plan.name,
                 status: currentPlan.status,
                 coinType: currentPlan.plan.coinType,
-                baseHashrate: parseFloat(currentPlan.plan.baseHashrate.toString()),
+                baseHashrate: scalePlanHashrate(parseFloat(currentPlan.plan.baseHashrate.toString())),
                 hashrateUnit: currentPlan.plan.hashrateUnit,
                 algorithm: currentPlan.plan.algorithm,
                 startDate: currentPlan.startDate ? currentPlan.startDate.toISOString() : null,

@@ -213,6 +213,9 @@ export default async function DashboardPage() {
   })
 
   const hashrateBase = activeMining ? Number(activeMining.assignedHashrate) : 0
+  const hashrateDisplay = activeMining
+    ? `${Number(activeMining.assignedHashrate).toLocaleString()} ${activeMining.hashrateUnit}`
+    : '0 TH/s'
   const hashrateSeries = Array.from({ length: 24 }, (_, index) => {
     const hoursAgo = 23 - index
     const seed = (user?.id || 1) * 97 + hoursAgo * 13
@@ -442,7 +445,7 @@ export default async function DashboardPage() {
                   <div>
                     <div className="text-xs md:text-sm text-white/60 mb-1">Hashrate</div>
                     <div className="text-lg md:text-2xl font-bold text-white">
-                      {activeMiningPlan.plan.baseHashrate.toString()} {activeMiningPlan.plan.hashrateUnit}
+                      {hashrateDisplay}
                     </div>
                   </div>
                   <div>
@@ -470,7 +473,7 @@ export default async function DashboardPage() {
             <div className="text-xs md:text-sm text-white/60 mb-2">Total Hashrate</div>
             <div className="text-lg md:text-2xl font-bold text-white">
               {user?.accountStatus === 'active' && activeMiningPlan
-                ? `${activeMiningPlan.plan.baseHashrate.toString()} ${activeMiningPlan.plan.hashrateUnit}`
+                ? hashrateDisplay
                 : '0 TH/s'}
             </div>
           </div>

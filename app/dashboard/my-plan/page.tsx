@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Calendar, Hash, Zap, TrendingUp, Clock } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { scalePlanHashrate } from '@/lib/mining-hashrate'
 
 export default async function MyPlanPage() {
   const { userId } = await auth()
@@ -23,7 +24,10 @@ export default async function MyPlanPage() {
         orderBy: {
           createdAt: 'desc'
         }
-      }
+      },
+      miningStats: {
+        orderBy: { createdAt: 'desc' },
+      },
     }
   })
 
@@ -51,6 +55,7 @@ export default async function MyPlanPage() {
     plan => plan.status === 'awaiting_payment' && plan.upgradeFromPlanId
   ) || null
   const currentPlan = activePlan || pendingUpgrade || selectedPlan
+  const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
 
   if (!currentPlan) {
     return (
@@ -98,8 +103,10 @@ export default async function MyPlanPage() {
     paymentStatus: currentPlan.paymentStatus,
     planName: currentPlan.plan.name,
     coinType: currentPlan.plan.coinType,
-    baseHashrate: parseFloat(currentPlan.plan.baseHashrate.toString()),
-    hashrateUnit: currentPlan.plan.hashrateUnit,
+    baseHashrate: activeMining
+      ? parseFloat(activeMining.assignedHashrate.toString())
+      : scalePlanHashrate(parseFloat(currentPlan.plan.baseHashrate.toString())),
+    hashrateUnit: activeMining?.hashrateUnit ?? currentPlan.plan.hashrateUnit,
     algorithm: currentPlan.plan.algorithm,
     hardwareModel: currentPlan.plan.hardwareModel,
     selectedDurationDays: currentPlan.selectedDurationDays,

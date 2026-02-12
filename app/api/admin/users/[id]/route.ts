@@ -10,6 +10,7 @@ import {
   readNumberField,
   readStringField,
 } from '@/lib/requestValidation'
+import { scalePlanHashrate } from '@/lib/mining-hashrate'
 
 const USER_ACTIONS = [
   'updateMining',
@@ -83,7 +84,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         orderBy: { createdAt: 'desc' },
       })
 
-      const maxHashrate = latestPlan ? Number(latestPlan.plan.baseHashrate) : null
+      const maxHashrate = latestPlan ? scalePlanHashrate(Number(latestPlan.plan.baseHashrate)) : null
       const assignedHashrate = readNumberField(body, 'assignedHashrate', { required: true, min: 0.0001 })!
       const counterSpeed = readNumberField(body, 'counterSpeed', { required: true, min: 0.0001, max: 0.01 })!
       const miningPool = readStringField(body, 'miningPool', { maxLength: 50 })

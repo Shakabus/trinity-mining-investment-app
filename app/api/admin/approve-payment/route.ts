@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { scalePlanHashrateDecimal } from '@/lib/mining-hashrate'
 import {
   isInputValidationError,
   readJsonObject,
@@ -118,12 +119,14 @@ export async function POST(req: Request) {
       })
     }
 
+    const scaledPlanHashrate = scalePlanHashrateDecimal(userPlan.plan.baseHashrate)
+
     // Create mining stats for the user
     await prisma.miningStats.create({
       data: {
         userId: userPlan.userId,
         userPlanId: userPlan.id,
-        assignedHashrate: userPlan.plan.baseHashrate,
+        assignedHashrate: scaledPlanHashrate,
         hashrateUnit: userPlan.plan.hashrateUnit,
         counterSpeed: 0.001, // Default counter speed
         algorithm: userPlan.plan.algorithm,
@@ -146,7 +149,7 @@ export async function POST(req: Request) {
         data: allocationSplits.map(split => ({
           userPlanId: userPlan.id,
           coinType: split.coinType,
-          hashrate: userPlan.plan.baseHashrate.mul(split.ratio),
+          hashrate: scaledPlanHashrate.mul(split.ratio),
           hashrateUnit: userPlan.plan.hashrateUnit,
           algorithm: split.algorithm,
           hardwareModel: split.hardwareModel,
