@@ -20,7 +20,7 @@ function TradingViewWidget() {
     script.type = 'text/javascript'
     script.async = true
     script.dataset.tradingviewEmbed = 'market-quotes'
-    script.textContent = JSON.stringify({
+    script.innerHTML = JSON.stringify({
       colorTheme: 'dark',
       locale: 'en',
       largeChartUrl: '',
@@ -77,7 +77,7 @@ function TradingViewWidget() {
 
   return (
     <div
-      className="tradingview-widget-container h-[780px] md:h-[920px] w-full no-theme-invert"
+      className="tradingview-widget-container h-[780px] md:h-[920px] w-full"
       ref={containerRef}
     >
       <div className="tradingview-widget-container__widget h-full w-full" />

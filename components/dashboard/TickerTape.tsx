@@ -20,20 +20,20 @@ export default function TickerTape() {
     script.type = 'text/javascript'
     script.async = true
     script.dataset.tradingviewEmbed = 'ticker-tape'
-    script.textContent = JSON.stringify({
-      symbols: [
-        { proName: 'BITSTAMP:BTCUSD', title: 'Bitcoin' },
-        { proName: 'BITSTAMP:ETHUSD', title: 'Ethereum' },
-        { proName: 'BINANCE:LTCUSDT', title: 'Litecoin' },
-        { proName: 'BINANCE:XRPUSDT', title: 'XRP' },
-        { proName: 'BINANCE:SOLUSDT', title: 'Solana' },
+    script.innerHTML = `{
+      "symbols": [
+        { "proName": "BITSTAMP:BTCUSD", "title": "Bitcoin" },
+        { "proName": "BITSTAMP:ETHUSD", "title": "Ethereum" },
+        { "proName": "BINANCE:LTCUSDT", "title": "Litecoin" },
+        { "proName": "BINANCE:XRPUSDT", "title": "XRP" },
+        { "proName": "BINANCE:SOLUSDT", "title": "Solana" }
       ],
-      showSymbolLogo: true,
-      colorTheme: 'dark',
-      isTransparent: true,
-      displayMode: 'adaptive',
-      locale: 'en',
-    })
+      "showSymbolLogo": true,
+      "colorTheme": "dark",
+      "isTransparent": true,
+      "displayMode": "adaptive",
+      "locale": "en"
+    }`
 
     container.appendChild(script)
 
@@ -45,7 +45,7 @@ export default function TickerTape() {
 
   return (
     <div
-      className="sticky top-0 z-20 w-full overflow-hidden no-theme-invert"
+      className="sticky top-0 z-20 w-full overflow-hidden"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
         backdropFilter: 'blur(28px)',

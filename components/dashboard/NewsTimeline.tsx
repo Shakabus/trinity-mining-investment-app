@@ -20,16 +20,16 @@ function NewsTimeline() {
     script.type = 'text/javascript'
     script.async = true
     script.dataset.tradingviewEmbed = 'news-timeline'
-    script.textContent = JSON.stringify({
-      feedMode: 'market',
-      market: 'crypto',
-      colorTheme: 'dark',
-      isTransparent: true,
-      displayMode: 'regular',
-      width: '100%',
-      height: '100%',
-      locale: 'en',
-    })
+    script.innerHTML = `{
+      "feedMode": "market",
+      "market": "crypto",
+      "colorTheme": "dark",
+      "isTransparent": true,
+      "displayMode": "regular",
+      "width": "100%",
+      "height": "100%",
+      "locale": "en"
+    }`
 
     container.appendChild(script)
 
@@ -41,7 +41,7 @@ function NewsTimeline() {
 
   return (
     <div
-      className="rounded-3xl overflow-hidden w-full h-full no-theme-invert"
+      className="rounded-3xl overflow-hidden w-full h-full"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
         backdropFilter: 'blur(20px)',
