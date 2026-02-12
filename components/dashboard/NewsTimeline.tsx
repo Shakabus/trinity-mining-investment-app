@@ -9,33 +9,40 @@ function NewsTimeline() {
     const container = containerRef.current
     if (!container) return
 
-    const widgetRoot = container.querySelector('.tradingview-widget-container__widget') as HTMLDivElement | null
-    if (!widgetRoot) return
+    const mountWidget = () => {
+      const widgetRoot = container.querySelector('.tradingview-widget-container__widget') as HTMLDivElement | null
+      if (!widgetRoot) return
 
-    widgetRoot.innerHTML = ''
-    container.querySelectorAll('script[data-tradingview-embed="news-timeline"]').forEach(node => node.remove())
+      widgetRoot.innerHTML = ''
+      container.querySelectorAll('script[data-tradingview-embed="news-timeline"]').forEach(node => node.remove())
 
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js'
-    script.type = 'text/javascript'
-    script.async = true
-    script.dataset.tradingviewEmbed = 'news-timeline'
-    script.innerHTML = `{
-      "feedMode": "market",
-      "market": "crypto",
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "displayMode": "regular",
-      "width": "100%",
-      "height": "100%",
-      "locale": "en"
-    }`
+      const script = document.createElement('script')
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-timeline.js'
+      script.type = 'text/javascript'
+      script.async = true
+      script.dataset.tradingviewEmbed = 'news-timeline'
+      script.innerHTML = `{
+        "feedMode": "market",
+        "market": "crypto",
+        "colorTheme": "dark",
+        "isTransparent": true,
+        "displayMode": "regular",
+        "width": "100%",
+        "height": "100%",
+        "locale": "en"
+      }`
 
-    container.appendChild(script)
+      container.appendChild(script)
+    }
+
+    mountWidget()
+    const retryTimer = window.setTimeout(mountWidget, 550)
 
     return () => {
+      window.clearTimeout(retryTimer)
       container.querySelectorAll('script[data-tradingview-embed="news-timeline"]').forEach(node => node.remove())
-      widgetRoot.innerHTML = ''
+      const widgetRoot = container.querySelector('.tradingview-widget-container__widget') as HTMLDivElement | null
+      if (widgetRoot) widgetRoot.innerHTML = ''
     }
   }, [])
 

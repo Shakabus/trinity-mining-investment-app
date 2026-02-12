@@ -9,37 +9,46 @@ export default function TickerTape() {
     const container = containerRef.current
     if (!container) return
 
-    const widgetRoot = container.querySelector('.tradingview-widget-container__widget') as HTMLDivElement | null
-    if (!widgetRoot) return
+    const mountWidget = () => {
+      const widgetRoot = container.querySelector('.tradingview-widget-container__widget') as HTMLDivElement | null
+      if (!widgetRoot) return
 
-    widgetRoot.innerHTML = ''
-    container.querySelectorAll('script[data-tradingview-embed="ticker-tape"]').forEach(node => node.remove())
+      widgetRoot.innerHTML = ''
+      container.querySelectorAll('script[data-tradingview-embed="ticker-tape"]').forEach(node => node.remove())
 
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js'
-    script.type = 'text/javascript'
-    script.async = true
-    script.dataset.tradingviewEmbed = 'ticker-tape'
-    script.innerHTML = `{
-      "symbols": [
-        { "proName": "BITSTAMP:BTCUSD", "title": "Bitcoin" },
-        { "proName": "BITSTAMP:ETHUSD", "title": "Ethereum" },
-        { "proName": "BINANCE:LTCUSDT", "title": "Litecoin" },
-        { "proName": "BINANCE:XRPUSDT", "title": "XRP" },
-        { "proName": "BINANCE:SOLUSDT", "title": "Solana" }
-      ],
-      "showSymbolLogo": true,
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "displayMode": "adaptive",
-      "locale": "en"
-    }`
+      const script = document.createElement('script')
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js'
+      script.type = 'text/javascript'
+      script.async = true
+      script.dataset.tradingviewEmbed = 'ticker-tape'
+      script.innerHTML = `{
+        "symbols": [
+          { "proName": "BITSTAMP:BTCUSD", "title": "Bitcoin" },
+          { "proName": "BITSTAMP:ETHUSD", "title": "Ethereum" },
+          { "proName": "BINANCE:LTCUSDT", "title": "Litecoin" },
+          { "proName": "BINANCE:XRPUSDT", "title": "XRP" },
+          { "proName": "BINANCE:SOLUSDT", "title": "Solana" }
+        ],
+        "showSymbolLogo": true,
+        "colorTheme": "dark",
+        "isTransparent": true,
+        "displayMode": "adaptive",
+        "locale": "en"
+      }`
 
-    container.appendChild(script)
+      container.appendChild(script)
+    }
+
+    mountWidget()
+    // TradingView can occasionally mount with a fallback light skin on first paint.
+    // One delayed remount stabilizes dark theme rendering.
+    const retryTimer = window.setTimeout(mountWidget, 550)
 
     return () => {
+      window.clearTimeout(retryTimer)
       container.querySelectorAll('script[data-tradingview-embed="ticker-tape"]').forEach(node => node.remove())
-      widgetRoot.innerHTML = ''
+      const widgetRoot = container.querySelector('.tradingview-widget-container__widget') as HTMLDivElement | null
+      if (widgetRoot) widgetRoot.innerHTML = ''
     }
   }, [])
 

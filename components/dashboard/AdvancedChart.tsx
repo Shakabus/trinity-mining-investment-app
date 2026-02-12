@@ -9,40 +9,46 @@ function AdvancedChart() {
     const host = hostRef.current
     if (!host) return
 
-    host.innerHTML = ''
+    const mountWidget = () => {
+      host.innerHTML = ''
 
-    const script = document.createElement('script')
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
-    script.type = 'text/javascript'
-    script.async = true
-    script.innerHTML = JSON.stringify({
-      autosize: true,
-      symbol: 'BINANCE:BTCUSDT',
-      interval: '60',
-      timezone: 'Etc/UTC',
-      theme: 'dark',
-      style: '1',
-      locale: 'en',
-      allow_symbol_change: true,
-      save_image: false,
-      calendar: false,
-      isTransparent: true,
-      backgroundColor: 'rgba(0, 0, 0, 0)',
-      overrides: {
-        'paneProperties.background': 'rgba(0, 0, 0, 0)',
-        'paneProperties.backgroundType': 'solid',
-        'paneProperties.vertGridProperties.color': 'rgba(255, 255, 255, 0.06)',
-        'paneProperties.horzGridProperties.color': 'rgba(255, 255, 255, 0.06)',
-        'scalesProperties.textColor': 'rgba(255, 255, 255, 0.7)',
-      },
-      hide_top_toolbar: false,
-      hide_legend: false,
-      support_host: 'https://www.tradingview.com',
-    })
+      const script = document.createElement('script')
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
+      script.type = 'text/javascript'
+      script.async = true
+      script.innerHTML = JSON.stringify({
+        autosize: true,
+        symbol: 'BINANCE:BTCUSDT',
+        interval: '60',
+        timezone: 'Etc/UTC',
+        theme: 'dark',
+        style: '1',
+        locale: 'en',
+        allow_symbol_change: true,
+        save_image: false,
+        calendar: false,
+        isTransparent: true,
+        backgroundColor: 'rgba(0, 0, 0, 0)',
+        overrides: {
+          'paneProperties.background': 'rgba(0, 0, 0, 0)',
+          'paneProperties.backgroundType': 'solid',
+          'paneProperties.vertGridProperties.color': 'rgba(255, 255, 255, 0.06)',
+          'paneProperties.horzGridProperties.color': 'rgba(255, 255, 255, 0.06)',
+          'scalesProperties.textColor': 'rgba(255, 255, 255, 0.7)',
+        },
+        hide_top_toolbar: false,
+        hide_legend: false,
+        support_host: 'https://www.tradingview.com',
+      })
 
-    host.appendChild(script)
+      host.appendChild(script)
+    }
+
+    mountWidget()
+    const retryTimer = window.setTimeout(mountWidget, 550)
 
     return () => {
+      window.clearTimeout(retryTimer)
       host.innerHTML = ''
     }
   }, [])
