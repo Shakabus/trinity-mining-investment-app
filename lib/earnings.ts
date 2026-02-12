@@ -99,6 +99,7 @@ export async function autoUpdateEarnings({
     let dailyEstimateUsd = Number(record.dailyEstimateUsd)
     let totalEarnedCrypto = Number(record.totalEarnedCrypto)
     let totalEarnedUsd = Number(record.totalEarnedUsd)
+    let targetDailyEstimateCrypto: number | null = null
 
     if (!record.isAdminOverride) {
       const planStart = record.userPlan.startDate ?? record.userPlan.createdAt ?? now
@@ -153,28 +154,43 @@ export async function autoUpdateEarnings({
         ? (now.getTime() - record.lastEstimateUpdateAt.getTime()) / (1000 * 60 * 60)
         : 999
 
-      if (!record.isHistorical && estimateAgeHours >= 12) {
+      if (!record.isHistorical) {
         if (record.userPlan.plan.coinType === 'MULTI') {
           const allocation = record.userPlan.multiAssetAllocations.find(
             item => item.coinType === record.coinType
           )
           if (allocation) {
-            dailyEstimateCrypto = computeDailyCryptoEstimate(
+            targetDailyEstimateCrypto = computeDailyCryptoEstimate(
               allocation.coinType,
               Number(allocation.hashrate),
               allocation.hashrateUnit
             )
           }
         } else if (miningStats) {
-          dailyEstimateCrypto = computeDailyCryptoEstimate(
+          targetDailyEstimateCrypto = computeDailyCryptoEstimate(
             record.coinType,
             Number(miningStats.assignedHashrate),
             miningStats.hashrateUnit
           )
         }
+      }
+
+      const estimateDrift =
+        targetDailyEstimateCrypto && targetDailyEstimateCrypto > 0
+          ? Math.abs(dailyEstimateCrypto - targetDailyEstimateCrypto) / targetDailyEstimateCrypto
+          : 0
+      const shouldRefreshEstimate =
+        !record.isHistorical &&
+        (
+          estimateAgeHours >= 12 ||
+          dailyEstimateCrypto <= 0 ||
+          estimateDrift > 0.08
+        )
+
+      if (shouldRefreshEstimate && targetDailyEstimateCrypto && targetDailyEstimateCrypto > 0) {
+        dailyEstimateCrypto = targetDailyEstimateCrypto
         const priceForEstimate = prices[record.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
         dailyEstimateUsd = priceForEstimate > 0 ? dailyEstimateCrypto * priceForEstimate : dailyEstimateUsd
-
         await prisma.earnings.update({
           where: { id: record.id },
           data: {

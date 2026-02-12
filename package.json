@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "migrate:mining-hashrate-scale": "node scripts/scale-existing-mining-hashrate.js",
+    "migrate:mining-earnings-normalize": "node scripts/normalize-existing-mining-earnings.js",
     "postinstall": "prisma generate"
   },
   "prisma": {
