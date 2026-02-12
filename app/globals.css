@@ -67,7 +67,7 @@ html[data-theme="light"] [class*="lottie"] svg {
 }
 
 html[data-theme="light"] .no-theme-invert * {
-  filter: inherit !important;
+  filter: none !important;
 }
 
 .theme-toggle {

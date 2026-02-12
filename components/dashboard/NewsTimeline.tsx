@@ -1,9 +1,11 @@
 'use client'
 
 import { memo, useEffect, useRef } from 'react'
+import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 function NewsTimeline() {
   const hostRef = useRef<HTMLDivElement>(null)
+  const { theme } = useSiteTheme()
 
   useEffect(() => {
     const host = hostRef.current
@@ -32,7 +34,7 @@ function NewsTimeline() {
     return () => {
       host.innerHTML = ''
     }
-  }, [])
+  }, [theme])
 
   return (
     <div

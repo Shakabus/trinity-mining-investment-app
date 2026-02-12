@@ -1,9 +1,11 @@
  'use client'
 
  import React, { memo, useEffect, useRef } from 'react'
+ import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
  function TradingViewWidget() {
    const containerRef = useRef<HTMLDivElement | null>(null)
+   const { theme } = useSiteTheme()
 
    useEffect(() => {
      if (!containerRef.current) return
@@ -68,7 +70,7 @@
      return () => {
        host.innerHTML = ''
      }
-   }, [])
+   }, [theme])
 
   return (
     <div

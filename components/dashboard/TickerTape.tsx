@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 export default function TickerTape() {
   const hostRef = useRef<HTMLDivElement>(null)
+  const { theme } = useSiteTheme()
 
   useEffect(() => {
     const host = hostRef.current
@@ -35,7 +37,7 @@ export default function TickerTape() {
     return () => {
       host.innerHTML = ''
     }
-  }, [])
+  }, [theme])
 
   return (
     <div
