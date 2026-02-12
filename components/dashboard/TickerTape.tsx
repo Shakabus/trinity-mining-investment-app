@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 export default function TickerTape() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { theme } = useSiteTheme()
 
   useEffect(() => {
     const container = containerRef.current
@@ -29,7 +31,7 @@ export default function TickerTape() {
         { "proName": "BINANCE:SOLUSDT", "title": "Solana" }
       ],
       "showSymbolLogo": true,
-      "colorTheme": "dark",
+      "colorTheme": "${theme}",
       "isTransparent": true,
       "displayMode": "adaptive",
       "locale": "en"
@@ -41,16 +43,23 @@ export default function TickerTape() {
       container.querySelectorAll('script[data-tradingview-embed="ticker-tape"]').forEach(node => node.remove())
       widgetRoot.innerHTML = ''
     }
-  }, [])
+  }, [theme])
 
   return (
     <div
       className="sticky top-0 z-20 w-full overflow-hidden no-theme-invert"
       style={{
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
+        background:
+          theme === 'light'
+            ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.78))'
+            : 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
         backdropFilter: 'blur(28px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.18)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
+        borderBottom:
+          theme === 'light' ? '1px solid rgba(15, 23, 42, 0.16)' : '1px solid rgba(255, 255, 255, 0.18)',
+        boxShadow:
+          theme === 'light'
+            ? '0 8px 24px rgba(15, 23, 42, 0.14)'
+            : '0 8px 32px rgba(0, 0, 0, 0.25)',
       }}
     >
       <div ref={containerRef} className="tradingview-widget-container w-full">

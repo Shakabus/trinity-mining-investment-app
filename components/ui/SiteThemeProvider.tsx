@@ -15,6 +15,10 @@ const ThemeContext = createContext<ThemeContextValue | null>(null)
 const THEME_STORAGE_KEY = 'trinity_site_theme'
 
 function getInitialTheme(): SiteTheme {
+  if (typeof window !== 'undefined') {
+    const saved = window.localStorage.getItem(THEME_STORAGE_KEY)
+    if (saved === 'light' || saved === 'dark') return saved
+  }
   if (typeof document !== 'undefined') {
     const current = document.documentElement.dataset.theme
     if (current === 'light' || current === 'dark') return current
