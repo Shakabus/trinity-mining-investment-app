@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import styles from '@/components/marketing/HomeIntroPreloader.module.css'
 
 const MESSAGE = ['WELCOME', 'TO', 'TRINITY IN ONE', 'INVESTMENTS'].join('\n')
-const TYPE_INTERVAL_MS = 52
+const TYPE_INTERVAL_MS = 95
 const HOLD_AFTER_DONE_MS = 700
-const FADE_OUT_MS = 420
+const FADE_OUT_MS = 760
 
 export default function HomeIntroPreloader() {
   const [typedText, setTypedText] = useState('')
@@ -53,4 +53,3 @@ export default function HomeIntroPreloader() {
     </div>
   )
 }
-
