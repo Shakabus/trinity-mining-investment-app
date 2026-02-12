@@ -51,6 +51,7 @@ interface MiningDashboardProps {
     temperatureC: number
     difficultyChange: number
     totalEarnedCrypto: number
+    estimatedDailyCrypto?: number
     hourlyHashrate: { time: string; hashrate: number }[]
     weeklyPerformance: { day: string; averageHashrate: number; validShares: number }[]
     isMiningActive: boolean
@@ -68,6 +69,7 @@ interface MiningDashboardProps {
       hashrateUnit: string
       currentHashrate: number
       totalEarnedCrypto: number
+      estimatedDailyCrypto?: number
     }[]
   }
 }
@@ -75,9 +77,6 @@ interface MiningDashboardProps {
 export default function MiningDashboard({ mining }: MiningDashboardProps) {
   const { format } = useCurrency()
   const [data, setData] = useState(mining)
-  const [displayHashrate, setDisplayHashrate] = useState(mining.currentHashrate)
-  const [displayShares, setDisplayShares] = useState(mining.validShares)
-  const [displayEarned, setDisplayEarned] = useState(mining.totalEarnedCrypto)
   const [nowMs, setNowMs] = useState(0)
 
   useEffect(() => {
@@ -94,9 +93,8 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
         const updated = await response.json()
         setData(prev => ({
           ...prev,
-          latencyMs: updated.latencyMs,
-          powerKw: updated.powerKw,
-          temperatureC: updated.temperatureC,
+          ...updated,
+          historicalEarnings: prev.historicalEarnings,
         }))
       } catch {
         // Ignore polling errors to keep UI stable.
@@ -107,76 +105,10 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
   }, [])
 
   useEffect(() => {
-    setDisplayHashrate(data.currentHashrate)
-  }, [data.currentHashrate])
-
-  useEffect(() => {
-    setDisplayShares(data.validShares)
-  }, [data.validShares])
-
-  useEffect(() => {
-    setDisplayEarned(data.totalEarnedCrypto)
-  }, [data.totalEarnedCrypto])
-
-  useEffect(() => {
     setNowMs(Date.now())
     const interval = setInterval(() => setNowMs(Date.now()), 60 * 1000)
     return () => clearInterval(interval)
   }, [])
-
-  // Gentle hashrate drift, never above the assigned rate.
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!data.isMiningActive) {
-        setDisplayHashrate(0)
-        return
-      }
-      const shouldAdjust = Math.random() < 0.35
-      if (!shouldAdjust) {
-        return
-      }
-      const max = data.assignedHashrate
-      const min = max * 0.9
-      const delta = (Math.random() * 2 - 1) * max * 0.01
-      setDisplayHashrate(prev => {
-        const next = Math.min(max, Math.max(min, prev + delta))
-        return Math.round(next * 100) / 100
-      })
-    }, 20000)
-
-    return () => clearInterval(interval)
-  }, [data.assignedHashrate, data.isMiningActive])
-
-  // Valid shares tick up occasionally.
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!data.isMiningActive) {
-        return
-      }
-      const chance = Math.min(0.35, 0.08 + data.assignedHashrate / 6000)
-      if (Math.random() < chance) {
-        setDisplayShares(prev => prev + 1)
-      }
-    }, 15000)
-
-    return () => clearInterval(interval)
-  }, [data.assignedHashrate, data.isMiningActive])
-
-  // Earnings grow slowly over time while viewing.
-  useEffect(() => {
-    if (!data.isMiningActive) {
-      return
-    }
-    if (data.assetStats && data.assetStats.length > 0) {
-      return
-    }
-    const interval = setInterval(() => {
-      const increment = data.assignedHashrate * 0.00000000002
-      setDisplayEarned(prev => prev + increment)
-    }, 20000)
-
-    return () => clearInterval(interval)
-  }, [data.assignedHashrate, data.assetStats, data.isMiningActive])
 
   const shareTotals = useMemo(() => {
     const total = data.validShares + data.staleShares + data.invalidShares
@@ -205,7 +137,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
   const earnedLabel = data.coinType === 'BTC' ? 'BITCOIN EARNED' : `${data.coinType} EARNED`
   const totalEarned = hasMultiAssets
     ? data.assetStats!.reduce((sum, asset) => sum + asset.totalEarnedCrypto, 0)
-    : displayEarned
+    : data.totalEarnedCrypto
 
   const DAILY_YIELD_PER_TH: Record<string, number> = {
     BTC: 0.00000022,
@@ -213,12 +145,20 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
     LTC: 0.000015,
   }
 
-  const estimatedDailyCrypto = hasMultiAssets
+  const fallbackEstimatedDailyCrypto = hasMultiAssets
     ? data.assetStats!.reduce((sum, asset) => {
+        if (asset.estimatedDailyCrypto && asset.estimatedDailyCrypto > 0) {
+          return sum + asset.estimatedDailyCrypto
+        }
         const yieldPerTh = DAILY_YIELD_PER_TH[asset.coinType] ?? DAILY_YIELD_PER_TH.BTC
         return sum + asset.assignedHashrate * yieldPerTh
       }, 0)
     : data.assignedHashrate * (DAILY_YIELD_PER_TH[data.coinType] ?? DAILY_YIELD_PER_TH.BTC)
+
+  const estimatedDailyCrypto =
+    typeof data.estimatedDailyCrypto === 'number' && data.estimatedDailyCrypto > 0
+      ? data.estimatedDailyCrypto
+      : fallbackEstimatedDailyCrypto
 
   const actualDailyCrypto = daysRunning > 0 ? totalEarned / daysRunning : 0
 
@@ -267,8 +207,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <span className="text-xs uppercase tracking-wide text-white/60">VALID SHARES</span>
             <span className="text-2xl md:text-3xl font-bold text-white font-mono">
-              {displayShares.toLocaleString()}
-              <span className="ml-2 text-xs text-white/50 font-sans">(increments occasionally)</span>
+              {data.validShares.toLocaleString()}
             </span>
           </div>
           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -282,7 +221,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
           </div>
         </div>
         <div className="mt-6 text-sm text-white/50">
-          Current hashrate: {displayHashrate.toLocaleString(undefined, { maximumFractionDigits: 2 })}{' '}
+          Current hashrate: {data.currentHashrate.toLocaleString(undefined, { maximumFractionDigits: 2 })}{' '}
           {data.hashrateUnit} - {daysRunning} days running
         </div>
       </div>

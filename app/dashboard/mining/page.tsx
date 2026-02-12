@@ -252,6 +252,7 @@ export default async function MiningPage() {
     hashrateUnit: string
     currentHashrate: number
     totalEarnedCrypto: number
+    estimatedDailyCrypto: number
   }[] = []
 
   if (isMultiAsset) {
@@ -322,6 +323,15 @@ export default async function MiningPage() {
           )
         : 0
       const totalEarnedCrypto = parseFloat(earningsRecord.totalEarnedCrypto.toString()) + earnedIncrement
+      const estimatedDailyCrypto = (() => {
+        const recordEstimate = parseFloat(earningsRecord.dailyEstimateCrypto.toString())
+        if (recordEstimate > 0) {
+          return recordEstimate
+        }
+        const hashrateTH = normalizeHashrateToTH(allocationHashrate, allocation.hashrateUnit)
+        const yieldPerTh = DAILY_YIELD_PER_TH[allocation.coinType] ?? DAILY_YIELD_PER_TH.BTC
+        return hashrateTH * yieldPerTh
+      })()
 
       if (isMiningActive && elapsedSeconds > 0 && !earningsRecord.isAdminOverride) {
         await prisma.earnings.update({
@@ -339,11 +349,13 @@ export default async function MiningPage() {
         hashrateUnit: allocation.hashrateUnit,
         currentHashrate: allocationCurrentHashrate,
         totalEarnedCrypto,
+        estimatedDailyCrypto,
       })
     }
   }
 
   let totalEarnedCrypto = 0
+  let estimatedDailyCrypto = 0
 
   if (!isMultiAsset) {
     let earningsRecord = miningStats.userPlan.earnings.find(record => record.isActive)
@@ -378,6 +390,14 @@ export default async function MiningPage() {
         )
       : 0
     totalEarnedCrypto = parseFloat(earningsRecord.totalEarnedCrypto.toString()) + earnedIncrement
+    estimatedDailyCrypto = (() => {
+      const recordEstimate = parseFloat(earningsRecord.dailyEstimateCrypto.toString())
+      if (recordEstimate > 0) {
+        return recordEstimate
+      }
+      const yieldPerTh = DAILY_YIELD_PER_TH[miningStats.userPlan.plan.coinType] ?? DAILY_YIELD_PER_TH.BTC
+      return normalizeHashrateToTH(assignedHashrate, miningStats.hashrateUnit) * yieldPerTh
+    })()
 
     if (isMiningActive && elapsedSeconds > 0 && !earningsRecord.isAdminOverride) {
       await prisma.earnings.update({
@@ -434,6 +454,9 @@ export default async function MiningPage() {
     temperatureC,
     difficultyChange,
     totalEarnedCrypto,
+    estimatedDailyCrypto: isMultiAsset
+      ? assetStats.reduce((sum, item) => sum + item.estimatedDailyCrypto, 0)
+      : estimatedDailyCrypto,
     hourlyHashrate,
     weeklyPerformance,
     assetStats: assetStats.length > 0 ? assetStats : undefined,

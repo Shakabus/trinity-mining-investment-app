@@ -198,7 +198,29 @@ export default async function DashboardPage() {
     effectiveAccountStatus === 'active' && daysActiveStart
       ? Math.max(1, Math.floor((now.getTime() - new Date(daysActiveStart).getTime()) / (1000 * 60 * 60 * 24)) + 1)
       : 0
-  const actualDailyUsd = daysActive > 0 ? totalEarnedUsd / daysActive : 0
+  const computeDailyRunRate = (totalUsd: number, startDate: Date | null | undefined, fallbackDate: Date | null | undefined) => {
+    const startedAt = startDate ?? fallbackDate ?? now
+    const elapsedDays = Math.max(1, Math.floor((now.getTime() - startedAt.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+    return totalUsd / elapsedDays
+  }
+
+  const miningActualDailyUsd = updatedEarnings
+    .filter(record => !record.isHistorical)
+    .reduce((sum, record) => {
+      const totalUsd = Number(record.totalEarnedUsd || 0)
+      const startDate = record.userPlan?.startDate ?? null
+      const fallbackDate = record.userPlan?.createdAt ?? null
+      return sum + computeDailyRunRate(totalUsd, startDate, fallbackDate)
+    }, 0)
+
+  const tradingActualDailyUsd = tradingEarningsComputed
+    .filter(record => record.isActive)
+    .reduce((sum, record) => {
+      const totalUsd = Number(record.totalEarnedUsd || 0)
+      const startDate = activeTradingPlan?.startDate ?? null
+      const fallbackDate = activeTradingPlan?.createdAt ?? record.createdAt ?? null
+      return sum + computeDailyRunRate(totalUsd, startDate, fallbackDate)
+    }, 0)
 
   const earningsSeries = Array.from({ length: 24 }, (_, index) => {
     const hoursAgo = 23 - index
@@ -240,7 +262,7 @@ export default async function DashboardPage() {
     (tradingEarningsComputed.length > 0
       ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0)
       : 0)
-  const combinedActualDaily = daysActive > 0 ? totalEarnedUsd / daysActive : 0
+  const combinedActualDaily = miningActualDailyUsd + tradingActualDailyUsd
   const convertedEstimatedDaily = convertUsd(combinedEstimatedDaily, rates, preferredCurrency)
   const convertedActualDaily = convertUsd(combinedActualDaily, rates, preferredCurrency)
   const estimatedVsActual = [
