@@ -34,9 +34,13 @@ const OFFICES: Office[] = [
 ]
 
 const CONTACT_CHANNELS = [
-  { label: 'Support', value: 'support@trinityinoneinvestments.com', href: 'mailto:support@trinityinoneinvestments.com' },
-  { label: 'Info', value: 'info@trinityinoneinvestments.com', href: 'mailto:info@trinityinoneinvestments.com' },
-  { label: 'Corporate', value: 'contact@trinityinvestments.com', href: 'mailto:contact@trinityinvestments.com' },
+  { label: 'Info', value: 'INFO@TRINTYIN1INVESTMENTS.COM', href: 'mailto:INFO@TRINTYIN1INVESTMENTS.COM' },
+  { label: 'Support', value: 'SUPPORT@TRINITYIN1INVESTMENTS.COM', href: 'mailto:SUPPORT@TRINITYIN1INVESTMENTS.COM' },
+  {
+    label: 'Administrator General',
+    value: 'ADMINISTRATORGENERAL@TRINITYIN1INVESTMENTS.COM',
+    href: 'mailto:ADMINISTRATORGENERAL@TRINITYIN1INVESTMENTS.COM',
+  },
   { label: 'Primary Tel', value: '+1 305 800 1115', href: 'tel:+13058001115' },
 ]
 
