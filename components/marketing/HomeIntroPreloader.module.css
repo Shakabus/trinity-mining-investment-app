@@ -1,0 +1,57 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 2.5rem 1.25rem;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.2), transparent 42%),
+    radial-gradient(circle at 82% 72%, rgba(16, 185, 129, 0.14), transparent 46%),
+    #000000;
+  opacity: 1;
+  transition: opacity 420ms ease;
+}
+
+.overlayExit {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.textWrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.24em;
+}
+
+.text {
+  white-space: pre-line;
+  font-size: clamp(2rem, 7vw, 4.8rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: #ffffff;
+  text-shadow: 0 8px 28px rgba(255, 255, 255, 0.18);
+}
+
+.cursor {
+  font-size: clamp(2rem, 7vw, 4.8rem);
+  line-height: 1;
+  font-weight: 700;
+  color: #ffffff;
+  animation: blink 900ms steps(1, end) infinite;
+}
+
+@keyframes blink {
+  0%,
+  44% {
+    opacity: 1;
+  }
+  45%,
+  100% {
+    opacity: 0;
+  }
+}
+

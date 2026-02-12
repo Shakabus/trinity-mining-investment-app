@@ -9,12 +9,14 @@ import FeaturesOrbitSection from '@/components/marketing/FeaturesOrbitSection'
 import RewardsIncentivesSection from '@/components/marketing/RewardsIncentivesSection'
 import OrderPayoutList from '@/components/marketing/OrderPayoutList'
 import HomeRealEstateIntroSection from '@/components/marketing/HomeRealEstateIntroSection'
+import HomeIntroPreloader from '@/components/marketing/HomeIntroPreloader'
 import MarketingFooter from '@/components/marketing/MarketingFooter'
 import Link from 'next/link'
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-black text-white marketing-page">
+      <HomeIntroPreloader />
       <div className="marketing-page-content">
         <div className="mx-auto w-full max-w-6xl px-6 pt-6">
           <BitryxHeader />
