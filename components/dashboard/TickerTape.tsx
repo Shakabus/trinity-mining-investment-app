@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 export default function TickerTape() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const { theme } = useSiteTheme()
 
   useEffect(() => {
     const container = containerRef.current
@@ -29,7 +31,7 @@ export default function TickerTape() {
         { "proName": "BINANCE:SOLUSDT", "title": "Solana" }
       ],
       "showSymbolLogo": true,
-      "colorTheme": "dark",
+      "colorTheme": "${theme}",
       "isTransparent": true,
       "displayMode": "adaptive",
       "locale": "en"
@@ -41,11 +43,11 @@ export default function TickerTape() {
       container.querySelectorAll('script[data-tradingview-embed="ticker-tape"]').forEach(node => node.remove())
       widgetRoot.innerHTML = ''
     }
-  }, [])
+  }, [theme])
 
   return (
     <div
-      className="sticky top-0 z-20 w-full overflow-hidden"
+      className="sticky top-0 z-20 w-full overflow-hidden no-theme-invert"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
         backdropFilter: 'blur(28px)',

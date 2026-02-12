@@ -1,9 +1,11 @@
 'use client'
 
 import { memo, useEffect, useRef } from 'react'
+import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
 
 function TradingViewWidget() {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const { theme } = useSiteTheme()
 
   useEffect(() => {
     const container = containerRef.current
@@ -21,7 +23,7 @@ function TradingViewWidget() {
     script.async = true
     script.dataset.tradingviewEmbed = 'market-quotes'
     script.innerHTML = JSON.stringify({
-      colorTheme: 'dark',
+      colorTheme: theme,
       locale: 'en',
       largeChartUrl: '',
       isTransparent: true,
@@ -73,11 +75,11 @@ function TradingViewWidget() {
       container.querySelectorAll('script[data-tradingview-embed="market-quotes"]').forEach(node => node.remove())
       widgetRoot.innerHTML = ''
     }
-  }, [])
+  }, [theme])
 
   return (
     <div
-      className="tradingview-widget-container h-[780px] md:h-[920px] w-full"
+      className="tradingview-widget-container h-[780px] md:h-[920px] w-full no-theme-invert"
       ref={containerRef}
     >
       <div className="tradingview-widget-container__widget h-full w-full" />
