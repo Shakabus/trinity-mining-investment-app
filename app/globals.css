@@ -65,7 +65,10 @@ html[data-theme="light"] [class*="lottie"] svg {
   filter: invert(1) hue-rotate(180deg) !important;
 }
 
-html[data-theme="light"] .no-theme-invert,
+html[data-theme="light"] .no-theme-invert {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
 html[data-theme="light"] .no-theme-invert * {
   filter: none !important;
 }

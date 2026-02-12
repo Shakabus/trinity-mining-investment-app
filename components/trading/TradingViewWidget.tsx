@@ -77,7 +77,7 @@ function TradingViewWidget() {
 
   return (
     <div
-      className="tradingview-widget-container h-[780px] md:h-[920px] w-full rounded-3xl overflow-hidden"
+      className="tradingview-widget-container h-[780px] md:h-[920px] w-full rounded-3xl overflow-hidden no-theme-invert"
       ref={containerRef}
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
