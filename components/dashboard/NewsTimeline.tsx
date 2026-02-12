@@ -1,11 +1,25 @@
 'use client'
 
-import { memo, useEffect, useRef } from 'react'
-import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
+import { memo, useEffect, useRef, useState } from 'react'
+
+function readTheme(): 'dark' | 'light' {
+  if (typeof document === 'undefined') return 'dark'
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+}
 
 function NewsTimeline() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { theme } = useSiteTheme()
+  const [theme, setTheme] = useState<'dark' | 'light'>(readTheme)
+
+  useEffect(() => {
+    const root = document.documentElement
+    const syncTheme = () => setTheme(readTheme())
+    const observer = new MutationObserver(syncTheme)
+
+    syncTheme()
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -26,7 +40,8 @@ function NewsTimeline() {
       "feedMode": "market",
       "market": "crypto",
       "colorTheme": "${theme}",
-      "isTransparent": true,
+      "isTransparent": false,
+      "backgroundColor": "${theme === 'light' ? '#ffffff' : '#0b0f16'}",
       "displayMode": "regular",
       "width": "100%",
       "height": "100%",

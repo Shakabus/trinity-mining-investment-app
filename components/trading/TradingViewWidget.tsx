@@ -1,11 +1,25 @@
 'use client'
 
-import { memo, useEffect, useRef } from 'react'
-import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
+import { memo, useEffect, useRef, useState } from 'react'
+
+function readTheme(): 'dark' | 'light' {
+  if (typeof document === 'undefined') return 'dark'
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+}
 
 function TradingViewWidget() {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const { theme } = useSiteTheme()
+  const [theme, setTheme] = useState<'dark' | 'light'>(readTheme)
+
+  useEffect(() => {
+    const root = document.documentElement
+    const syncTheme = () => setTheme(readTheme())
+    const observer = new MutationObserver(syncTheme)
+
+    syncTheme()
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -26,7 +40,8 @@ function TradingViewWidget() {
       colorTheme: theme,
       locale: 'en',
       largeChartUrl: '',
-      isTransparent: true,
+      isTransparent: false,
+      backgroundColor: theme === 'light' ? '#ffffff' : '#0b0f16',
       showSymbolLogo: true,
       support_host: 'https://www.tradingview.com',
       width: '100%',

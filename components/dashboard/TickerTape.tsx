@@ -1,11 +1,25 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { useSiteTheme } from '@/components/ui/SiteThemeProvider'
+import { useEffect, useRef, useState } from 'react'
+
+function readTheme(): 'dark' | 'light' {
+  if (typeof document === 'undefined') return 'dark'
+  return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+}
 
 export default function TickerTape() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { theme } = useSiteTheme()
+  const [theme, setTheme] = useState<'dark' | 'light'>(readTheme)
+
+  useEffect(() => {
+    const root = document.documentElement
+    const syncTheme = () => setTheme(readTheme())
+    const observer = new MutationObserver(syncTheme)
+
+    syncTheme()
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -32,7 +46,8 @@ export default function TickerTape() {
       ],
       "showSymbolLogo": true,
       "colorTheme": "${theme}",
-      "isTransparent": true,
+      "isTransparent": false,
+      "backgroundColor": "${theme === 'light' ? '#ffffff' : '#0b0f16'}",
       "displayMode": "adaptive",
       "locale": "en"
     }`
