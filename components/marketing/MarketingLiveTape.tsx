@@ -187,7 +187,6 @@ export default function MarketingLiveTape() {
 
   return (
     <div className={`bitryx-live-tape ${isVisible ? 'is-visible' : 'is-hidden'}`} aria-hidden="true">
-      <div className="bitryx-live-tape__label">DEMO FEED</div>
       <div className="bitryx-live-tape__viewport">
         <div className="bitryx-live-tape__track">
           {tapeItems.map((item, index) => (
@@ -213,4 +212,3 @@ export default function MarketingLiveTape() {
     </div>
   )
 }
-

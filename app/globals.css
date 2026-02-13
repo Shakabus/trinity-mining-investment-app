@@ -466,20 +466,6 @@ a[aria-disabled="true"],
   opacity: 0;
 }
 
-.bitryx-live-tape__label {
-  flex: 0 0 auto;
-  margin-left: 0.35rem;
-  padding: 0.15rem 0.52rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-  white-space: nowrap;
-}
-
 .bitryx-live-tape__viewport {
   position: relative;
   flex: 1;
@@ -557,10 +543,6 @@ a[aria-disabled="true"],
     left: 12px;
     right: 12px;
     height: 24px;
-  }
-
-  .bitryx-live-tape__label {
-    display: none;
   }
 }
 
