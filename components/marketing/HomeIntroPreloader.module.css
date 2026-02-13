@@ -42,6 +42,19 @@
   animation: blink 1800ms steps(1, end) infinite;
 }
 
+.counter {
+  position: absolute;
+  left: 0.55rem;
+  bottom: 1.6rem;
+  font-size: clamp(0.95rem, 1.45vw, 1.2rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.25);
+  transform: rotate(-90deg);
+  transform-origin: left bottom;
+  user-select: none;
+}
+
 @keyframes blink {
   0%,
   44% {
