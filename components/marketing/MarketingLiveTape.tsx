@@ -17,6 +17,8 @@ type FeedItem = {
   tone: 'deposit' | 'withdrawal' | 'plan'
 }
 
+const TAPE_VISIBLE_OFFSET_PX = 32
+
 const REGIONS: FeedRegion[] = [
   {
     countries: ['United States', 'Canada', 'Mexico'],
@@ -184,6 +186,18 @@ export default function MarketingLiveTape() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--marketing-tape-offset', isVisible ? `${TAPE_VISIBLE_OFFSET_PX}px` : '0px')
+  }, [isVisible])
+
+  useEffect(
+    () => () => {
+      document.documentElement.style.removeProperty('--marketing-tape-offset')
+    },
+    [],
+  )
 
   return (
     <div className={`bitryx-live-tape ${isVisible ? 'is-visible' : 'is-hidden'}`} aria-hidden="true">
