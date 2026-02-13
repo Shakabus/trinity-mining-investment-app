@@ -532,6 +532,119 @@ a[aria-disabled="true"],
   color: #93c5fd;
 }
 
+.bitryx-withdraw-alert {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  z-index: 72;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  transform: translate(-112%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 420ms cubic-bezier(0.2, 0.74, 0.28, 1), opacity 320ms ease;
+}
+
+.bitryx-withdraw-alert.is-visible {
+  transform: translate(0, -50%);
+  opacity: 1;
+}
+
+.bitryx-withdraw-alert__bell {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
+  backdrop-filter: blur(14px);
+  display: grid;
+  place-items: center;
+  font-size: 0.92rem;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+}
+
+.bitryx-withdraw-alert__bell.is-ringing {
+  animation: bitryx-bell-ring 620ms ease-in-out 2;
+}
+
+.bitryx-withdraw-alert__card {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(15px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.3);
+  padding: 0.44rem 0;
+  transition: max-width 420ms cubic-bezier(0.2, 0.74, 0.28, 1), opacity 260ms ease, padding 360ms ease;
+}
+
+.bitryx-withdraw-alert.is-expanded .bitryx-withdraw-alert__card {
+  max-width: min(82vw, 386px);
+  opacity: 1;
+  padding: 0.44rem 0.84rem;
+}
+
+.bitryx-withdraw-alert.is-closing .bitryx-withdraw-alert__card {
+  max-width: 0;
+  opacity: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.bitryx-withdraw-alert__title {
+  margin: 0 0 0.08rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.bitryx-withdraw-alert__text {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.91);
+  font-size: 0.67rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bitryx-withdraw-alert__name {
+  font-weight: 600;
+}
+
+.bitryx-withdraw-alert__meta {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.bitryx-withdraw-alert__value {
+  color: #f87171;
+  font-weight: 700;
+}
+
+@keyframes bitryx-bell-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-18deg);
+  }
+  40% {
+    transform: rotate(14deg);
+  }
+  60% {
+    transform: rotate(-9deg);
+  }
+  80% {
+    transform: rotate(6deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
 @keyframes bitryx-live-tape-scroll {
   from {
     transform: translateX(0);
@@ -546,6 +659,21 @@ a[aria-disabled="true"],
     left: 12px;
     right: 12px;
     height: 24px;
+  }
+
+  .bitryx-withdraw-alert {
+    gap: 0.3rem;
+  }
+
+  .bitryx-withdraw-alert__bell {
+    width: 30px;
+    height: 30px;
+  }
+
+  .bitryx-withdraw-alert.is-expanded .bitryx-withdraw-alert__card {
+    max-width: min(84vw, 312px);
+    padding-top: 0.42rem;
+    padding-bottom: 0.42rem;
   }
 }
 

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import MarketingLiveTape from '@/components/marketing/MarketingLiveTape'
+import MarketingWithdrawalAlert from '@/components/marketing/MarketingWithdrawalAlert'
 
 const NAV_ITEMS = [
   { label: 'Features', href: '/features' },
@@ -18,6 +19,7 @@ export default function BitryxHeader() {
   return (
     <>
       <MarketingLiveTape />
+      <MarketingWithdrawalAlert />
       <header className={`bitryx-header${open ? ' active' : ''}`}>
         <div className="bitryx-container">
           <div className="bitryx-logo">
