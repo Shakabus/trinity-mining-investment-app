@@ -16,7 +16,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      allowedRedirectOrigins={[
+        'https://trinityin1investments.com',
+        'https://www.trinityin1investments.com',
+        'https://trinity-mining-investment-app.vercel.app',
+        'https://trinity-mining-investment-app-remyremified-gits-projects.vercel.app',
+      ]}
+    >
       <html lang="en" suppressHydrationWarning>
         <body suppressHydrationWarning className="antialiased">
           <script
