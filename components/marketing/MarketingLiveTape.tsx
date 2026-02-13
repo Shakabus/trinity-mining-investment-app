@@ -161,7 +161,7 @@ export default function MarketingLiveTape() {
   const lastYRef = useRef(0)
 
   const tapeItems = useMemo(() => {
-    const base = generateFeedItems(500)
+    const base = generateFeedItems(700)
     return [...base, ...base]
   }, [])
 
