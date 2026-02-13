@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import MarketingLiveTape from '@/components/marketing/MarketingLiveTape'
 
 const NAV_ITEMS = [
   { label: 'Features', href: '/features' },
@@ -15,57 +16,60 @@ export default function BitryxHeader() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className={`bitryx-header${open ? ' active' : ''}`}>
-      <div className="bitryx-container">
-        <div className="bitryx-logo">
-          <Link href="/">Trinity</Link>
+    <>
+      <MarketingLiveTape />
+      <header className={`bitryx-header${open ? ' active' : ''}`}>
+        <div className="bitryx-container">
+          <div className="bitryx-logo">
+            <Link href="/">Trinity</Link>
+          </div>
+
+          <nav className="bitryx-nav">
+            {NAV_ITEMS.map(item => (
+              <Link key={item.href} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+            <Link className="bitryx-login-btn" href="/sign-in">
+              Login
+            </Link>
+          </nav>
+
+          <button
+            className="bitryx-toggle"
+            aria-label="Toggle menu"
+            aria-expanded={open}
+            onClick={() => setOpen(prev => !prev)}
+            type="button"
+          >
+            <span />
+            <span />
+          </button>
         </div>
 
-        <nav className="bitryx-nav">
+        <div className="bitryx-mobile-menu">
           {NAV_ITEMS.map(item => (
-            <Link key={item.href} href={item.href}>
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+            >
               {item.label}
             </Link>
           ))}
-          <Link className="bitryx-login-btn" href="/sign-in">
-            Login
-          </Link>
-        </nav>
-
-        <button
-          className="bitryx-toggle"
-          aria-label="Toggle menu"
-          aria-expanded={open}
-          onClick={() => setOpen(prev => !prev)}
-          type="button"
-        >
-          <span />
-          <span />
-        </button>
-      </div>
-
-      <div className="bitryx-mobile-menu">
-        {NAV_ITEMS.map(item => (
           <Link
-            key={item.href}
-            href={item.href}
+            className="bitryx-login-btn mobile"
+            href="/sign-in"
             onClick={() => setOpen(false)}
           >
-            {item.label}
+            Login
           </Link>
-        ))}
-        <Link
-          className="bitryx-login-btn mobile"
-          href="/sign-in"
-          onClick={() => setOpen(false)}
-        >
-          Login
-        </Link>
-      </div>
+        </div>
 
-      <div className="bitryx-theme-toggle" aria-label="Theme mode toggle">
-        <ThemeToggle compact />
-      </div>
-    </header>
+        <div className="bitryx-theme-toggle" aria-label="Theme mode toggle">
+          <ThemeToggle compact />
+        </div>
+      </header>
+    </>
   )
 }

@@ -218,7 +218,7 @@ a[aria-disabled="true"],
 .bitryx-header {
   position: fixed;
   top: 5px;
-  top: calc(env(safe-area-inset-top) + 5px);
+  top: calc(env(safe-area-inset-top) + 37px);
   left: 24px;
   right: 24px;
   width: auto;
@@ -351,7 +351,7 @@ a[aria-disabled="true"],
 
 .bitryx-mobile-menu {
   position: fixed;
-  top: 70px;
+  top: 108px;
   right: 20px;
   width: 250px;
   height: auto;
@@ -395,7 +395,7 @@ a[aria-disabled="true"],
 
 .bitryx-theme-toggle {
   position: fixed;
-  top: calc(env(safe-area-inset-top) + 78px);
+  top: calc(env(safe-area-inset-top) + 110px);
   right: clamp(12px, 2.6vw, 26px);
   z-index: 1001;
   pointer-events: auto;
@@ -426,7 +426,7 @@ a[aria-disabled="true"],
   }
 
   .bitryx-theme-toggle {
-    top: calc(env(safe-area-inset-top) + 74px);
+    top: calc(env(safe-area-inset-top) + 106px);
     right: 14px;
   }
 }
@@ -434,7 +434,134 @@ a[aria-disabled="true"],
 /* Keep marketing navbar pinned on all pages and themes */
 .bitryx-header {
   position: fixed !important;
-  top: calc(env(safe-area-inset-top) + 5px) !important;
+  top: calc(env(safe-area-inset-top) + 37px) !important;
+}
+
+.bitryx-live-tape {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 4px);
+  left: 24px;
+  right: 24px;
+  width: auto;
+  max-width: 1200px;
+  margin-inline: auto;
+  z-index: 1000;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  overflow: hidden;
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 260ms ease, opacity 220ms ease;
+}
+
+.bitryx-live-tape.is-hidden {
+  transform: translateY(calc(-100% - 10px));
+  opacity: 0;
+}
+
+.bitryx-live-tape__label {
+  flex: 0 0 auto;
+  margin-left: 0.35rem;
+  padding: 0.15rem 0.52rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+}
+
+.bitryx-live-tape__viewport {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+.bitryx-live-tape__track {
+  display: inline-flex;
+  align-items: center;
+  min-width: max-content;
+  gap: 1.35rem;
+  padding-right: 1rem;
+  animation: bitryx-live-tape-scroll 105s linear infinite;
+}
+
+.bitryx-live-tape__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+}
+
+.bitryx-live-tape__item::after {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.34);
+  margin-left: 0.72rem;
+}
+
+.bitryx-live-tape__name {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.bitryx-live-tape__country {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.bitryx-live-tape__verb {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.bitryx-live-tape__value {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.bitryx-live-tape__value.is-deposit {
+  color: #4ade80;
+}
+
+.bitryx-live-tape__value.is-withdrawal {
+  color: #f87171;
+}
+
+.bitryx-live-tape__value.is-plan {
+  color: #93c5fd;
+}
+
+@keyframes bitryx-live-tape-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 900px) {
+  .bitryx-live-tape {
+    left: 12px;
+    right: 12px;
+    height: 24px;
+  }
+
+  .bitryx-live-tape__label {
+    display: none;
+  }
 }
 
 .glass-panel {
