@@ -481,7 +481,7 @@ a[aria-disabled="true"],
   min-width: max-content;
   gap: 1.35rem;
   padding-right: 1rem;
-  animation: bitryx-live-tape-scroll 400s linear infinite;
+  animation: bitryx-live-tape-scroll 550s linear infinite;
 }
 
 .bitryx-live-tape__item {
