@@ -46,11 +46,12 @@ const menuItems = [
   },
   {
     name: 'Real estate Portfolio',
+    labelKey: 'realEstatePortfolio',
     href: '/dashboard/real-estate',
     icon: Building2,
     children: [
-      { name: 'My Properties', href: '/dashboard/real-estate/my-properties', icon: Home },
-      { name: 'Property Earnings', href: '/dashboard/real-estate/property-earnings', icon: LineChart },
+      { name: 'My Properties', labelKey: 'myProperties', href: '/dashboard/real-estate/my-properties', icon: Home },
+      { name: 'Property Earnings', labelKey: 'propertyEarnings', href: '/dashboard/real-estate/property-earnings', icon: LineChart },
       { name: 'Withdrawals', labelKey: 'withdrawals', href: '/dashboard/real-estate/withdrawals', icon: Wallet },
     ],
   },
@@ -140,8 +141,8 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
               background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.35), rgba(58, 19, 122, 0.25))',
               border: '1px solid rgba(88, 45, 255, 0.5)',
             }}
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
+            title={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
           >
             {isCollapsed ? <ChevronsRight size={16} className="text-white" /> : <ChevronsLeft size={16} className="text-white" />}
           </button>
@@ -168,7 +169,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
                       border: isActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
                     }}
-                    title={isCollapsed ? item.name : undefined}
+                    title={isCollapsed ? (item.labelKey ? t(item.labelKey) : item.name) : undefined}
                   >
                     <Link
                       href={item.href}
@@ -197,7 +198,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                         type="button"
                         onClick={() => toggleParent(item.href)}
                         className="ml-auto p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                        aria-label={parentOpen ? 'Collapse section links' : 'Expand section links'}
+                        aria-label={parentOpen ? t('collapseSectionLinks') : t('expandSectionLinks')}
                       >
                         {parentOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                       </button>
@@ -294,7 +295,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
               color: 'rgba(255, 255, 255, 0.75)',
               border: '1px solid transparent',
             }}
-            title={isCollapsed ? 'Return to Main Site' : undefined}
+            title={isCollapsed ? t('returnToMainSite') : undefined}
           >
             <div
               className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
@@ -306,7 +307,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
             >
               <Home size={18} strokeWidth={2} />
             </div>
-            {!isCollapsed && <span className="font-medium">Return to Main Site</span>}
+            {!isCollapsed && <span className="font-medium">{t('returnToMainSite')}</span>}
           </Link>
         </div>
       </aside>
@@ -324,7 +325,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
       >
         {/* Close Button */}
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl font-bold text-white">Menu</h2>
+          <h2 className="text-xl font-bold text-white">{t('menu')}</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -373,13 +374,13 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       >
                         <Icon size={18} strokeWidth={2} />
                       </div>
-                      <span className="font-medium">{item.name}</span>
+                      <span className="font-medium">{item.labelKey ? t(item.labelKey) : item.name}</span>
                     </Link>
                     <button
                       type="button"
                       onClick={() => toggleParent(item.href)}
                       className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                      aria-label={parentOpen ? 'Collapse section links' : 'Expand section links'}
+                      aria-label={parentOpen ? t('collapseSectionLinks') : t('expandSectionLinks')}
                     >
                       {parentOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </button>
@@ -420,7 +421,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                           >
                             <ChildIcon size={16} strokeWidth={2} />
                           </div>
-                          <span className="font-medium">{child.name}</span>
+                          <span className="font-medium">{child.labelKey ? t(child.labelKey) : child.name}</span>
                         </Link>
                       )
                     })}
@@ -456,7 +457,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                 >
                   <Icon size={18} strokeWidth={2} />
                 </div>
-                <span className="font-medium">{item.name}</span>
+                <span className="font-medium">{item.labelKey ? t(item.labelKey) : item.name}</span>
               </Link>
             )
           })}
@@ -482,7 +483,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
             >
               <Home size={18} strokeWidth={2} />
             </div>
-            <span className="font-medium">Return to Main Site</span>
+            <span className="font-medium">{t('returnToMainSite')}</span>
           </Link>
         </div>
       </aside>

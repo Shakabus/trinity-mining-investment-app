@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useMemo, useState } from 'react'
 import { type LanguageCode, translate } from '@/lib/i18n'
+import DashboardAutoTranslate from '@/components/i18n/DashboardAutoTranslate'
 
 interface LanguageContextValue {
   language: LanguageCode
@@ -28,7 +29,12 @@ export function LanguageProvider({
     }
   }, [language])
 
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
+  return (
+    <LanguageContext.Provider value={value}>
+      <DashboardAutoTranslate language={language} />
+      {children}
+    </LanguageContext.Provider>
+  )
 }
 
 export function useLanguage() {

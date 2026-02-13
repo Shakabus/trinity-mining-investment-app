@@ -2528,8 +2528,154 @@ const DICTIONARY: Record<LanguageCode, Dictionary> = {
   pt: PT,
 }
 
+const EXTRA_DICTIONARY: Record<LanguageCode, Dictionary> = {
+  en: {
+    realEstatePortfolio: 'Real Estate Portfolio',
+    myProperties: 'My Properties',
+    propertyEarnings: 'Property Earnings',
+    returnToMainSite: 'Return to Main Site',
+    menu: 'Menu',
+    expandSidebar: 'Expand sidebar',
+    collapseSidebar: 'Collapse sidebar',
+    expandSectionLinks: 'Expand section links',
+    collapseSectionLinks: 'Collapse section links',
+    openActivity: 'Open activity',
+    userFallback: 'User',
+    languageSaved: 'Saved',
+    languageUpdateFailed: 'Failed to update language.',
+  },
+  es: {
+    realEstatePortfolio: 'Portafolio inmobiliario',
+    myProperties: 'Mis propiedades',
+    propertyEarnings: 'Ganancias inmobiliarias',
+    returnToMainSite: 'Volver al sitio principal',
+    menu: 'Menu',
+    expandSidebar: 'Expandir barra lateral',
+    collapseSidebar: 'Contraer barra lateral',
+    expandSectionLinks: 'Expandir enlaces de seccion',
+    collapseSectionLinks: 'Contraer enlaces de seccion',
+    openActivity: 'Abrir actividad',
+    userFallback: 'Usuario',
+    languageSaved: 'Guardado',
+    languageUpdateFailed: 'No se pudo actualizar el idioma.',
+  },
+  fr: {
+    realEstatePortfolio: 'Portefeuille immobilier',
+    myProperties: 'Mes proprietes',
+    propertyEarnings: 'Revenus immobiliers',
+    returnToMainSite: 'Retour au site principal',
+    menu: 'Menu',
+    expandSidebar: 'Developper la barre laterale',
+    collapseSidebar: 'Reduire la barre laterale',
+    expandSectionLinks: 'Developper les liens de section',
+    collapseSectionLinks: 'Reduire les liens de section',
+    openActivity: 'Ouvrir l activite',
+    userFallback: 'Utilisateur',
+    languageSaved: 'Enregistre',
+    languageUpdateFailed: 'Impossible de mettre a jour la langue.',
+  },
+  de: {
+    realEstatePortfolio: 'Immobilienportfolio',
+    myProperties: 'Meine Immobilien',
+    propertyEarnings: 'Immobilienertrage',
+    returnToMainSite: 'Zuruck zur Hauptseite',
+    menu: 'Menu',
+    expandSidebar: 'Seitenleiste erweitern',
+    collapseSidebar: 'Seitenleiste einklappen',
+    expandSectionLinks: 'Abschnittslinks erweitern',
+    collapseSectionLinks: 'Abschnittslinks einklappen',
+    openActivity: 'Aktivitat offnen',
+    userFallback: 'Benutzer',
+    languageSaved: 'Gespeichert',
+    languageUpdateFailed: 'Sprache konnte nicht aktualisiert werden.',
+  },
+  it: {
+    realEstatePortfolio: 'Portafoglio immobiliare',
+    myProperties: 'Le mie proprieta',
+    propertyEarnings: 'Rendimenti immobiliari',
+    returnToMainSite: 'Torna al sito principale',
+    menu: 'Menu',
+    expandSidebar: 'Espandi barra laterale',
+    collapseSidebar: 'Comprimi barra laterale',
+    expandSectionLinks: 'Espandi collegamenti sezione',
+    collapseSectionLinks: 'Comprimi collegamenti sezione',
+    openActivity: 'Apri attivita',
+    userFallback: 'Utente',
+    languageSaved: 'Salvato',
+    languageUpdateFailed: 'Impossibile aggiornare la lingua.',
+  },
+  pt: {
+    realEstatePortfolio: 'Portfolio imobiliario',
+    myProperties: 'Minhas propriedades',
+    propertyEarnings: 'Rendimentos imobiliarios',
+    returnToMainSite: 'Voltar ao site principal',
+    menu: 'Menu',
+    expandSidebar: 'Expandir barra lateral',
+    collapseSidebar: 'Recolher barra lateral',
+    expandSectionLinks: 'Expandir links da secao',
+    collapseSectionLinks: 'Recolher links da secao',
+    openActivity: 'Abrir atividade',
+    userFallback: 'Usuario',
+    languageSaved: 'Salvo',
+    languageUpdateFailed: 'Falha ao atualizar o idioma.',
+  },
+}
+
+function normalizePhrase(value: string) {
+  return value.replace(/\s+/g, ' ').trim().toLowerCase()
+}
+
+const phraseMapCache: Partial<Record<LanguageCode, Map<string, string>>> = {}
+
+function getPhraseMap(lang: LanguageCode) {
+  if (!phraseMapCache[lang]) {
+    const map = new Map<string, string>()
+    const englishSource: Dictionary = {
+      ...DICTIONARY.en,
+      ...EXTRA_DICTIONARY.en,
+    }
+    const targetSource: Dictionary = {
+      ...englishSource,
+      ...DICTIONARY[lang],
+      ...EXTRA_DICTIONARY[lang],
+    }
+
+    for (const [key, englishText] of Object.entries(englishSource)) {
+      const targetText = targetSource[key]
+      if (!englishText || !targetText || englishText === targetText) continue
+      map.set(normalizePhrase(englishText), targetText)
+    }
+
+    phraseMapCache[lang] = map
+  }
+
+  return phraseMapCache[lang]!
+}
+
+export function translateText(value: string, lang: LanguageCode) {
+  if (lang === 'en') return value
+
+  const fullText = value ?? ''
+  const core = fullText.trim()
+  if (!core) return fullText
+
+  const phraseMap = getPhraseMap(lang)
+  const translated = phraseMap.get(normalizePhrase(core))
+  if (!translated) return fullText
+
+  const leading = fullText.match(/^\s*/)?.[0] ?? ''
+  const trailing = fullText.match(/\s*$/)?.[0] ?? ''
+  return `${leading}${translated}${trailing}`
+}
+
 export function translate(key: string, lang: LanguageCode) {
-  return DICTIONARY[lang]?.[key] ?? DICTIONARY.en[key] ?? key
+  return (
+    EXTRA_DICTIONARY[lang]?.[key] ??
+    DICTIONARY[lang]?.[key] ??
+    EXTRA_DICTIONARY.en[key] ??
+    DICTIONARY.en[key] ??
+    key
+  )
 }
 
 

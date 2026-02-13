@@ -145,7 +145,7 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
 
           <div className="hidden md:block text-right">
             <div className="text-sm font-medium text-white">
-              {user?.fullName || 'User'}
+              {user?.fullName || t('userFallback')}
             </div>
             <div className="text-xs text-white/60">
               {user?.email}
@@ -160,8 +160,8 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
               }
             }}
             className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 md:h-10 md:w-10"
-            aria-label="Open activity"
-            title="Open activity"
+            aria-label={t('openActivity')}
+            title={t('openActivity')}
           >
             <Bell size={18} />
             {hasUnreadActivity ? (

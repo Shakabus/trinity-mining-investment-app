@@ -1,15 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
 import { SUPPORTED_LANGUAGES, LANGUAGE_LABELS, type LanguageCode } from '@/lib/i18n'
 
 export default function LanguageToggle() {
   const { language, setLanguage, t } = useLanguage()
+  const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
 
   const handleChange = async (value: LanguageCode) => {
+    const previousLanguage = language
     setLanguage(value)
     setIsSaving(true)
     setStatus(null)
@@ -21,12 +24,14 @@ export default function LanguageToggle() {
       })
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        throw new Error(data?.error || 'Failed to update language.')
+        throw new Error(data?.error || t('languageUpdateFailed'))
       }
-      setStatus('Saved')
+      setStatus(t('languageSaved'))
+      router.refresh()
       setTimeout(() => setStatus(null), 1500)
     } catch (error: any) {
-      setStatus(error?.message || 'Failed to update language.')
+      setLanguage(previousLanguage)
+      setStatus(error?.message || t('languageUpdateFailed'))
     } finally {
       setIsSaving(false)
     }
