@@ -43,9 +43,9 @@
 }
 
 .counter {
-  position: absolute;
-  left: 0.55rem;
-  bottom: 1.6rem;
+  position: fixed;
+  left: calc(env(safe-area-inset-left) + 1.9rem);
+  bottom: calc(env(safe-area-inset-bottom) + 1.1rem);
   font-size: clamp(0.95rem, 1.45vw, 1.2rem);
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -53,6 +53,8 @@
   transform: rotate(-90deg);
   transform-origin: left bottom;
   user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 @keyframes blink {
