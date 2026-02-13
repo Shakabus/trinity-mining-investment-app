@@ -1,17 +1,26 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Bell } from 'lucide-react'
 import { generateWithdrawalFeed, type MarketingLiveFeedItem } from '@/components/marketing/marketingLiveFeed'
 
 const BASE_FEED_COUNT = 1000
-const INITIAL_MIN_DELAY_MS = 12000
-const INITIAL_MAX_DELAY_MS = 26000
-const MIN_INTERVAL_MS = 2 * 60 * 1000
-const MAX_INTERVAL_MS = 5 * 60 * 1000
+const DEFAULT_INITIAL_MIN_DELAY_MS = 12000
+const DEFAULT_INITIAL_MAX_DELAY_MS = 26000
+const DEFAULT_MIN_INTERVAL_MS = 2 * 60 * 1000
+const DEFAULT_MAX_INTERVAL_MS = 5 * 60 * 1000
 const BELL_PHASE_MS = 900
 const EXIT_PHASE_MS = 550
 
 type AlertPhase = 'hidden' | 'bell' | 'open' | 'closing'
+
+type MarketingWithdrawalAlertProps = {
+  minIntervalMs?: number
+  maxIntervalMs?: number
+  initialMinDelayMs?: number
+  initialMaxDelayMs?: number
+  title?: string
+}
 
 function randomBetween(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min
@@ -28,7 +37,13 @@ function shuffle<T>(items: T[]) {
   return next
 }
 
-export default function MarketingWithdrawalAlert() {
+export default function MarketingWithdrawalAlert({
+  minIntervalMs = DEFAULT_MIN_INTERVAL_MS,
+  maxIntervalMs = DEFAULT_MAX_INTERVAL_MS,
+  initialMinDelayMs = DEFAULT_INITIAL_MIN_DELAY_MS,
+  initialMaxDelayMs = DEFAULT_INITIAL_MAX_DELAY_MS,
+  title = 'Live payout',
+}: MarketingWithdrawalAlertProps) {
   const [phase, setPhase] = useState<AlertPhase>('hidden')
   const [alertItem, setAlertItem] = useState<MarketingLiveFeedItem | null>(null)
   const timersRef = useRef<number[]>([])
@@ -81,7 +96,7 @@ export default function MarketingWithdrawalAlert() {
 
         const resetTimer = window.setTimeout(() => {
           setPhase('hidden')
-          scheduleNext(randomBetween(MIN_INTERVAL_MS, MAX_INTERVAL_MS))
+          scheduleNext(randomBetween(minIntervalMs, maxIntervalMs))
         }, BELL_PHASE_MS + visibleDuration + EXIT_PHASE_MS)
 
         timersRef.current.push(openTimer, closeTimer, resetTimer)
@@ -90,9 +105,9 @@ export default function MarketingWithdrawalAlert() {
       timersRef.current.push(timer)
     }
 
-    scheduleNext(randomBetween(INITIAL_MIN_DELAY_MS, INITIAL_MAX_DELAY_MS))
+    scheduleNext(randomBetween(initialMinDelayMs, initialMaxDelayMs))
     return clearTimers
-  }, [])
+  }, [initialMaxDelayMs, initialMinDelayMs, maxIntervalMs, minIntervalMs])
 
   if (!alertItem) return null
 
@@ -107,9 +122,11 @@ export default function MarketingWithdrawalAlert() {
       }`}
       aria-hidden="true"
     >
-      <div className={`bitryx-withdraw-alert__bell ${phase === 'bell' ? 'is-ringing' : ''}`}>🔔</div>
+      <div className={`bitryx-withdraw-alert__bell ${phase === 'bell' ? 'is-ringing' : ''}`}>
+        <Bell size={15} strokeWidth={2.2} />
+      </div>
       <div className="bitryx-withdraw-alert__card">
-        <p className="bitryx-withdraw-alert__title">Live payout</p>
+        <p className="bitryx-withdraw-alert__title">{title}</p>
         <p className="bitryx-withdraw-alert__text">
           <span className="bitryx-withdraw-alert__name">{alertItem.name}</span>
           <span className="bitryx-withdraw-alert__meta"> ({alertItem.country})</span> {alertItem.action}{' '}

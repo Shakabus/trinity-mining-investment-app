@@ -4,6 +4,7 @@ import { useState } from 'react'
 import DashboardNav from './DashboardNav'
 import DashboardSidebar from './DashboardSidebar'
 import UserPresenceTracker from './UserPresenceTracker'
+import MarketingWithdrawalAlert from '@/components/marketing/MarketingWithdrawalAlert'
 import { CurrencyProvider } from '@/components/currency/CurrencyProvider'
 import { LanguageProvider } from '@/components/i18n/LanguageProvider'
 import type { LanguageCode } from '@/lib/i18n'
@@ -43,6 +44,13 @@ export default function DashboardLayoutClient({
         style={{ background: '#000000' }}
       >
         <UserPresenceTracker />
+        <MarketingWithdrawalAlert
+          title="Withdrawal alert"
+          minIntervalMs={3 * 60 * 1000}
+          maxIntervalMs={9 * 60 * 1000}
+          initialMinDelayMs={25000}
+          initialMaxDelayMs={60000}
+        />
         <div className="h-full flex">
           {/* Sidebar */}
           <DashboardSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
