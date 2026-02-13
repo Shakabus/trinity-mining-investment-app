@@ -8,6 +8,11 @@ import { SiteThemeProvider } from '@/components/ui/SiteThemeProvider'
 export const metadata = {
   title: 'Trinity In One Cloud Mining & Investments',
   description: 'Professional cryptocurrency cloud mining and investment platform',
+  icons: {
+    icon: '/trinity-favicon.svg',
+    shortcut: '/trinity-favicon.svg',
+    apple: '/trinity-favicon.svg',
+  },
 }
 
 export default function RootLayout({
