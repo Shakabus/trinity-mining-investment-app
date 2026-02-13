@@ -42,7 +42,7 @@ function shouldTranslateNode(node: Text) {
 
 function canRequestRemoteTranslation(text: string) {
   if (!text) return false
-  if (text.length < 2 || text.length > 180) return false
+  if (text.length < 2 || text.length > 420) return false
   if (!/[A-Za-z]/.test(text)) return false
   if (/^[$0-9.,%\-+:/() ]+$/.test(text)) return false
   return true
@@ -73,6 +73,25 @@ async function fetchGoogleTranslate(text: string, language: LanguageCode) {
   return translated || null
 }
 
+function safeReadStorage(storageKey: string) {
+  try {
+    const raw = window.localStorage.getItem(storageKey)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as unknown
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, string>) : {}
+  } catch {
+    return {}
+  }
+}
+
+function safeWriteStorage(storageKey: string, value: Record<string, string>) {
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(value))
+  } catch {
+    // ignore storage quota / privacy-mode errors
+  }
+}
+
 export default function DashboardAutoTranslate({ language }: { language: LanguageCode }) {
   const originalsRef = useRef(new WeakMap<Text, string>())
   const lastAppliedRef = useRef(new WeakMap<Text, string>())
@@ -83,8 +102,8 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const stored = window.localStorage.getItem(`${STORAGE_PREFIX}${language}`)
-    const parsed: Record<string, string> = stored ? JSON.parse(stored) : {}
+    const storageKey = `${STORAGE_PREFIX}${language}`
+    const parsed = safeReadStorage(storageKey)
     remoteCacheRef.current = new Map(Object.entries(parsed))
   }, [language])
 
@@ -103,7 +122,7 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
       if (!existingOriginal) {
         originalsRef.current.set(node, currentValue)
       } else if (lastApplied && currentValue !== lastApplied && currentValue !== existingOriginal) {
-        // Source text changed from React or other render cycle.
+        // source changed by React or live updates; reset base text
         originalsRef.current.set(node, currentValue)
       }
 
@@ -163,6 +182,7 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
       processingRef.current = true
       try {
         const batch = Array.from(pendingRef.current).slice(0, 6)
+
         for (const sourceText of batch) {
           pendingRef.current.delete(sourceText)
           const key = cacheKey(language, sourceText)
@@ -172,11 +192,11 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
           if (translated && translated !== sourceText) {
             remoteCacheRef.current.set(key, translated)
           }
+
           await new Promise(resolve => window.setTimeout(resolve, 120))
         }
 
-        const toStore = Object.fromEntries(remoteCacheRef.current.entries())
-        window.localStorage.setItem(`${STORAGE_PREFIX}${language}`, JSON.stringify(toStore))
+        safeWriteStorage(`${STORAGE_PREFIX}${language}`, Object.fromEntries(remoteCacheRef.current.entries()))
         scheduleApply()
       } finally {
         processingRef.current = false
