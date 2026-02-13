@@ -174,9 +174,9 @@ export default function MarketingLiveTape() {
 
       if (currentY < 16) {
         setIsVisible(true)
-      } else if (currentY < previousY - 4) {
-        setIsVisible(false)
       } else if (currentY > previousY + 4) {
+        setIsVisible(false)
+      } else if (currentY < previousY - 4) {
         setIsVisible(true)
       }
 
