@@ -46,7 +46,7 @@
   position: fixed;
   left: calc(env(safe-area-inset-left) + 1.9rem);
   bottom: calc(env(safe-area-inset-bottom) + 1.1rem);
-  font-size: clamp(0.95rem, 1.45vw, 1.2rem);
+  font-size: clamp(1.12rem, 1.8vw, 1.45rem);
   font-weight: 600;
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.25);
