@@ -116,24 +116,24 @@ const computePnlNoise = ({
   seed,
   stepIndex,
   progress,
-  expectedReturnUsd,
-  investmentUsd,
+  targetPnlUsd,
+  elapsedMs,
+  durationMs,
 }: {
   seed: number
   stepIndex: number
   progress: number
-  expectedReturnUsd: number
-  investmentUsd: number
+  targetPnlUsd: number
+  elapsedMs: number
+  durationMs: number
 }) => {
   const rng = mulberry32(Math.floor(seed * 100000 + stepIndex * 37 + 11))
-  const scaleBase = clamp(expectedReturnUsd * 0.2, 75, expectedReturnUsd * 0.55)
-  const volatility = 0.4 + rng() * 0.7
-  const signed = rng() * 2 - 1
-  const intensity = scaleBase * volatility * (0.35 + 0.65 * progress)
-  const noise = signed * intensity
-  const minPnl = -0.8 * investmentUsd
-  const maxPnl = expectedReturnUsd - investmentUsd
-  return clamp(noise, minPnl - (expectedReturnUsd * 0.35), maxPnl * 0.55)
+  const amplitude = Math.max(12, Math.abs(targetPnlUsd) * 0.07)
+  const phase = durationMs > 0 ? (elapsedMs / durationMs) * Math.PI * 4 : 0
+  const wave = Math.sin(phase + seed * 0.31)
+  const random = (rng() * 2 - 1) * 0.6
+  const intensity = 0.45 + progress * 0.55
+  return (wave + random) * amplitude * intensity
 }
 
 export function pickTradingPlanReturn(config: TradingPlanConfig, investmentUsd: number, seed: number) {
@@ -168,17 +168,22 @@ export function simulateTradingProgress({
     expectedReturnUsd,
     investmentUsd,
   })
-  const { earnedUsd, stepIndex } = getSchedulePoint(schedule, elapsedMs)
+  const { earnedUsd: rawEarnedUsd, stepIndex } = getSchedulePoint(schedule, elapsedMs)
+  const earnedUsd = Math.max(0, rawEarnedUsd)
   const progress = expectedReturnUsd === 0 ? 0 : clamp(earnedUsd / expectedReturnUsd, 0, 1)
-  const pnlBase = earnedUsd - investmentUsd
+  const targetPnlUsd = expectedReturnUsd - investmentUsd
+  const pnlBase = targetPnlUsd * progress
   const pnlNoise = computePnlNoise({
     seed,
     stepIndex,
     progress,
-    expectedReturnUsd,
-    investmentUsd,
+    targetPnlUsd,
+    elapsedMs,
+    durationMs,
   })
-  const pnlUsd = clamp(pnlBase + pnlNoise, -0.6 * investmentUsd, expectedReturnUsd - investmentUsd)
+  const pnlMin = targetPnlUsd >= 0 ? -0.08 * investmentUsd : targetPnlUsd * 1.05
+  const pnlMax = targetPnlUsd >= 0 ? targetPnlUsd : Math.max(targetPnlUsd * 0.25, investmentUsd * 0.04)
+  const pnlUsd = clamp(pnlBase + pnlNoise, pnlMin, pnlMax)
   const equityUsd = investmentUsd + pnlUsd
   const dailyEstimateUsd = durationHours > 0 ? (expectedReturnUsd / (durationHours / 24)) : 0
   const winRate = clamp(55 + Math.sin(seed + progress * 2.4) * 12, 40, 78)
@@ -228,17 +233,22 @@ export function buildTradingSeries({
   return Array.from({ length: points }, (_, index) => {
     const timestamp = new Date(startDate.getTime() + interval * index)
     const elapsedMs = clamp(timestamp.getTime() - startDate.getTime(), 0, durationMs)
-    const { earnedUsd, stepIndex } = getSchedulePoint(schedule, elapsedMs)
+    const { earnedUsd: rawEarnedUsd, stepIndex } = getSchedulePoint(schedule, elapsedMs)
+    const earnedUsd = Math.max(0, rawEarnedUsd)
     const progress = expectedReturnUsd === 0 ? 0 : clamp(earnedUsd / expectedReturnUsd, 0, 1)
-    const pnlBase = earnedUsd - investmentUsd
+    const targetPnlUsd = expectedReturnUsd - investmentUsd
+    const pnlBase = targetPnlUsd * progress
     const pnlNoise = computePnlNoise({
       seed: seed + 13,
       stepIndex,
       progress,
-      expectedReturnUsd,
-      investmentUsd,
+      targetPnlUsd,
+      elapsedMs,
+      durationMs,
     })
-    const pnl = clamp(pnlBase + pnlNoise, -0.6 * investmentUsd, expectedReturnUsd - investmentUsd)
+    const pnlMin = targetPnlUsd >= 0 ? -0.08 * investmentUsd : targetPnlUsd * 1.05
+    const pnlMax = targetPnlUsd >= 0 ? targetPnlUsd : Math.max(targetPnlUsd * 0.25, investmentUsd * 0.04)
+    const pnl = clamp(pnlBase + pnlNoise, pnlMin, pnlMax)
     return {
       time: timestamp,
       value: Math.round(earnedUsd * 100) / 100,
@@ -270,17 +280,22 @@ export function buildTradingJumpSeries({
 
   const points = schedule.map(point => {
     const timestamp = new Date(startDate.getTime() + point.timeMs)
-    const { earnedUsd, stepIndex } = getSchedulePoint(schedule, point.timeMs)
+    const { earnedUsd: rawEarnedUsd, stepIndex } = getSchedulePoint(schedule, point.timeMs)
+    const earnedUsd = Math.max(0, rawEarnedUsd)
     const progress = expectedReturnUsd === 0 ? 0 : clamp(earnedUsd / expectedReturnUsd, 0, 1)
-    const pnlBase = earnedUsd - investmentUsd
+    const targetPnlUsd = expectedReturnUsd - investmentUsd
+    const pnlBase = targetPnlUsd * progress
     const pnlNoise = computePnlNoise({
       seed,
       stepIndex,
       progress,
-      expectedReturnUsd,
-      investmentUsd,
+      targetPnlUsd,
+      elapsedMs: point.timeMs,
+      durationMs,
     })
-    const pnl = clamp(pnlBase + pnlNoise, -0.6 * investmentUsd, expectedReturnUsd - investmentUsd)
+    const pnlMin = targetPnlUsd >= 0 ? -0.08 * investmentUsd : targetPnlUsd * 1.05
+    const pnlMax = targetPnlUsd >= 0 ? targetPnlUsd : Math.max(targetPnlUsd * 0.25, investmentUsd * 0.04)
+    const pnl = clamp(pnlBase + pnlNoise, pnlMin, pnlMax)
     return {
       time: timestamp,
       earnedUsd: Math.round(earnedUsd * 100) / 100,
@@ -292,17 +307,22 @@ export function buildTradingJumpSeries({
 
   const finalPoint = points[points.length - 1]
   if (!finalPoint || finalPoint.time.getTime() !== endDate.getTime()) {
-    const { earnedUsd, stepIndex } = getSchedulePoint(schedule, durationMs)
+    const { earnedUsd: rawEarnedUsd, stepIndex } = getSchedulePoint(schedule, durationMs)
+    const earnedUsd = Math.max(0, rawEarnedUsd)
     const progress = expectedReturnUsd === 0 ? 0 : clamp(earnedUsd / expectedReturnUsd, 0, 1)
-    const pnlBase = earnedUsd - investmentUsd
+    const targetPnlUsd = expectedReturnUsd - investmentUsd
+    const pnlBase = targetPnlUsd * progress
     const pnlNoise = computePnlNoise({
       seed,
       stepIndex,
       progress,
-      expectedReturnUsd,
-      investmentUsd,
+      targetPnlUsd,
+      elapsedMs: durationMs,
+      durationMs,
     })
-    const pnl = clamp(pnlBase + pnlNoise, -0.6 * investmentUsd, expectedReturnUsd - investmentUsd)
+    const pnlMin = targetPnlUsd >= 0 ? -0.08 * investmentUsd : targetPnlUsd * 1.05
+    const pnlMax = targetPnlUsd >= 0 ? targetPnlUsd : Math.max(targetPnlUsd * 0.25, investmentUsd * 0.04)
+    const pnl = clamp(pnlBase + pnlNoise, pnlMin, pnlMax)
     points.push({
       time: endDate,
       earnedUsd: Math.round(earnedUsd * 100) / 100,
