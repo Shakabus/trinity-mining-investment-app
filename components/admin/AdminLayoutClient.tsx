@@ -78,15 +78,6 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 	                <div className="text-xs text-white/60">{user.email}</div>
 	              </div>
 
-              <Link
-                href="/live-payments"
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/25"
-                title="View live payment stream"
-              >
-                <Radio size={13} />
-                Live Stream
-              </Link>
-
 	              <ThemeToggle compact />
 
 	              <UserButton
