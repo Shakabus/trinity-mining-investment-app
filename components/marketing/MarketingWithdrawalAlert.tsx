@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Bell } from 'lucide-react'
-import { generateWithdrawalFeed, type MarketingLiveFeedItem } from '@/components/marketing/marketingLiveFeed'
+import { generateMarketingLiveFeed, type MarketingLiveFeedItem } from '@/components/marketing/marketingLiveFeed'
 
 const BASE_FEED_COUNT = 1000
-const DEFAULT_INITIAL_MIN_DELAY_MS = 12000
-const DEFAULT_INITIAL_MAX_DELAY_MS = 26000
-const DEFAULT_MIN_INTERVAL_MS = 2 * 60 * 1000
-const DEFAULT_MAX_INTERVAL_MS = 5 * 60 * 1000
+const DEFAULT_INITIAL_MIN_DELAY_MS = 5000
+const DEFAULT_INITIAL_MAX_DELAY_MS = 15000
+const DEFAULT_MIN_INTERVAL_MS = 5000
+const DEFAULT_MAX_INTERVAL_MS = 15000
 const BELL_PHASE_MS = 900
 const EXIT_PHASE_MS = 550
 
@@ -42,7 +42,7 @@ export default function MarketingWithdrawalAlert({
   maxIntervalMs = DEFAULT_MAX_INTERVAL_MS,
   initialMinDelayMs = DEFAULT_INITIAL_MIN_DELAY_MS,
   initialMaxDelayMs = DEFAULT_INITIAL_MAX_DELAY_MS,
-  title = 'Live payout',
+  title,
 }: MarketingWithdrawalAlertProps) {
   const [phase, setPhase] = useState<AlertPhase>('hidden')
   const [alertItem, setAlertItem] = useState<MarketingLiveFeedItem | null>(null)
@@ -50,12 +50,18 @@ export default function MarketingWithdrawalAlert({
   const queueRef = useRef<MarketingLiveFeedItem[]>([])
   const queueIndexRef = useRef(0)
 
-  const withdrawalItems = useMemo(() => generateWithdrawalFeed(BASE_FEED_COUNT), [])
+  const liveItems = useMemo(
+    () =>
+      generateMarketingLiveFeed(BASE_FEED_COUNT).filter(
+        item => item.tone === 'withdrawal' || item.tone === 'deposit'
+      ),
+    []
+  )
 
   useEffect(() => {
-    queueRef.current = shuffle(withdrawalItems)
+    queueRef.current = shuffle(liveItems)
     queueIndexRef.current = 0
-  }, [withdrawalItems])
+  }, [liveItems])
 
   useEffect(() => {
     const clearTimers = () => {
@@ -114,19 +120,21 @@ export default function MarketingWithdrawalAlert({
   const isVisible = phase !== 'hidden'
   const isExpanded = phase === 'open' || phase === 'closing'
   const isClosing = phase === 'closing'
+  const alertTone = alertItem.tone === 'deposit' ? 'deposit' : 'withdrawal'
+  const resolvedTitle = title ?? (alertTone === 'deposit' ? 'Live deposit' : 'Live payout')
 
   return (
     <div
-      className={`bitryx-withdraw-alert ${isVisible ? 'is-visible' : ''} ${isExpanded ? 'is-expanded' : ''} ${
-        isClosing ? 'is-closing' : ''
-      }`}
+      className={`bitryx-withdraw-alert tone-${alertTone} ${isVisible ? 'is-visible' : ''} ${
+        isExpanded ? 'is-expanded' : ''
+      } ${isClosing ? 'is-closing' : ''}`}
       aria-hidden="true"
     >
       <div className={`bitryx-withdraw-alert__bell ${phase === 'bell' ? 'is-ringing' : ''}`}>
         <Bell size={15} strokeWidth={2.2} />
       </div>
       <div className="bitryx-withdraw-alert__card">
-        <p className="bitryx-withdraw-alert__title">{title}</p>
+        <p className="bitryx-withdraw-alert__title">{resolvedTitle}</p>
         <p className="bitryx-withdraw-alert__text">
           <span className="bitryx-withdraw-alert__name">{alertItem.name}</span>
           <span className="bitryx-withdraw-alert__meta"> ({alertItem.country})</span> {alertItem.action}{' '}

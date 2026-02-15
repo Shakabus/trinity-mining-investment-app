@@ -624,6 +624,10 @@ a[aria-disabled="true"],
   font-weight: 700;
 }
 
+.bitryx-withdraw-alert.tone-deposit .bitryx-withdraw-alert__value {
+  color: #4ade80;
+}
+
 @keyframes bitryx-bell-ring {
   0% {
     transform: rotate(0deg);
