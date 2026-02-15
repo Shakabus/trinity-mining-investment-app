@@ -214,10 +214,10 @@ function readPersistedStreamState() {
         : null
     if (safeTotal === null) return null
 
-    const safeFlows = Array.isArray(parsed.flows)
+    const safeFlows: CompanyFlowRow[] = Array.isArray(parsed.flows)
       ? parsed.flows
           .filter(flow => flow && typeof flow === 'object')
-          .map(flow => ({
+          .map((flow): CompanyFlowRow => ({
             id: String(flow.id ?? `${Date.now()}-${Math.random()}`),
             name: String(flow.name ?? 'Member'),
             direction: flow.direction === 'outflow' ? 'outflow' : 'inflow',
