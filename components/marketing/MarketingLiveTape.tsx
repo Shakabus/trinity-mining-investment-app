@@ -1,19 +1,23 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { generateMarketingLiveFeed } from '@/components/marketing/marketingLiveFeed'
+import { generateMarketingLiveFeed, type MarketingLiveFeedItem } from '@/components/marketing/marketingLiveFeed'
 
 const TAPE_VISIBLE_OFFSET_PX = 32
 const BASE_FEED_COUNT = 1000
 
 export default function MarketingLiveTape() {
   const [isVisible, setIsVisible] = useState(true)
+  const [approvedItems, setApprovedItems] = useState<MarketingLiveFeedItem[]>([])
   const lastYRef = useRef(0)
+  const fetchTimerRef = useRef<number | null>(null)
+
+  const baseItems = useMemo(() => generateMarketingLiveFeed(BASE_FEED_COUNT), [])
 
   const tapeItems = useMemo(() => {
-    const base = generateMarketingLiveFeed(BASE_FEED_COUNT)
-    return [...base, ...base]
-  }, [])
+    const merged = approvedItems.length ? [...approvedItems, ...baseItems] : baseItems
+    return [...merged, ...merged]
+  }, [approvedItems, baseItems])
 
   useEffect(() => {
     lastYRef.current = window.scrollY
@@ -48,6 +52,34 @@ export default function MarketingLiveTape() {
     },
     [],
   )
+
+  useEffect(() => {
+    let cancelled = false
+
+    const pullLiveApprovals = async () => {
+      try {
+        const response = await fetch('/api/public/live-activity?limit=60', { cache: 'no-store' })
+        if (!response.ok) return
+        const data = (await response.json()) as { items?: MarketingLiveFeedItem[] }
+        if (cancelled) return
+        setApprovedItems(Array.isArray(data.items) ? data.items : [])
+      } catch {
+        if (!cancelled) {
+          setApprovedItems([])
+        }
+      }
+    }
+
+    pullLiveApprovals()
+    fetchTimerRef.current = window.setInterval(pullLiveApprovals, 5000)
+
+    return () => {
+      cancelled = true
+      if (fetchTimerRef.current) {
+        window.clearInterval(fetchTimerRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div className={`bitryx-live-tape ${isVisible ? 'is-visible' : 'is-hidden'}`} aria-hidden="true">

@@ -48,7 +48,10 @@ export default function MarketingWithdrawalAlert({
   const [alertItem, setAlertItem] = useState<MarketingLiveFeedItem | null>(null)
   const timersRef = useRef<number[]>([])
   const queueRef = useRef<MarketingLiveFeedItem[]>([])
+  const priorityQueueRef = useRef<MarketingLiveFeedItem[]>([])
+  const seenIdsRef = useRef<Set<string>>(new Set())
   const queueIndexRef = useRef(0)
+  const pollTimerRef = useRef<number | null>(null)
 
   const liveItems = useMemo(
     () =>
@@ -64,6 +67,39 @@ export default function MarketingWithdrawalAlert({
   }, [liveItems])
 
   useEffect(() => {
+    let cancelled = false
+
+    const pullLiveApprovals = async () => {
+      try {
+        const response = await fetch('/api/public/live-activity?limit=30', { cache: 'no-store' })
+        if (!response.ok) return
+        const data = (await response.json()) as { items?: MarketingLiveFeedItem[] }
+        if (cancelled || !Array.isArray(data.items)) return
+
+        // Push oldest first so alerts fire in timeline order.
+        const chronological = [...data.items].reverse()
+        for (const item of chronological) {
+          if (seenIdsRef.current.has(item.id)) continue
+          seenIdsRef.current.add(item.id)
+          priorityQueueRef.current.push(item)
+        }
+      } catch {
+        // Ignore polling failures; fallback queue continues uninterrupted.
+      }
+    }
+
+    pullLiveApprovals()
+    pollTimerRef.current = window.setInterval(pullLiveApprovals, 5000)
+
+    return () => {
+      cancelled = true
+      if (pollTimerRef.current) {
+        window.clearInterval(pollTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     const clearTimers = () => {
       for (const timer of timersRef.current) {
         window.clearTimeout(timer)
@@ -72,6 +108,9 @@ export default function MarketingWithdrawalAlert({
     }
 
     const nextItem = () => {
+      const priority = priorityQueueRef.current.shift()
+      if (priority) return priority
+
       if (queueRef.current.length === 0) return null
       if (queueIndexRef.current >= queueRef.current.length) {
         queueRef.current = shuffle(queueRef.current)
