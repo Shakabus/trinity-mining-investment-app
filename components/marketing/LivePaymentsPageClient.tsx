@@ -8,21 +8,35 @@ type LiveActivityItem = MarketingLiveFeedItem & {
   createdAt?: string
 }
 
-type LiveTradeRow = {
+type CompanyFlowRow = {
   id: string
-  side: 'buy' | 'sell'
-  priceUsd: number
-  sizeBtc: number
-  notionalUsd: number
+  name: string
+  direction: 'inflow' | 'outflow'
+  amountUsd: number
+  totalUsd: number
   occurredAt: string
   eventLabel: string
 }
 
-type OrderBookRow = {
-  priceUsd: number
-  sizeBtc: number
-  cumulativeBtc: number
-}
+const MIN_COMPANY_TOTAL_USD = 490_000_000
+const MAX_COMPANY_TOTAL_USD = 550_000_000
+const TARGET_NAME_POOL = 5000
+
+const SYNTHETIC_FIRST_NAMES = [
+  'Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas', 'Henry', 'Alexander',
+  'Mason', 'Michael', 'Ethan', 'Daniel', 'Jacob', 'Logan', 'Jackson', 'Levi', 'Sebastian', 'Mateo',
+  'Jack', 'Owen', 'Theodore', 'Aiden', 'Samuel', 'Joseph', 'John', 'David', 'Wyatt', 'Matthew',
+  'Luke', 'Asher', 'Carter', 'Julian', 'Grayson', 'Leo', 'Jayden', 'Gabriel', 'Isaac', 'Lincoln',
+  'Anthony', 'Hudson', 'Dylan', 'Ezra', 'Thomas', 'Charles', 'Christopher', 'Jaxon', 'Maverick', 'Josiah',
+]
+
+const SYNTHETIC_LAST_NAMES = [
+  'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
+  'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin',
+  'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson',
+  'Walker', 'Young', 'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores',
+  'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts',
+]
 
 function formatTime(value?: string) {
   if (!value) return 'Live'
@@ -40,32 +54,59 @@ function formatUsd(value: number) {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 }
 
-function formatBtc(value: number) {
-  return value.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+function buildExpandedNamePool(baseNames: string[], target: number) {
+  const uniqueNames = new Set<string>()
+
+  for (const name of baseNames) {
+    const trimmed = name.trim()
+    if (trimmed) uniqueNames.add(trimmed)
+    if (uniqueNames.size >= target) {
+      return Array.from(uniqueNames).slice(0, target)
+    }
+  }
+
+  let firstIndex = 0
+  let lastIndex = 0
+  let cycle = 0
+
+  while (uniqueNames.size < target) {
+    const first = SYNTHETIC_FIRST_NAMES[firstIndex % SYNTHETIC_FIRST_NAMES.length]
+    const last = SYNTHETIC_LAST_NAMES[lastIndex % SYNTHETIC_LAST_NAMES.length]
+    const suffix = cycle > 0 ? ` ${cycle + 1}` : ''
+    uniqueNames.add(`${first} ${last}${suffix}`)
+
+    firstIndex += 1
+    if (firstIndex % SYNTHETIC_FIRST_NAMES.length === 0) {
+      lastIndex += 1
+      if (lastIndex % SYNTHETIC_LAST_NAMES.length === 0) {
+        cycle += 1
+      }
+    }
+  }
+
+  return Array.from(uniqueNames).slice(0, target)
 }
 
 export default function LivePaymentsPageClient() {
   const [items, setItems] = useState<LiveActivityItem[]>([])
-  const [trades, setTrades] = useState<LiveTradeRow[]>([])
-  const [midPriceUsd, setMidPriceUsd] = useState(45950.3)
+  const [flows, setFlows] = useState<CompanyFlowRow[]>([])
+  const [companyTotalUsd, setCompanyTotalUsd] = useState(512_300_000)
 
   const cursorRef = useRef(0)
-  const midPriceRef = useRef(45950.3)
+  const totalRef = useRef(512_300_000)
 
   useEffect(() => {
     let cancelled = false
 
     const fetchFeed = async () => {
       try {
-        const response = await fetch('/api/public/live-activity?limit=120', { cache: 'no-store' })
+        const response = await fetch('/api/public/live-activity?limit=160', { cache: 'no-store' })
         if (!response.ok) return
         const data = (await response.json()) as { items?: LiveActivityItem[] }
         if (cancelled) return
         setItems(Array.isArray(data.items) ? data.items : [])
       } catch {
-        if (!cancelled) {
-          setItems([])
-        }
+        if (!cancelled) setItems([])
       }
     }
 
@@ -78,39 +119,49 @@ export default function LivePaymentsPageClient() {
     }
   }, [])
 
+  const namePool = useMemo(() => buildExpandedNamePool(items.map(item => item.name), TARGET_NAME_POOL), [items])
+
   useEffect(() => {
     const timer = window.setInterval(() => {
-      const activityItem = items.length ? items[cursorRef.current % items.length] : null
+      const sequence = cursorRef.current
+      const activityItem = items.length ? items[sequence % items.length] : null
       cursorRef.current += 1
 
-      const side: LiveTradeRow['side'] = activityItem?.tone === 'withdrawal' ? 'sell' : 'buy'
-      const baseMove = side === 'buy' ? 1 : -1
-      const randomMove = (Math.random() - 0.5) * 8
-      const directionalMove = baseMove * (Math.random() * 4.6)
-      const nextPrice = Math.max(10000, Math.min(120000, midPriceRef.current + randomMove + directionalMove))
+      const sourceAmount = activityItem ? parseUsdValue(activityItem.value) : null
+      const scaledAmount = sourceAmount
+        ? Math.max(250_000, Math.min(6_500_000, sourceAmount * (sourceAmount < 300_000 ? 12 : 6)))
+        : 250_000 + Math.random() * 5_250_000
 
-      const anchorUsd = activityItem ? parseUsdValue(activityItem.value) : null
-      const resolvedNotional = anchorUsd ?? 50 + Math.random() * 249950
-      const rawBtc = resolvedNotional / nextPrice
-      const sizeBtc = Math.max(0.001, Math.min(8.5, Number(rawBtc.toFixed(3))))
+      let direction: CompanyFlowRow['direction'] = activityItem?.tone === 'withdrawal' ? 'outflow' : 'inflow'
+      if (totalRef.current <= MIN_COMPANY_TOTAL_USD + 1_500_000) direction = 'inflow'
+      if (totalRef.current >= MAX_COMPANY_TOTAL_USD - 1_500_000) direction = 'outflow'
 
-      const trade: LiveTradeRow = {
+      const signedAmount = direction === 'inflow' ? scaledAmount : -scaledAmount
+      const nextTotal = Math.max(
+        MIN_COMPANY_TOTAL_USD,
+        Math.min(MAX_COMPANY_TOTAL_USD, totalRef.current + signedAmount)
+      )
+      totalRef.current = nextTotal
+      setCompanyTotalUsd(nextTotal)
+
+      const name = namePool.length ? namePool[sequence % namePool.length] : activityItem?.name ?? `Member ${sequence + 1}`
+      const eventLabel = activityItem ? `${activityItem.action} ${activityItem.value}` : 'automated treasury transfer'
+
+      const nextFlow: CompanyFlowRow = {
         id: `${Date.now()}-${Math.floor(Math.random() * 100000)}`,
-        side,
-        priceUsd: Number(nextPrice.toFixed(1)),
-        sizeBtc,
-        notionalUsd: Number((sizeBtc * nextPrice).toFixed(2)),
+        name,
+        direction,
+        amountUsd: Math.round(scaledAmount),
+        totalUsd: nextTotal,
         occurredAt: new Date().toISOString(),
-        eventLabel: activityItem ? `${activityItem.action} ${activityItem.value}` : 'live market fill',
+        eventLabel,
       }
 
-      midPriceRef.current = nextPrice
-      setMidPriceUsd(Number(nextPrice.toFixed(1)))
-      setTrades(previous => [trade, ...previous].slice(0, 220))
-    }, 1250)
+      setFlows(previous => [nextFlow, ...previous].slice(0, 300))
+    }, 1100)
 
     return () => window.clearInterval(timer)
-  }, [items])
+  }, [items, namePool])
 
   const summary = useMemo(() => {
     let deposits = 0
@@ -128,37 +179,8 @@ export default function LivePaymentsPageClient() {
     return { deposits, withdrawals, plans, approvedPayments }
   }, [items])
 
-  const { bids, asks } = useMemo(() => {
-    const latest = trades.slice(0, 24)
-    const avgBtc =
-      latest.length > 0 ? latest.reduce((total, row) => total + row.sizeBtc, 0) / latest.length : 0.92
-    const depthBase = Math.max(0.35, Math.min(4.6, avgBtc))
-    const bidRows: OrderBookRow[] = []
-    const askRows: OrderBookRow[] = []
-    let bidCum = 0
-    let askCum = 0
-
-    for (let level = 0; level < 10; level += 1) {
-      const step = 0.6 + level * 0.45
-      const bidSize = Math.max(0.001, Number((depthBase * (1.18 - level * 0.06)).toFixed(3)))
-      const askSize = Math.max(0.001, Number((depthBase * (1.12 - level * 0.055)).toFixed(3)))
-      bidCum = Number((bidCum + bidSize).toFixed(3))
-      askCum = Number((askCum + askSize).toFixed(3))
-
-      bidRows.push({
-        priceUsd: Number((midPriceUsd - step).toFixed(1)),
-        sizeBtc: bidSize,
-        cumulativeBtc: bidCum,
-      })
-      askRows.push({
-        priceUsd: Number((midPriceUsd + step).toFixed(1)),
-        sizeBtc: askSize,
-        cumulativeBtc: askCum,
-      })
-    }
-
-    return { bids: bidRows, asks: askRows.reverse() }
-  }, [midPriceUsd, trades])
+  const payoutRows = useMemo(() => flows.filter(flow => flow.direction === 'outflow').slice(0, 9), [flows])
+  const receiptRows = useMemo(() => flows.filter(flow => flow.direction === 'inflow').slice(0, 9), [flows])
 
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-20">
@@ -170,8 +192,8 @@ export default function LivePaymentsPageClient() {
           backdropFilter: 'blur(18px)',
         }}
       >
-        <h1 className="text-3xl md:text-4xl font-bold text-white">Live Payments Stream</h1>
-        <p className="mt-3 text-sm md:text-base text-white/70">Live generator for payment and withdrawal activity.</p>
+        <h1 className="text-3xl font-bold text-white md:text-4xl">Live Payments Stream</h1>
+        <p className="mt-3 text-sm text-white/70 md:text-base">Live generator for payment and withdrawal activity.</p>
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
@@ -187,8 +209,8 @@ export default function LivePaymentsPageClient() {
             <div className="mt-1 text-2xl font-semibold text-red-300">{summary.withdrawals}</div>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
-            <div className="text-xs text-white/60">Plan events</div>
-            <div className="mt-1 text-2xl font-semibold text-sky-300">{summary.plans}</div>
+            <div className="text-xs text-white/60">Name pool</div>
+            <div className="mt-1 text-2xl font-semibold text-sky-300">{namePool.length.toLocaleString('en-US')}</div>
           </div>
         </div>
       </div>
@@ -243,36 +265,31 @@ export default function LivePaymentsPageClient() {
               backdropFilter: 'blur(16px)',
             }}
           >
-            <div className="text-xs uppercase tracking-[0.12em] text-white/55">Order Book</div>
-            <div className="mt-3 grid grid-cols-3 text-[11px] text-white/45">
-              <span>Price (USD)</span>
-              <span className="text-right">Size (BTC)</span>
-              <span className="text-right">Sum (BTC)</span>
+            <div className="text-xs uppercase tracking-[0.12em] text-white/55">Transfer Book</div>
+            <div className="mt-3 grid grid-cols-[1.2fr_1fr] text-[11px] text-white/45">
+              <span>Name</span>
+              <span className="text-right">Amount (USD)</span>
             </div>
 
             <div className="mt-2 space-y-1">
-              {asks.map(row => (
-                <div key={`ask-${row.priceUsd}`} className="grid grid-cols-3 text-xs text-red-300/95">
-                  <span>{row.priceUsd.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-                  <span className="text-right">{formatBtc(row.sizeBtc)}</span>
-                  <span className="text-right">{formatBtc(row.cumulativeBtc)}</span>
+              {payoutRows.map(row => (
+                <div key={row.id} className="grid grid-cols-[1.2fr_1fr] text-xs text-red-300/95">
+                  <span className="truncate pr-2">{row.name}</span>
+                  <span className="text-right">{formatUsd(row.amountUsd)}</span>
                 </div>
               ))}
             </div>
 
             <div className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-center">
-              <div className="text-2xl font-semibold text-emerald-300">
-                {midPriceUsd.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-              </div>
-              <div className="text-[11px] text-emerald-200/85">{formatUsd(midPriceUsd)}</div>
+              <div className="text-2xl font-semibold text-emerald-300">{formatUsd(companyTotalUsd)}</div>
+              <div className="text-[11px] text-emerald-200/85">Company transfer total</div>
             </div>
 
             <div className="mt-3 space-y-1">
-              {bids.map(row => (
-                <div key={`bid-${row.priceUsd}`} className="grid grid-cols-3 text-xs text-emerald-300/95">
-                  <span>{row.priceUsd.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
-                  <span className="text-right">{formatBtc(row.sizeBtc)}</span>
-                  <span className="text-right">{formatBtc(row.cumulativeBtc)}</span>
+              {receiptRows.map(row => (
+                <div key={row.id} className="grid grid-cols-[1.2fr_1fr] text-xs text-emerald-300/95">
+                  <span className="truncate pr-2">{row.name}</span>
+                  <span className="text-right">{formatUsd(row.amountUsd)}</span>
                 </div>
               ))}
             </div>
@@ -286,33 +303,28 @@ export default function LivePaymentsPageClient() {
               backdropFilter: 'blur(16px)',
             }}
           >
-            <div className="text-xs uppercase tracking-[0.12em] text-white/55">Trades</div>
-            <div className="mt-3 grid grid-cols-4 text-[11px] text-white/45">
-              <span>Price (USD)</span>
-              <span className="text-right">Amount (BTC)</span>
-              <span className="text-right">Notional</span>
+            <div className="text-xs uppercase tracking-[0.12em] text-white/55">Live Company Transfers</div>
+            <div className="mt-3 grid grid-cols-[1.1fr_auto_auto] text-[11px] text-white/45">
+              <span>Name</span>
+              <span className="text-right">Direction</span>
               <span className="text-right">Time</span>
             </div>
             <div className="mt-2 max-h-[240px] space-y-1 overflow-y-auto pr-1">
-              {trades.slice(0, 36).map(row => (
-                <div key={row.id} className="grid grid-cols-4 text-xs">
-                  <span className={row.side === 'buy' ? 'text-emerald-300' : 'text-red-300'}>
-                    {row.priceUsd.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+              {flows.slice(0, 36).map(flow => (
+                <div key={flow.id} className="grid grid-cols-[1.1fr_auto_auto] text-xs">
+                  <span className="truncate pr-2 text-white/90">{flow.name}</span>
+                  <span className={flow.direction === 'inflow' ? 'text-right text-emerald-300' : 'text-right text-red-300'}>
+                    {flow.direction === 'inflow' ? 'Received' : 'Paid'}
                   </span>
-                  <span className="text-right text-white/85">{formatBtc(row.sizeBtc)}</span>
-                  <span className="text-right text-white/75">{formatUsd(row.notionalUsd)}</span>
-                  <span className="text-right text-white/55">{formatTime(row.occurredAt)}</span>
+                  <span className="text-right text-white/55">{formatTime(flow.occurredAt)}</span>
                 </div>
               ))}
-              {trades.length === 0 && <p className="py-2 text-sm text-white/55">Generating live trades...</p>}
+              {flows.length === 0 && <p className="py-2 text-sm text-white/55">Generating live transfers...</p>}
             </div>
           </div>
 
-          <div
-            className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs text-white/60"
-            title="Latest generator event"
-          >
-            Latest generator event: <span className="text-white/85">{trades[0]?.eventLabel ?? 'Waiting for feed...'}</span>
+          <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs text-white/60">
+            Latest generator event: <span className="text-white/85">{flows[0]?.eventLabel ?? 'Waiting for feed...'}</span>
           </div>
         </div>
       </div>
