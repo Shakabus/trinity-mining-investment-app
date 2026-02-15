@@ -47,9 +47,8 @@ export default function TradingOverviewCharts({
   const [allocationState, setAllocationState] = useState(allocationSeries)
   const [performanceState, setPerformanceState] = useState(performanceSeries)
   const lastIndexRef = useRef<number>(-1)
-  const lastTickRef = useRef<number | null>(null)
+  const lastTickRef = useRef<number>(0)
   const allocationSeedRef = useRef<number>(seed * 1000)
-  const allocationTickRef = useRef<number>(0)
 
   const startDate = useMemo(() => (startDateIso ? new Date(startDateIso) : new Date()), [startDateIso])
 
@@ -86,96 +85,7 @@ export default function TradingOverviewCharts({
     const windowMs = 3 * 60 * 60 * 1000
     const trimWindow = (points: { time: number; value: number }[], nowMs: number) =>
       points.filter(point => point.time >= nowMs - windowMs)
-
-    const seedSeries = () => {
-      const nowMs = Date.now()
-      const lastIndex = findLastIndex(nowMs)
-      if (lastIndex < 0) {
-        setEquitySeries([])
-        setPnlSeries([])
-        lastIndexRef.current = -1
-        lastTickRef.current = null
-        return
-      }
-      const windowStart = nowMs - windowMs
-      const seedPoints = schedulePoints.filter(point => point.time.getTime() >= windowStart && point.time.getTime() <= nowMs)
-      setEquitySeries(seedPoints.map(point => ({ time: point.time.getTime(), value: convert(point.equity) })))
-      setPnlSeries(seedPoints.map(point => ({ time: point.time.getTime(), value: convert(point.pnl) })))
-      lastIndexRef.current = lastIndex
-      const lastSeed = seedPoints[seedPoints.length - 1]
-      lastTickRef.current = lastSeed ? lastSeed.time.getTime() : null
-    }
-
-    seedSeries()
-
-    const interval = setInterval(() => {
-      const nowMs = Date.now()
-      const lastIndex = findLastIndex(nowMs)
-      if (lastIndex <= lastIndexRef.current || lastIndex < 0) {
-        return
-      }
-      const newPoints = schedulePoints.slice(lastIndexRef.current + 1, lastIndex + 1)
-      lastIndexRef.current = lastIndex
-      const lastPoint = newPoints[newPoints.length - 1]
-      if (lastPoint) {
-        lastTickRef.current = lastPoint.time.getTime()
-      }
-      const nowMsWindow = Date.now()
-      setEquitySeries(prev =>
-        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: convert(point.equity) }))], nowMsWindow)
-      )
-      setPnlSeries(prev =>
-        trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: convert(point.pnl) }))], nowMsWindow)
-      )
-
-      const focusSeed = seed + lastIndex * 17
-      const nextAllocation = buildAllocationSeries(focusSeed)
-      const pnlSignal = lastPoint ? lastPoint.pnl : 0
-      const pnlRatio = expectedReturnUsd > 0 ? pnlSignal / expectedReturnUsd : 0
-      const bias = pnlRatio >= 0 ? Math.min(0.35, pnlRatio * 0.6) : -Math.min(0.35, Math.abs(pnlRatio) * 0.6)
-      const nextPerformance = nextAllocation.map(item => {
-        const base = item.value * (0.85 + Math.abs(bias))
-        const direction = item.value === Math.max(...nextAllocation.map(x => x.value)) ? bias : bias * 0.4
-        const value = Math.round(clamp(base + base * direction, 12, 100))
-        return { label: item.name, value }
-      })
-      setAllocationState(nextAllocation)
-      setPerformanceState(nextPerformance)
-    }, 15000)
-
-    const microInterval = setInterval(() => {
-      const now = new Date()
-      const nowMs = now.getTime()
-      const lastTickMs = lastTickRef.current ?? startDate.getTime()
-      const minGapMs = 60 * 1000
-      if (nowMs - lastTickMs < minGapMs) {
-        return
-      }
-      const snapshot = simulateTradingProgress({
-        investmentUsd,
-        expectedReturnUsd,
-        durationHours,
-        startDate,
-        now,
-        seed,
-      })
-      const equityValue = Number(convert(snapshot.equityUsd).toFixed(2))
-      const pnlValue = Number(convert(snapshot.pnlUsd).toFixed(2))
-      const tickTime = nowMs
-      lastTickRef.current = tickTime
-      setEquitySeries(prev => trimWindow([...prev, { time: tickTime, value: equityValue }], nowMs))
-      setPnlSeries(prev => trimWindow([...prev, { time: tickTime, value: pnlValue }], nowMs))
-    }, 60000)
-
-    const allocationInterval = setInterval(() => {
-      const nowMs = Date.now()
-      const minGapMs = 2 * 60 * 1000
-      if (nowMs - allocationTickRef.current < minGapMs) {
-        return
-      }
-      allocationTickRef.current = nowMs
-      allocationSeedRef.current += 1 + Math.round(Math.sin(nowMs / 60000) * 2)
-      const nextAllocation = buildAllocationSeries(allocationSeedRef.current)
+    const currentPoint = (nowMs: number) => {
       const snapshot = simulateTradingProgress({
         investmentUsd,
         expectedReturnUsd,
@@ -184,7 +94,67 @@ export default function TradingOverviewCharts({
         now: new Date(nowMs),
         seed,
       })
-      const pnlRatio = expectedReturnUsd > 0 ? snapshot.pnlUsd / expectedReturnUsd : 0
+      return {
+        equity: { time: nowMs, value: Number(convert(snapshot.equityUsd).toFixed(2)) },
+        pnl: { time: nowMs, value: Number(convert(snapshot.pnlUsd).toFixed(2)) },
+        snapshot,
+      }
+    }
+
+    const seedSeries = () => {
+      const nowMs = Date.now()
+      const lastIndex = findLastIndex(nowMs)
+      const point = currentPoint(nowMs)
+      const windowStart = nowMs - windowMs
+      const seedPoints =
+        lastIndex < 0
+          ? []
+          : schedulePoints.filter(point => point.time.getTime() >= windowStart && point.time.getTime() <= nowMs)
+      setEquitySeries(
+        trimWindow(
+          [...seedPoints.map(point => ({ time: point.time.getTime(), value: convert(point.equity) })), point.equity],
+          nowMs
+        )
+      )
+      setPnlSeries(
+        trimWindow(
+          [...seedPoints.map(point => ({ time: point.time.getTime(), value: convert(point.pnl) })), point.pnl],
+          nowMs
+        )
+      )
+      lastIndexRef.current = lastIndex
+      lastTickRef.current = nowMs
+    }
+
+    seedSeries()
+
+    const interval = setInterval(() => {
+      const nowMs = Date.now()
+      const lastIndex = findLastIndex(nowMs)
+      if (lastIndex > lastIndexRef.current && lastIndex >= 0) {
+        const newPoints = schedulePoints.slice(lastIndexRef.current + 1, lastIndex + 1)
+        const nowMsWindow = Date.now()
+        setEquitySeries(prev =>
+          trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: convert(point.equity) }))], nowMsWindow)
+        )
+        setPnlSeries(prev =>
+          trimWindow([...prev, ...newPoints.map(point => ({ time: point.time.getTime(), value: convert(point.pnl) }))], nowMsWindow)
+        )
+        lastIndexRef.current = lastIndex
+      }
+
+      // Always push a live point so charts keep moving even between jump checkpoints.
+      if (nowMs - lastTickRef.current < 15000) {
+        return
+      }
+      const point = currentPoint(nowMs)
+      setEquitySeries(prev => trimWindow([...prev, point.equity], nowMs))
+      setPnlSeries(prev => trimWindow([...prev, point.pnl], nowMs))
+      lastTickRef.current = nowMs
+
+      allocationSeedRef.current += 1 + Math.round(Math.sin(nowMs / 60000) * 2)
+      const nextAllocation = buildAllocationSeries(allocationSeedRef.current)
+      const pnlRatio = expectedReturnUsd > 0 ? point.snapshot.pnlUsd / expectedReturnUsd : 0
       const bias = pnlRatio >= 0 ? Math.min(0.25, pnlRatio * 0.5) : -Math.min(0.25, Math.abs(pnlRatio) * 0.5)
       const maxValue = Math.max(...nextAllocation.map(x => x.value))
       const nextPerformance = nextAllocation.map(item => {
@@ -195,12 +165,10 @@ export default function TradingOverviewCharts({
       })
       setAllocationState(nextAllocation)
       setPerformanceState(nextPerformance)
-    }, 60000)
+    }, 15000)
 
     return () => {
       clearInterval(interval)
-      clearInterval(microInterval)
-      clearInterval(allocationInterval)
     }
   }, [schedulePoints, investmentUsd, expectedReturnUsd, durationHours, seed, startDate, convert])
 

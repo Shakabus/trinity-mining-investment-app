@@ -28,7 +28,7 @@ export default function TradingLiveOverviewCards({
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 15000)
+    const interval = setInterval(() => setNow(new Date()), 5000)
     return () => clearInterval(interval)
   }, [])
 

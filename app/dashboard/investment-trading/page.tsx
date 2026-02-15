@@ -290,7 +290,7 @@ export default async function TradingInvestmentPage() {
           expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
           durationHours={activePlan.durationHours}
           startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
-          seed={(user?.id || 1) * 11}
+          seed={liveSeed}
           allocationSeries={allocationSeries}
           performanceSeries={performanceSeries}
         />
