@@ -140,7 +140,7 @@ export default function PaymentInstructions({ plan, accountBalanceUsd }: Payment
       const response = await fetch('/api/user/account-balance/pay-mining-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userPlanId: plan.id }),
+        body: JSON.stringify({ userPlanId: plan.id, coinType: selectedCrypto }),
       })
 
       if (!response.ok) {

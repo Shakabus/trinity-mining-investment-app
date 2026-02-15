@@ -43,7 +43,7 @@ export async function PATCH(req: Request) {
 
     const existing = await prisma.withdrawal.findUnique({
       where: { id: withdrawalId },
-      select: { id: true, userId: true, amountUsd: true, status: true },
+      select: { id: true, userId: true, amountUsd: true, amountCrypto: true, coinType: true, status: true },
     })
 
     if (!existing) {
@@ -83,7 +83,12 @@ export async function PATCH(req: Request) {
           source: 'mining_withdrawal',
           referenceId: withdrawalReference,
           note: 'Mining withdrawal approved.',
-          metadata: { withdrawalId: withdrawal.id, status },
+          metadata: {
+            withdrawalId: withdrawal.id,
+            status,
+            coinType: existing.coinType,
+            amountCrypto: Number(existing.amountCrypto),
+          },
         })
       }
     }
@@ -98,7 +103,12 @@ export async function PATCH(req: Request) {
         source: 'mining_withdrawal',
         referenceId: withdrawalReference,
         note: 'Mining withdrawal request rejected.',
-        metadata: { withdrawalId: withdrawal.id, previousStatus: existing.status },
+        metadata: {
+          withdrawalId: withdrawal.id,
+          previousStatus: existing.status,
+          coinType: existing.coinType,
+          amountCrypto: Number(existing.amountCrypto),
+        },
       })
     }
 
@@ -115,7 +125,12 @@ export async function PATCH(req: Request) {
           source: 'withdrawal_reversal',
           referenceId: reversalReference,
           note: 'Mining withdrawal reversed after rejection.',
-          metadata: { withdrawalId: withdrawal.id, previousStatus: existing.status },
+          metadata: {
+            withdrawalId: withdrawal.id,
+            previousStatus: existing.status,
+            coinType: existing.coinType,
+            amountCrypto: Number(existing.amountCrypto),
+          },
         })
       }
     }

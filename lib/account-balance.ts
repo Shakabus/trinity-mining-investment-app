@@ -1,5 +1,13 @@
 import { prisma } from '@/lib/db'
 import type { Prisma, PrismaClient } from '@prisma/client'
+import {
+  convertCoinToUsd,
+  convertUsdToCoin,
+  isTrackedAssetCoin,
+  TRACKED_ASSET_COINS,
+  type CryptoPriceMap,
+  type TrackedAssetCoin,
+} from '@/lib/crypto-prices'
 
 export const ACCOUNT_BALANCE_ENTRY_ACTION = 'AccountBalanceEntry'
 
@@ -34,6 +42,16 @@ export type AccountBalanceEntry = StoredBalanceEntry & {
   id: number
   userId: number
   createdAt: Date
+}
+
+export type AccountBalanceCoinSummary = {
+  coinType: TrackedAssetCoin
+  totalInCrypto: number
+  totalOutCrypto: number
+  netCrypto: number
+  totalInUsd: number
+  totalOutUsd: number
+  netUsd: number
 }
 
 type CreateEntryInput = {
@@ -160,18 +178,123 @@ export async function getAccountBalanceEntries(
     .filter((entry): entry is AccountBalanceEntry => Boolean(entry))
 }
 
-export async function getAccountBalanceSummary(userId: number, db: DbClient = prisma) {
-  const entries = await getAccountBalanceEntries(userId, { limit: 3000 }, db)
-  const latestByReference = new Map<string, AccountBalanceEntry>()
-  for (const entry of entries) {
-    const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
-    const existing = latestByReference.get(key)
-    if (!existing || existing.createdAt.getTime() < entry.createdAt.getTime()) {
-      latestByReference.set(key, entry)
+export function getLatestAccountBalanceEntries(entries: AccountBalanceEntry[]) {
+  return [...entries]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .reduce<Map<string, AccountBalanceEntry>>((map, entry) => {
+      const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
+      if (!map.has(key)) {
+        map.set(key, entry)
+      }
+      return map
+    }, new Map())
+}
+
+function fallbackCoinBySource(source: AccountBalanceSource): TrackedAssetCoin | null {
+  switch (source) {
+    case 'external_trading_payment':
+    case 'trading_plan_purchase':
+    case 'trading_withdrawal':
+      return 'USDT'
+    case 'external_payment':
+    case 'mining_plan_purchase':
+    case 'mining_withdrawal':
+    case 'referral_withdrawal':
+      return 'BTC'
+    default:
+      return null
+  }
+}
+
+function getEntryCoinType(entry: AccountBalanceEntry): TrackedAssetCoin | null {
+  const metadataCoin = typeof entry.metadata?.coinType === 'string' ? entry.metadata.coinType.toUpperCase() : null
+  if (metadataCoin && isTrackedAssetCoin(metadataCoin)) {
+    return metadataCoin
+  }
+  return fallbackCoinBySource(entry.source)
+}
+
+function getEntryCryptoAmount(
+  entry: AccountBalanceEntry,
+  coinType: TrackedAssetCoin,
+  prices: CryptoPriceMap
+) {
+  const metadataAmount = Number(entry.metadata?.amountCrypto)
+  if (Number.isFinite(metadataAmount) && metadataAmount > 0) {
+    return Number(metadataAmount.toFixed(8))
+  }
+
+  return convertUsdToCoin(entry.amountUsd, coinType, prices)
+}
+
+export function summarizeAccountBalanceAssets(
+  entries: AccountBalanceEntry[],
+  prices: CryptoPriceMap
+): {
+  byCoin: Record<TrackedAssetCoin, AccountBalanceCoinSummary>
+  combinedAssetUsd: number
+} {
+  const latestEntries = [...getLatestAccountBalanceEntries(entries).values()]
+  const settledEntries = latestEntries.filter(entry => entry.status === 'settled')
+
+  const byCoin = TRACKED_ASSET_COINS.reduce<Record<TrackedAssetCoin, AccountBalanceCoinSummary>>(
+    (map, coinType) => {
+      map[coinType] = {
+        coinType,
+        totalInCrypto: 0,
+        totalOutCrypto: 0,
+        netCrypto: 0,
+        totalInUsd: 0,
+        totalOutUsd: 0,
+        netUsd: 0,
+      }
+      return map
+    },
+    {} as Record<TrackedAssetCoin, AccountBalanceCoinSummary>
+  )
+
+  for (const entry of settledEntries) {
+    const coinType = getEntryCoinType(entry)
+    if (!coinType) continue
+
+    const cryptoAmount = getEntryCryptoAmount(entry, coinType, prices)
+    const bucket = byCoin[coinType]
+
+    if (entry.direction === 'credit') {
+      bucket.totalInCrypto = Number((bucket.totalInCrypto + cryptoAmount).toFixed(8))
+      bucket.totalInUsd = Number((bucket.totalInUsd + entry.amountUsd).toFixed(2))
+    } else {
+      bucket.totalOutCrypto = Number((bucket.totalOutCrypto + cryptoAmount).toFixed(8))
+      bucket.totalOutUsd = Number((bucket.totalOutUsd + entry.amountUsd).toFixed(2))
     }
   }
 
-  const latestEntries = [...latestByReference.values()]
+  let combinedAssetUsd = 0
+  for (const coinType of TRACKED_ASSET_COINS) {
+    const bucket = byCoin[coinType]
+    bucket.netCrypto = Number((bucket.totalInCrypto - bucket.totalOutCrypto).toFixed(8))
+    bucket.netUsd = convertCoinToUsd(bucket.netCrypto, coinType, prices)
+    combinedAssetUsd += bucket.netUsd
+  }
+
+  return {
+    byCoin,
+    combinedAssetUsd: Number(combinedAssetUsd.toFixed(2)),
+  }
+}
+
+export async function getAccountBalanceAssetSummary(
+  userId: number,
+  prices: CryptoPriceMap,
+  db: DbClient = prisma
+) {
+  const entries = await getAccountBalanceEntries(userId, { limit: 3000 }, db)
+  return summarizeAccountBalanceAssets(entries, prices)
+}
+
+export async function getAccountBalanceSummary(userId: number, db: DbClient = prisma) {
+  const entries = await getAccountBalanceEntries(userId, { limit: 3000 }, db)
+  const latestEntries = [...getLatestAccountBalanceEntries(entries).values()]
   const settledEntries = latestEntries.filter(entry => entry.status === 'settled')
 
   const totalCreditsUsd = settledEntries

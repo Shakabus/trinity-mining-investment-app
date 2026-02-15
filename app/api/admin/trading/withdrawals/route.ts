@@ -82,7 +82,12 @@ export async function PATCH(req: Request) {
           source: 'trading_withdrawal',
           referenceId: withdrawalReference,
           note: 'Trading withdrawal approved.',
-          metadata: { withdrawalId: withdrawal.id, status },
+          metadata: {
+            withdrawalId: withdrawal.id,
+            status,
+            coinType: 'USDT',
+            amountCrypto: Number(Number(withdrawal.amountUsd).toFixed(8)),
+          },
         })
       }
     }
@@ -97,7 +102,12 @@ export async function PATCH(req: Request) {
         source: 'trading_withdrawal',
         referenceId: withdrawalReference,
         note: 'Trading withdrawal request rejected.',
-        metadata: { withdrawalId: withdrawal.id, previousStatus: existing.status },
+        metadata: {
+          withdrawalId: withdrawal.id,
+          previousStatus: existing.status,
+          coinType: 'USDT',
+          amountCrypto: Number(Number(withdrawal.amountUsd).toFixed(8)),
+        },
       })
     }
 
@@ -114,7 +124,12 @@ export async function PATCH(req: Request) {
           source: 'withdrawal_reversal',
           referenceId: reversalReference,
           note: 'Trading withdrawal reversed after rejection.',
-          metadata: { withdrawalId: withdrawal.id, previousStatus: existing.status },
+          metadata: {
+            withdrawalId: withdrawal.id,
+            previousStatus: existing.status,
+            coinType: 'USDT',
+            amountCrypto: Number(Number(withdrawal.amountUsd).toFixed(8)),
+          },
         })
       }
     }

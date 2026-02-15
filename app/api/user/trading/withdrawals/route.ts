@@ -118,7 +118,12 @@ export async function POST(req: Request) {
       source: 'trading_withdrawal',
       referenceId: `trading-withdrawal:${withdrawal.id}`,
       note: 'Trading withdrawal request submitted.',
-      metadata: { withdrawalId: withdrawal.id, tradingUserPlanId: activePlan.id },
+      metadata: {
+        withdrawalId: withdrawal.id,
+        tradingUserPlanId: activePlan.id,
+        coinType: 'USDT',
+        amountCrypto: Number(amountUsd.toFixed(8)),
+      },
     })
 
     await logUserActivity({

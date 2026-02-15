@@ -4,6 +4,12 @@ import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { createAccountBalanceEntry, hasSettledEntryForReference } from '@/lib/account-balance'
 import {
+  convertUsdToCoin,
+  getTrackedCryptoPricesUsd,
+  isTrackedAssetCoin,
+  type TrackedAssetCoin,
+} from '@/lib/crypto-prices'
+import {
   isInputValidationError,
   readJsonObject,
   readNumberField,
@@ -143,6 +149,10 @@ export async function POST(req: Request) {
 
     const externalPaymentRef = `external-trading-payment:${payment.id}`
     const purchaseRef = `trading-plan:${tradingPlan.id}`
+    const rawCoin = (payment.cryptoType || 'USDT').toUpperCase()
+    const paymentCoin: TrackedAssetCoin = isTrackedAssetCoin(rawCoin) ? rawCoin : 'USDT'
+    const trackedPrices = await getTrackedCryptoPricesUsd()
+    const settledAmountCrypto = convertUsdToCoin(Number(tradingPlan.investmentUsd), paymentCoin, trackedPrices)
     const hasExternalCredit = await hasSettledEntryForReference(tradingPlan.userId, externalPaymentRef, 'credit')
     const hasPurchaseDebit = await hasSettledEntryForReference(tradingPlan.userId, purchaseRef, 'debit')
 
@@ -155,7 +165,13 @@ export async function POST(req: Request) {
         source: 'external_trading_payment',
         referenceId: externalPaymentRef,
         note: 'External trading payment approved.',
-        metadata: { tradingUserPlanId: tradingPlan.id, paymentId: payment.id },
+        metadata: {
+          tradingUserPlanId: tradingPlan.id,
+          paymentId: payment.id,
+          coinType: paymentCoin,
+          amountCrypto: settledAmountCrypto,
+          usdPriceAtSettlement: trackedPrices[paymentCoin],
+        },
       })
     }
 
@@ -168,7 +184,13 @@ export async function POST(req: Request) {
         source: 'trading_plan_purchase',
         referenceId: purchaseRef,
         note: `Trading plan purchase settled for ${tradingPlan.plan.name}.`,
-        metadata: { tradingUserPlanId: tradingPlan.id, paymentId: payment.id },
+        metadata: {
+          tradingUserPlanId: tradingPlan.id,
+          paymentId: payment.id,
+          coinType: paymentCoin,
+          amountCrypto: settledAmountCrypto,
+          usdPriceAtSettlement: trackedPrices[paymentCoin],
+        },
       })
     }
 

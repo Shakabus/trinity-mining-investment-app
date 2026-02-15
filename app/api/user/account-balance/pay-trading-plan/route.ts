@@ -3,17 +3,21 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import {
   createAccountBalanceEntry,
+  getAccountBalanceAssetSummary,
   getAccountBalanceSummary,
   hasSettledEntryForReference,
 } from '@/lib/account-balance'
+import { convertUsdToCoin, getTrackedCryptoPricesUsd, type TrackedAssetCoin } from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
 import {
   isInputValidationError,
   readJsonObject,
   readNumberField,
+  readStringField,
 } from '@/lib/requestValidation'
 
-const PAY_TRADING_PLAN_FIELDS = ['tradingUserPlanId'] as const
+const PAY_TRADING_PLAN_FIELDS = ['tradingUserPlanId', 'coinType'] as const
+const PAYABLE_COINS = ['BTC', 'ETH', 'SOL', 'USDT'] as const
 
 export async function POST(req: Request) {
   try {
@@ -28,6 +32,11 @@ export async function POST(req: Request) {
       integer: true,
       min: 1,
     })!
+    const selectedCoin =
+      (readStringField(body, 'coinType', {
+        toUpperCase: true,
+        enumValues: PAYABLE_COINS,
+      }) as TrackedAssetCoin | undefined) ?? 'USDT'
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -58,6 +67,24 @@ export async function POST(req: Request) {
       )
     }
 
+    const cryptoPrices = await getTrackedCryptoPricesUsd()
+    const assetSummary = await getAccountBalanceAssetSummary(user.id, cryptoPrices)
+    const requiredCoinAmount = convertUsdToCoin(investmentUsd, selectedCoin, cryptoPrices)
+    const availableCoinAmount = assetSummary.byCoin[selectedCoin]?.netCrypto ?? 0
+
+    if (requiredCoinAmount <= 0 || cryptoPrices[selectedCoin] <= 0) {
+      return NextResponse.json({ error: `Unable to resolve ${selectedCoin} conversion rate.` }, { status: 400 })
+    }
+
+    if (availableCoinAmount + 0.00000001 < requiredCoinAmount) {
+      return NextResponse.json(
+        {
+          error: `Insufficient ${selectedCoin} wallet balance. Available: ${availableCoinAmount.toFixed(8)} ${selectedCoin}.`,
+        },
+        { status: 400 }
+      )
+    }
+
     const debitReference = `trading-plan:${tradingPlan.id}`
     const alreadyDebited = await hasSettledEntryForReference(user.id, debitReference, 'debit')
     if (alreadyDebited) {
@@ -74,7 +101,12 @@ export async function POST(req: Request) {
           source: 'trading_plan_purchase',
           referenceId: debitReference,
           note: `Account balance used for ${tradingPlan.plan.name}.`,
-          metadata: { tradingUserPlanId: tradingPlan.id },
+          metadata: {
+            tradingUserPlanId: tradingPlan.id,
+            coinType: selectedCoin,
+            amountCrypto: requiredCoinAmount,
+            usdPriceAtSettlement: cryptoPrices[selectedCoin],
+          },
         },
         tx
       )
@@ -139,6 +171,7 @@ export async function POST(req: Request) {
         await tx.tradingPayment.update({
           where: { id: existingPayment.id },
           data: {
+            cryptoType: selectedCoin,
             transactionId: 'Account Balance',
             status: 'confirmed',
             confirmations: 999,
@@ -152,7 +185,7 @@ export async function POST(req: Request) {
             userId: tradingPlan.userId,
             tradingUserPlanId: tradingPlan.id,
             amountUsd: tradingPlan.investmentUsd,
-            cryptoType: 'USDT',
+            cryptoType: selectedCoin,
             walletAddress: 'Account Balance',
             transactionId: 'Account Balance',
             status: 'confirmed',

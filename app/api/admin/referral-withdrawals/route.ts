@@ -39,7 +39,7 @@ export async function PATCH(req: Request) {
 
     const existing = await prisma.referralWithdrawal.findUnique({
       where: { id },
-      select: { id: true, userId: true, amountUsd: true, status: true },
+      select: { id: true, userId: true, amountUsd: true, amountCrypto: true, coinType: true, status: true },
     })
     if (!existing) {
       return NextResponse.json({ error: 'Referral withdrawal not found.' }, { status: 404 })
@@ -68,7 +68,12 @@ export async function PATCH(req: Request) {
           source: 'referral_withdrawal',
           referenceId: withdrawalReference,
           note: 'Referral withdrawal approved.',
-          metadata: { withdrawalId: updated.id, status },
+          metadata: {
+            withdrawalId: updated.id,
+            status,
+            coinType: existing.coinType,
+            amountCrypto: Number(existing.amountCrypto),
+          },
         })
       }
     }
@@ -83,7 +88,12 @@ export async function PATCH(req: Request) {
         source: 'referral_withdrawal',
         referenceId: withdrawalReference,
         note: 'Referral withdrawal request rejected.',
-        metadata: { withdrawalId: updated.id, previousStatus: existing.status },
+        metadata: {
+          withdrawalId: updated.id,
+          previousStatus: existing.status,
+          coinType: existing.coinType,
+          amountCrypto: Number(existing.amountCrypto),
+        },
       })
     }
 
@@ -100,7 +110,12 @@ export async function PATCH(req: Request) {
           source: 'withdrawal_reversal',
           referenceId: reversalReference,
           note: 'Referral withdrawal reversed after rejection.',
-          metadata: { withdrawalId: updated.id, previousStatus: existing.status },
+          metadata: {
+            withdrawalId: updated.id,
+            previousStatus: existing.status,
+            coinType: existing.coinType,
+            amountCrypto: Number(existing.amountCrypto),
+          },
         })
       }
     }

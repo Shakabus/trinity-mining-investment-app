@@ -5,6 +5,12 @@ import { logUserActivity } from '@/lib/user-activity'
 import { scalePlanHashrateDecimal } from '@/lib/mining-hashrate'
 import { createAccountBalanceEntry, hasSettledEntryForReference } from '@/lib/account-balance'
 import {
+  convertUsdToCoin,
+  getTrackedCryptoPricesUsd,
+  isTrackedAssetCoin,
+  type TrackedAssetCoin,
+} from '@/lib/crypto-prices'
+import {
   isInputValidationError,
   readJsonObject,
   readNumberField,
@@ -225,6 +231,15 @@ export async function POST(req: Request) {
 
     const externalPaymentRef = `external-payment:${payment.id}`
     const purchaseRef = `mining-plan:${userPlan.id}`
+    const rawCoin = (payment.cryptoType || userPlan.plan.coinType || 'BTC').toUpperCase()
+    const paymentCoin: TrackedAssetCoin = isTrackedAssetCoin(rawCoin) ? rawCoin : 'BTC'
+    const trackedPrices = await getTrackedCryptoPricesUsd()
+    const amountCryptoFromPayment = Number((payment as { amountCrypto?: unknown }).amountCrypto ?? 0)
+    const settledAmountCrypto =
+      Number.isFinite(amountCryptoFromPayment) && amountCryptoFromPayment > 0
+        ? Number(amountCryptoFromPayment.toFixed(8))
+        : convertUsdToCoin(Number(userPlan.finalPrice), paymentCoin, trackedPrices)
+
     const hasExternalCredit = await hasSettledEntryForReference(userPlan.userId, externalPaymentRef, 'credit')
     const hasPurchaseDebit = await hasSettledEntryForReference(userPlan.userId, purchaseRef, 'debit')
 
@@ -237,7 +252,13 @@ export async function POST(req: Request) {
         source: 'external_payment',
         referenceId: externalPaymentRef,
         note: 'External mining payment approved.',
-        metadata: { userPlanId: userPlan.id, paymentId: payment.id },
+        metadata: {
+          userPlanId: userPlan.id,
+          paymentId: payment.id,
+          coinType: paymentCoin,
+          amountCrypto: settledAmountCrypto,
+          usdPriceAtSettlement: trackedPrices[paymentCoin],
+        },
       })
     }
 
@@ -250,7 +271,13 @@ export async function POST(req: Request) {
         source: 'mining_plan_purchase',
         referenceId: purchaseRef,
         note: `Mining plan purchase settled for ${userPlan.plan.name}.`,
-        metadata: { userPlanId: userPlan.id, paymentId: payment.id },
+        metadata: {
+          userPlanId: userPlan.id,
+          paymentId: payment.id,
+          coinType: paymentCoin,
+          amountCrypto: settledAmountCrypto,
+          usdPriceAtSettlement: trackedPrices[paymentCoin],
+        },
       })
     }
 

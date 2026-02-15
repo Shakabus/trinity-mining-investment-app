@@ -4,17 +4,21 @@ import { prisma } from '@/lib/db'
 import { scalePlanHashrateDecimal } from '@/lib/mining-hashrate'
 import {
   createAccountBalanceEntry,
+  getAccountBalanceAssetSummary,
   getAccountBalanceSummary,
   hasSettledEntryForReference,
 } from '@/lib/account-balance'
+import { convertUsdToCoin, getTrackedCryptoPricesUsd, type TrackedAssetCoin } from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
 import {
   isInputValidationError,
   readJsonObject,
   readNumberField,
+  readStringField,
 } from '@/lib/requestValidation'
 
-const PAY_MINING_PLAN_FIELDS = ['userPlanId'] as const
+const PAY_MINING_PLAN_FIELDS = ['userPlanId', 'coinType'] as const
+const PAYABLE_COINS = ['BTC', 'ETH', 'SOL', 'USDT'] as const
 const DEFAULT_REFERRAL_SETTINGS = {
   isEnabled: true,
   bonusPercent: 5,
@@ -30,6 +34,11 @@ export async function POST(req: Request) {
 
     const body = await readJsonObject(req, { allowedKeys: PAY_MINING_PLAN_FIELDS })
     const userPlanId = readNumberField(body, 'userPlanId', { required: true, integer: true, min: 1 })!
+    const selectedCoin =
+      (readStringField(body, 'coinType', {
+        toUpperCase: true,
+        enumValues: PAYABLE_COINS,
+      }) as TrackedAssetCoin | undefined) ?? 'USDT'
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -65,6 +74,24 @@ export async function POST(req: Request) {
       )
     }
 
+    const cryptoPrices = await getTrackedCryptoPricesUsd()
+    const assetSummary = await getAccountBalanceAssetSummary(user.id, cryptoPrices)
+    const requiredCoinAmount = convertUsdToCoin(finalPriceUsd, selectedCoin, cryptoPrices)
+    const availableCoinAmount = assetSummary.byCoin[selectedCoin]?.netCrypto ?? 0
+
+    if (requiredCoinAmount <= 0 || cryptoPrices[selectedCoin] <= 0) {
+      return NextResponse.json({ error: `Unable to resolve ${selectedCoin} conversion rate.` }, { status: 400 })
+    }
+
+    if (availableCoinAmount + 0.00000001 < requiredCoinAmount) {
+      return NextResponse.json(
+        {
+          error: `Insufficient ${selectedCoin} wallet balance. Available: ${availableCoinAmount.toFixed(8)} ${selectedCoin}.`,
+        },
+        { status: 400 }
+      )
+    }
+
     const debitReference = `mining-plan:${userPlan.id}`
     const alreadyDebited = await hasSettledEntryForReference(user.id, debitReference, 'debit')
     if (alreadyDebited) {
@@ -81,7 +108,12 @@ export async function POST(req: Request) {
           source: 'mining_plan_purchase',
           referenceId: debitReference,
           note: `Account balance used for ${userPlan.plan.name}.`,
-          metadata: { userPlanId: userPlan.id },
+          metadata: {
+            userPlanId: userPlan.id,
+            coinType: selectedCoin,
+            amountCrypto: requiredCoinAmount,
+            usdPriceAtSettlement: cryptoPrices[selectedCoin],
+          },
         },
         tx
       )
@@ -206,11 +238,12 @@ export async function POST(req: Request) {
         ? await tx.payment.update({
             where: { id: existingPayment.id },
             data: {
-              amountUsd: userPlan.finalPrice,
-              cryptoType: existingPayment.cryptoType || userPlan.plan.coinType,
-              transactionId: 'Account Balance',
-              status: 'confirmed',
-              confirmations: 999,
+            amountUsd: userPlan.finalPrice,
+            amountCrypto: requiredCoinAmount,
+            cryptoType: selectedCoin,
+            transactionId: 'Account Balance',
+            status: 'confirmed',
+            confirmations: 999,
               confirmedByAdminId: null,
               confirmedAt: new Date(),
             },
@@ -220,7 +253,8 @@ export async function POST(req: Request) {
               userId: userPlan.userId,
               userPlanId: userPlan.id,
               amountUsd: userPlan.finalPrice,
-              cryptoType: userPlan.plan.coinType,
+              amountCrypto: requiredCoinAmount,
+              cryptoType: selectedCoin,
               walletAddress: 'Account Balance',
               transactionId: 'Account Balance',
               status: 'confirmed',

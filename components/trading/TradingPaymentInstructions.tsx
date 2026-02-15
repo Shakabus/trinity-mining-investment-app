@@ -126,7 +126,7 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
       const response = await fetch('/api/user/account-balance/pay-trading-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tradingUserPlanId: plan.id }),
+        body: JSON.stringify({ tradingUserPlanId: plan.id, coinType: selectedCrypto }),
       })
 
       if (!response.ok) {

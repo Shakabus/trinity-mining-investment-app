@@ -123,7 +123,7 @@ export async function POST(req: Request) {
       source: 'referral_withdrawal',
       referenceId: `referral-withdrawal:${withdrawal.id}`,
       note: 'Referral withdrawal request submitted.',
-      metadata: { withdrawalId: withdrawal.id, coinType },
+      metadata: { withdrawalId: withdrawal.id, coinType, amountCrypto, usdPriceAtRequest: price },
     })
 
     await logUserActivity({

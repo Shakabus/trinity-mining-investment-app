@@ -8,9 +8,11 @@ import { simulateTradingProgress } from '@/lib/trading'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 import {
   formatAccountBalanceSource,
+  getAccountBalanceAssetSummary,
   getAccountBalanceEntries,
   getAccountBalanceSummary,
 } from '@/lib/account-balance'
+import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
@@ -133,6 +135,7 @@ export default async function DashboardPage() {
     : null
 
   const rates = await getFxRates()
+  const trackedCryptoPrices = await getTrackedCryptoPricesUsd()
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
     ? (user?.preferredCurrency as CurrencyCode)
     : 'USD'
@@ -221,6 +224,17 @@ export default async function DashboardPage() {
         totalDebitsUsd: 0,
       }
   const accountBalanceEntries = user ? await getAccountBalanceEntries(user.id, { limit: 800 }) : []
+  const accountAssetSummary = user
+    ? await getAccountBalanceAssetSummary(user.id, trackedCryptoPrices)
+    : {
+        byCoin: {
+          BTC: { coinType: 'BTC', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+          ETH: { coinType: 'ETH', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+          SOL: { coinType: 'SOL', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+          USDT: { coinType: 'USDT', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+        },
+        combinedAssetUsd: 0,
+      }
 
   const latestEntriesByReference = accountBalanceEntries.reduce<Map<string, (typeof accountBalanceEntries)[number]>>(
     (map, entry) => {
@@ -257,6 +271,10 @@ export default async function DashboardPage() {
   const recentBalanceTransactions = latestAccountBalanceEntries
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 5)
+  const formatCoinAmount = (amount: number) => Number(amount.toFixed(8)).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 8,
+  })
   const realEstateMonthlyRealizedUsd = realEstateData.summary.thisMonthRealizedUsd
   const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
   const totalEarnedOverviewUsd = totalEarnedUsd + realEstateMonthlyRealizedUsd
@@ -462,6 +480,49 @@ export default async function DashboardPage() {
               ) : (
                 <div className="text-xs text-white/50">No account transactions yet.</div>
               )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+          {TRACKED_ASSET_COINS.map(coin => {
+            const coinSummary = accountAssetSummary.byCoin[coin]
+            return (
+              <div
+                key={coin}
+                className="p-4 rounded-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03))',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                }}
+              >
+                <div className="text-xs text-white/70 mb-1">{coin} Wallet Flow</div>
+                <div className="text-base font-semibold text-white" title={`${formatCoinAmount(coinSummary.netCrypto)} ${coin}`}>
+                  {formatCoinAmount(coinSummary.netCrypto)} {coin}
+                </div>
+                <div className="text-xs text-white/65 mt-1">Value: {formatMoney(coinSummary.netUsd)}</div>
+                <div className="text-[11px] text-emerald-300/90 mt-2">
+                  In: +{formatCoinAmount(coinSummary.totalInCrypto)} {coin}
+                </div>
+                <div className="text-[11px] text-rose-300/90">
+                  Out: -{formatCoinAmount(coinSummary.totalOutCrypto)} {coin}
+                </div>
+              </div>
+            )
+          })}
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(16, 185, 129, 0.05))',
+              border: '1px solid rgba(16, 185, 129, 0.32)',
+            }}
+          >
+            <div className="text-xs text-emerald-100/80 mb-1">Combined Asset View</div>
+            <div className="text-xl font-semibold text-emerald-200" title={formatMoney(accountAssetSummary.combinedAssetUsd)}>
+              {formatMoney(accountAssetSummary.combinedAssetUsd)}
+            </div>
+            <div className="text-[11px] text-emerald-100/70 mt-2">
+              Live-priced from BTC, ETH, SOL, and USDT.
             </div>
           </div>
         </div>

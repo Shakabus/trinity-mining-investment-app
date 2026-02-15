@@ -149,7 +149,7 @@ export async function POST(req: Request) {
       source: 'mining_withdrawal',
       referenceId: `mining-withdrawal:${withdrawal.id}`,
       note: 'Mining withdrawal request submitted.',
-      metadata: { withdrawalId: withdrawal.id, coinType },
+      metadata: { withdrawalId: withdrawal.id, coinType, amountCrypto, usdPriceAtRequest: price },
     })
 
     await logUserActivity({

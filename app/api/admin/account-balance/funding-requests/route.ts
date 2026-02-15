@@ -5,6 +5,12 @@ import {
   createAccountBalanceEntry,
   parseAccountBalanceEntryDetail,
 } from '@/lib/account-balance'
+import {
+  convertUsdToCoin,
+  getTrackedCryptoPricesUsd,
+  isTrackedAssetCoin,
+  type TrackedAssetCoin,
+} from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
 import {
   isInputValidationError,
@@ -148,6 +154,11 @@ export async function PATCH(req: Request) {
     }
 
     const status = decision === 'approve' ? 'settled' : 'rejected'
+    const rawCoinType = typeof pendingEntry.metadata?.coinType === 'string' ? pendingEntry.metadata.coinType.toUpperCase() : ''
+    const coinType: TrackedAssetCoin = isTrackedAssetCoin(rawCoinType) ? rawCoinType : 'USDT'
+    const prices = await getTrackedCryptoPricesUsd()
+    const amountCrypto = convertUsdToCoin(pendingEntry.amountUsd, coinType, prices)
+
     await createAccountBalanceEntry({
       userId: pendingEntry.userId,
       direction: 'credit',
@@ -161,6 +172,9 @@ export async function PATCH(req: Request) {
           : 'Funding request rejected.',
       metadata: {
         ...(pendingEntry.metadata || {}),
+        coinType,
+        amountCrypto: status === 'settled' ? amountCrypto : undefined,
+        usdPriceAtSettlement: status === 'settled' ? prices[coinType] : undefined,
         reviewedByAdminId: adminUser.id,
         reviewedAt: new Date().toISOString(),
         adminNote: note,
