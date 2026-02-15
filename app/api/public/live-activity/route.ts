@@ -118,30 +118,32 @@ export async function GET(req: Request) {
       take: Math.min(limit, 80),
     })
 
-    const approvalItems: LiveActivityItem[] = approvalLogs
-      .map(log => {
-        const detail = log.detail ?? null
-        const isWithdrawal = WITHDRAWAL_ACTIONS.has(log.action)
-        const isPayment = PAYMENT_APPROVAL_ACTIONS.has(log.action)
+    const approvalItems = approvalLogs.reduce<LiveActivityItem[]>((accumulator, log) => {
+      const detail = log.detail ?? null
+      const isWithdrawal = WITHDRAWAL_ACTIONS.has(log.action)
+      const isPayment = PAYMENT_APPROVAL_ACTIONS.has(log.action)
 
-        if (!isWithdrawal && !isPayment) return null
+      if (!isWithdrawal && !isPayment) {
+        return accumulator
+      }
 
-        if (isWithdrawal && !/(processed|paid|approved)/i.test(detail ?? '')) {
-          return null
-        }
+      if (isWithdrawal && !/(processed|paid|approved)/i.test(detail ?? '')) {
+        return accumulator
+      }
 
-        return {
-          id: `approval-${log.id}`,
-          name: formatMemberName(log.user?.fullName ?? null, log.user?.email ?? null, log.userId),
-          country: 'Global',
-          action: isWithdrawal ? 'withdrawal completed for' : 'payment approved for',
-          value: isWithdrawal ? extractWithdrawalValue(detail) : extractValue(detail, log.action),
-          tone: isWithdrawal ? ('withdrawal' as const) : ('deposit' as const),
-          createdAt: log.createdAt.toISOString(),
-          source: 'approved' as const,
-        }
+      accumulator.push({
+        id: `approval-${log.id}`,
+        name: formatMemberName(log.user?.fullName ?? null, log.user?.email ?? null, log.userId),
+        country: 'Global',
+        action: isWithdrawal ? 'withdrawal completed for' : 'payment approved for',
+        value: isWithdrawal ? extractWithdrawalValue(detail) : extractValue(detail, log.action),
+        tone: isWithdrawal ? ('withdrawal' as const) : ('deposit' as const),
+        createdAt: log.createdAt.toISOString(),
+        source: 'approved' as const,
       })
-      .filter((item): item is LiveActivityItem => Boolean(item))
+
+      return accumulator
+    }, [])
 
     const generatedItems = buildSyntheticWindow(limit * 3, Date.now()).map(item => ({
       ...item,
