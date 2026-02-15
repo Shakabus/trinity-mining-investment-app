@@ -22,6 +22,8 @@ const MIN_COMPANY_TOTAL_USD = 515_000_000
 const MAX_COMPANY_TOTAL_USD = 575_000_000
 const TARGET_NAME_POOL = 2000
 const FLOW_BATCH_SIZE = 3
+const LIVE_STREAM_STATE_KEY = 'live_payment_stream_state_v1'
+const MAX_PERSISTED_FLOWS = 220
 
 const SYNTHETIC_FIRST_NAMES = [
   'Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas', 'Henry', 'Alexander',
@@ -183,10 +185,99 @@ function buildExpandedNamePool(baseNames: string[], target: number) {
   return disperseBySurname(Array.from(uniqueNames)).slice(0, target)
 }
 
+type PersistedStreamState = {
+  companyTotalUsd: number
+  cursor: number
+  nameCursor: number
+  lastSurnameInflow: string
+  lastSurnameOutflow: string
+  lastFirstInflow: string
+  lastFirstOutflow: string
+  lastGlobalFirst: string
+  recentGlobalFirsts: string[]
+  recentInflowFirsts: string[]
+  recentOutflowFirsts: string[]
+  flows: CompanyFlowRow[]
+}
+
+function readPersistedStreamState() {
+  if (typeof window === 'undefined') return null
+  try {
+    const rawValue = window.localStorage.getItem(LIVE_STREAM_STATE_KEY)
+    if (!rawValue) return null
+    const parsed = JSON.parse(rawValue) as Partial<PersistedStreamState>
+    if (!parsed || typeof parsed !== 'object') return null
+
+    const safeTotal =
+      typeof parsed.companyTotalUsd === 'number' && Number.isFinite(parsed.companyTotalUsd)
+        ? Math.max(MIN_COMPANY_TOTAL_USD, Math.min(MAX_COMPANY_TOTAL_USD, parsed.companyTotalUsd))
+        : null
+    if (safeTotal === null) return null
+
+    const safeFlows = Array.isArray(parsed.flows)
+      ? parsed.flows
+          .filter(flow => flow && typeof flow === 'object')
+          .map(flow => ({
+            id: String(flow.id ?? `${Date.now()}-${Math.random()}`),
+            name: String(flow.name ?? 'Member'),
+            direction: flow.direction === 'outflow' ? 'outflow' : 'inflow',
+            amountUsd:
+              typeof flow.amountUsd === 'number' && Number.isFinite(flow.amountUsd) ? flow.amountUsd : 250000,
+            totalUsd:
+              typeof flow.totalUsd === 'number' && Number.isFinite(flow.totalUsd) ? flow.totalUsd : safeTotal,
+            occurredAt: String(flow.occurredAt ?? new Date().toISOString()),
+            eventLabel: String(flow.eventLabel ?? 'automated treasury transfer'),
+          }))
+          .slice(0, MAX_PERSISTED_FLOWS)
+      : []
+
+    const safeList = (value: unknown, maxSize: number) =>
+      Array.isArray(value)
+        ? value
+            .map(entry => String(entry))
+            .filter(entry => entry.length > 0)
+            .slice(0, maxSize)
+        : []
+
+    return {
+      companyTotalUsd: safeTotal,
+      cursor:
+        typeof parsed.cursor === 'number' && Number.isFinite(parsed.cursor) && parsed.cursor >= 0
+          ? Math.floor(parsed.cursor)
+          : 0,
+      nameCursor:
+        typeof parsed.nameCursor === 'number' && Number.isFinite(parsed.nameCursor) && parsed.nameCursor >= 0
+          ? Math.floor(parsed.nameCursor)
+          : 0,
+      lastSurnameInflow: String(parsed.lastSurnameInflow ?? ''),
+      lastSurnameOutflow: String(parsed.lastSurnameOutflow ?? ''),
+      lastFirstInflow: String(parsed.lastFirstInflow ?? ''),
+      lastFirstOutflow: String(parsed.lastFirstOutflow ?? ''),
+      lastGlobalFirst: String(parsed.lastGlobalFirst ?? ''),
+      recentGlobalFirsts: safeList(parsed.recentGlobalFirsts, 10),
+      recentInflowFirsts: safeList(parsed.recentInflowFirsts, 4),
+      recentOutflowFirsts: safeList(parsed.recentOutflowFirsts, 4),
+      flows: safeFlows,
+    } satisfies PersistedStreamState
+  } catch {
+    return null
+  }
+}
+
+function writePersistedStreamState(state: PersistedStreamState) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(LIVE_STREAM_STATE_KEY, JSON.stringify(state))
+  } catch {
+    // Ignore persistence errors; live stream should continue in-memory.
+  }
+}
+
 export default function LivePaymentsPageClient() {
   const [items, setItems] = useState<LiveActivityItem[]>([])
   const [flows, setFlows] = useState<CompanyFlowRow[]>([])
   const [companyTotalUsd, setCompanyTotalUsd] = useState(537_300_000)
+  const [streamReady, setStreamReady] = useState(false)
 
   const cursorRef = useRef(0)
   const nameCursorRef = useRef(0)
@@ -233,6 +324,56 @@ export default function LivePaymentsPageClient() {
   const namePool = useMemo(() => buildExpandedNamePool(items.map(item => item.name), TARGET_NAME_POOL), [items])
 
   useEffect(() => {
+    const hydrateTimer = window.setTimeout(() => {
+      const persistedState = readPersistedStreamState()
+      if (persistedState) {
+        setCompanyTotalUsd(persistedState.companyTotalUsd)
+        setFlows(persistedState.flows)
+        cursorRef.current = persistedState.cursor
+        nameCursorRef.current = persistedState.nameCursor
+        totalRef.current = persistedState.companyTotalUsd
+        lastSurnameByDirectionRef.current = {
+          inflow: persistedState.lastSurnameInflow,
+          outflow: persistedState.lastSurnameOutflow,
+        }
+        lastFirstByDirectionRef.current = {
+          inflow: persistedState.lastFirstInflow,
+          outflow: persistedState.lastFirstOutflow,
+        }
+        lastGlobalFirstRef.current = persistedState.lastGlobalFirst
+        recentGlobalFirstsRef.current = persistedState.recentGlobalFirsts
+        recentDirectionFirstsRef.current = {
+          inflow: persistedState.recentInflowFirsts,
+          outflow: persistedState.recentOutflowFirsts,
+        }
+      }
+      setStreamReady(true)
+    }, 0)
+
+    return () => window.clearTimeout(hydrateTimer)
+  }, [])
+
+  useEffect(() => {
+    if (!streamReady) return
+    writePersistedStreamState({
+      companyTotalUsd,
+      cursor: cursorRef.current,
+      nameCursor: nameCursorRef.current,
+      lastSurnameInflow: lastSurnameByDirectionRef.current.inflow,
+      lastSurnameOutflow: lastSurnameByDirectionRef.current.outflow,
+      lastFirstInflow: lastFirstByDirectionRef.current.inflow,
+      lastFirstOutflow: lastFirstByDirectionRef.current.outflow,
+      lastGlobalFirst: lastGlobalFirstRef.current,
+      recentGlobalFirsts: recentGlobalFirstsRef.current,
+      recentInflowFirsts: recentDirectionFirstsRef.current.inflow,
+      recentOutflowFirsts: recentDirectionFirstsRef.current.outflow,
+      flows: flows.slice(0, MAX_PERSISTED_FLOWS),
+    })
+  }, [companyTotalUsd, flows, streamReady])
+
+  useEffect(() => {
+    if (!streamReady) return
+
     const timer = window.setInterval(() => {
       const nextBatch: CompanyFlowRow[] = []
 
@@ -346,7 +487,7 @@ export default function LivePaymentsPageClient() {
     }, 1100)
 
     return () => window.clearInterval(timer)
-  }, [items, namePool])
+  }, [items, namePool, streamReady])
 
   const liveMetrics = useMemo(() => {
     let approvedUsd = 0
