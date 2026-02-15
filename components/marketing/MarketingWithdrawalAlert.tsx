@@ -5,10 +5,10 @@ import { Bell } from 'lucide-react'
 import { generateMarketingLiveFeed, type MarketingLiveFeedItem } from '@/components/marketing/marketingLiveFeed'
 
 const BASE_FEED_COUNT = 1000
-const DEFAULT_INITIAL_MIN_DELAY_MS = 5000
-const DEFAULT_INITIAL_MAX_DELAY_MS = 15000
-const DEFAULT_MIN_INTERVAL_MS = 5000
-const DEFAULT_MAX_INTERVAL_MS = 15000
+const DEFAULT_INITIAL_MIN_DELAY_MS = 2000
+const DEFAULT_INITIAL_MAX_DELAY_MS = 4000
+const DEFAULT_MIN_INTERVAL_MS = 2000
+const DEFAULT_MAX_INTERVAL_MS = 4000
 const BELL_PHASE_MS = 900
 const EXIT_PHASE_MS = 550
 

@@ -46,10 +46,10 @@ export default function DashboardLayoutClient({
         <UserPresenceTracker />
         <MarketingWithdrawalAlert
           title="Live activity"
-          minIntervalMs={5000}
-          maxIntervalMs={15000}
-          initialMinDelayMs={5000}
-          initialMaxDelayMs={15000}
+          minIntervalMs={2000}
+          maxIntervalMs={4000}
+          initialMinDelayMs={2000}
+          initialMaxDelayMs={4000}
         />
         <div className="h-full flex">
           {/* Sidebar */}

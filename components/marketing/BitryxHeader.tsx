@@ -19,7 +19,12 @@ export default function BitryxHeader() {
   return (
     <>
       <MarketingLiveTape />
-      <MarketingWithdrawalAlert />
+      <MarketingWithdrawalAlert
+        minIntervalMs={2000}
+        maxIntervalMs={4000}
+        initialMinDelayMs={2000}
+        initialMaxDelayMs={4000}
+      />
       <header className={`bitryx-header${open ? ' active' : ''}`}>
         <div className="bitryx-container">
           <div className="bitryx-logo">
