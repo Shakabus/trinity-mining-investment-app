@@ -16,7 +16,6 @@ import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-pri
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
-import LanguageToggle from '@/components/dashboard/LanguageToggle'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 
 import TickerTape from '@/components/dashboard/TickerTape'
@@ -393,7 +392,6 @@ export default async function DashboardPage() {
               {t('overviewSubtitle')}
             </p>
           </div>
-          <LanguageToggle />
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-3">

@@ -7,6 +7,7 @@ import { Bell, Menu } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import LanguageToggle from '@/components/dashboard/LanguageToggle'
 
 interface DashboardNavProps {
   user: {
@@ -172,6 +173,7 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
             ) : null}
           </Link>
 
+          <LanguageToggle variant="icon" />
           <ThemeToggle compact />
           {isMounted ? (
             <UserButton
