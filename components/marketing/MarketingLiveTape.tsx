@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { generateMarketingLiveFeed, type MarketingLiveFeedItem } from '@/components/marketing/marketingLiveFeed'
 
 const TAPE_VISIBLE_OFFSET_PX = 32
@@ -8,16 +9,16 @@ const BASE_FEED_COUNT = 1000
 
 export default function MarketingLiveTape() {
   const [isVisible, setIsVisible] = useState(true)
-  const [approvedItems, setApprovedItems] = useState<MarketingLiveFeedItem[]>([])
+  const [liveItems, setLiveItems] = useState<MarketingLiveFeedItem[]>([])
   const lastYRef = useRef(0)
   const fetchTimerRef = useRef<number | null>(null)
 
   const baseItems = useMemo(() => generateMarketingLiveFeed(BASE_FEED_COUNT), [])
 
   const tapeItems = useMemo(() => {
-    const merged = approvedItems.length ? [...approvedItems, ...baseItems] : baseItems
+    const merged = liveItems.length ? liveItems : baseItems
     return [...merged, ...merged]
-  }, [approvedItems, baseItems])
+  }, [liveItems, baseItems])
 
   useEffect(() => {
     lastYRef.current = window.scrollY
@@ -62,16 +63,16 @@ export default function MarketingLiveTape() {
         if (!response.ok) return
         const data = (await response.json()) as { items?: MarketingLiveFeedItem[] }
         if (cancelled) return
-        setApprovedItems(Array.isArray(data.items) ? data.items : [])
+        setLiveItems(Array.isArray(data.items) ? data.items : [])
       } catch {
         if (!cancelled) {
-          setApprovedItems([])
+          setLiveItems([])
         }
       }
     }
 
     pullLiveApprovals()
-    fetchTimerRef.current = window.setInterval(pullLiveApprovals, 5000)
+    fetchTimerRef.current = window.setInterval(pullLiveApprovals, 2000)
 
     return () => {
       cancelled = true
@@ -86,7 +87,12 @@ export default function MarketingLiveTape() {
       <div className="bitryx-live-tape__viewport">
         <div className="bitryx-live-tape__track">
           {tapeItems.map((item, index) => (
-            <span key={`${item.id}-${index}`} className="bitryx-live-tape__item">
+            <Link
+              key={`${item.id}-${index}`}
+              href="/live-payments"
+              className="bitryx-live-tape__item"
+              prefetch={false}
+            >
               <span className="bitryx-live-tape__name">{item.name}</span>
               <span className="bitryx-live-tape__country">{item.country}</span>
               <span className="bitryx-live-tape__verb">{item.action}</span>
@@ -101,7 +107,7 @@ export default function MarketingLiveTape() {
               >
                 {item.value}
               </span>
-            </span>
+            </Link>
           ))}
         </div>
       </div>

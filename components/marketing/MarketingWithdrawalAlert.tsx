@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import { generateMarketingLiveFeed, type MarketingLiveFeedItem } from '@/components/marketing/marketingLiveFeed'
 
@@ -53,7 +54,7 @@ export default function MarketingWithdrawalAlert({
   const queueIndexRef = useRef(0)
   const pollTimerRef = useRef<number | null>(null)
 
-  const liveItems = useMemo(
+  const fallbackItems = useMemo(
     () =>
       generateMarketingLiveFeed(BASE_FEED_COUNT).filter(
         item => item.tone === 'withdrawal' || item.tone === 'deposit'
@@ -62,34 +63,33 @@ export default function MarketingWithdrawalAlert({
   )
 
   useEffect(() => {
-    queueRef.current = shuffle(liveItems)
+    queueRef.current = shuffle(fallbackItems)
     queueIndexRef.current = 0
-  }, [liveItems])
+  }, [fallbackItems])
 
   useEffect(() => {
     let cancelled = false
 
-    const pullLiveApprovals = async () => {
+    const pullLiveFeed = async () => {
       try {
         const response = await fetch('/api/public/live-activity?limit=30', { cache: 'no-store' })
         if (!response.ok) return
         const data = (await response.json()) as { items?: MarketingLiveFeedItem[] }
         if (cancelled || !Array.isArray(data.items)) return
+        const filtered = data.items.filter(item => item.tone === 'withdrawal' || item.tone === 'deposit')
 
-        // Push oldest first so alerts fire in timeline order.
-        const chronological = [...data.items].reverse()
-        for (const item of chronological) {
+        for (const item of filtered) {
           if (seenIdsRef.current.has(item.id)) continue
           seenIdsRef.current.add(item.id)
           priorityQueueRef.current.push(item)
         }
       } catch {
-        // Ignore polling failures; fallback queue continues uninterrupted.
+        // Keep fallback queue running if polling fails.
       }
     }
 
-    pullLiveApprovals()
-    pollTimerRef.current = window.setInterval(pullLiveApprovals, 5000)
+    pullLiveFeed()
+    pollTimerRef.current = window.setInterval(pullLiveFeed, 2000)
 
     return () => {
       cancelled = true
@@ -172,14 +172,14 @@ export default function MarketingWithdrawalAlert({
       <div className={`bitryx-withdraw-alert__bell ${phase === 'bell' ? 'is-ringing' : ''}`}>
         <Bell size={15} strokeWidth={2.2} />
       </div>
-      <div className="bitryx-withdraw-alert__card">
+      <Link href="/live-payments" className="bitryx-withdraw-alert__card" prefetch={false}>
         <p className="bitryx-withdraw-alert__title">{resolvedTitle}</p>
         <p className="bitryx-withdraw-alert__text">
           <span className="bitryx-withdraw-alert__name">{alertItem.name}</span>
           <span className="bitryx-withdraw-alert__meta"> ({alertItem.country})</span> {alertItem.action}{' '}
           <span className="bitryx-withdraw-alert__value">{alertItem.value}</span>
         </p>
-      </div>
+      </Link>
     </div>
   )
 }

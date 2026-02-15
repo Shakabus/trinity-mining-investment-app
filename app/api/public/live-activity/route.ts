@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { generateMarketingLiveFeed, type MarketingLiveFeedItem } from '@/components/marketing/marketingLiveFeed'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,8 @@ const APPROVAL_ACTIONS = new Set([
 const DEFAULT_LIMIT = 40
 const MAX_LIMIT = 120
 const VISIBILITY_DELAY_MS = 7000
+const SYNTHETIC_POOL_SIZE = 2000
+const SYNTHETIC_SHIFT_MS = 2000
 
 type LiveActivityItem = {
   id: string
@@ -19,8 +22,9 @@ type LiveActivityItem = {
   country: string
   action: string
   value: string
-  tone: 'deposit'
+  tone: 'deposit' | 'withdrawal' | 'plan'
   createdAt: string
+  source: 'approved' | 'generated'
 }
 
 function formatMemberName(fullName: string | null, email: string | null, userId: number) {
@@ -51,6 +55,24 @@ function extractValue(detail: string | null, action: string) {
   return 'Investment payment'
 }
 
+function buildSyntheticWindow(limit: number, nowMs: number): MarketingLiveFeedItem[] {
+  const pool = generateMarketingLiveFeed(SYNTHETIC_POOL_SIZE, 817234)
+  if (!pool.length) return []
+
+  const cursor = Math.floor(nowMs / SYNTHETIC_SHIFT_MS) % pool.length
+  const items: MarketingLiveFeedItem[] = []
+
+  for (let index = 0; index < limit; index += 1) {
+    const base = pool[(cursor + index) % pool.length]
+    items.push({
+      ...base,
+      id: `generated-${cursor}-${index}-${base.id}`,
+    })
+  }
+
+  return items
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -62,7 +84,7 @@ export async function GET(req: Request) {
     const visibleCutoff = new Date(Date.now() - VISIBILITY_DELAY_MS)
     const since = new Date(Date.now() - 1000 * 60 * 60 * 12)
 
-    const logs = await prisma.userActivityLog.findMany({
+    const approvalLogs = await prisma.userActivityLog.findMany({
       where: {
         action: { in: Array.from(APPROVAL_ACTIONS) },
         createdAt: { gte: since, lte: visibleCutoff },
@@ -77,10 +99,10 @@ export async function GET(req: Request) {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: limit,
+      take: Math.min(limit, 80),
     })
 
-    const items: LiveActivityItem[] = logs.map(log => ({
+    const approvalItems: LiveActivityItem[] = approvalLogs.map(log => ({
       id: `approval-${log.id}`,
       name: formatMemberName(log.user?.fullName ?? null, log.user?.email ?? null, log.userId),
       country: 'Global',
@@ -88,7 +110,34 @@ export async function GET(req: Request) {
       value: extractValue(log.detail ?? null, log.action),
       tone: 'deposit',
       createdAt: log.createdAt.toISOString(),
+      source: 'approved',
     }))
+
+    const generatedItems = buildSyntheticWindow(limit * 3, Date.now()).map(item => ({
+      ...item,
+      createdAt: new Date().toISOString(),
+      source: 'generated' as const,
+    }))
+
+    const items: LiveActivityItem[] = []
+    let approvalIndex = 0
+    let generatedIndex = 0
+
+    // Interleave approved payment events into the generated stream.
+    while (items.length < limit && (approvalIndex < approvalItems.length || generatedIndex < generatedItems.length)) {
+      if (approvalIndex < approvalItems.length) {
+        items.push(approvalItems[approvalIndex])
+        approvalIndex += 1
+        if (items.length >= limit) break
+      }
+
+      let burst = 0
+      while (generatedIndex < generatedItems.length && burst < 4 && items.length < limit) {
+        items.push(generatedItems[generatedIndex])
+        generatedIndex += 1
+        burst += 1
+      }
+    }
 
     return NextResponse.json(
       { items },
