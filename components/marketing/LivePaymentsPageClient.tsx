@@ -18,8 +18,8 @@ type CompanyFlowRow = {
   eventLabel: string
 }
 
-const MIN_COMPANY_TOTAL_USD = 490_000_000
-const MAX_COMPANY_TOTAL_USD = 550_000_000
+const MIN_COMPANY_TOTAL_USD = 515_000_000
+const MAX_COMPANY_TOTAL_USD = 575_000_000
 const TARGET_NAME_POOL = 10000
 const FLOW_BATCH_SIZE = 3
 
@@ -91,11 +91,11 @@ function buildExpandedNamePool(baseNames: string[], target: number) {
 export default function LivePaymentsPageClient() {
   const [items, setItems] = useState<LiveActivityItem[]>([])
   const [flows, setFlows] = useState<CompanyFlowRow[]>([])
-  const [companyTotalUsd, setCompanyTotalUsd] = useState(512_300_000)
+  const [companyTotalUsd, setCompanyTotalUsd] = useState(537_300_000)
 
   const cursorRef = useRef(0)
   const nameCursorRef = useRef(0)
-  const totalRef = useRef(512_300_000)
+  const totalRef = useRef(537_300_000)
 
   useEffect(() => {
     let cancelled = false
@@ -204,6 +204,16 @@ export default function LivePaymentsPageClient() {
 
   const payoutRows = useMemo(() => flows.filter(flow => flow.direction === 'outflow').slice(0, 9), [flows])
   const receiptRows = useMemo(() => flows.filter(flow => flow.direction === 'inflow').slice(0, 9), [flows])
+  const approvedDisplayUsd = useMemo(() => {
+    const liveSeed =
+      liveMetrics.approvedUsd +
+      liveMetrics.generatedInflowUsd +
+      liveMetrics.generatedOutflowUsd +
+      liveMetrics.feedInflowUsd +
+      liveMetrics.feedOutflowUsd
+
+    return 4_000_000 + (Math.floor(liveSeed) % 1_000_000)
+  }, [liveMetrics])
 
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-20">
@@ -221,7 +231,7 @@ export default function LivePaymentsPageClient() {
         <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Approved payment value</div>
-            <div className="mt-1 text-2xl font-semibold text-emerald-300">{formatUsd(liveMetrics.approvedUsd)}</div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-300">{formatUsd(approvedDisplayUsd)}</div>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Feed inflow processed</div>
