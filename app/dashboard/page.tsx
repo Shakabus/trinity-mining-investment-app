@@ -488,7 +488,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           {TRACKED_ASSET_COINS.map(coin => {
             const coinSummary = accountAssetSummary.byCoin[coin]
             return (
@@ -514,21 +514,6 @@ export default async function DashboardPage() {
               </div>
             )
           })}
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(16, 185, 129, 0.05))',
-              border: '1px solid rgba(16, 185, 129, 0.32)',
-            }}
-          >
-            <div className="text-xs text-emerald-100/80 mb-1">Combined Asset View</div>
-            <div className="text-xl font-semibold text-emerald-200" title={formatMoney(accountAssetSummary.combinedAssetUsd)}>
-              {formatMoney(accountAssetSummary.combinedAssetUsd)}
-            </div>
-            <div className="text-[11px] text-emerald-100/70 mt-2">
-              Live-priced from BTC, ETH, SOL, and USDT.
-            </div>
-          </div>
         </div>
 
         {/* Account Status Card */}
