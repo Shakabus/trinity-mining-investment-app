@@ -37,6 +37,9 @@ export default function BitryxHeader() {
                 {item.label}
               </Link>
             ))}
+            <Link className="bitryx-live-stream-btn" href="/live-payments">
+              Live Stream
+            </Link>
             <Link className="bitryx-login-btn" href="/sign-in">
               Login
             </Link>
@@ -64,6 +67,13 @@ export default function BitryxHeader() {
               {item.label}
             </Link>
           ))}
+          <Link
+            className="bitryx-live-stream-btn mobile"
+            href="/live-payments"
+            onClick={() => setOpen(false)}
+          >
+            Live Stream
+          </Link>
           <Link
             className="bitryx-login-btn mobile"
             href="/sign-in"

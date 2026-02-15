@@ -173,6 +173,7 @@ export default function MarketingWithdrawalAlert({
         <Bell size={15} strokeWidth={2.2} />
       </div>
       <Link href="/live-payments" className="bitryx-withdraw-alert__card" prefetch={false}>
+        <p className="bitryx-withdraw-alert__linkhint">Click to view live payment stream</p>
         <p className="bitryx-withdraw-alert__title">{resolvedTitle}</p>
         <p className="bitryx-withdraw-alert__text">
           <span className="bitryx-withdraw-alert__name">{alertItem.name}</span>

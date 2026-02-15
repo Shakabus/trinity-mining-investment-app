@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Building2,
   Home,
+  Radio,
 } from 'lucide-react'
 
 const menuItems = [
@@ -289,6 +290,29 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
 
         <div className="pt-4 mt-4 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.12)' }}>
           <Link
+            href="/live-payments"
+            className={`mb-2 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-3 rounded-lg transition-all group`}
+            style={{
+              color: 'rgba(187, 247, 208, 0.95)',
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(74, 222, 128, 0.35)',
+            }}
+            title={isCollapsed ? 'Live Payment Stream' : undefined}
+          >
+            <div
+              className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(5, 150, 105, 0.12))',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(74, 222, 128, 0.35)',
+              }}
+            >
+              <Radio size={18} strokeWidth={2} />
+            </div>
+            {!isCollapsed && <span className="font-medium">Live Payment Stream</span>}
+          </Link>
+
+          <Link
             href="/"
             className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-3 rounded-lg transition-all group`}
             style={{
@@ -464,6 +488,29 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
         </nav>
 
         <div className="pt-5 mt-5 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.12)' }}>
+          <Link
+            href="/live-payments"
+            onClick={onClose}
+            className="mb-2 flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
+            style={{
+              color: 'rgba(187, 247, 208, 0.95)',
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(74, 222, 128, 0.35)',
+            }}
+          >
+            <div
+              className="p-1.5 rounded-lg transition-all"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(5, 150, 105, 0.12))',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(74, 222, 128, 0.35)',
+              }}
+            >
+              <Radio size={18} strokeWidth={2} />
+            </div>
+            <span className="font-medium">Live Payment Stream</span>
+          </Link>
+
           <Link
             href="/"
             onClick={onClose}

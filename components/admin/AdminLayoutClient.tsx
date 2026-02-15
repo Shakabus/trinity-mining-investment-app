@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
-import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, Building2, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, Building2, ChevronsLeft, ChevronsRight, Radio } from 'lucide-react'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 
 const menuItems = [
@@ -77,6 +77,15 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 	                <div className="text-sm font-medium text-white">{user.fullName || 'Admin'}</div>
 	                <div className="text-xs text-white/60">{user.email}</div>
 	              </div>
+
+              <Link
+                href="/live-payments"
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/25"
+                title="View live payment stream"
+              >
+                <Radio size={13} />
+                Live Stream
+              </Link>
 
 	              <ThemeToggle compact />
 
@@ -173,6 +182,13 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
             {!isCollapsed && (
               <div className="mt-auto pt-6">
                 <Link
+                  href="/live-payments"
+                  className="mb-2 flex items-center gap-2 px-4 py-2 rounded-lg text-emerald-200 hover:text-emerald-100 hover:bg-emerald-500/10 transition-all text-sm border border-emerald-400/30"
+                >
+                  <Radio size={14} />
+                  Live Payment Stream
+                </Link>
+                <Link
                   href="/dashboard"
                   className="flex items-center gap-2 px-4 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/5 transition-all text-sm"
                 >
@@ -238,6 +254,17 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                 )
               })}
             </nav>
+
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <Link
+                href="/live-payments"
+                onClick={() => setIsSidebarOpen(false)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-emerald-200 hover:bg-emerald-500/10 transition-all text-sm border border-emerald-400/30"
+              >
+                <Radio size={14} />
+                Live Payment Stream
+              </Link>
+            </div>
           </aside>
 
           {/* Main Content (ONLY scrolling area) */}

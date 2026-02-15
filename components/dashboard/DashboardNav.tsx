@@ -3,7 +3,7 @@
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bell, Menu } from 'lucide-react'
+import { Bell, Menu, Radio } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
 import ThemeToggle from '@/components/ui/ThemeToggle'
@@ -151,6 +151,15 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
               {user?.email}
             </div>
           </div>
+
+          <Link
+            href="/live-payments"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-500/25"
+            title="View live payment stream"
+          >
+            <Radio size={13} />
+            Live Stream
+          </Link>
 
           <Link
             href="/dashboard/activity"
