@@ -11,12 +11,13 @@ export default function LivePaymentsPage() {
         <div className="mx-auto w-full max-w-6xl px-6 pt-6">
           <BitryxHeader />
         </div>
-        <main className="pt-28 md:pt-32">
+        <main className="pt-28 md:pt-32 pb-8">
           <LivePaymentsPageClient />
         </main>
-        <MarketingFooter />
+        <div className="mt-8 md:mt-12">
+          <MarketingFooter />
+        </div>
       </div>
     </div>
   )
 }
-

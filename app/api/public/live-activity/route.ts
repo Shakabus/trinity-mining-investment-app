@@ -4,11 +4,18 @@ import { generateMarketingLiveFeed, type MarketingLiveFeedItem } from '@/compone
 
 export const dynamic = 'force-dynamic'
 
-const APPROVAL_ACTIONS = new Set([
+const PAYMENT_APPROVAL_ACTIONS = new Set([
   'PaymentApproved',
   'TradingPaymentApproved',
   'RealEstateBuyInApproved',
 ])
+const WITHDRAWAL_ACTIONS = new Set([
+  'WithdrawalUpdated',
+  'TradingWithdrawalUpdated',
+  'ReferralWithdrawalUpdated',
+  'RealEstateWithdrawalPaid',
+])
+const TRACKED_ACTIONS = new Set([...PAYMENT_APPROVAL_ACTIONS, ...WITHDRAWAL_ACTIONS])
 
 const DEFAULT_LIMIT = 40
 const MAX_LIMIT = 120
@@ -55,6 +62,15 @@ function extractValue(detail: string | null, action: string) {
   return 'Investment payment'
 }
 
+function extractWithdrawalValue(detail: string | null) {
+  if (!detail) return 'Payout released'
+
+  const amountMatch = detail.match(/\$[\d,]+(?:\.\d+)?/)
+  if (amountMatch?.[0]) return amountMatch[0]
+
+  return 'Payout released'
+}
+
 function buildSyntheticWindow(limit: number, nowMs: number): MarketingLiveFeedItem[] {
   const pool = generateMarketingLiveFeed(SYNTHETIC_POOL_SIZE, 817234)
   if (!pool.length) return []
@@ -86,7 +102,7 @@ export async function GET(req: Request) {
 
     const approvalLogs = await prisma.userActivityLog.findMany({
       where: {
-        action: { in: Array.from(APPROVAL_ACTIONS) },
+        action: { in: Array.from(TRACKED_ACTIONS) },
         createdAt: { gte: since, lte: visibleCutoff },
       },
       include: {
@@ -102,16 +118,30 @@ export async function GET(req: Request) {
       take: Math.min(limit, 80),
     })
 
-    const approvalItems: LiveActivityItem[] = approvalLogs.map(log => ({
-      id: `approval-${log.id}`,
-      name: formatMemberName(log.user?.fullName ?? null, log.user?.email ?? null, log.userId),
-      country: 'Global',
-      action: 'payment approved for',
-      value: extractValue(log.detail ?? null, log.action),
-      tone: 'deposit',
-      createdAt: log.createdAt.toISOString(),
-      source: 'approved',
-    }))
+    const approvalItems: LiveActivityItem[] = approvalLogs
+      .map(log => {
+        const detail = log.detail ?? null
+        const isWithdrawal = WITHDRAWAL_ACTIONS.has(log.action)
+        const isPayment = PAYMENT_APPROVAL_ACTIONS.has(log.action)
+
+        if (!isWithdrawal && !isPayment) return null
+
+        if (isWithdrawal && !/(processed|paid|approved)/i.test(detail ?? '')) {
+          return null
+        }
+
+        return {
+          id: `approval-${log.id}`,
+          name: formatMemberName(log.user?.fullName ?? null, log.user?.email ?? null, log.userId),
+          country: 'Global',
+          action: isWithdrawal ? 'withdrawal completed for' : 'payment approved for',
+          value: isWithdrawal ? extractWithdrawalValue(detail) : extractValue(detail, log.action),
+          tone: isWithdrawal ? ('withdrawal' as const) : ('deposit' as const),
+          createdAt: log.createdAt.toISOString(),
+          source: 'approved' as const,
+        }
+      })
+      .filter((item): item is LiveActivityItem => Boolean(item))
 
     const generatedItems = buildSyntheticWindow(limit * 3, Date.now()).map(item => ({
       ...item,
