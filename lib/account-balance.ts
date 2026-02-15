@@ -18,6 +18,7 @@ export type AccountBalanceSource =
   | 'funding_deposit'
   | 'mining_plan_purchase'
   | 'trading_plan_purchase'
+  | 'real_estate_buy_in'
   | 'mining_withdrawal'
   | 'trading_withdrawal'
   | 'referral_withdrawal'
@@ -75,6 +76,7 @@ const isSource = (value: unknown): value is AccountBalanceSource =>
   value === 'funding_deposit' ||
   value === 'mining_plan_purchase' ||
   value === 'trading_plan_purchase' ||
+  value === 'real_estate_buy_in' ||
   value === 'mining_withdrawal' ||
   value === 'trading_withdrawal' ||
   value === 'referral_withdrawal' ||
@@ -195,6 +197,8 @@ function fallbackCoinBySource(source: AccountBalanceSource): TrackedAssetCoin | 
     case 'external_trading_payment':
     case 'trading_plan_purchase':
     case 'trading_withdrawal':
+      return 'USDT'
+    case 'real_estate_buy_in':
       return 'USDT'
     case 'external_payment':
     case 'mining_plan_purchase':
@@ -352,6 +356,8 @@ export function formatAccountBalanceSource(source: AccountBalanceSource) {
       return 'Mining plan purchase'
     case 'trading_plan_purchase':
       return 'Trading plan purchase'
+    case 'real_estate_buy_in':
+      return 'Real estate buy-in'
     case 'mining_withdrawal':
       return 'Mining withdrawal'
     case 'trading_withdrawal':

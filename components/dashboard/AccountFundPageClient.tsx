@@ -36,6 +36,7 @@ const sourceLabel: Record<string, string> = {
   funding_deposit: 'Account funding',
   mining_plan_purchase: 'Mining plan purchase',
   trading_plan_purchase: 'Trading plan purchase',
+  real_estate_buy_in: 'Real estate buy-in',
   mining_withdrawal: 'Mining withdrawal',
   trading_withdrawal: 'Trading withdrawal',
   referral_withdrawal: 'Referral withdrawal',

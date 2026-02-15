@@ -1,8 +1,7 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Copy, Check, AlertCircle } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
@@ -22,123 +21,57 @@ type RealEstateSelection = {
 
 type RealEstatePaymentInstructionsProps = {
   selection: RealEstateSelection
+  accountBalanceUsd: number
 }
 
-const WALLET_ADDRESSES = {
-  BTC: 'bc1q76ztuupz9sycs3hf0l8q0t3mt5j78rxr29cwv4',
-  ETH: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
-  USDT: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
-  SOL: '54fnCmk1gLDhtzDcd8xt7ar4YKKu9sJqqwyXNoDZMpw8',
-}
-
-export default function RealEstatePaymentInstructions({ selection }: RealEstatePaymentInstructionsProps) {
+export default function RealEstatePaymentInstructions({
+  selection,
+  accountBalanceUsd,
+}: RealEstatePaymentInstructionsProps) {
   const { showToast } = useToast()
   const { format } = useCurrency()
-  const [copied, setCopied] = useState(false)
-  const [selectedCrypto, setSelectedCrypto] = useState<keyof typeof WALLET_ADDRESSES>('USDT')
-  const [showVerify, setShowVerify] = useState(false)
-  const [txid, setTxid] = useState('')
-  const [proofFile, setProofFile] = useState<File | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [verifyError, setVerifyError] = useState<string | null>(null)
-  const [submittedAt, setSubmittedAt] = useState<string | null>(null)
-
-  const walletAddress = WALLET_ADDRESSES[selectedCrypto]
-  const cryptoOptions: (keyof typeof WALLET_ADDRESSES)[] = ['USDT', 'BTC', 'ETH', 'SOL']
+  const [isPayingFromBalance, setIsPayingFromBalance] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   const parsedMinimumUsd = Number(selection.minimum.replace(/[^0-9.]/g, ''))
+  const displayAmount = Number.isFinite(parsedMinimumUsd) ? parsedMinimumUsd : 0
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(walletAddress)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
-  }
-
-  const validateTxid = (value: string) => {
-    const trimmed = value.trim()
-    if (!trimmed) return 'Transaction ID is required.'
-    const isHex64 = /^[a-fA-F0-9]{64}$/.test(trimmed)
-    const isEthTx = /^0x[a-fA-F0-9]{64}$/.test(trimmed)
-    const isSolTx = trimmed.length >= 32
-
-    if (selectedCrypto === 'ETH' || selectedCrypto === 'USDT') {
-      return isEthTx ? null : 'ETH or USDT TXID must start with 0x and be 66 characters total.'
-    }
-    if (selectedCrypto === 'BTC') {
-      return isHex64 ? null : 'BTC TXID must be 64 hex characters.'
-    }
-    if (selectedCrypto === 'SOL') {
-      return isSolTx ? null : 'SOL transaction signature must be at least 32 characters.'
-    }
-    return isHex64 || isEthTx ? null : 'TXID format appears invalid.'
-  }
-
-  const handleSubmitProof = async () => {
-    const txidError = validateTxid(txid)
-    if (txidError) {
-      setVerifyError(txidError)
-      return
-    }
-    if (!proofFile) {
-      setVerifyError('Please upload a payment proof file.')
-      return
-    }
-
-    setIsSubmitting(true)
-    setVerifyError(null)
-
+  const handlePayFromBalance = async () => {
     try {
-      const formData = new FormData()
-      const subject = `Real Estate Buy-In Proof - ${selection.title} (${selection.tier})`
-      const message = [
-        `Property: ${selection.title}`,
-        `Location: ${selection.location}`,
-        `Tier: ${selection.tier}`,
-        `Minimum: ${selection.minimum}`,
-        `Duration: ${selection.duration}`,
-        `Payout Model: ${selection.payoutModel}`,
-        `Projected Band: ${selection.projectedBand}`,
-        `Illustrative Outcome: ${selection.illustrativeOutcome}`,
-        `Payment Coin: ${selectedCrypto}`,
-        `TXID: ${txid.trim()}`,
-        'Request: Please verify this real estate buy-in payment and activate my allocation.',
-      ].join('\n')
+      setIsPayingFromBalance(true)
+      setPaymentError(null)
 
-      formData.append('subject', subject)
-      formData.append('message', message)
-      formData.append('file', proofFile)
-
-      const response = await fetch('/api/user/support/tickets', {
+      const response = await fetch('/api/user/account-balance/pay-real-estate', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(selection),
       })
 
       if (!response.ok) {
         const data = await response.json().catch(() => null)
-        const message = data?.error || 'Failed to submit payment proof.'
-        setVerifyError(message)
+        const message = data?.error || 'Unable to submit real-estate buy-in from account balance.'
+        setPaymentError(message)
         showToast(message, 'error')
         return
       }
 
-      const now = new Date().toLocaleString()
-      setSubmittedAt(now)
-      setShowVerify(false)
-      showToast('Payment proof submitted to support for verification.', 'success')
+      showToast('Real-estate buy-in submitted from account balance for review.', 'success')
+      window.location.href = '/dashboard/real-estate?buyin=pending'
     } catch (error) {
-      console.error('Real estate payment proof error:', error)
-      setVerifyError('Network error. Please try again.')
-      showToast('Network error. Please try again.', 'error')
+      console.error('Real-estate pay from account balance error:', error)
+      const message = 'Network error. Please try again.'
+      setPaymentError(message)
+      showToast(message, 'error')
     } finally {
-      setIsSubmitting(false)
+      setIsPayingFromBalance(false)
     }
   }
 
   return (
     <div className="space-y-6 py-4">
       <div className="text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Complete Your Real Estate Buy-In</h1>
-        <p className="text-white/70">Select payment currency, send funds, and upload proof to start verification.</p>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Real Estate Buy-In Payment</h1>
+        <p className="text-white/70">Real-estate buy-ins are paid only from your account balance.</p>
       </div>
 
       <div
@@ -165,20 +98,16 @@ export default function RealEstatePaymentInstructions({ selection }: RealEstateP
           </div>
           <div className="flex justify-between items-center gap-3">
             <span className="text-white/70">Duration:</span>
-            <span className="text-white font-semibold text-right">{selection.duration}</span>
+            <span className="text-white font-semibold text-right">{selection.duration || '-'}</span>
           </div>
           <div className="flex justify-between items-center gap-3">
             <span className="text-white/70">Payout Basis:</span>
-            <span className="text-white font-semibold text-right">{selection.payoutModel}</span>
-          </div>
-          <div className="flex justify-between items-center gap-3">
-            <span className="text-white/70">Projected Return Band:</span>
-            <span className="text-white font-semibold text-right">{selection.projectedBand}</span>
+            <span className="text-white font-semibold text-right">{selection.payoutModel || '-'}</span>
           </div>
           <div className="border-t border-white/10 pt-3 mt-3">
             <div className="flex justify-between items-center">
               <span className="text-white text-lg font-semibold">Buy-In Amount:</span>
-              <span className="text-3xl font-bold text-white">{Number.isFinite(parsedMinimumUsd) ? format(parsedMinimumUsd) : selection.minimum}</span>
+              <span className="text-3xl font-bold text-white">{format(displayAmount)}</span>
             </div>
           </div>
         </div>
@@ -187,143 +116,35 @@ export default function RealEstatePaymentInstructions({ selection }: RealEstateP
       <div
         className="p-6 rounded-3xl"
         style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.04))',
+          border: '1px solid rgba(16, 185, 129, 0.35)',
         }}
       >
-        <h3 className="text-lg font-semibold text-white mb-4">Select Payment Currency</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {cryptoOptions.map(crypto => (
-            <button
-              key={crypto}
-              onClick={() => setSelectedCrypto(crypto)}
-              className="p-4 rounded-xl transition-all"
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="text-sm text-emerald-100/85">Account balance available</div>
+            <div className="text-2xl font-bold text-emerald-200">{format(accountBalanceUsd)}</div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <LoadingButton
+              onClick={handlePayFromBalance}
+              isLoading={isPayingFromBalance}
+              loadingText="Processing..."
+              className="px-5 py-2.5 rounded-full text-sm font-semibold"
               style={{
-                background:
-                  selectedCrypto === crypto
-                    ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
-                    : 'rgba(255, 255, 255, 0.05)',
-                border:
-                  selectedCrypto === crypto
-                    ? '2px solid rgba(88, 45, 255, 0.5)'
-                    : '1px solid rgba(255, 255, 255, 0.1)',
+                background: 'linear-gradient(135deg, #10b981, #047857)',
+                color: '#ffffff',
               }}
             >
-              <div className="text-white font-semibold">{crypto}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div
-        className="p-6 md:p-8 rounded-3xl"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-        }}
-      >
-        <h2 className="text-xl font-semibold text-white mb-6">Payment Instructions</h2>
-
-        <div className="mb-6">
-          <div className="flex items-start gap-3 mb-3">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold"
-              style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)' }}
-            >
-              1
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-2">Send {selectedCrypto} to this address:</h3>
-              <div
-                className="p-4 rounded-xl break-all font-mono text-sm"
-                style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-white">{walletAddress}</span>
-                  <button onClick={handleCopy} className="p-2 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0" title="Copy address">
-                    {copied ? <Check size={20} className="text-green-400" /> : <Copy size={20} className="text-white/70" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <div className="flex items-start gap-3">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold"
-              style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)' }}
-            >
-              2
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-2">Network Information:</h3>
-              <div className="space-y-2 text-sm text-white/70">
-                <p>
-                  - Network:{' '}
-                  {selectedCrypto === 'USDT'
-                    ? 'ERC-20 (Ethereum)'
-                    : selectedCrypto === 'ETH'
-                    ? 'Ethereum'
-                    : selectedCrypto === 'SOL'
-                    ? 'Solana'
-                    : 'Bitcoin'}
-                </p>
-                <p>- Amount: {Number.isFinite(parsedMinimumUsd) ? format(parsedMinimumUsd) : selection.minimum} equivalent in {selectedCrypto}</p>
-                <p>- Keep your TXID for proof verification.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-start gap-3">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold"
-              style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)' }}
-            >
-              3
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-2">Upload payment proof:</h3>
-              <p className="text-sm text-white/70">Submit TXID and receipt screenshot or PDF. Verification status will update after review.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="p-6 rounded-3xl"
-        style={{
-          background: 'rgba(59, 130, 246, 0.12)',
-          border: '1px solid rgba(59, 130, 246, 0.28)',
-        }}
-      >
-        <div className="flex gap-3 items-start">
-          <AlertCircle size={22} className="text-blue-300 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="font-semibold text-blue-200 mb-2">Need another payment option?</h3>
-            <p className="text-sm text-blue-100/85 leading-6">
-              If you cannot use the listed payment channels, contact support and request a dedicated settlement option for this property tier.
-            </p>
-            <Link href="/dashboard/support" className="inline-block mt-3 text-sm font-semibold text-white underline underline-offset-4">
-              Open Support Center
+              Pay with Account Balance
+            </LoadingButton>
+            <Link href="/dashboard/account/fund" className="text-sm font-semibold text-emerald-100 underline underline-offset-4">
+              Fund Account
             </Link>
           </div>
         </div>
+        {paymentError ? <div className="text-sm text-rose-200 mt-3">{paymentError}</div> : null}
       </div>
-
-      {submittedAt && (
-        <div
-          className="p-4 rounded-2xl text-sm text-white/80"
-          style={{ background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
-        >
-          Payment proof submitted on {submittedAt}. Awaiting verification.
-        </div>
-      )}
 
       <LivePaymentsPageClient />
 
@@ -331,96 +152,25 @@ export default function RealEstatePaymentInstructions({ selection }: RealEstateP
         <Link
           href="/dashboard/real-estate"
           className="flex-1 py-4 rounded-full font-semibold text-center transition-all"
-          style={{ background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.2)', color: '#ffffff' }}
+          style={{
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: '#ffffff',
+          }}
         >
           Back to Portfolio
         </Link>
         <Link
           href="/dashboard/support"
           className="flex-1 py-4 rounded-full font-semibold text-center transition-all"
-          style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)', color: '#ffffff' }}
+          style={{
+            background: 'linear-gradient(135deg, #582dff, #3a137a)',
+            color: '#ffffff',
+          }}
         >
           Contact Support
         </Link>
       </div>
-
-      <div className="flex justify-center">
-        <button
-          onClick={() => setShowVerify(true)}
-          className="px-6 py-3 rounded-full font-semibold transition-all"
-          style={{
-            background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.4), rgba(58, 19, 122, 0.3))',
-            border: '1px solid rgba(88, 45, 255, 0.5)',
-            color: '#ffffff',
-          }}
-        >
-          Verify Payment (Upload Proof)
-        </button>
-      </div>
-
-      {showVerify && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setShowVerify(false)}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl p-6 relative"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04))',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              backdropFilter: 'blur(24px)',
-            }}
-            onClick={event => event.stopPropagation()}
-          >
-            <h3 className="text-xl font-semibold text-white mb-2">Submit Payment Proof</h3>
-            <p className="text-white/60 text-sm mb-4">Upload a screenshot or PDF of your payment receipt and enter the transaction ID.</p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">Transaction ID</label>
-                <input
-                  type="text"
-                  value={txid}
-                  onChange={event => setTxid(event.target.value)}
-                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm font-mono"
-                  placeholder="Paste TXID here"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-2">Payment Proof</label>
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  onChange={event => setProofFile(event.target.files?.[0] || null)}
-                  className="w-full text-sm text-white/70"
-                />
-                <div className="text-xs text-white/50 mt-2">Accepted formats: JPG, PNG, WebP, PDF. Max 5MB.</div>
-              </div>
-            </div>
-
-            {verifyError && <div className="text-sm text-red-300 mt-4">{verifyError}</div>}
-
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowVerify(false)}
-                className="px-4 py-2 rounded-lg text-sm text-white/70 hover:text-white transition-all"
-              >
-                Cancel
-              </button>
-              <LoadingButton
-                onClick={handleSubmitProof}
-                isLoading={isSubmitting}
-                loadingText="Submitting..."
-                className="px-5 py-2 rounded-lg text-sm font-semibold"
-                style={{ background: 'linear-gradient(135deg, #582dff, #3a137a)', color: '#ffffff' }}
-              >
-                Submit Proof
-              </LoadingButton>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

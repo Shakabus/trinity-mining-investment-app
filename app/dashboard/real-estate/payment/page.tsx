@@ -1,6 +1,8 @@
 ﻿import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/db'
 import RealEstatePaymentInstructions from '@/components/real-estate/RealEstatePaymentInstructions'
+import { getAccountBalanceSummary } from '@/lib/account-balance'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 
 export const dynamic = 'force-dynamic'
@@ -29,6 +31,14 @@ export default async function RealEstatePaymentPage({
     redirect('/sign-in')
   }
 
+  const user = await prisma.user.findUnique({
+    where: { clerkUserId: userId },
+    select: { id: true },
+  })
+  if (!user) {
+    redirect('/sign-in')
+  }
+
   const resolvedParams = searchParams ? await searchParams : undefined
 
   const selection = {
@@ -52,9 +62,11 @@ export default async function RealEstatePaymentPage({
     redirect('/dashboard/real-estate?buyin=pending')
   }
 
+  const balanceSummary = await getAccountBalanceSummary(user.id)
+
   return (
     <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
-      <RealEstatePaymentInstructions selection={selection} />
+      <RealEstatePaymentInstructions selection={selection} accountBalanceUsd={balanceSummary.availableToSpendUsd} />
     </div>
   )
 }

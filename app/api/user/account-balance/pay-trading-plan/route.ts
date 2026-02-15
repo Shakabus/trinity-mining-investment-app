@@ -7,7 +7,12 @@ import {
   getAccountBalanceSummary,
   hasSettledEntryForReference,
 } from '@/lib/account-balance'
-import { convertUsdToCoin, getTrackedCryptoPricesUsd, type TrackedAssetCoin } from '@/lib/crypto-prices'
+import {
+  TRACKED_ASSET_COINS,
+  convertUsdToCoin,
+  getTrackedCryptoPricesUsd,
+  type TrackedAssetCoin,
+} from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
 import {
   isInputValidationError,
@@ -32,11 +37,11 @@ export async function POST(req: Request) {
       integer: true,
       min: 1,
     })!
-    const selectedCoin =
+    const requestedCoin =
       (readStringField(body, 'coinType', {
         toUpperCase: true,
         enumValues: PAYABLE_COINS,
-      }) as TrackedAssetCoin | undefined) ?? 'USDT'
+      }) as TrackedAssetCoin | undefined) ?? null
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -69,6 +74,16 @@ export async function POST(req: Request) {
 
     const cryptoPrices = await getTrackedCryptoPricesUsd()
     const assetSummary = await getAccountBalanceAssetSummary(user.id, cryptoPrices)
+    const selectedCoin =
+      requestedCoin ??
+      [...TRACKED_ASSET_COINS]
+        .sort((a, b) => (assetSummary.byCoin[b]?.netUsd ?? 0) - (assetSummary.byCoin[a]?.netUsd ?? 0))
+        .find(coin => (assetSummary.byCoin[coin]?.netUsd ?? 0) >= investmentUsd)
+
+    if (!selectedCoin) {
+      return NextResponse.json({ error: 'No funded wallet has enough balance for this purchase.' }, { status: 400 })
+    }
+
     const requiredCoinAmount = convertUsdToCoin(investmentUsd, selectedCoin, cryptoPrices)
     const availableCoinAmount = assetSummary.byCoin[selectedCoin]?.netCrypto ?? 0
 
