@@ -399,11 +399,15 @@ export default async function DashboardPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-white">Account Balance</h2>
+            <div className="text-xs text-white/65 mt-1">Combined wallet asset value (live crypto conversion)</div>
             <div
               className="text-3xl md:text-4xl font-semibold text-emerald-300 mt-2"
-              title={formatMoney(accountBalanceSummary.availableToSpendUsd)}
+              title={formatMoney(accountAssetSummary.combinedAssetUsd)}
             >
-              {formatMoney(accountBalanceSummary.availableToSpendUsd)}
+              {formatMoney(accountAssetSummary.combinedAssetUsd)}
+            </div>
+            <div className="text-xs text-white/70 mt-2">
+              Spendable balance: {formatMoney(accountBalanceSummary.availableToSpendUsd)}
             </div>
             {accountBalanceSummary.pendingCreditsUsd > 0 && (
               <div className="text-xs text-emerald-100/80 mt-2">
