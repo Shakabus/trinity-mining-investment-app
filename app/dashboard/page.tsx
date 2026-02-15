@@ -263,7 +263,7 @@ export default async function DashboardPage() {
       entry =>
         entry.direction === 'debit' &&
         entry.status === 'settled' &&
-        ['mining_plan_purchase', 'trading_plan_purchase'].includes(entry.source)
+        ['mining_plan_purchase', 'trading_plan_purchase', 'real_estate_buy_in'].includes(entry.source)
     )
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
