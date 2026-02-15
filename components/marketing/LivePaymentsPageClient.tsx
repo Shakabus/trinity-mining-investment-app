@@ -22,6 +22,9 @@ const MIN_COMPANY_TOTAL_USD = 515_000_000
 const MAX_COMPANY_TOTAL_USD = 575_000_000
 const TARGET_NAME_POOL = 10000
 const FLOW_BATCH_SIZE = 3
+const APPROVED_DISPLAY_MIN_USD = 60_000_000
+const APPROVED_DISPLAY_RANGE_USD = 30_000_000
+const FEED_DISPLAY_BOOST_USD = 30_000_000
 
 const SYNTHETIC_FIRST_NAMES = [
   'Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas', 'Henry', 'Alexander',
@@ -212,8 +215,17 @@ export default function LivePaymentsPageClient() {
       liveMetrics.feedInflowUsd +
       liveMetrics.feedOutflowUsd
 
-    return 4_000_000 + (Math.floor(liveSeed) % 1_000_000)
+    return APPROVED_DISPLAY_MIN_USD + (Math.floor(liveSeed) % APPROVED_DISPLAY_RANGE_USD)
   }, [liveMetrics])
+
+  const feedInflowDisplayUsd = useMemo(
+    () => liveMetrics.feedInflowUsd + liveMetrics.generatedInflowUsd + FEED_DISPLAY_BOOST_USD,
+    [liveMetrics.feedInflowUsd, liveMetrics.generatedInflowUsd]
+  )
+  const feedOutflowDisplayUsd = useMemo(
+    () => liveMetrics.feedOutflowUsd + liveMetrics.generatedOutflowUsd + FEED_DISPLAY_BOOST_USD,
+    [liveMetrics.feedOutflowUsd, liveMetrics.generatedOutflowUsd]
+  )
 
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-20">
@@ -235,15 +247,11 @@ export default function LivePaymentsPageClient() {
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Feed inflow processed</div>
-            <div className="mt-1 text-2xl font-semibold text-emerald-300">
-              {formatUsd(liveMetrics.feedInflowUsd + liveMetrics.generatedInflowUsd)}
-            </div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-300">{formatUsd(feedInflowDisplayUsd)}</div>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Feed outflow processed</div>
-            <div className="mt-1 text-2xl font-semibold text-red-300">
-              {formatUsd(liveMetrics.feedOutflowUsd + liveMetrics.generatedOutflowUsd)}
-            </div>
+            <div className="mt-1 text-2xl font-semibold text-red-300">{formatUsd(feedOutflowDisplayUsd)}</div>
           </div>
         </div>
       </div>
