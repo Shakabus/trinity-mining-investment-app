@@ -55,12 +55,25 @@ function formatUsd(value: number) {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 }
 
+function firstNameOf(fullName: string) {
+  const parts = fullName.trim().split(/\s+/)
+  return parts[0]?.toLowerCase() ?? ''
+}
+
 function surnameOf(fullName: string) {
   const parts = fullName.trim().split(/\s+/)
   while (parts.length > 1 && /^(\d+|[ivxlcdm]+)$/i.test(parts[parts.length - 1])) {
     parts.pop()
   }
   return parts[parts.length - 1]?.toLowerCase() ?? ''
+}
+
+function hashString(value: string) {
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
+  }
+  return hash
 }
 
 function alphaTag(value: number) {
@@ -86,6 +99,12 @@ function disperseBySurname(names: string[]) {
     } else {
       buckets.set(surname, [name])
     }
+  }
+
+  for (const [surname, bucket] of buckets) {
+    bucket.sort((left, right) => {
+      return hashString(`${surname}:${left}`) - hashString(`${surname}:${right}`)
+    })
   }
 
   const ordered: string[] = []
@@ -176,6 +195,11 @@ export default function LivePaymentsPageClient() {
     inflow: '',
     outflow: '',
   })
+  const lastFirstByDirectionRef = useRef<{ inflow: string; outflow: string }>({
+    inflow: '',
+    outflow: '',
+  })
+  const lastGlobalFirstRef = useRef('')
 
   useEffect(() => {
     let cancelled = false
@@ -215,21 +239,30 @@ export default function LivePaymentsPageClient() {
 
         const start = nameCursorRef.current % namePool.length
         const previousSurname = lastSurnameByDirectionRef.current[direction]
+        const previousFirstByDirection = lastFirstByDirectionRef.current[direction]
+        const previousGlobalFirst = lastGlobalFirstRef.current
 
         for (let offset = 0; offset < namePool.length; offset += 1) {
           const candidateIndex = (start + offset) % namePool.length
           const candidate = namePool[candidateIndex]
           const candidateSurname = surnameOf(candidate)
+          const candidateFirst = firstNameOf(candidate)
           if (namePool.length > 1 && candidateSurname === previousSurname) continue
+          if (namePool.length > 2 && candidateFirst === previousFirstByDirection) continue
+          if (namePool.length > 3 && candidateFirst === previousGlobalFirst) continue
 
           nameCursorRef.current = (candidateIndex + 1) % namePool.length
           lastSurnameByDirectionRef.current[direction] = candidateSurname
+          lastFirstByDirectionRef.current[direction] = candidateFirst
+          lastGlobalFirstRef.current = candidateFirst
           return candidate
         }
 
         const fallbackCandidate = namePool[start]
         nameCursorRef.current = (start + 1) % namePool.length
         lastSurnameByDirectionRef.current[direction] = surnameOf(fallbackCandidate)
+        lastFirstByDirectionRef.current[direction] = firstNameOf(fallbackCandidate)
+        lastGlobalFirstRef.current = firstNameOf(fallbackCandidate)
         return fallbackCandidate
       }
 
