@@ -60,8 +60,12 @@ export default async function TradingInvestmentPage() {
   const activePlan = user?.tradingPlans.find(plan => ['active', 'completed'].includes(plan.status)) ?? null
   const pendingPlan = user?.tradingPlans.find(plan => plan.status === 'awaiting_payment') ?? null
   const selectedPlan = user?.tradingPlans.find(plan => plan.status === 'selected') ?? null
-  const activeStats = user?.tradingStats.find(stat => stat.isActive) ?? null
-  const activeEarnings = user?.tradingEarnings.find(earning => earning.isActive) ?? null
+  const activeStats = activePlan
+    ? user?.tradingStats.find(stat => stat.tradingUserPlanId === activePlan.id && stat.isActive) ?? null
+    : null
+  const activeEarnings = activePlan
+    ? user?.tradingEarnings.find(earning => earning.tradingUserPlanId === activePlan.id && earning.isActive) ?? null
+    : null
   const now = new Date()
 
   let snapshot = null as null | {
@@ -72,6 +76,8 @@ export default async function TradingInvestmentPage() {
     winRate: number
     openPositions: number
   }
+
+  const liveSeed = activePlan ? user.id * 13 + activePlan.id * 7 : user.id * 13
 
   if (activePlan) {
     const startDate = activePlan.startDate ?? activePlan.createdAt ?? now
@@ -141,7 +147,7 @@ export default async function TradingInvestmentPage() {
       await prisma.tradingEarning.update({
         where: { id: activeEarnings.id },
         data: {
-          totalEarnedUsd: snapshot.equityUsd,
+          totalEarnedUsd: snapshot.earnedUsd,
           dailyEstimateUsd: snapshot.dailyEstimateUsd,
           lastCalculatedAt: now,
         },
@@ -258,7 +264,7 @@ export default async function TradingInvestmentPage() {
           expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
           durationHours={activePlan.durationHours}
           startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
-          seed={(user?.id || 1) * 11}
+          seed={liveSeed}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

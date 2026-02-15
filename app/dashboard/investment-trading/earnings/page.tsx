@@ -32,7 +32,13 @@ export default async function TradingEarningsPage() {
   })
 
   const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
-  const activeEarning = user?.tradingEarnings.find(earning => earning.isActive) ?? null
+  const activeEarning = activePlan
+    ? (user?.tradingEarnings.find(
+        earning => earning.tradingUserPlanId === activePlan.id && earning.isActive
+      ) ??
+      user?.tradingEarnings.find(earning => earning.tradingUserPlanId === activePlan.id) ??
+      null)
+    : null
   const now = new Date()
 
   const rates = await getFxRates()
@@ -101,6 +107,8 @@ export default async function TradingEarningsPage() {
     ? (snapshot ? snapshot.dailyEstimateUsd : (activeEarning ? Number(activeEarning.dailyEstimateUsd) : 0))
     : 0
 
+  const liveSeed = activePlan ? (user?.id || 1) * 13 + activePlan.id * 7 : (user?.id || 1) * 13
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <div>
@@ -114,7 +122,7 @@ export default async function TradingEarningsPage() {
           expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
           durationHours={activePlan.durationHours}
           startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
-          seed={(user?.id || 1) * 13}
+          seed={liveSeed}
         />
       ) : (
         <EmptyState
@@ -142,7 +150,7 @@ export default async function TradingEarningsPage() {
           expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
           durationHours={activePlan.durationHours}
           startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
-          seed={(user?.id || 1) * 19}
+          seed={liveSeed}
         />
       )}
     </div>

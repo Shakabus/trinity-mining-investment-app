@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { simulateTradingProgress } from '@/lib/trading'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,11 +28,40 @@ export default async function TradingWithdrawalsPage() {
   })
 
   const activePlan = user?.tradingPlans.find(plan => ['active', 'completed'].includes(plan.status)) ?? null
-  const activeEarning = user?.tradingEarnings.find(earning => earning.isActive) ?? null
-  const totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
-  const totalWithdrawn = user?.tradingWithdrawals.reduce((sum, w) => sum + Number(w.amountUsd), 0) ?? 0
-  const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
+  const activeEarning = activePlan
+    ? (user?.tradingEarnings.find(
+        earning => earning.tradingUserPlanId === activePlan.id && earning.isActive
+      ) ??
+      user?.tradingEarnings.find(earning => earning.tradingUserPlanId === activePlan.id) ??
+      null)
+    : null
   const now = new Date()
+  const liveSeed = activePlan ? (user?.id || 1) * 13 + activePlan.id * 7 : (user?.id || 1) * 13
+  let totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
+  if (activePlan && activeEarning && !activeEarning.isAdminOverride) {
+    const startDate = activePlan.startDate ?? activePlan.createdAt ?? now
+    const snapshot = simulateTradingProgress({
+      investmentUsd: Number(activePlan.investmentUsd),
+      expectedReturnUsd: Number(activePlan.expectedReturnUsd),
+      durationHours: activePlan.durationHours,
+      startDate,
+      now,
+      seed: liveSeed,
+    })
+    totalEarned = snapshot.earnedUsd
+    await prisma.tradingEarning.update({
+      where: { id: activeEarning.id },
+      data: {
+        totalEarnedUsd: snapshot.earnedUsd,
+        dailyEstimateUsd: snapshot.dailyEstimateUsd,
+        lastCalculatedAt: now,
+      },
+    })
+  }
+  const totalWithdrawn = user?.tradingWithdrawals
+    .filter(w => (activePlan ? w.tradingUserPlanId === activePlan.id : true))
+    .reduce((sum, w) => sum + Number(w.amountUsd), 0) ?? 0
+  const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
   const minWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
   const rates = await getFxRates()
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
@@ -49,12 +79,12 @@ export default async function TradingWithdrawalsPage() {
     value: Number(withdrawal.amountUsd),
   })) ?? []
 
-  const statusCounts = user?.tradingWithdrawals.reduce((acc, withdrawal) => {
+  const statusCounts = user?.tradingWithdrawals.reduce((acc: Record<string, number>, withdrawal) => {
     acc[withdrawal.status] = (acc[withdrawal.status] || 0) + 1
     return acc
   }, {} as Record<string, number>) ?? {}
 
-  const statusSeries = Object.entries(statusCounts).map(([name, value]) => ({ name, value }))
+  const statusSeries = Object.entries(statusCounts).map(([name, value]) => ({ name, value: Number(value) }))
 
   const balanceSeries = Array.from({ length: 8 }, (_, index) => {
     const value = Math.max(0, availableUsd - index * (availableUsd * 0.08))

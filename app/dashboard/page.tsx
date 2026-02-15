@@ -94,7 +94,13 @@ export default async function DashboardPage() {
   const hasTradingSelected = tradingPlan?.status === 'selected'
   const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
   const now = new Date()
-  const activeTradingEarning = tradingEarnings.find(earning => earning.isActive) ?? null
+  const activeTradingEarning = activeTradingPlan
+    ? (tradingEarnings.find(
+        earning => earning.tradingUserPlanId === activeTradingPlan.id && earning.isActive
+      ) ??
+      tradingEarnings.find(earning => earning.tradingUserPlanId === activeTradingPlan.id) ??
+      null)
+    : null
 
   const rates = await getFxRates()
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
@@ -154,7 +160,7 @@ export default async function DashboardPage() {
     await prisma.tradingEarning.update({
       where: { id: activeTradingEarning.id },
       data: {
-        totalEarnedUsd: snapshot.equityUsd,
+        totalEarnedUsd: snapshot.earnedUsd,
         dailyEstimateUsd: snapshot.dailyEstimateUsd,
         lastCalculatedAt: now,
       },
@@ -163,7 +169,7 @@ export default async function DashboardPage() {
       record.id === activeTradingEarning.id
         ? {
             ...record,
-            totalEarnedUsd: snapshot.equityUsd,
+            totalEarnedUsd: snapshot.earnedUsd,
             dailyEstimateUsd: snapshot.dailyEstimateUsd,
           }
         : record

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { simulateTradingProgress } from '@/lib/trading'
 import {
   isInputValidationError,
   readJsonObject,
@@ -39,14 +40,46 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
 
-    const activePlan = user.tradingPlans.find(plan => plan.status === 'active') ?? user.tradingPlans[0]
+    const activePlan =
+      user.tradingPlans.find(plan => ['active', 'completed'].includes(plan.status)) ?? user.tradingPlans[0]
     if (!activePlan) {
       return NextResponse.json({ error: 'No active trading plan.' }, { status: 400 })
     }
 
-    const activeEarning = user.tradingEarnings.find(earning => earning.isActive) ?? user.tradingEarnings[0]
-    const totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
-    const totalWithdrawn = user.tradingWithdrawals.reduce((sum, w) => sum + Number(w.amountUsd), 0)
+    const activeEarning =
+      user.tradingEarnings.find(
+        earning => earning.tradingUserPlanId === activePlan.id && earning.isActive
+      ) ??
+      user.tradingEarnings.find(earning => earning.tradingUserPlanId === activePlan.id) ??
+      null
+
+    const now = new Date()
+    const liveSeed = user.id * 13 + activePlan.id * 7
+    let totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
+    if (activeEarning && !activeEarning.isAdminOverride) {
+      const startDate = activePlan.startDate ?? activePlan.createdAt ?? now
+      const snapshot = simulateTradingProgress({
+        investmentUsd: Number(activePlan.investmentUsd),
+        expectedReturnUsd: Number(activePlan.expectedReturnUsd),
+        durationHours: activePlan.durationHours,
+        startDate,
+        now,
+        seed: liveSeed,
+      })
+      totalEarned = snapshot.earnedUsd
+      await prisma.tradingEarning.update({
+        where: { id: activeEarning.id },
+        data: {
+          totalEarnedUsd: snapshot.earnedUsd,
+          dailyEstimateUsd: snapshot.dailyEstimateUsd,
+          lastCalculatedAt: now,
+        },
+      })
+    }
+
+    const totalWithdrawn = user.tradingWithdrawals
+      .filter(withdrawal => withdrawal.tradingUserPlanId === activePlan.id)
+      .reduce((sum, w) => sum + Number(w.amountUsd), 0)
     const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
     const minWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
 
