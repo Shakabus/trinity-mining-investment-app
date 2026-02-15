@@ -22,9 +22,6 @@ const MIN_COMPANY_TOTAL_USD = 515_000_000
 const MAX_COMPANY_TOTAL_USD = 575_000_000
 const TARGET_NAME_POOL = 10000
 const FLOW_BATCH_SIZE = 3
-const APPROVED_DISPLAY_MIN_USD = 60_000_000
-const APPROVED_DISPLAY_RANGE_USD = 30_000_000
-const FEED_DISPLAY_BOOST_USD = 30_000_000
 
 const SYNTHETIC_FIRST_NAMES = [
   'Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas', 'Henry', 'Alexander',
@@ -207,25 +204,23 @@ export default function LivePaymentsPageClient() {
 
   const payoutRows = useMemo(() => flows.filter(flow => flow.direction === 'outflow').slice(0, 9), [flows])
   const receiptRows = useMemo(() => flows.filter(flow => flow.direction === 'inflow').slice(0, 9), [flows])
-  const approvedDisplayUsd = useMemo(() => {
-    const liveSeed =
-      liveMetrics.approvedUsd +
-      liveMetrics.generatedInflowUsd +
-      liveMetrics.generatedOutflowUsd +
-      liveMetrics.feedInflowUsd +
-      liveMetrics.feedOutflowUsd
+  const summaryDisplay = useMemo(() => {
+    const sourceApproved = Math.max(1, liveMetrics.approvedUsd)
+    const sourceInflow = Math.max(1, liveMetrics.feedInflowUsd + liveMetrics.generatedInflowUsd)
+    const sourceOutflow = Math.max(1, liveMetrics.feedOutflowUsd + liveMetrics.generatedOutflowUsd)
 
-    return APPROVED_DISPLAY_MIN_USD + (Math.floor(liveSeed) % APPROVED_DISPLAY_RANGE_USD)
-  }, [liveMetrics])
+    // Keep ratios live-driven but anchored so all three values stay substantial.
+    const approvedWeight = sourceApproved + companyTotalUsd * 0.18
+    const inflowWeight = sourceInflow + companyTotalUsd * 0.41
+    const outflowWeight = sourceOutflow + companyTotalUsd * 0.41
+    const totalWeight = approvedWeight + inflowWeight + outflowWeight
 
-  const feedInflowDisplayUsd = useMemo(
-    () => liveMetrics.feedInflowUsd + liveMetrics.generatedInflowUsd + FEED_DISPLAY_BOOST_USD,
-    [liveMetrics.feedInflowUsd, liveMetrics.generatedInflowUsd]
-  )
-  const feedOutflowDisplayUsd = useMemo(
-    () => liveMetrics.feedOutflowUsd + liveMetrics.generatedOutflowUsd + FEED_DISPLAY_BOOST_USD,
-    [liveMetrics.feedOutflowUsd, liveMetrics.generatedOutflowUsd]
-  )
+    const approvedUsd = Math.round((companyTotalUsd * approvedWeight) / totalWeight)
+    const inflowUsd = Math.round((companyTotalUsd * inflowWeight) / totalWeight)
+    const outflowUsd = Math.max(0, Math.round(companyTotalUsd - approvedUsd - inflowUsd))
+
+    return { approvedUsd, inflowUsd, outflowUsd }
+  }, [companyTotalUsd, liveMetrics])
 
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-20">
@@ -243,15 +238,15 @@ export default function LivePaymentsPageClient() {
         <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Approved payment value</div>
-            <div className="mt-1 text-2xl font-semibold text-emerald-300">{formatUsd(approvedDisplayUsd)}</div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-300">{formatUsd(summaryDisplay.approvedUsd)}</div>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Feed inflow processed</div>
-            <div className="mt-1 text-2xl font-semibold text-emerald-300">{formatUsd(feedInflowDisplayUsd)}</div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-300">{formatUsd(summaryDisplay.inflowUsd)}</div>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Feed outflow processed</div>
-            <div className="mt-1 text-2xl font-semibold text-red-300">{formatUsd(feedOutflowDisplayUsd)}</div>
+            <div className="mt-1 text-2xl font-semibold text-red-300">{formatUsd(summaryDisplay.outflowUsd)}</div>
           </div>
         </div>
       </div>
