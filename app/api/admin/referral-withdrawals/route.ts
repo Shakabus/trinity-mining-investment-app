@@ -73,6 +73,20 @@ export async function PATCH(req: Request) {
       }
     }
 
+    const rejectedFromPending = status === 'rejected' && existing.status !== 'rejected'
+    if (rejectedFromPending) {
+      await createAccountBalanceEntry({
+        userId: updated.userId,
+        direction: 'debit',
+        status: 'rejected',
+        amountUsd: Number(updated.amountUsd),
+        source: 'referral_withdrawal',
+        referenceId: withdrawalReference,
+        note: 'Referral withdrawal request rejected.',
+        metadata: { withdrawalId: updated.id, previousStatus: existing.status },
+      })
+    }
+
     const reversalReference = `referral-withdrawal-reversal:${updated.id}`
     const becomesRejectedAfterSettled = status === 'rejected' && ['approved', 'processed'].includes(existing.status)
     if (becomesRejectedAfterSettled) {

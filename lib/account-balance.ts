@@ -162,7 +162,17 @@ export async function getAccountBalanceEntries(
 
 export async function getAccountBalanceSummary(userId: number, db: DbClient = prisma) {
   const entries = await getAccountBalanceEntries(userId, { limit: 3000 }, db)
-  const settledEntries = entries.filter(entry => entry.status === 'settled')
+  const latestByReference = new Map<string, AccountBalanceEntry>()
+  for (const entry of entries) {
+    const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
+    const existing = latestByReference.get(key)
+    if (!existing || existing.createdAt.getTime() < entry.createdAt.getTime()) {
+      latestByReference.set(key, entry)
+    }
+  }
+
+  const latestEntries = [...latestByReference.values()]
+  const settledEntries = latestEntries.filter(entry => entry.status === 'settled')
 
   const totalCreditsUsd = settledEntries
     .filter(entry => entry.direction === 'credit')
@@ -172,15 +182,24 @@ export async function getAccountBalanceSummary(userId: number, db: DbClient = pr
     .filter(entry => entry.direction === 'debit')
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
-  const pendingCreditsUsd = entries
+  const pendingCreditsUsd = latestEntries
     .filter(entry => entry.status === 'pending' && entry.direction === 'credit')
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const pendingDebitsUsd = latestEntries
+    .filter(entry => entry.status === 'pending' && entry.direction === 'debit')
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const balanceUsd = Number(Math.max(0, totalCreditsUsd - totalDebitsUsd).toFixed(2))
+  const availableToSpendUsd = Number(Math.max(0, balanceUsd - pendingDebitsUsd).toFixed(2))
 
   return {
     totalCreditsUsd: Number(totalCreditsUsd.toFixed(2)),
     totalDebitsUsd: Number(totalDebitsUsd.toFixed(2)),
     pendingCreditsUsd: Number(pendingCreditsUsd.toFixed(2)),
-    balanceUsd: Number(Math.max(0, totalCreditsUsd - totalDebitsUsd).toFixed(2)),
+    pendingDebitsUsd: Number(pendingDebitsUsd.toFixed(2)),
+    balanceUsd,
+    availableToSpendUsd,
   }
 }
 
@@ -191,12 +210,15 @@ export async function hasSettledEntryForReference(
   db: DbClient = prisma
 ) {
   const entries = await getAccountBalanceEntries(userId, { limit: 3000 }, db)
-  return entries.some(
-    entry =>
-      entry.status === 'settled' &&
-      entry.referenceId === referenceId &&
-      (direction ? entry.direction === direction : true)
-  )
+  const matching = entries
+    .filter(
+      entry =>
+        entry.referenceId === referenceId &&
+        (direction ? entry.direction === direction : true)
+    )
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+
+  return matching.length > 0 && matching[0].status === 'settled'
 }
 
 export function formatAccountBalanceSource(source: AccountBalanceSource) {

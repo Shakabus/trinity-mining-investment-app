@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { getCryptoPricesUsd } from '@/lib/earnings'
 import { logUserActivity } from '@/lib/user-activity'
+import { createAccountBalanceEntry, getAccountBalanceSummary } from '@/lib/account-balance'
 import {
   isInputValidationError,
   readJsonObject,
@@ -76,6 +77,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Amount exceeds available referral balance.' }, { status: 400 })
     }
 
+    const accountSummary = await getAccountBalanceSummary(user.id)
+    if (amountUsd > accountSummary.availableToSpendUsd) {
+      return NextResponse.json(
+        { error: `Amount exceeds account balance. Available: $${accountSummary.availableToSpendUsd.toFixed(2)}.` },
+        { status: 400 }
+      )
+    }
+
     const walletAddress =
       coinType === 'BTC'
         ? user.btcWalletAddress || user.walletAddress
@@ -104,6 +113,17 @@ export async function POST(req: Request) {
         walletAddress,
         status: 'pending',
       },
+    })
+
+    await createAccountBalanceEntry({
+      userId: user.id,
+      direction: 'debit',
+      status: 'pending',
+      amountUsd,
+      source: 'referral_withdrawal',
+      referenceId: `referral-withdrawal:${withdrawal.id}`,
+      note: 'Referral withdrawal request submitted.',
+      metadata: { withdrawalId: withdrawal.id, coinType },
     })
 
     await logUserActivity({

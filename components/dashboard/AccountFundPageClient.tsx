@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { Check, Copy } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 
 type BalanceEntry = {
@@ -18,10 +19,17 @@ type BalanceEntry = {
 type Props = {
   balanceUsd: number
   pendingCreditsUsd: number
+  pendingDebitsUsd: number
   entries: BalanceEntry[]
 }
 
 const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
+const WALLET_ADDRESSES: Record<(typeof COINS)[number], string> = {
+  BTC: 'bc1q76ztuupz9sycs3hf0l8q0t3mt5j78rxr29cwv4',
+  ETH: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
+  USDT: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
+  SOL: '54fnCmk1gLDhtzDcd8xt7ar4YKKu9sJqqwyXNoDZMpw8',
+}
 
 const sourceLabel: Record<string, string> = {
   funding_deposit: 'Account funding',
@@ -35,11 +43,12 @@ const sourceLabel: Record<string, string> = {
   withdrawal_reversal: 'Withdrawal reversal',
 }
 
-export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, entries }: Props) {
+export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, pendingDebitsUsd, entries }: Props) {
   const [amountUsd, setAmountUsd] = useState('')
   const [coinType, setCoinType] = useState<(typeof COINS)[number]>('USDT')
   const [txid, setTxid] = useState('')
   const [proofFile, setProofFile] = useState<File | null>(null)
+  const [copiedAddress, setCopiedAddress] = useState(false)
   const [status, setStatus] = useState<{ type: 'idle' | 'error' | 'success'; message: string }>({
     type: 'idle',
     message: '',
@@ -50,6 +59,13 @@ export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, e
     () => entries.filter(entry => entry.source === 'funding_deposit' && entry.status === 'pending'),
     [entries]
   )
+  const walletAddress = WALLET_ADDRESSES[coinType]
+
+  const copyAddress = async () => {
+    await navigator.clipboard.writeText(walletAddress)
+    setCopiedAddress(true)
+    setTimeout(() => setCopiedAddress(false), 1500)
+  }
 
   const submit = async () => {
     const amount = Number(amountUsd)
@@ -137,6 +153,11 @@ export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, e
           <div className="text-3xl font-bold text-blue-200 mt-1">
             ${pendingCreditsUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
+          {pendingDebitsUsd > 0 && (
+            <div className="text-xs text-amber-100/85 mt-2">
+              Pending debits: ${pendingDebitsUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -189,6 +210,37 @@ export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, e
           </div>
         </div>
 
+        <div
+          className="p-4 rounded-xl"
+          style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+          }}
+        >
+          <div className="text-sm text-white/80 mb-2">Send {coinType} to this address</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs md:text-sm text-white break-all font-mono">{walletAddress}</div>
+            <button
+              type="button"
+              onClick={copyAddress}
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/15 transition-colors flex-shrink-0"
+              aria-label="Copy wallet address"
+            >
+              {copiedAddress ? <Check size={16} className="text-emerald-300" /> : <Copy size={16} className="text-white/75" />}
+            </button>
+          </div>
+          <div className="text-xs text-white/55 mt-2">
+            Network:{' '}
+            {coinType === 'USDT'
+              ? 'ERC-20 (Ethereum)'
+              : coinType === 'ETH'
+              ? 'Ethereum'
+              : coinType === 'SOL'
+              ? 'Solana'
+              : 'Bitcoin'}
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm text-white/80 mb-2">Proof upload (image or PDF)</label>
           <input
@@ -217,6 +269,26 @@ export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, e
         >
           Submit funding request
         </LoadingButton>
+      </div>
+
+      <div
+        className="p-6 rounded-3xl"
+        style={{
+          background: 'rgba(59, 130, 246, 0.12)',
+          border: '1px solid rgba(59, 130, 246, 0.28)',
+        }}
+      >
+        <div className="flex gap-3 items-start">
+          <div>
+            <h3 className="font-semibold text-blue-200 mb-2">Need another payment option?</h3>
+            <p className="text-sm text-blue-100/85 leading-6">
+              If you cannot use the listed payment channels, contact support and request a dedicated settlement option.
+            </p>
+            <Link href="/dashboard/support" className="inline-block mt-3 text-sm font-semibold text-white underline underline-offset-4">
+              Open Support Center
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div

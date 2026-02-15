@@ -209,7 +209,9 @@ export default async function DashboardPage() {
     ? await getAccountBalanceSummary(user.id)
     : {
         balanceUsd: 0,
+        availableToSpendUsd: 0,
         pendingCreditsUsd: 0,
+        pendingDebitsUsd: 0,
         totalCreditsUsd: 0,
         totalDebitsUsd: 0,
       }
@@ -339,13 +341,18 @@ export default async function DashboardPage() {
             <h2 className="text-2xl md:text-3xl font-bold text-white">Account Balance</h2>
             <div
               className="text-3xl md:text-4xl font-semibold text-emerald-300 mt-2"
-              title={formatMoney(accountBalanceSummary.balanceUsd)}
+              title={formatMoney(accountBalanceSummary.availableToSpendUsd)}
             >
-              {formatMoney(accountBalanceSummary.balanceUsd)}
+              {formatMoney(accountBalanceSummary.availableToSpendUsd)}
             </div>
             {accountBalanceSummary.pendingCreditsUsd > 0 && (
               <div className="text-xs text-emerald-100/80 mt-2">
                 Pending credits: {formatMoney(accountBalanceSummary.pendingCreditsUsd)}
+              </div>
+            )}
+            {accountBalanceSummary.pendingDebitsUsd > 0 && (
+              <div className="text-xs text-amber-100/80 mt-1">
+                Pending debits: {formatMoney(accountBalanceSummary.pendingDebitsUsd)}
               </div>
             )}
           </div>

@@ -28,8 +28,9 @@ export default async function FundAccountPage() {
 
   return (
     <AccountFundPageClient
-      balanceUsd={summary.balanceUsd}
+      balanceUsd={summary.availableToSpendUsd}
       pendingCreditsUsd={summary.pendingCreditsUsd}
+      pendingDebitsUsd={summary.pendingDebitsUsd}
       entries={entries.map(entry => ({
         ...entry,
         createdAt: entry.createdAt.toISOString(),

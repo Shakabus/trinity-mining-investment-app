@@ -51,9 +51,9 @@ export async function POST(req: Request) {
 
     const investmentUsd = Number(tradingPlan.investmentUsd)
     const summary = await getAccountBalanceSummary(user.id)
-    if (summary.balanceUsd < investmentUsd) {
+    if (summary.availableToSpendUsd < investmentUsd) {
       return NextResponse.json(
-        { error: `Insufficient account balance. Available: $${summary.balanceUsd.toFixed(2)}.` },
+        { error: `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.` },
         { status: 400 }
       )
     }

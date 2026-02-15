@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { simulateTradingProgress } from '@/lib/trading'
+import { createAccountBalanceEntry, getAccountBalanceSummary } from '@/lib/account-balance'
 import {
   isInputValidationError,
   readJsonObject,
@@ -91,6 +92,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Amount exceeds available balance.' }, { status: 400 })
     }
 
+    const accountSummary = await getAccountBalanceSummary(user.id)
+    if (amountUsd > accountSummary.availableToSpendUsd) {
+      return NextResponse.json(
+        { error: `Amount exceeds account balance. Available: $${accountSummary.availableToSpendUsd.toFixed(2)}.` },
+        { status: 400 }
+      )
+    }
+
     const withdrawal = await prisma.tradingWithdrawal.create({
       data: {
         userId: user.id,
@@ -99,6 +108,17 @@ export async function POST(req: Request) {
         walletAddress,
         status: 'pending',
       },
+    })
+
+    await createAccountBalanceEntry({
+      userId: user.id,
+      direction: 'debit',
+      status: 'pending',
+      amountUsd,
+      source: 'trading_withdrawal',
+      referenceId: `trading-withdrawal:${withdrawal.id}`,
+      note: 'Trading withdrawal request submitted.',
+      metadata: { withdrawalId: withdrawal.id, tradingUserPlanId: activePlan.id },
     })
 
     await logUserActivity({
