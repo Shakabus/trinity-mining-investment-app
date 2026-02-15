@@ -17,6 +17,7 @@ import TickerTape from '@/components/dashboard/TickerTape'
 import AdvancedChart from '@/components/dashboard/AdvancedChart'
 import NewsTimeline from '@/components/dashboard/NewsTimeline'
 import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
+import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -851,6 +852,8 @@ export default async function DashboardPage() {
           sharesSeries={sharesSeries}
           estimatedVsActual={estimatedVsActual}
         />
+
+        <LivePaymentsPageClient />
       </div>
     </div>
   )
