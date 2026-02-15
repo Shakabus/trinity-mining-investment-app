@@ -200,6 +200,11 @@ export default function LivePaymentsPageClient() {
     outflow: '',
   })
   const lastGlobalFirstRef = useRef('')
+  const recentGlobalFirstsRef = useRef<string[]>([])
+  const recentDirectionFirstsRef = useRef<{ inflow: string[]; outflow: string[] }>({
+    inflow: [],
+    outflow: [],
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -231,6 +236,14 @@ export default function LivePaymentsPageClient() {
     const timer = window.setInterval(() => {
       const nextBatch: CompanyFlowRow[] = []
 
+      const pushRecent = (history: string[], value: string, size: number) => {
+        if (!value) return
+        history.unshift(value)
+        if (history.length > size) {
+          history.length = size
+        }
+      }
+
       const pickNameForDirection = (
         direction: CompanyFlowRow['direction'],
         fallbackName: string
@@ -241,6 +254,8 @@ export default function LivePaymentsPageClient() {
         const previousSurname = lastSurnameByDirectionRef.current[direction]
         const previousFirstByDirection = lastFirstByDirectionRef.current[direction]
         const previousGlobalFirst = lastGlobalFirstRef.current
+        const recentGlobalFirsts = recentGlobalFirstsRef.current
+        const recentDirectionFirsts = recentDirectionFirstsRef.current[direction]
 
         for (let offset = 0; offset < namePool.length; offset += 1) {
           const candidateIndex = (start + offset) % namePool.length
@@ -250,11 +265,33 @@ export default function LivePaymentsPageClient() {
           if (namePool.length > 1 && candidateSurname === previousSurname) continue
           if (namePool.length > 2 && candidateFirst === previousFirstByDirection) continue
           if (namePool.length > 3 && candidateFirst === previousGlobalFirst) continue
+          if (namePool.length > 20 && recentDirectionFirsts.includes(candidateFirst)) continue
+          if (namePool.length > 40 && recentGlobalFirsts.includes(candidateFirst)) continue
 
           nameCursorRef.current = (candidateIndex + 1) % namePool.length
           lastSurnameByDirectionRef.current[direction] = candidateSurname
           lastFirstByDirectionRef.current[direction] = candidateFirst
           lastGlobalFirstRef.current = candidateFirst
+          pushRecent(recentDirectionFirsts, candidateFirst, 4)
+          pushRecent(recentGlobalFirsts, candidateFirst, 10)
+          return candidate
+        }
+
+        // Relax constraints if the strict pass filtered too aggressively.
+        for (let offset = 0; offset < namePool.length; offset += 1) {
+          const candidateIndex = (start + offset) % namePool.length
+          const candidate = namePool[candidateIndex]
+          const candidateSurname = surnameOf(candidate)
+          const candidateFirst = firstNameOf(candidate)
+          if (namePool.length > 1 && candidateSurname === previousSurname) continue
+          if (namePool.length > 2 && candidateFirst === previousFirstByDirection) continue
+
+          nameCursorRef.current = (candidateIndex + 1) % namePool.length
+          lastSurnameByDirectionRef.current[direction] = candidateSurname
+          lastFirstByDirectionRef.current[direction] = candidateFirst
+          lastGlobalFirstRef.current = candidateFirst
+          pushRecent(recentDirectionFirsts, candidateFirst, 4)
+          pushRecent(recentGlobalFirsts, candidateFirst, 10)
           return candidate
         }
 
@@ -263,6 +300,8 @@ export default function LivePaymentsPageClient() {
         lastSurnameByDirectionRef.current[direction] = surnameOf(fallbackCandidate)
         lastFirstByDirectionRef.current[direction] = firstNameOf(fallbackCandidate)
         lastGlobalFirstRef.current = firstNameOf(fallbackCandidate)
+        pushRecent(recentDirectionFirsts, firstNameOf(fallbackCandidate), 4)
+        pushRecent(recentGlobalFirsts, firstNameOf(fallbackCandidate), 10)
         return fallbackCandidate
       }
 
