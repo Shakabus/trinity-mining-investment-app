@@ -55,6 +55,67 @@ function formatUsd(value: number) {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
 }
 
+function surnameOf(fullName: string) {
+  const parts = fullName.trim().split(/\s+/)
+  return parts[parts.length - 1]?.toLowerCase() ?? ''
+}
+
+function disperseBySurname(names: string[]) {
+  const buckets = new Map<string, string[]>()
+
+  for (const name of names) {
+    const surname = surnameOf(name)
+    const bucket = buckets.get(surname)
+    if (bucket) {
+      bucket.push(name)
+    } else {
+      buckets.set(surname, [name])
+    }
+  }
+
+  const ordered: string[] = []
+  let previousSurname = ''
+
+  while (buckets.size > 0) {
+    let selectedSurname = ''
+    let selectedCount = -1
+
+    for (const [surname, bucket] of buckets) {
+      if (bucket.length <= 0) continue
+      if (surname === previousSurname && buckets.size > 1) continue
+      if (bucket.length > selectedCount) {
+        selectedSurname = surname
+        selectedCount = bucket.length
+      }
+    }
+
+    // Fallback when only one surname bucket remains.
+    if (!selectedSurname) {
+      for (const [surname, bucket] of buckets) {
+        if (bucket.length > selectedCount) {
+          selectedSurname = surname
+          selectedCount = bucket.length
+        }
+      }
+    }
+
+    const selectedBucket = buckets.get(selectedSurname)
+    if (!selectedBucket || selectedBucket.length === 0) break
+
+    const nextName = selectedBucket.shift()
+    if (nextName) {
+      ordered.push(nextName)
+      previousSurname = selectedSurname
+    }
+
+    if (selectedBucket.length === 0) {
+      buckets.delete(selectedSurname)
+    }
+  }
+
+  return ordered
+}
+
 function buildExpandedNamePool(baseNames: string[], target: number) {
   const uniqueNames = new Set<string>()
 
@@ -85,7 +146,7 @@ function buildExpandedNamePool(baseNames: string[], target: number) {
     }
   }
 
-  return Array.from(uniqueNames).slice(0, target)
+  return disperseBySurname(Array.from(uniqueNames)).slice(0, target)
 }
 
 export default function LivePaymentsPageClient() {
