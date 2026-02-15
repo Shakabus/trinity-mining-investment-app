@@ -6,6 +6,7 @@ import { Copy, Check, AlertCircle } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
+import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 
 interface TradingPaymentInstructionsProps {
   plan: {
@@ -416,6 +417,8 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
           Payment proof submitted on {new Date(plan.payment.createdAt).toLocaleString()}. Awaiting verification.
         </div>
       )}
+
+      <LivePaymentsPageClient />
 
       <div className="flex justify-center">
         <button

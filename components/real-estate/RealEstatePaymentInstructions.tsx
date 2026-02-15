@@ -6,6 +6,7 @@ import { Copy, Check, AlertCircle } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
+import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 
 type RealEstateSelection = {
   propertyId: string
@@ -323,6 +324,8 @@ export default function RealEstatePaymentInstructions({ selection }: RealEstateP
           Payment proof submitted on {submittedAt}. Awaiting verification.
         </div>
       )}
+
+      <LivePaymentsPageClient />
 
       <div className="flex flex-col sm:flex-row gap-4">
         <Link

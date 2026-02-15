@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Check, Copy } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
+import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 
 type BalanceEntry = {
   id: number
@@ -340,6 +341,8 @@ export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, p
           You currently have {pendingFunding.length} funding request(s) awaiting review.
         </div>
       )}
+
+      <LivePaymentsPageClient />
     </div>
   )
 }
