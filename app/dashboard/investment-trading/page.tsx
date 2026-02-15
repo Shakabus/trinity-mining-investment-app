@@ -70,6 +70,7 @@ export default async function TradingInvestmentPage() {
 
   let snapshot = null as null | {
     progress: number
+    earnedUsd: number
     equityUsd: number
     pnlUsd: number
     dailyEstimateUsd: number
