@@ -4,7 +4,12 @@ import { prisma } from '@/lib/db'
 import EmptyState from '@/components/ui/EmptyState'
 import { Activity } from 'lucide-react'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
-import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+import {
+  ACCOUNT_BALANCE_ENTRY_ACTION,
+  formatAccountBalanceSource,
+  parseAccountBalanceEntryDetail,
+} from '@/lib/account-balance'
 
 function formatDate(value: Date) {
   return value.toLocaleString()
@@ -22,7 +27,7 @@ export default async function ActivityPage() {
     include: {
       userActivityLogs: {
         orderBy: { createdAt: 'desc' },
-        take: 50,
+        take: 120,
       },
     },
   })
@@ -39,6 +44,40 @@ export default async function ActivityPage() {
     ? (user?.preferredLanguage as LanguageCode)
     : languageFromCurrency(preferredCurrency)
   const t = (key: string) => translate(key, preferredLanguage)
+  const formatMoney = (amountUsd: number) =>
+    formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
+
+  const activityRows = user.userActivityLogs.map(entry => {
+    if (entry.action !== ACCOUNT_BALANCE_ENTRY_ACTION) {
+      return {
+        id: entry.id,
+        createdAt: entry.createdAt,
+        actionLabel: entry.action,
+        detailLabel: entry.detail || '-',
+      }
+    }
+
+    const parsed = parseAccountBalanceEntryDetail(entry.detail)
+    if (!parsed) {
+      return {
+        id: entry.id,
+        createdAt: entry.createdAt,
+        actionLabel: 'Account balance update',
+        detailLabel: 'Balance transaction recorded.',
+      }
+    }
+
+    const amountLabel = `${parsed.direction === 'credit' ? '+' : '-'}${formatMoney(parsed.amountUsd)}`
+    const sourceLabel = formatAccountBalanceSource(parsed.source)
+    const statusLabel = parsed.status.charAt(0).toUpperCase() + parsed.status.slice(1)
+
+    return {
+      id: entry.id,
+      createdAt: entry.createdAt,
+      actionLabel: `Account balance ${parsed.direction === 'credit' ? 'credit' : 'debit'}`,
+      detailLabel: `${amountLabel} • ${sourceLabel} • ${statusLabel}`,
+    }
+  })
 
   return (
     <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-6 space-y-6">
@@ -55,7 +94,7 @@ export default async function ActivityPage() {
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
-        {user.userActivityLogs.length === 0 ? (
+        {activityRows.length === 0 ? (
           <EmptyState
             title={t('activityEmptyTitle')}
             description={t('activityEmptyDescription')}
@@ -72,11 +111,11 @@ export default async function ActivityPage() {
                 </tr>
               </thead>
               <tbody>
-                {user.userActivityLogs.map(entry => (
-                  <tr key={entry.id} className="border-t border-white/10">
-                    <td className="py-2 text-white/80">{formatDate(entry.createdAt)}</td>
-                    <td className="py-2 text-white/80">{entry.action}</td>
-                    <td className="py-2 text-white/70">{entry.detail || '-'}</td>
+                {activityRows.map(row => (
+                  <tr key={row.id} className="border-t border-white/10">
+                    <td className="py-2 text-white/80">{formatDate(row.createdAt)}</td>
+                    <td className="py-2 text-white/80">{row.actionLabel}</td>
+                    <td className="py-2 text-white/70">{row.detailLabel}</td>
                   </tr>
                 ))}
               </tbody>

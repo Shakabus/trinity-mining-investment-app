@@ -6,7 +6,11 @@ import { Gem, Pickaxe, DollarSign, Settings, TrendingUp } from 'lucide-react'
 import { autoUpdateEarnings } from '@/lib/earnings'
 import { simulateTradingProgress } from '@/lib/trading'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
-import { getAccountBalanceSummary } from '@/lib/account-balance'
+import {
+  formatAccountBalanceSource,
+  getAccountBalanceEntries,
+  getAccountBalanceSummary,
+} from '@/lib/account-balance'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
@@ -216,6 +220,43 @@ export default async function DashboardPage() {
         totalCreditsUsd: 0,
         totalDebitsUsd: 0,
       }
+  const accountBalanceEntries = user ? await getAccountBalanceEntries(user.id, { limit: 800 }) : []
+
+  const latestEntriesByReference = accountBalanceEntries.reduce<Map<string, (typeof accountBalanceEntries)[number]>>(
+    (map, entry) => {
+      const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
+      const existing = map.get(key)
+      if (!existing || existing.createdAt.getTime() < entry.createdAt.getTime()) {
+        map.set(key, entry)
+      }
+      return map
+    },
+    new Map()
+  )
+
+  const latestAccountBalanceEntries = [...latestEntriesByReference.values()]
+
+  const totalDepositedUsd = latestAccountBalanceEntries
+    .filter(
+      entry =>
+        entry.direction === 'credit' &&
+        entry.status === 'settled' &&
+        ['funding_deposit', 'external_payment', 'external_trading_payment'].includes(entry.source)
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const totalInvestedUsd = latestAccountBalanceEntries
+    .filter(
+      entry =>
+        entry.direction === 'debit' &&
+        entry.status === 'settled' &&
+        ['mining_plan_purchase', 'trading_plan_purchase'].includes(entry.source)
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const recentBalanceTransactions = latestAccountBalanceEntries
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 5)
   const realEstateMonthlyRealizedUsd = realEstateData.summary.thisMonthRealizedUsd
   const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
   const totalEarnedOverviewUsd = totalEarnedUsd + realEstateMonthlyRealizedUsd
@@ -367,6 +408,62 @@ export default async function DashboardPage() {
           >
             Fund Account
           </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.05))',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+            }}
+          >
+            <div className="text-xs text-emerald-100/80 mb-1">Total Deposits</div>
+            <div className="text-xl font-semibold text-emerald-200" title={formatMoney(totalDepositedUsd)}>
+              {formatMoney(totalDepositedUsd)}
+            </div>
+          </div>
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
+              border: '1px solid rgba(88, 45, 255, 0.35)',
+            }}
+          >
+            <div className="text-xs text-violet-100/80 mb-1">Total Invested</div>
+            <div className="text-xl font-semibold text-violet-200" title={formatMoney(totalInvestedUsd)}>
+              {formatMoney(totalInvestedUsd)}
+            </div>
+          </div>
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03))',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+            }}
+          >
+            <div className="text-xs text-white/70 mb-1">Last 5 Account Transactions</div>
+            <div className="space-y-2">
+              {recentBalanceTransactions.length > 0 ? (
+                recentBalanceTransactions.map(entry => (
+                  <div key={entry.id} className="flex items-start justify-between gap-2 text-xs">
+                    <div className="min-w-0">
+                      <div className="truncate text-white/75">{formatAccountBalanceSource(entry.source)}</div>
+                      <div className="text-[11px] text-white/45">
+                        {entry.createdAt.toLocaleDateString()} • {entry.status}
+                      </div>
+                    </div>
+                    <span className={`shrink-0 ${entry.direction === 'credit' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      {entry.direction === 'credit' ? '+' : '-'}
+                      {formatMoney(entry.amountUsd)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-white/50">No account transactions yet.</div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Account Status Card */}
