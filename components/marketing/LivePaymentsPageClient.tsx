@@ -172,21 +172,35 @@ export default function LivePaymentsPageClient() {
     return () => window.clearInterval(timer)
   }, [items, namePool])
 
-  const summary = useMemo(() => {
-    let deposits = 0
-    let withdrawals = 0
-    let plans = 0
-    let approvedPayments = 0
+  const liveMetrics = useMemo(() => {
+    let approvedUsd = 0
+    let feedInflowUsd = 0
+    let feedOutflowUsd = 0
 
     for (const item of items) {
-      if (item.tone === 'deposit') deposits += 1
-      if (item.tone === 'withdrawal') withdrawals += 1
-      if (item.tone === 'plan') plans += 1
-      if (item.source === 'approved') approvedPayments += 1
+      const parsed = parseUsdValue(item.value)
+      if (!parsed) continue
+      if (item.tone === 'deposit') feedInflowUsd += parsed
+      if (item.tone === 'withdrawal') feedOutflowUsd += parsed
+      if (item.source === 'approved') approvedUsd += parsed
     }
 
-    return { deposits, withdrawals, plans, approvedPayments }
-  }, [items])
+    let generatedInflowUsd = 0
+    let generatedOutflowUsd = 0
+
+    for (const flow of flows) {
+      if (flow.direction === 'inflow') generatedInflowUsd += flow.amountUsd
+      if (flow.direction === 'outflow') generatedOutflowUsd += flow.amountUsd
+    }
+
+    return {
+      approvedUsd,
+      feedInflowUsd,
+      feedOutflowUsd,
+      generatedInflowUsd,
+      generatedOutflowUsd,
+    }
+  }, [flows, items])
 
   const payoutRows = useMemo(() => flows.filter(flow => flow.direction === 'outflow').slice(0, 9), [flows])
   const receiptRows = useMemo(() => flows.filter(flow => flow.direction === 'inflow').slice(0, 9), [flows])
@@ -204,18 +218,22 @@ export default function LivePaymentsPageClient() {
         <h1 className="text-3xl font-bold text-white md:text-4xl">Live Payments Stream</h1>
         <p className="mt-3 text-sm text-white/70 md:text-base">Live generator for payment and withdrawal activity.</p>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
-            <div className="text-xs text-white/60">Approved payments</div>
-            <div className="mt-1 text-2xl font-semibold text-emerald-300">{summary.approvedPayments}</div>
+            <div className="text-xs text-white/60">Approved payment value</div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-300">{formatUsd(liveMetrics.approvedUsd)}</div>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
-            <div className="text-xs text-white/60">Deposit events</div>
-            <div className="mt-1 text-2xl font-semibold text-emerald-300">{summary.deposits}</div>
+            <div className="text-xs text-white/60">Feed inflow processed</div>
+            <div className="mt-1 text-2xl font-semibold text-emerald-300">
+              {formatUsd(liveMetrics.feedInflowUsd + liveMetrics.generatedInflowUsd)}
+            </div>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
-            <div className="text-xs text-white/60">Withdrawal events</div>
-            <div className="mt-1 text-2xl font-semibold text-red-300">{summary.withdrawals}</div>
+            <div className="text-xs text-white/60">Feed outflow processed</div>
+            <div className="mt-1 text-2xl font-semibold text-red-300">
+              {formatUsd(liveMetrics.feedOutflowUsd + liveMetrics.generatedOutflowUsd)}
+            </div>
           </div>
         </div>
       </div>
