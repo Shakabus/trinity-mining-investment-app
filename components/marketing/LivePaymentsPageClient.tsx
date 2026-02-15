@@ -20,7 +20,8 @@ type CompanyFlowRow = {
 
 const MIN_COMPANY_TOTAL_USD = 490_000_000
 const MAX_COMPANY_TOTAL_USD = 550_000_000
-const TARGET_NAME_POOL = 5000
+const TARGET_NAME_POOL = 10000
+const FLOW_BATCH_SIZE = 3
 
 const SYNTHETIC_FIRST_NAMES = [
   'Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas', 'Henry', 'Alexander',
@@ -93,6 +94,7 @@ export default function LivePaymentsPageClient() {
   const [companyTotalUsd, setCompanyTotalUsd] = useState(512_300_000)
 
   const cursorRef = useRef(0)
+  const nameCursorRef = useRef(0)
   const totalRef = useRef(512_300_000)
 
   useEffect(() => {
@@ -123,41 +125,48 @@ export default function LivePaymentsPageClient() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      const sequence = cursorRef.current
-      const activityItem = items.length ? items[sequence % items.length] : null
-      cursorRef.current += 1
+      const nextBatch: CompanyFlowRow[] = []
 
-      const sourceAmount = activityItem ? parseUsdValue(activityItem.value) : null
-      const scaledAmount = sourceAmount
-        ? Math.max(250_000, Math.min(6_500_000, sourceAmount * (sourceAmount < 300_000 ? 12 : 6)))
-        : 250_000 + Math.random() * 5_250_000
+      for (let step = 0; step < FLOW_BATCH_SIZE; step += 1) {
+        const sequence = cursorRef.current
+        const activityItem = items.length ? items[sequence % items.length] : null
+        cursorRef.current += 1
 
-      let direction: CompanyFlowRow['direction'] = activityItem?.tone === 'withdrawal' ? 'outflow' : 'inflow'
-      if (totalRef.current <= MIN_COMPANY_TOTAL_USD + 1_500_000) direction = 'inflow'
-      if (totalRef.current >= MAX_COMPANY_TOTAL_USD - 1_500_000) direction = 'outflow'
+        const sourceAmount = activityItem ? parseUsdValue(activityItem.value) : null
+        const scaledAmount = sourceAmount
+          ? Math.max(250_000, Math.min(6_500_000, sourceAmount * (sourceAmount < 300_000 ? 12 : 6)))
+          : 250_000 + Math.random() * 5_250_000
 
-      const signedAmount = direction === 'inflow' ? scaledAmount : -scaledAmount
-      const nextTotal = Math.max(
-        MIN_COMPANY_TOTAL_USD,
-        Math.min(MAX_COMPANY_TOTAL_USD, totalRef.current + signedAmount)
-      )
-      totalRef.current = nextTotal
-      setCompanyTotalUsd(nextTotal)
+        let direction: CompanyFlowRow['direction'] = activityItem?.tone === 'withdrawal' ? 'outflow' : 'inflow'
+        if (totalRef.current <= MIN_COMPANY_TOTAL_USD + 1_500_000) direction = 'inflow'
+        if (totalRef.current >= MAX_COMPANY_TOTAL_USD - 1_500_000) direction = 'outflow'
 
-      const name = namePool.length ? namePool[sequence % namePool.length] : activityItem?.name ?? `Member ${sequence + 1}`
-      const eventLabel = activityItem ? `${activityItem.action} ${activityItem.value}` : 'automated treasury transfer'
+        const signedAmount = direction === 'inflow' ? scaledAmount : -scaledAmount
+        const nextTotal = Math.max(
+          MIN_COMPANY_TOTAL_USD,
+          Math.min(MAX_COMPANY_TOTAL_USD, totalRef.current + signedAmount)
+        )
+        totalRef.current = nextTotal
 
-      const nextFlow: CompanyFlowRow = {
-        id: `${Date.now()}-${Math.floor(Math.random() * 100000)}`,
-        name,
-        direction,
-        amountUsd: Math.round(scaledAmount),
-        totalUsd: nextTotal,
-        occurredAt: new Date().toISOString(),
-        eventLabel,
+        const fallbackName = activityItem?.name ?? `Member ${sequence + 1}`
+        const poolIndex = nameCursorRef.current
+        const name = namePool.length ? namePool[poolIndex % namePool.length] : fallbackName
+        nameCursorRef.current += 1
+        const eventLabel = activityItem ? `${activityItem.action} ${activityItem.value}` : 'automated treasury transfer'
+
+        nextBatch.push({
+          id: `${Date.now()}-${step}-${Math.floor(Math.random() * 100000)}`,
+          name,
+          direction,
+          amountUsd: Math.round(scaledAmount),
+          totalUsd: nextTotal,
+          occurredAt: new Date().toISOString(),
+          eventLabel,
+        })
       }
 
-      setFlows(previous => [nextFlow, ...previous].slice(0, 300))
+      setCompanyTotalUsd(totalRef.current)
+      setFlows(previous => [...nextBatch.reverse(), ...previous].slice(0, 300))
     }, 1100)
 
     return () => window.clearInterval(timer)
@@ -195,7 +204,7 @@ export default function LivePaymentsPageClient() {
         <h1 className="text-3xl font-bold text-white md:text-4xl">Live Payments Stream</h1>
         <p className="mt-3 text-sm text-white/70 md:text-base">Live generator for payment and withdrawal activity.</p>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3">
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Approved payments</div>
             <div className="mt-1 text-2xl font-semibold text-emerald-300">{summary.approvedPayments}</div>
@@ -207,10 +216,6 @@ export default function LivePaymentsPageClient() {
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
             <div className="text-xs text-white/60">Withdrawal events</div>
             <div className="mt-1 text-2xl font-semibold text-red-300">{summary.withdrawals}</div>
-          </div>
-          <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-4">
-            <div className="text-xs text-white/60">Name pool</div>
-            <div className="mt-1 text-2xl font-semibold text-sky-300">{namePool.length.toLocaleString('en-US')}</div>
           </div>
         </div>
       </div>
