@@ -24,6 +24,7 @@ interface TradingPaymentInstructionsProps {
       createdAt: Date
     } | null
   }
+  accountBalanceUsd: number
 }
 
 const WALLET_ADDRESSES = {
@@ -33,7 +34,7 @@ const WALLET_ADDRESSES = {
   SOL: '54fnCmk1gLDhtzDcd8xt7ar4YKKu9sJqqwyXNoDZMpw8',
 }
 
-export default function TradingPaymentInstructions({ plan }: TradingPaymentInstructionsProps) {
+export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: TradingPaymentInstructionsProps) {
   const { showToast } = useToast()
   const { format } = useCurrency()
   const [copied, setCopied] = useState(false)
@@ -43,6 +44,7 @@ export default function TradingPaymentInstructions({ plan }: TradingPaymentInstr
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
+  const [isPayingFromBalance, setIsPayingFromBalance] = useState(false)
 
   const walletAddress = WALLET_ADDRESSES[selectedCrypto]
   const cryptoOptions: (keyof typeof WALLET_ADDRESSES)[] = ['USDT', 'BTC', 'ETH', 'SOL']
@@ -116,6 +118,35 @@ export default function TradingPaymentInstructions({ plan }: TradingPaymentInstr
     }
   }
 
+  const handlePayFromBalance = async () => {
+    try {
+      setIsPayingFromBalance(true)
+      setVerifyError(null)
+      const response = await fetch('/api/user/account-balance/pay-trading-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tradingUserPlanId: plan.id }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        const message = data?.error || 'Unable to pay from account balance.'
+        setVerifyError(message)
+        showToast(message, 'error')
+        return
+      }
+
+      showToast('Trading plan activated using account balance.', 'success')
+      window.location.href = '/dashboard/investment-trading'
+    } catch (error) {
+      console.error('Trading pay from account balance error:', error)
+      setVerifyError('Network error. Please try again.')
+      showToast('Network error. Please try again.', 'error')
+    } finally {
+      setIsPayingFromBalance(false)
+    }
+  }
+
   return (
     <div className="space-y-6 py-4">
       <div className="text-center">
@@ -167,6 +198,38 @@ export default function TradingPaymentInstructions({ plan }: TradingPaymentInstr
               <span className="text-white text-lg font-semibold">Total Amount:</span>
               <span className="text-3xl font-bold text-white">{format(plan.investmentUsd)}</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="p-6 rounded-3xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.04))',
+          border: '1px solid rgba(16, 185, 129, 0.35)',
+        }}
+      >
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="text-sm text-emerald-100/85">Account balance available</div>
+            <div className="text-2xl font-bold text-emerald-200">{format(accountBalanceUsd)}</div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <LoadingButton
+              onClick={handlePayFromBalance}
+              isLoading={isPayingFromBalance}
+              loadingText="Processing..."
+              className="px-5 py-2.5 rounded-full text-sm font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #10b981, #047857)',
+                color: '#ffffff',
+              }}
+            >
+              Pay with Account Balance
+            </LoadingButton>
+            <Link href="/dashboard/account/fund" className="text-sm font-semibold text-emerald-100 underline underline-offset-4">
+              Fund Account
+            </Link>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { createAccountBalanceEntry, hasSettledEntryForReference } from '@/lib/account-balance'
 import {
   isInputValidationError,
   readJsonObject,
@@ -36,6 +37,14 @@ export async function PATCH(req: Request) {
     })!
     const transactionId = readStringField(body, 'transactionId', { maxLength: 120 }) || ''
 
+    const existing = await prisma.referralWithdrawal.findUnique({
+      where: { id },
+      select: { id: true, userId: true, amountUsd: true, status: true },
+    })
+    if (!existing) {
+      return NextResponse.json({ error: 'Referral withdrawal not found.' }, { status: 404 })
+    }
+
     const updated = await prisma.referralWithdrawal.update({
       where: { id },
       data: {
@@ -45,6 +54,42 @@ export async function PATCH(req: Request) {
         processedByAdminId: status === 'processed' ? adminUser.id : null,
       },
     })
+
+    const withdrawalReference = `referral-withdrawal:${updated.id}`
+    const movesToSettled = ['approved', 'processed'].includes(status) && !['approved', 'processed'].includes(existing.status)
+    if (movesToSettled) {
+      const hasDebit = await hasSettledEntryForReference(updated.userId, withdrawalReference, 'debit')
+      if (!hasDebit) {
+        await createAccountBalanceEntry({
+          userId: updated.userId,
+          direction: 'debit',
+          status: 'settled',
+          amountUsd: Number(updated.amountUsd),
+          source: 'referral_withdrawal',
+          referenceId: withdrawalReference,
+          note: 'Referral withdrawal approved.',
+          metadata: { withdrawalId: updated.id, status },
+        })
+      }
+    }
+
+    const reversalReference = `referral-withdrawal-reversal:${updated.id}`
+    const becomesRejectedAfterSettled = status === 'rejected' && ['approved', 'processed'].includes(existing.status)
+    if (becomesRejectedAfterSettled) {
+      const hasReversal = await hasSettledEntryForReference(updated.userId, reversalReference, 'credit')
+      if (!hasReversal) {
+        await createAccountBalanceEntry({
+          userId: updated.userId,
+          direction: 'credit',
+          status: 'settled',
+          amountUsd: Number(updated.amountUsd),
+          source: 'withdrawal_reversal',
+          referenceId: reversalReference,
+          note: 'Referral withdrawal reversed after rejection.',
+          metadata: { withdrawalId: updated.id, previousStatus: existing.status },
+        })
+      }
+    }
 
     await prisma.adminActivityLog.create({
       data: {

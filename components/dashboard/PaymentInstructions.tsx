@@ -25,6 +25,7 @@ interface PaymentInstructionsProps {
       createdAt: Date
     } | null
   }
+  accountBalanceUsd: number
 }
 
 // Wallet addresses for different cryptocurrencies
@@ -36,7 +37,7 @@ const WALLET_ADDRESSES = {
   MULTI: 'bc1q76ztuupz9sycs3hf0l8q0t3mt5j78rxr29cwv4' // Default to BTC for multi-asset
 }
 
-export default function PaymentInstructions({ plan }: PaymentInstructionsProps) {
+export default function PaymentInstructions({ plan, accountBalanceUsd }: PaymentInstructionsProps) {
   const { showToast } = useToast()
   const { format } = useCurrency()
   const searchParams = useSearchParams()
@@ -49,6 +50,7 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [verifyError, setVerifyError] = useState<string | null>(null)
+  const [isPayingFromBalance, setIsPayingFromBalance] = useState(false)
 
   const walletAddress = WALLET_ADDRESSES[selectedCrypto]
 
@@ -130,6 +132,35 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
     }
   }
 
+  const handlePayFromBalance = async () => {
+    try {
+      setIsPayingFromBalance(true)
+      setVerifyError(null)
+      const response = await fetch('/api/user/account-balance/pay-mining-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userPlanId: plan.id }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        const message = data?.error || 'Unable to pay from account balance.'
+        setVerifyError(message)
+        showToast(message, 'error')
+        return
+      }
+
+      showToast('Plan activated using account balance.', 'success')
+      window.location.href = '/dashboard'
+    } catch (error) {
+      console.error('Pay from account balance error:', error)
+      setVerifyError('Network error. Please try again.')
+      showToast('Network error. Please try again.', 'error')
+    } finally {
+      setIsPayingFromBalance(false)
+    }
+  }
+
   return (
     <div className="space-y-6 py-4">
       {/* Header */}
@@ -179,6 +210,38 @@ export default function PaymentInstructions({ plan }: PaymentInstructionsProps) 
               <span className="text-white text-lg font-semibold">Total Amount:</span>
               <span className="text-3xl font-bold text-white">{format(plan.finalPrice)}</span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="p-6 rounded-3xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.04))',
+          border: '1px solid rgba(16, 185, 129, 0.35)',
+        }}
+      >
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="text-sm text-emerald-100/85">Account balance available</div>
+            <div className="text-2xl font-bold text-emerald-200">{format(accountBalanceUsd)}</div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <LoadingButton
+              onClick={handlePayFromBalance}
+              isLoading={isPayingFromBalance}
+              loadingText="Processing..."
+              className="px-5 py-2.5 rounded-full text-sm font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #10b981, #047857)',
+                color: '#ffffff',
+              }}
+            >
+              Pay with Account Balance
+            </LoadingButton>
+            <Link href="/dashboard/account/fund" className="text-sm font-semibold text-emerald-100 underline underline-offset-4">
+              Fund Account
+            </Link>
           </div>
         </div>
       </div>

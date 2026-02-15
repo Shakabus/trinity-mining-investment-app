@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import PaymentInstructions from '@/components/dashboard/PaymentInstructions'
+import { getAccountBalanceSummary } from '@/lib/account-balance'
 
 export default async function PaymentPage() {
   const { userId } = await auth()
@@ -60,9 +61,14 @@ export default async function PaymentPage() {
       : null,
   }
 
+  const balanceSummary = await getAccountBalanceSummary(user.id)
+
   return (
     <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
-      <PaymentInstructions plan={planData} />
+      <PaymentInstructions
+        plan={planData}
+        accountBalanceUsd={balanceSummary.balanceUsd}
+      />
     </div>
   )
 }

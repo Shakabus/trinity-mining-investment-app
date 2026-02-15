@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { createAccountBalanceEntry, hasSettledEntryForReference } from '@/lib/account-balance'
 import {
   isInputValidationError,
   readJsonObject,
@@ -114,16 +115,60 @@ export async function POST(req: Request) {
       orderBy: { createdAt: 'desc' },
     })
 
-    if (existingPayment) {
-      await prisma.tradingPayment.update({
-        where: { id: existingPayment.id },
-        data: {
-          transactionId: txid || existingPayment.transactionId || 'Manual Approval',
-          status: 'confirmed',
-          confirmations: 999,
-          confirmedByAdminId: adminUser.id,
-          confirmedAt: new Date(),
-        },
+    const payment = existingPayment
+      ? await prisma.tradingPayment.update({
+          where: { id: existingPayment.id },
+          data: {
+            transactionId: txid || existingPayment.transactionId || 'Manual Approval',
+            status: 'confirmed',
+            confirmations: 999,
+            confirmedByAdminId: adminUser.id,
+            confirmedAt: new Date(),
+          },
+        })
+      : await prisma.tradingPayment.create({
+          data: {
+            userId: tradingPlan.userId,
+            tradingUserPlanId: tradingPlan.id,
+            amountUsd: tradingPlan.investmentUsd,
+            cryptoType: 'USDT',
+            walletAddress: 'Approved',
+            transactionId: txid || 'Manual Approval',
+            status: 'confirmed',
+            confirmations: 999,
+            confirmedByAdminId: adminUser.id,
+            confirmedAt: new Date(),
+          },
+        })
+
+    const externalPaymentRef = `external-trading-payment:${payment.id}`
+    const purchaseRef = `trading-plan:${tradingPlan.id}`
+    const hasExternalCredit = await hasSettledEntryForReference(tradingPlan.userId, externalPaymentRef, 'credit')
+    const hasPurchaseDebit = await hasSettledEntryForReference(tradingPlan.userId, purchaseRef, 'debit')
+
+    if (!hasExternalCredit) {
+      await createAccountBalanceEntry({
+        userId: tradingPlan.userId,
+        direction: 'credit',
+        status: 'settled',
+        amountUsd: Number(tradingPlan.investmentUsd),
+        source: 'external_trading_payment',
+        referenceId: externalPaymentRef,
+        note: 'External trading payment approved.',
+        metadata: { tradingUserPlanId: tradingPlan.id, paymentId: payment.id },
+      })
+    }
+
+    if (!hasPurchaseDebit) {
+      await createAccountBalanceEntry({
+        userId: tradingPlan.userId,
+        direction: 'debit',
+        status: 'settled',
+        amountUsd: Number(tradingPlan.investmentUsd),
+        source: 'trading_plan_purchase',
+        referenceId: purchaseRef,
+        note: `Trading plan purchase settled for ${tradingPlan.plan.name}.`,
+        metadata: { tradingUserPlanId: tradingPlan.id, paymentId: payment.id },
       })
     }
 

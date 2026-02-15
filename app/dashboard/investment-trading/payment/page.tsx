@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import TradingPaymentInstructions from '@/components/trading/TradingPaymentInstructions'
+import { getAccountBalanceSummary } from '@/lib/account-balance'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,9 +59,14 @@ export default async function TradingPaymentPage() {
       : null,
   }
 
+  const balanceSummary = await getAccountBalanceSummary(user.id)
+
   return (
     <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
-      <TradingPaymentInstructions plan={planData} />
+      <TradingPaymentInstructions
+        plan={planData}
+        accountBalanceUsd={balanceSummary.balanceUsd}
+      />
     </div>
   )
 }

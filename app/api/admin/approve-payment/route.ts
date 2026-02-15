@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { scalePlanHashrateDecimal } from '@/lib/mining-hashrate'
+import { createAccountBalanceEntry, hasSettledEntryForReference } from '@/lib/account-balance'
 import {
   isInputValidationError,
   readJsonObject,
@@ -221,6 +222,37 @@ export async function POST(req: Request) {
             confirmedAt: new Date(),
           },
         })
+
+    const externalPaymentRef = `external-payment:${payment.id}`
+    const purchaseRef = `mining-plan:${userPlan.id}`
+    const hasExternalCredit = await hasSettledEntryForReference(userPlan.userId, externalPaymentRef, 'credit')
+    const hasPurchaseDebit = await hasSettledEntryForReference(userPlan.userId, purchaseRef, 'debit')
+
+    if (!hasExternalCredit) {
+      await createAccountBalanceEntry({
+        userId: userPlan.userId,
+        direction: 'credit',
+        status: 'settled',
+        amountUsd: Number(userPlan.finalPrice),
+        source: 'external_payment',
+        referenceId: externalPaymentRef,
+        note: 'External mining payment approved.',
+        metadata: { userPlanId: userPlan.id, paymentId: payment.id },
+      })
+    }
+
+    if (!hasPurchaseDebit) {
+      await createAccountBalanceEntry({
+        userId: userPlan.userId,
+        direction: 'debit',
+        status: 'settled',
+        amountUsd: Number(userPlan.finalPrice),
+        source: 'mining_plan_purchase',
+        referenceId: purchaseRef,
+        note: `Mining plan purchase settled for ${userPlan.plan.name}.`,
+        metadata: { userPlanId: userPlan.id, paymentId: payment.id },
+      })
+    }
 
     if (priorConfirmedPayments === 0 && userPlan.user.referredById) {
       const existingBonus = await prisma.referralBonus.findFirst({

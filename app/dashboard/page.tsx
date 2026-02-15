@@ -6,6 +6,7 @@ import { Gem, Pickaxe, DollarSign, Settings, TrendingUp } from 'lucide-react'
 import { autoUpdateEarnings } from '@/lib/earnings'
 import { simulateTradingProgress } from '@/lib/trading'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
+import { getAccountBalanceSummary } from '@/lib/account-balance'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
@@ -204,45 +205,17 @@ export default async function DashboardPage() {
     ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
     : 0
   const realEstateData = await getRealEstateDashboardData(userId)
+  const accountBalanceSummary = user
+    ? await getAccountBalanceSummary(user.id)
+    : {
+        balanceUsd: 0,
+        pendingCreditsUsd: 0,
+        totalCreditsUsd: 0,
+        totalDebitsUsd: 0,
+      }
   const realEstateMonthlyRealizedUsd = realEstateData.summary.thisMonthRealizedUsd
   const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
   const totalEarnedOverviewUsd = totalEarnedUsd + realEstateMonthlyRealizedUsd
-  const miningWithdrawableUsd = updatedEarnings.reduce(
-    (sum, record) => sum + (record.isWithdrawable ? Number(record.totalEarnedUsd || 0) : 0),
-    0
-  )
-  const miningReservedUsd = user
-    ? user.withdrawals
-        .filter(withdrawal => withdrawal.status === 'pending' || withdrawal.status === 'approved')
-        .reduce((sum, withdrawal) => sum + Number(withdrawal.amountUsd || 0), 0)
-    : 0
-  const miningAvailableUsd = Math.max(0, miningWithdrawableUsd - miningReservedUsd)
-
-  const tradingWithdrawableUsd = tradingEarningsComputed.reduce(
-    (sum, record) => sum + Number(record.totalEarnedUsd || 0),
-    0
-  )
-  const tradingReservedUsd = user
-    ? user.tradingWithdrawals
-        .filter(withdrawal => withdrawal.status === 'pending' || withdrawal.status === 'approved')
-        .reduce((sum, withdrawal) => sum + Number(withdrawal.amountUsd || 0), 0)
-    : 0
-  const tradingAvailableUsd = Math.max(0, tradingWithdrawableUsd - tradingReservedUsd)
-
-  const referralBonusAvailableUsd = user
-    ? user.referralBonuses
-        .filter(bonus => bonus.status === 'available')
-        .reduce((sum, bonus) => sum + Number(bonus.amountUsd || 0), 0)
-    : 0
-  const referralReservedUsd = user
-    ? user.referralWithdrawals
-        .filter(withdrawal => withdrawal.status === 'pending' || withdrawal.status === 'approved')
-        .reduce((sum, withdrawal) => sum + Number(withdrawal.amountUsd || 0), 0)
-    : 0
-  const referralAvailableUsd = Math.max(0, referralBonusAvailableUsd - referralReservedUsd)
-
-  const accountBalanceAvailableUsd =
-    miningAvailableUsd + tradingAvailableUsd + referralAvailableUsd + realEstateData.availableWithdrawalUsd
   const realEstateTotalAllocationUsd = realEstateData.summary.portfolioAllocationUsd
   const realEstateApprovedCount = realEstateData.summary.approvedCount
   const realEstatePendingCount = realEstateData.summary.pendingCount
@@ -359,6 +332,33 @@ export default async function DashboardPage() {
             </p>
           </div>
           <LanguageToggle />
+        </div>
+
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">Account Balance</h2>
+            <div
+              className="text-3xl md:text-4xl font-semibold text-emerald-300 mt-2"
+              title={formatMoney(accountBalanceSummary.balanceUsd)}
+            >
+              {formatMoney(accountBalanceSummary.balanceUsd)}
+            </div>
+            {accountBalanceSummary.pendingCreditsUsd > 0 && (
+              <div className="text-xs text-emerald-100/80 mt-2">
+                Pending credits: {formatMoney(accountBalanceSummary.pendingCreditsUsd)}
+              </div>
+            )}
+          </div>
+          <Link
+            href="/dashboard/account/fund"
+            className="inline-block px-5 py-2.5 rounded-full font-semibold text-sm md:text-base"
+            style={{
+              background: 'linear-gradient(135deg, #10b981, #047857)',
+              color: '#ffffff',
+            }}
+          >
+            Fund Account
+          </Link>
         </div>
 
         {/* Account Status Card */}
@@ -551,22 +551,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-7 gap-3 md:gap-4">
-          <div
-            className="p-4 md:p-6 rounded-3xl min-w-0"
-            style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(16, 185, 129, 0.05))',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(16, 185, 129, 0.32)',
-            }}
-          >
-            <div className="text-xs md:text-sm text-emerald-100/85 mb-2">Account Balance</div>
-            <div className="text-lg md:text-2xl font-bold text-emerald-200 truncate" title={formatMoney(accountBalanceAvailableUsd)}>
-              {formatMoney(accountBalanceAvailableUsd)}
-            </div>
-            <div className="text-[11px] text-emerald-100/70 mt-2">Available across mining, trading, referral and real estate.</div>
-          </div>
-
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
           <div
             className="p-4 md:p-6 rounded-3xl min-w-0"
             style={{
