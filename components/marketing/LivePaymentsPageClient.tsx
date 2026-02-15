@@ -57,7 +57,22 @@ function formatUsd(value: number) {
 
 function surnameOf(fullName: string) {
   const parts = fullName.trim().split(/\s+/)
+  while (parts.length > 1 && /^(\d+|[ivxlcdm]+)$/i.test(parts[parts.length - 1])) {
+    parts.pop()
+  }
   return parts[parts.length - 1]?.toLowerCase() ?? ''
+}
+
+function alphaTag(value: number) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  let remaining = value
+  let tag = ''
+  while (remaining > 0) {
+    remaining -= 1
+    tag = alphabet[remaining % 26] + tag
+    remaining = Math.floor(remaining / 26)
+  }
+  return tag
 }
 
 function disperseBySurname(names: string[]) {
@@ -134,8 +149,8 @@ function buildExpandedNamePool(baseNames: string[], target: number) {
   while (uniqueNames.size < target) {
     const first = SYNTHETIC_FIRST_NAMES[firstIndex % SYNTHETIC_FIRST_NAMES.length]
     const last = SYNTHETIC_LAST_NAMES[lastIndex % SYNTHETIC_LAST_NAMES.length]
-    const suffix = cycle > 0 ? ` ${cycle + 1}` : ''
-    uniqueNames.add(`${first} ${last}${suffix}`)
+    const marker = cycle > 0 ? ` ${alphaTag(cycle)}` : ''
+    uniqueNames.add(`${first}${marker} ${last}`)
 
     firstIndex += 1
     if (firstIndex % SYNTHETIC_FIRST_NAMES.length === 0) {
@@ -157,6 +172,10 @@ export default function LivePaymentsPageClient() {
   const cursorRef = useRef(0)
   const nameCursorRef = useRef(0)
   const totalRef = useRef(537_300_000)
+  const lastSurnameByDirectionRef = useRef<{ inflow: string; outflow: string }>({
+    inflow: '',
+    outflow: '',
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -188,6 +207,32 @@ export default function LivePaymentsPageClient() {
     const timer = window.setInterval(() => {
       const nextBatch: CompanyFlowRow[] = []
 
+      const pickNameForDirection = (
+        direction: CompanyFlowRow['direction'],
+        fallbackName: string
+      ) => {
+        if (!namePool.length) return fallbackName
+
+        const start = nameCursorRef.current % namePool.length
+        const previousSurname = lastSurnameByDirectionRef.current[direction]
+
+        for (let offset = 0; offset < namePool.length; offset += 1) {
+          const candidateIndex = (start + offset) % namePool.length
+          const candidate = namePool[candidateIndex]
+          const candidateSurname = surnameOf(candidate)
+          if (namePool.length > 1 && candidateSurname === previousSurname) continue
+
+          nameCursorRef.current = (candidateIndex + 1) % namePool.length
+          lastSurnameByDirectionRef.current[direction] = candidateSurname
+          return candidate
+        }
+
+        const fallbackCandidate = namePool[start]
+        nameCursorRef.current = (start + 1) % namePool.length
+        lastSurnameByDirectionRef.current[direction] = surnameOf(fallbackCandidate)
+        return fallbackCandidate
+      }
+
       for (let step = 0; step < FLOW_BATCH_SIZE; step += 1) {
         const sequence = cursorRef.current
         const activityItem = items.length ? items[sequence % items.length] : null
@@ -210,9 +255,7 @@ export default function LivePaymentsPageClient() {
         totalRef.current = nextTotal
 
         const fallbackName = activityItem?.name ?? `Member ${sequence + 1}`
-        const poolIndex = nameCursorRef.current
-        const name = namePool.length ? namePool[poolIndex % namePool.length] : fallbackName
-        nameCursorRef.current += 1
+        const name = pickNameForDirection(direction, fallbackName)
         const eventLabel = activityItem ? `${activityItem.action} ${activityItem.value}` : 'automated treasury transfer'
 
         nextBatch.push({
