@@ -78,14 +78,21 @@ export default function PlanModal({ plan, isOpen, onClose }: PlanModalProps) {
     setIsSubmitting(true)
 
     try {
+      const payload = plan.isUpgradeMode
+        ? {
+            planId: plan.id,
+            durationDays: selectedDuration.durationDays,
+          }
+        : {
+            planId: plan.id,
+            durationDays: selectedDuration.durationDays,
+            finalPrice: finalPrice,
+          }
+
       const response = await fetch(plan.isUpgradeMode ? '/api/user/upgrade-plan' : '/api/user/select-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          planId: plan.id,
-          durationDays: selectedDuration.durationDays,
-          finalPrice: finalPrice,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {

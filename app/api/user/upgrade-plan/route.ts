@@ -8,7 +8,7 @@ import {
   readNumberField,
 } from '@/lib/requestValidation'
 
-const UPGRADE_PLAN_ALLOWED_FIELDS = ['planId', 'durationDays'] as const
+const UPGRADE_PLAN_ALLOWED_FIELDS = ['planId', 'durationDays', 'finalPrice'] as const
 
 function getRemainingDays(startDate: Date | null, endDate: Date | null, totalDays: number) {
   if (endDate) {
