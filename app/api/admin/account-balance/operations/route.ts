@@ -26,6 +26,7 @@ const REVIEWABLE_SOURCES = [
   'mining_plan_purchase',
   'trading_plan_purchase',
   'real_estate_buy_in',
+  'account_balance_withdrawal',
 ] as const
 const DEFAULT_REFERRAL_SETTINGS = {
   isEnabled: true,
@@ -705,6 +706,47 @@ async function applyRealEstateReview(params: {
   })
 }
 
+async function applyAccountWithdrawalReview(params: {
+  userId: number
+  referenceId: string
+  amountUsd: number
+  metadata?: Record<string, unknown>
+  note?: string
+  decision: 'approve' | 'reject'
+  adminId: number
+}) {
+  await createAccountBalanceEntry({
+    userId: params.userId,
+    direction: 'debit',
+    status: params.decision === 'approve' ? 'settled' : 'rejected',
+    amountUsd: params.amountUsd,
+    source: 'account_balance_withdrawal',
+    referenceId: params.referenceId,
+    note:
+      params.decision === 'approve'
+        ? 'Account withdrawal approved by admin.'
+        : 'Account withdrawal rejected by admin.',
+    metadata: {
+      ...(params.metadata ?? {}),
+      reviewedByAdminId: params.adminId,
+      reviewedAt: new Date().toISOString(),
+      adminNote: params.note,
+    },
+  })
+
+  await logUserActivity({
+    userId: params.userId,
+    action:
+      params.decision === 'approve'
+        ? 'AccountBalanceWithdrawalApproved'
+        : 'AccountBalanceWithdrawalRejected',
+    detail:
+      params.decision === 'approve'
+        ? `Account withdrawal approved for $${params.amountUsd.toFixed(2)}.`
+        : `Account withdrawal rejected for $${params.amountUsd.toFixed(2)}.`,
+  })
+}
+
 export async function PATCH(req: Request) {
   try {
     const adminUser = await requireAdmin()
@@ -751,6 +793,8 @@ export async function PATCH(req: Request) {
       await applyTradingPlanReview(payload)
     } else if (sourceRaw === 'real_estate_buy_in') {
       await applyRealEstateReview(payload)
+    } else if (sourceRaw === 'account_balance_withdrawal') {
+      await applyAccountWithdrawalReview(payload)
     }
 
     await prisma.adminActivityLog.create({

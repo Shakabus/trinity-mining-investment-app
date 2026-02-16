@@ -58,6 +58,7 @@ const menuItems = [
   },
   { name: 'Referrals', labelKey: 'referrals', href: '/dashboard/referrals', icon: Link2 },
   { name: 'Fund Account', href: '/dashboard/account/fund', icon: Wallet },
+  { name: 'Withdraw Funds', href: '/dashboard/account/withdraw', icon: Wallet },
   { name: 'Activity', labelKey: 'activity', href: '/dashboard/activity', icon: History },
   { name: 'Support', labelKey: 'support', href: '/dashboard/support', icon: LifeBuoy },
   { name: 'Settings', labelKey: 'settings', href: '/dashboard/settings', icon: Settings },

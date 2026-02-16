@@ -267,6 +267,15 @@ export default async function DashboardPage() {
     )
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
+  const totalWithdrawnUsd = latestAccountBalanceEntries
+    .filter(
+      entry =>
+        entry.direction === 'debit' &&
+        entry.status === 'settled' &&
+        entry.source === 'account_balance_withdrawal'
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
   const recentBalanceTransactions = latestAccountBalanceEntries
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, 5)
@@ -418,19 +427,84 @@ export default async function DashboardPage() {
               </div>
             )}
           </div>
-          <Link
-            href="/dashboard/account/fund"
-            className="inline-block px-5 py-2.5 rounded-full font-semibold text-sm md:text-base"
-            style={{
-              background: 'linear-gradient(135deg, #10b981, #047857)',
-              color: '#ffffff',
-            }}
-          >
-            Fund Account
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/account/fund"
+              className="inline-block px-5 py-2.5 rounded-full font-semibold text-sm md:text-base"
+              style={{
+                background: 'linear-gradient(135deg, #10b981, #047857)',
+                color: '#ffffff',
+              }}
+            >
+              Fund Account
+            </Link>
+            <Link
+              href="/dashboard/account/withdraw"
+              className="inline-block px-5 py-2.5 rounded-full font-semibold text-sm md:text-base"
+              style={{
+                background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+                color: '#ffffff',
+              }}
+            >
+              Withdraw Funds
+            </Link>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {(completedMiningAvailable || completedTradingAvailable) && (
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+            }}
+          >
+            <div className="text-sm text-emerald-100">
+              Withdrawal alert: one or more plans reached completion and payout proceeds are ready.
+            </div>
+            <div className="flex flex-wrap gap-3 mt-3">
+              {completedMiningAvailable && (
+                <Link
+                  href="/dashboard/earnings"
+                  className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#d1fae5',
+                  }}
+                >
+                  Move Mining Proceeds {'>'}
+                </Link>
+              )}
+              {completedTradingAvailable && (
+                <Link
+                  href="/dashboard/investment-trading/withdrawals"
+                  className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#d1fae5',
+                  }}
+                >
+                  Move Trading Proceeds {'>'}
+                </Link>
+              )}
+              <Link
+                href="/dashboard/account/withdraw"
+                className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                style={{
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: '#fecaca',
+                }}
+              >
+                Open Withdraw Funds {'>'}
+              </Link>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div
             className="p-4 rounded-2xl"
             style={{
@@ -453,6 +527,18 @@ export default async function DashboardPage() {
             <div className="text-xs text-violet-100/80 mb-1">Total Invested</div>
             <div className="text-xl font-semibold text-violet-200" title={formatMoney(totalInvestedUsd)}>
               {formatMoney(totalInvestedUsd)}
+            </div>
+          </div>
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(239, 68, 68, 0.05))',
+              border: '1px solid rgba(239, 68, 68, 0.35)',
+            }}
+          >
+            <div className="text-xs text-rose-100/80 mb-1">Total Withdrawn</div>
+            <div className="text-xl font-semibold text-rose-200" title={formatMoney(totalWithdrawnUsd)}>
+              {formatMoney(totalWithdrawnUsd)}
             </div>
           </div>
           <div

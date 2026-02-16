@@ -10,6 +10,7 @@ type ReviewableSource =
   | 'mining_plan_purchase'
   | 'trading_plan_purchase'
   | 'real_estate_buy_in'
+  | 'account_balance_withdrawal'
 
 export type AccountBalanceOperationRow = {
   source: ReviewableSource
@@ -28,6 +29,7 @@ const sourceLabel: Record<ReviewableSource, string> = {
   mining_plan_purchase: 'Mining Plan Payment',
   trading_plan_purchase: 'Trading Plan Payment',
   real_estate_buy_in: 'Real-Estate Buy-In',
+  account_balance_withdrawal: 'Account Withdrawal',
 }
 
 export default function AccountBalanceOperationApproval({

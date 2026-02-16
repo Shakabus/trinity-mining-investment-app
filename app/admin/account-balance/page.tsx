@@ -15,6 +15,7 @@ const REVIEWABLE_SOURCES = new Set([
   'mining_plan_purchase',
   'trading_plan_purchase',
   'real_estate_buy_in',
+  'account_balance_withdrawal',
 ] as const)
 
 type ReviewableSource =
@@ -22,6 +23,7 @@ type ReviewableSource =
   | 'mining_plan_purchase'
   | 'trading_plan_purchase'
   | 'real_estate_buy_in'
+  | 'account_balance_withdrawal'
 
 const asNumber = (value: unknown) => {
   const parsed = Number(value)
@@ -164,6 +166,12 @@ export default async function AdminAccountBalancePage() {
       subtitle = ticket
         ? ticket.subject.replace(REAL_ESTATE_BUY_IN_TICKET_PREFIX, '').trim()
         : 'Real-estate buy-in payment from account balance'
+    } else if (row.source === 'account_balance_withdrawal') {
+      const destinationCoin = asString(row.metadata?.coinType)?.toUpperCase() ?? 'N/A'
+      const destinationWallet = asString(row.metadata?.walletAddress)
+      subtitle = destinationWallet
+        ? `Destination ${destinationCoin}: ${destinationWallet}`
+        : `Custom payout method request (${destinationCoin})`
     }
 
     return {
@@ -189,6 +197,7 @@ export default async function AdminAccountBalancePage() {
       mining_plan_purchase: 0,
       trading_plan_purchase: 0,
       real_estate_buy_in: 0,
+      account_balance_withdrawal: 0,
     }
   )
 
@@ -197,12 +206,13 @@ export default async function AdminAccountBalancePage() {
       <div>
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Account Balance Controls</h1>
         <p className="text-white/70">
-          Approve or reject account deposits, account-balance plan payments, and balance-linked buy-ins.
+          Approve or reject account deposits, account withdrawals, account-balance plan payments, and balance-linked buy-ins.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <MetricCard label="Deposits pending" value={sourceCounts.funding_deposit} />
+        <MetricCard label="Withdrawals pending" value={sourceCounts.account_balance_withdrawal} />
         <MetricCard label="Mining pending" value={sourceCounts.mining_plan_purchase} />
         <MetricCard label="Trading pending" value={sourceCounts.trading_plan_purchase} />
         <MetricCard label="Real-estate pending" value={sourceCounts.real_estate_buy_in} />
