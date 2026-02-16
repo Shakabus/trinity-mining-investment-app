@@ -146,7 +146,7 @@ export default function PlanModal({ plan, isOpen, onClose }: PlanModalProps) {
             </span>
           </div>
           <p className="text-white/70">
-            {plan.baseHashrate} {plan.hashrateUnit} - {plan.algorithm}
+            {plan.baseHashrate.toLocaleString()} {plan.hashrateUnit} - {plan.algorithm}
           </p>
         </div>
 

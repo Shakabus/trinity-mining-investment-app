@@ -6,6 +6,7 @@ import { Calendar, Hash, Zap, TrendingUp, Clock } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { scalePlanHashrate } from '@/lib/mining-hashrate'
+import { formatPlanDurationLabel, formatRemainingPlanTime } from '@/lib/mining-duration'
 import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
 
 export const dynamic = 'force-dynamic'
@@ -132,9 +133,9 @@ export default async function MyPlanPage() {
     ? Math.max(0, now.getTime() - effectiveStart.getTime())
     : 0
 
-  const daysRemaining = effectiveEnd
-    ? Math.max(0, Math.ceil((effectiveEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-    : Math.max(0, Math.ceil((durationMs - elapsedMs) / (1000 * 60 * 60 * 24)))
+  const remainingTimeLabel = effectiveEnd
+    ? formatRemainingPlanTime(effectiveEnd, now)
+    : formatRemainingPlanTime(new Date(now.getTime() + Math.max(0, durationMs - elapsedMs)), now)
 
   const progressPercentage = planData.selectedDurationDays > 0
     ? Math.min(100, Math.max(0, (elapsedMs / durationMs) * 100))
@@ -321,17 +322,17 @@ export default async function MyPlanPage() {
                 <span>Duration</span>
               </div>
               <div className="text-xl font-bold text-white">
-                {planData.selectedDurationDays} days
+                {formatPlanDurationLabel(planData.selectedDurationDays)}
               </div>
             </div>
 
             <div>
               <div className="flex items-center gap-2 text-white/60 text-sm mb-2">
                 <TrendingUp size={16} />
-                <span>Days Remaining</span>
+                <span>Time Remaining</span>
               </div>
               <div className="text-xl font-bold text-white">
-                {daysRemaining}
+                {remainingTimeLabel}
               </div>
             </div>
           </div>

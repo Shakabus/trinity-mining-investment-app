@@ -77,7 +77,7 @@ export default function PlanCard({ plan }: PlanCardProps) {
 
         {/* Hashrate */}
         <p className="text-sm text-white/60 mb-4">
-          {hashrate} {plan.hashrateUnit} - {plan.algorithm}
+          {hashrate.toLocaleString()} {plan.hashrateUnit} - {plan.algorithm}
         </p>
 
         {/* Price */}

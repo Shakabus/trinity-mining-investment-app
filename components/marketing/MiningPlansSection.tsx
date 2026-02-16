@@ -27,8 +27,8 @@ const GLOBAL_PARAMETERS: string[] = [
   'Average Block Time Target: ~10 minutes',
   'Pool Strategy: PPS+ with uptime-aware routing',
   'Per-User Allocation Controls: Applied by plan tier',
-  'Contract Duration: 7 days across all mining plans',
-  'Withdrawal Window: opens after 48 hours',
+  'Contract Duration: 24-96 hours depending on plan tier',
+  'Withdrawal Window: opens at completion (or after 48 hours on 72-96h plans)',
   'Operational Uptime Target: 99.9%',
 ]
 
@@ -41,9 +41,9 @@ const PLANS: Plan[] = [
     features: [
       '2 PH/s (2,000 TH/s) Hash Rate',
       'SHA-256 Allocation',
-      '7 day duration cycle',
+      '24 hour duration cycle',
       'Real-time monitoring',
-      'Withdrawals available after 48 hours',
+      'Withdrawals available at plan completion',
     ],
     modalSubtitle:
       'Designed for users entering the system with controlled exposure and transparent cycle tracking.',
@@ -61,10 +61,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 7 days',
+          'Duration: 24 hours',
           'Entry Cost: $2,000',
           'Maintenance + power charges applied transparently',
-          'Withdrawals unlocked after 48 hours',
+          'Withdrawals unlocked at plan completion',
         ],
       },
       {
@@ -85,9 +85,9 @@ const PLANS: Plan[] = [
     features: [
       '6 PH/s (6,000 TH/s) Hash Rate',
       'Antminer S19 Pro-class routing',
-      '7 day duration cycle',
+      '48 hour duration cycle',
       'Priority pool routing',
-      'Withdrawals available after 48 hours',
+      'Withdrawals available at plan completion',
     ],
     modalSubtitle:
       'Built for users moving beyond starter cycles into stronger hashrate exposure with better route efficiency.',
@@ -104,10 +104,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 7 days',
+          'Duration: 48 hours',
           'Entry Cost: $5,000',
           'Transparent daily operational costing',
-          'Withdrawals unlocked after 48 hours',
+          'Withdrawals unlocked at plan completion',
         ],
       },
       {
@@ -128,9 +128,9 @@ const PLANS: Plan[] = [
     features: [
       '10 PH/s (10,000 TH/s) Hash Rate',
       'Antminer S19 XP-class efficiency',
-      '7 day duration cycle',
+      '48 hour duration cycle',
       'Advanced performance dashboards',
-      'Withdrawals available after 48 hours',
+      'Withdrawals available at plan completion',
     ],
     modalSubtitle:
       'Structured for users prioritizing lower operational friction and more consistent long-cycle performance.',
@@ -147,10 +147,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 7 days',
+          'Duration: 48 hours',
           'Entry Cost: $10,000',
           'Fee structure optimized for medium to long duration',
-          'Withdrawals unlocked after 48 hours',
+          'Withdrawals unlocked at plan completion',
         ],
       },
       {
@@ -171,7 +171,7 @@ const PLANS: Plan[] = [
     features: [
       '40 PH/s (40,000 TH/s) Hash Rate',
       'S21 / S19 XP Hydro-class access',
-      '7 day duration cycle',
+      '72 hour duration cycle',
       'Intelligent pool optimization',
       'Withdrawals available after 48 hours',
     ],
@@ -190,7 +190,7 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 7 days',
+          'Duration: 72 hours',
           'Entry Cost: $20,000',
           'Longer-term structure with lower relative operational drag',
           'Withdrawals unlocked after 48 hours',
@@ -214,7 +214,7 @@ const PLANS: Plan[] = [
     features: [
       '200 PH/s (200,000 TH/s) Hash Rate',
       'Enterprise ASIC cluster allocation',
-      '7 day duration cycle',
+      '96 hour duration cycle',
       'Dedicated account management',
       'Withdrawals available after 48 hours',
     ],
@@ -233,7 +233,7 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 7 days',
+          'Duration: 96 hours',
           'Entry Cost: from $50,000',
           'Plan economics tuned for scale commitments',
           'Withdrawals unlocked after 48 hours',
@@ -258,7 +258,7 @@ const PLANS: Plan[] = [
       '200 PH/s BTC allocation',
       'ETH-equivalent + LTC mining routing',
       'Enterprise ASIC + GPU clusters',
-      '7 day duration cycle',
+      '96 hour duration cycle',
       'Withdrawals available after 48 hours',
     ],
     modalSubtitle:
@@ -276,7 +276,7 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 7 days',
+          'Duration: 96 hours',
           'Entry Cost: from $100,000',
           'Network-specific cost components disclosed in-plan',
           'Withdrawals unlocked after 48 hours',

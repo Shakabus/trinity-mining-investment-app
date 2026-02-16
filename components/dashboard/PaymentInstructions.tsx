@@ -6,6 +6,7 @@ import LoadingButton from '@/components/ui/LoadingButton'
 import { useToast } from '@/components/ui/ToastProvider'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
+import { formatPlanDurationLabel } from '@/lib/mining-duration'
 
 interface PaymentInstructionsProps {
   plan: {
@@ -78,7 +79,7 @@ export default function PaymentInstructions({ plan, accountBalanceUsd }: Payment
           </div>
           <div className="flex justify-between items-center">
             <span className="text-white/70">Duration:</span>
-            <span className="text-white font-semibold">{plan.selectedDurationDays} days</span>
+            <span className="text-white font-semibold">{formatPlanDurationLabel(plan.selectedDurationDays)}</span>
           </div>
           <div className="border-t border-white/10 pt-3 mt-3">
             <div className="flex justify-between items-center">

@@ -17,6 +17,7 @@ import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { formatPlanDurationLabel } from '@/lib/mining-duration'
 
 import TickerTape from '@/components/dashboard/TickerTape'
 import AdvancedChart from '@/components/dashboard/AdvancedChart'
@@ -780,7 +781,7 @@ export default async function DashboardPage() {
                   <div>
                     <div className="text-xs md:text-sm text-white/60 mb-1">Duration</div>
                     <div className="text-base md:text-lg font-semibold text-white">
-                      {activeMiningPlan.selectedDurationDays} days
+                      {formatPlanDurationLabel(activeMiningPlan.selectedDurationDays)}
                     </div>
                   </div>
                 </>
