@@ -29,13 +29,12 @@ import {
 
 const menuItems = [
   { name: 'Overview', labelKey: 'overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Plans', labelKey: 'plans', href: '/dashboard/plans', icon: Gem },
+  { name: 'Cloud Mining Plans', href: '/dashboard/plans', icon: Gem },
   { name: 'My Plan', labelKey: 'myPlan', href: '/dashboard/my-plan', icon: Package },
   { name: 'Mining', labelKey: 'mining', href: '/dashboard/mining', icon: Pickaxe },
   { name: 'Earnings', labelKey: 'earnings', href: '/dashboard/earnings', icon: DollarSign },
   {
-    name: 'Investment Trading',
-    labelKey: 'investmentTrading',
+    name: 'Promotional Trading Plans',
     href: '/dashboard/investment-trading',
     icon: Layers,
     children: [
