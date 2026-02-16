@@ -42,7 +42,9 @@ export default async function EarningsPage() {
   }
 
   const activeMining = user.miningStats.find(stat => stat.isActive) ?? user.miningStats[0] ?? null
-  const startDate = activeMining?.createdAt?.toISOString() ?? null
+  const activeMiningPlan = user.earnings.find(record => record.userPlan?.status === 'active')?.userPlan ?? null
+  const startDate = (activeMiningPlan?.startDate ?? activeMining?.createdAt ?? null)?.toISOString() ?? null
+  const planDurationDays = activeMiningPlan?.selectedDurationDays ?? null
   const now = new Date()
 
   const updatedRecords = await autoUpdateEarnings({
@@ -125,6 +127,7 @@ export default async function EarningsPage() {
         <EarningsDisplay
           records={records}
           startDate={startDate}
+          planDurationDays={planDurationDays}
           lastUpdatedAt={lastUpdatedAt}
           lastPayoutAt={null}
           payouts={payouts}

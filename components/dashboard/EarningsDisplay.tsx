@@ -7,6 +7,15 @@ import EmptyState from '@/components/ui/EmptyState'
 import { DollarSign } from 'lucide-react'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
+import {
+  buildChartSampleOffsets,
+  buildCycleSegments,
+  formatChartWindowLabel,
+  formatCycleProgressLabel,
+  resolveChartWindowHours,
+  resolveElapsedPlanHours,
+  resolvePlanDurationHours,
+} from '@/lib/mining-chart'
 
 interface EarningsRecord {
   id: number
@@ -32,6 +41,7 @@ interface PayoutEntry {
 interface EarningsDisplayProps {
   records: EarningsRecord[]
   startDate: string | null
+  planDurationDays?: number | null
   lastUpdatedAt: string | null
   lastPayoutAt: string | null
   payouts: PayoutEntry[]
@@ -43,6 +53,7 @@ interface EarningsDisplayProps {
 export default function EarningsDisplay({
   records,
   startDate,
+  planDurationDays,
   lastUpdatedAt,
   lastPayoutAt,
   payouts,
@@ -100,6 +111,23 @@ export default function EarningsDisplay({
       rateUsd,
     }
   }, [lastUpdatedAt, now, totals.dailyUsd, totals.totalUsd])
+
+  const planDurationHours = useMemo(
+    () => resolvePlanDurationHours(planDurationDays),
+    [planDurationDays]
+  )
+  const elapsedPlanHours = useMemo(
+    () => resolveElapsedPlanHours(startDate ? new Date(startDate) : null, new Date(now)),
+    [now, startDate]
+  )
+  const chartWindowHours = useMemo(
+    () => resolveChartWindowHours(planDurationHours, elapsedPlanHours),
+    [elapsedPlanHours, planDurationHours]
+  )
+  const cycleWindowLabel = useMemo(
+    () => formatChartWindowLabel(chartWindowHours),
+    [chartWindowHours]
+  )
 
   useEffect(() => {
     if (Number(withdrawAmountUsd) < convert(minWithdrawalUsd)) {
@@ -169,32 +197,33 @@ export default function EarningsDisplay({
   }, [now, records])
 
   const hourlySeries = useMemo(() => {
-    const points = []
-    for (let i = 23; i >= 0; i -= 1) {
-      const offsetSeconds = i * 3600
-      const value = Math.max(0, liveTotals.totalUsd - liveTotals.rateUsd * offsetSeconds)
-      const time = new Date(now - offsetSeconds * 1000).getHours()
+    return buildChartSampleOffsets(chartWindowHours, 24).map(offset => {
+      const hoursAgo = chartWindowHours - offset
+      const value = Math.max(0, liveTotals.totalUsd - liveTotals.rateUsd * hoursAgo * 3600)
+      const elapsedAtSample = Math.max(0, elapsedPlanHours - hoursAgo)
       const converted = convert(value)
-      points.push({ time: `${time}:00`, value: Math.round(converted * 100) / 100 })
-    }
-    return points
-  }, [convert, liveTotals.rateUsd, liveTotals.totalUsd, now])
+      return {
+        time: formatCycleProgressLabel(elapsedAtSample, planDurationHours),
+        value: Math.round(converted * 100) / 100,
+      }
+    })
+  }, [chartWindowHours, convert, elapsedPlanHours, liveTotals.rateUsd, liveTotals.totalUsd, planDurationHours])
 
   const weeklySeries = useMemo(() => {
-    const points = []
-    const startMs = startDate ? new Date(startDate).getTime() : now
-    for (let i = 6; i >= 0; i -= 1) {
-      const dayMs = now - i * 24 * 60 * 60 * 1000
-      const label = new Date(dayMs).toLocaleDateString('en-US', { weekday: 'short' })
-      if (dayMs < startMs) {
-        points.push({ day: label, value: 0 })
-        continue
+    return buildCycleSegments(chartWindowHours, 8).map(segment => {
+      const segmentHours = Math.max(1 / 6, segment.endHour - segment.startHour)
+      const segmentRateUsd = liveTotals.rateUsd * segmentHours * 3600
+      const converted = convert(segmentRateUsd)
+      const elapsedAtSegmentEnd = Math.min(
+        planDurationHours,
+        Math.max(0, elapsedPlanHours - (chartWindowHours - segment.endHour))
+      )
+      return {
+        day: formatCycleProgressLabel(elapsedAtSegmentEnd, planDurationHours),
+        value: Math.round(converted * 100) / 100,
       }
-      const converted = convert(liveTotals.rateUsd * 86400)
-      points.push({ day: label, value: Math.round(converted * 100) / 100 })
-    }
-    return points
-  }, [convert, liveTotals.rateUsd, now, startDate])
+    })
+  }, [chartWindowHours, convert, elapsedPlanHours, liveTotals.rateUsd, planDurationHours])
 
   return (
     <div className="space-y-6">
@@ -259,7 +288,9 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-4">{t('earnings24h')} ({currency})</h3>
+          <h3 className="text-white font-semibold mb-4">
+            {t('earnings24h')} ({currency}) • {cycleWindowLabel}
+          </h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={hourlySeries} margin={{ left: 5, right: 5, top: 5, bottom: 0 }}>
               <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '12px' }} tickMargin={6} />
@@ -285,7 +316,9 @@ export default function EarningsDisplay({
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-4">{t('earningsWeekly')} ({currency})</h3>
+          <h3 className="text-white font-semibold mb-4">
+            Cycle Segments ({currency}) • {cycleWindowLabel}
+          </h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={weeklySeries} margin={{ left: 5, right: 5, top: 5, bottom: 0 }}>
               <XAxis dataKey="day" stroke="#ffffff40" style={{ fontSize: '12px' }} tickMargin={6} />

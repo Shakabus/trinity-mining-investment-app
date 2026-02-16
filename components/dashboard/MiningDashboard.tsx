@@ -17,6 +17,11 @@ import {
 } from 'recharts'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
 import { getMiningDailyYieldPerTh } from '@/lib/mining-engine'
+import {
+  buildChartSampleOffsets,
+  formatChartWindowLabel,
+  formatCycleProgressLabel,
+} from '@/lib/mining-chart'
 
 interface MiningDashboardProps {
   mining: {
@@ -31,6 +36,9 @@ interface MiningDashboardProps {
     planName: string
     coinType: string
     startDate: Date | null
+    planDurationHours?: number
+    elapsedPlanHours?: number
+    chartWindowHours?: number
     currentHashrate: number
     validShares: number
     staleShares: number
@@ -130,9 +138,22 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
     [shareTotals]
   )
 
-  const daysRunning = data.startDate
-    ? Math.max(1, Math.floor((nowMs - new Date(data.startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)
-    : 0
+  const planDurationHours = Math.max(1, data.planDurationHours ?? 24)
+  const elapsedPlanHours =
+    typeof data.elapsedPlanHours === 'number' && Number.isFinite(data.elapsedPlanHours)
+      ? Math.min(planDurationHours, Math.max(0, data.elapsedPlanHours))
+      : data.startDate
+        ? Math.min(
+            planDurationHours,
+            Math.max(0, (nowMs - new Date(data.startDate).getTime()) / (1000 * 60 * 60))
+          )
+        : 0
+  const chartWindowHours = Math.max(
+    1,
+    Math.min(planDurationHours, (data.chartWindowHours ?? elapsedPlanHours) || 1)
+  )
+  const progressPercent = Math.min(100, Math.max(0, (elapsedPlanHours / planDurationHours) * 100))
+  const recentShareWindowLabel = formatChartWindowLabel(Math.min(planDurationHours, 24))
 
   const hasMultiAssets = Boolean(data.assetStats && data.assetStats.length > 0)
   const earnedLabel = data.coinType === 'BTC' ? 'BITCOIN EARNED' : `${data.coinType} EARNED`
@@ -155,16 +176,24 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
       ? data.estimatedDailyCrypto
       : fallbackEstimatedDailyCrypto
 
-  const actualDailyCrypto = daysRunning > 0 ? totalEarned / daysRunning : 0
+  const actualDailyCrypto = elapsedPlanHours > 0 ? (totalEarned / elapsedPlanHours) * 24 : 0
 
-  const earningsSeries = Array.from({ length: 24 }, (_, index) => {
-    const hoursAgo = 23 - index
+  const earningsSeries = buildChartSampleOffsets(chartWindowHours, 24).map(offset => {
+    const hoursAgo = chartWindowHours - offset
+    const elapsedAtSample = Math.max(0, elapsedPlanHours - hoursAgo)
     const value = Math.max(0, totalEarned - (estimatedDailyCrypto / 24) * hoursAgo)
-    return { time: `${new Date(nowMs - hoursAgo * 3600 * 1000).getHours()}:00`, value: Number(value.toFixed(8)) }
+    return {
+      time: formatCycleProgressLabel(elapsedAtSample, planDurationHours),
+      value: Number(value.toFixed(8)),
+    }
   })
 
   const estimatedVsActual = [
-    { label: 'Daily', estimated: Number(estimatedDailyCrypto.toFixed(8)), actual: Number(actualDailyCrypto.toFixed(8)) },
+    {
+      label: '24h Run Rate',
+      estimated: Number(estimatedDailyCrypto.toFixed(8)),
+      actual: Number(actualDailyCrypto.toFixed(8)),
+    },
   ]
 
   return (
@@ -217,7 +246,8 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
         </div>
         <div className="mt-6 text-sm text-white/50">
           Current hashrate: {data.currentHashrate.toLocaleString(undefined, { maximumFractionDigits: 2 })}{' '}
-          {data.hashrateUnit} - {daysRunning} days running
+          {data.hashrateUnit} - {Math.round(elapsedPlanHours)}h / {planDurationHours}h cycle (
+          {progressPercent.toFixed(1)}%)
         </div>
       </div>
 
@@ -296,10 +326,10 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
         >
           <div className="text-xs uppercase tracking-wide text-white/60 mb-2">Share Quality (1h)</div>
           <div className="text-white text-sm">
-            Valid: {data.lastHourShares.toLocaleString()} • Stale: {data.lastHourStale.toLocaleString()} • Invalid:{' '}
+            Valid: {data.lastHourShares.toLocaleString()} - Stale: {data.lastHourStale.toLocaleString()} - Invalid:{' '}
             {data.lastHourInvalid.toLocaleString()}
           </div>
-          <div className="text-xs text-white/50 mt-2">Last 24h valid: {data.lastDayShares.toLocaleString()}</div>
+          <div className="text-xs text-white/50 mt-2">Last {recentShareWindowLabel} valid: {data.lastDayShares.toLocaleString()}</div>
         </div>
 
         <div
@@ -325,7 +355,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
         >
           <div className="text-xs uppercase tracking-wide text-white/60 mb-2">Worker Status</div>
           <div className="text-white text-sm">
-            Online: {data.workerStatus.online} • Offline: {data.workerStatus.offline} • Total:{' '}
+            Online: {data.workerStatus.online} - Offline: {data.workerStatus.offline} - Total:{' '}
             {data.workerStatus.total}
           </div>
           <div className="text-xs text-white/50 mt-2">Uptime tracked from pool</div>
@@ -341,7 +371,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
         >
           <div className="text-xs uppercase tracking-wide text-white/60 mb-2">Power & Thermals</div>
           <div className="text-white text-sm">
-            {data.powerKw.toFixed(1)} kW • {data.temperatureC}°C
+            {data.powerKw.toFixed(1)} kW - {data.temperatureC} deg C
           </div>
           <div className="text-xs text-white/50 mt-2">
             Network difficulty: {data.difficultyChange >= 0 ? '+' : ''}
@@ -416,7 +446,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-4">Hashrate Stability (24h)</h3>
+          <h3 className="text-white font-semibold mb-4">Hashrate Stability (Cycle window: {formatChartWindowLabel(chartWindowHours)})</h3>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={data.hourlyHashrate}>
               <XAxis dataKey="time" stroke="#ffffff40" style={{ fontSize: '12px' }} />
@@ -435,7 +465,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
         </div>
       </div>
 
-      {/* Shares Submission History */}
+      {/* Shares Activity (Cycle window: {formatChartWindowLabel(chartWindowHours)}) */}
       <div
         className="p-6 rounded-3xl"
         style={{
@@ -444,7 +474,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
           border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
-        <h3 className="text-white font-semibold mb-4">Shares Submission History</h3>
+        <h3 className="text-white font-semibold mb-4">Shares Activity (Cycle window: {formatChartWindowLabel(chartWindowHours)})</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={data.weeklyPerformance}>
             <XAxis dataKey="day" stroke="#ffffff40" style={{ fontSize: '12px' }} />
@@ -504,7 +534,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
             border: '1px solid rgba(255, 255, 255, 0.18)',
           }}
         >
-          <h3 className="text-white font-semibold mb-4">Estimated vs Actual (Daily)</h3>
+          <h3 className="text-white font-semibold mb-4">Estimated vs Actual (24h run rate)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={estimatedVsActual}>
               <XAxis dataKey="label" stroke="#ffffff40" style={{ fontSize: '12px' }} />

@@ -19,6 +19,7 @@ interface OverviewAnalyticsProps {
   hashrateSeries: { time: string; value: number }[]
   sharesSeries: { day: string; value: number }[]
   estimatedVsActual: { label: string; estimated: number; actual: number }[]
+  miningWindowLabel?: string
 }
 
 export default function OverviewAnalytics({
@@ -26,6 +27,7 @@ export default function OverviewAnalytics({
   hashrateSeries,
   sharesSeries,
   estimatedVsActual,
+  miningWindowLabel,
 }: OverviewAnalyticsProps) {
   const { currency } = useCurrency()
   const { t } = useLanguage()
@@ -76,6 +78,7 @@ export default function OverviewAnalytics({
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <Activity size={16} />
             {t('hashrateStability')}
+            {miningWindowLabel ? ` (${miningWindowLabel})` : ''}
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={220}>
@@ -109,6 +112,7 @@ export default function OverviewAnalytics({
           <div className="flex items-center gap-2 text-white/70 text-sm mb-4">
             <BarChart3 size={16} />
             {t('sharesHistory')}
+            {miningWindowLabel ? ` (${miningWindowLabel})` : ''}
           </div>
           <div className="px-[5px]">
             <ResponsiveContainer width="100%" height={220}>

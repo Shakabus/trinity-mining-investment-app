@@ -12,6 +12,14 @@ import {
   getMiningDailyYieldPerTh,
   normalizeHashrateToTH,
 } from '@/lib/mining-engine'
+import {
+  buildChartSampleOffsets,
+  buildCycleSegments,
+  formatCycleProgressLabel,
+  resolveChartWindowHours,
+  resolveElapsedPlanHours,
+  resolvePlanDurationHours,
+} from '@/lib/mining-chart'
 
 function seededRandom(seed: number) {
   const x = Math.sin(seed) * 10000
@@ -164,10 +172,17 @@ export default async function MiningPage() {
   const shareSeed = miningStats.id + 91
   const staleRate = 0.01 + seededRandom(shareSeed) * 0.03
   const invalidRate = 0.002 + seededRandom(shareSeed + 3) * 0.004
+
+  const startDate = miningStats.userPlan.startDate ?? miningStats.createdAt ?? now
+  const planDurationHours = resolvePlanDurationHours(miningStats.userPlan.selectedDurationDays)
+  const elapsedPlanHours = Math.min(planDurationHours, resolveElapsedPlanHours(startDate, now))
+  const chartWindowHours = resolveChartWindowHours(planDurationHours, elapsedPlanHours)
+  const recentWindowHours = Math.min(planDurationHours, 24)
+
   const staleShares = Math.round(validShares * staleRate)
   const invalidShares = Math.round(validShares * invalidRate)
   const lastHourShares = Math.round(shareRatePerSecond * 3600)
-  const lastDayShares = Math.round(shareRatePerSecond * 86400)
+  const lastDayShares = Math.round(shareRatePerSecond * recentWindowHours * 3600)
   const lastHourStale = Math.round(lastHourShares * staleRate)
   const lastHourInvalid = Math.round(lastHourShares * invalidRate)
   const lastDayStale = Math.round(lastDayShares * staleRate)
@@ -184,43 +199,46 @@ export default async function MiningPage() {
   const difficultySeed = seededRandom(miningStats.id + Math.floor(now.getTime() / (1000 * 60 * 60 * 12)))
   const difficultyChange = Math.round((difficultySeed * 2 - 1) * 2 * 100) / 100
 
-  const startDate = miningStats.userPlan.startDate ?? miningStats.createdAt ?? now
   const miningStartMs = startDate.getTime()
-  const elapsedSinceStartSeconds = Math.max(0, (now.getTime() - miningStartMs) / 1000)
-  const elapsedHoursSinceStart = Math.floor(elapsedSinceStartSeconds / 3600)
-  const elapsedDaysSinceStart = Math.floor(elapsedSinceStartSeconds / 86400)
-
-  const hoursToRender = Math.min(24, Math.max(1, elapsedHoursSinceStart + 1))
-  const hourlyHashrate = Array.from({ length: hoursToRender }, (_, index) => {
-    const hourOffset = hoursToRender - 1 - index
-    const bucketTime = new Date(miningStartMs + hourOffset * 60 * 60 * 1000)
-    const hashrate = isMiningActive ? computeHashrate(assignedHashrate, miningStats.id, bucketTime) : 0
+  const hourlyOffsets = buildChartSampleOffsets(chartWindowHours, 24)
+  const hourlyHashrate = hourlyOffsets.map(offset => {
+    const hoursAgo = chartWindowHours - offset
+    const sampleTime = new Date(now.getTime() - hoursAgo * 60 * 60 * 1000)
+    const elapsedAtSample = Math.max(0, (sampleTime.getTime() - miningStartMs) / (1000 * 60 * 60))
+    const hashrate = isMiningActive ? computeHashrate(assignedHashrate, miningStats.id, sampleTime) : 0
     return {
-      time: `${bucketTime.getHours()}:00`,
+      time: formatCycleProgressLabel(elapsedAtSample, planDurationHours),
       hashrate: Math.round(hashrate * 100) / 100,
     }
   })
 
-  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const daysToRender = Math.min(7, Math.max(1, elapsedDaysSinceStart + 1))
-  const weeklyPerformance = Array.from({ length: daysToRender }, (_, index) => {
-    const dayOffset = daysToRender - 1 - index
-    const dayTime = new Date(miningStartMs + dayOffset * 24 * 60 * 60 * 1000)
-    const avgHashrate = isMiningActive ? computeHashrate(assignedHashrate, miningStats.id + 37, dayTime) : 0
-    const dailyPerformanceFactor = assignedHashrate > 0 ? avgHashrate / assignedHashrate : 0
-    const dailyShares = isMiningActive
+  const shareSegments = buildCycleSegments(chartWindowHours, 8)
+  const weeklyPerformance = shareSegments.map(segment => {
+    const segmentHours = Math.max(1 / 6, segment.endHour - segment.startHour)
+    const hoursAgoAtMidpoint = chartWindowHours - segment.midHour
+    const sampleTime = new Date(now.getTime() - hoursAgoAtMidpoint * 60 * 60 * 1000)
+    const elapsedAtEnd = Math.max(
+      0,
+      Math.min(planDurationHours, (sampleTime.getTime() - miningStartMs) / (1000 * 60 * 60) + segmentHours / 2)
+    )
+    const avgHashrate = isMiningActive ? computeHashrate(assignedHashrate, miningStats.id + 37, sampleTime) : 0
+    const segmentPerformanceFactor = assignedHashrate > 0 ? avgHashrate / assignedHashrate : 0
+    const segmentShares = isMiningActive
       ? Math.round(
           computeShareRatePerSecond({
             hashrateTH,
             uptimeFactor,
-            performanceFactor: dailyPerformanceFactor,
-          }) * 86400
+            performanceFactor: segmentPerformanceFactor,
+          }) *
+            segmentHours *
+            3600
         )
       : 0
+
     return {
-      day: dayLabels[dayTime.getDay()],
+      day: formatCycleProgressLabel(elapsedAtEnd, planDurationHours),
       averageHashrate: Math.round(avgHashrate * 100) / 100,
-      validShares: dailyShares,
+      validShares: segmentShares,
     }
   })
 
@@ -435,6 +453,9 @@ export default async function MiningPage() {
     planName: miningStats.userPlan.plan.name,
     coinType: miningStats.userPlan.plan.coinType,
     startDate: startDate,
+    planDurationHours,
+    elapsedPlanHours,
+    chartWindowHours,
     currentHashrate,
     validShares,
     staleShares,

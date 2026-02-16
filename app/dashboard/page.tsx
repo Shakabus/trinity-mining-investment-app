@@ -13,6 +13,15 @@ import {
   getAccountBalanceSummary,
 } from '@/lib/account-balance'
 import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
+import {
+  buildChartSampleOffsets,
+  buildCycleSegments,
+  formatChartWindowLabel,
+  formatCycleProgressLabel,
+  resolveChartWindowHours,
+  resolveElapsedPlanHours,
+  resolvePlanDurationHours,
+} from '@/lib/mining-chart'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
@@ -349,22 +358,36 @@ export default async function DashboardPage() {
   const hashrateDisplay = activeMining
     ? `${Number(activeMining.assignedHashrate).toLocaleString()} ${activeMining.hashrateUnit}`
     : '0 TH/s'
-  const hashrateSeries = Array.from({ length: 24 }, (_, index) => {
-    const hoursAgo = 23 - index
-    const seed = (user?.id || 1) * 97 + hoursAgo * 13
+  const miningDurationHours = resolvePlanDurationHours(activeMiningPlan?.selectedDurationDays ?? null)
+  const miningCycleStart = activeMiningPlan?.startDate ?? activeMining?.createdAt ?? now
+  const miningElapsedHours = resolveElapsedPlanHours(miningCycleStart, now)
+  const miningChartWindowHours = activeMining
+    ? resolveChartWindowHours(miningDurationHours, miningElapsedHours)
+    : 24
+  const miningWindowLabel = formatChartWindowLabel(miningChartWindowHours)
+
+  const hashrateSeries = buildChartSampleOffsets(miningChartWindowHours, 24).map(offset => {
+    const hoursAgo = miningChartWindowHours - offset
+    const seed = (user?.id || 1) * 97 + Math.round(hoursAgo * 13)
     const noise = Math.sin(seed) * 0.04
     const value = Math.max(0, hashrateBase * (0.96 + noise))
-    return { time: `${new Date(now.getTime() - hoursAgo * 3600 * 1000).getHours()}:00`, value: Math.round(value * 100) / 100 }
+    const elapsedAtSample = Math.max(0, miningElapsedHours - hoursAgo)
+    return {
+      time: formatCycleProgressLabel(elapsedAtSample, miningDurationHours),
+      value: Math.round(value * 100) / 100,
+    }
   })
 
   const totalShares = activeMining ? Number(activeMining.lastCounterValue || 0) : 0
-  const avgDailyShares = daysActive > 0 ? totalShares / daysActive : 0
-  const sharesSeries = Array.from({ length: Math.min(7, daysActive || 1) }, (_, index) => {
-    const dayOffset = Math.min(6, (daysActive - 1) - index)
-    const day = new Date(now.getTime() - dayOffset * 24 * 3600 * 1000)
+  const sharesSeries = buildCycleSegments(miningChartWindowHours, 7).map(segment => {
+    const elapsedAtSegmentEnd = Math.max(
+      0,
+      Math.min(miningDurationHours, miningElapsedHours - (miningChartWindowHours - segment.endHour))
+    )
+    const segmentRatio = miningChartWindowHours > 0 ? (segment.endHour - segment.startHour) / miningChartWindowHours : 0
     return {
-      day: day.toLocaleDateString('en-US', { weekday: 'short' }),
-      value: Math.round(avgDailyShares),
+      day: formatCycleProgressLabel(elapsedAtSegmentEnd, miningDurationHours),
+      value: Math.max(0, Math.round(totalShares * segmentRatio)),
     }
   })
 
@@ -378,7 +401,7 @@ export default async function DashboardPage() {
   const convertedActualDaily = convertUsd(combinedActualDaily, rates, preferredCurrency)
   const estimatedVsActual = [
     {
-      label: 'Daily',
+      label: '24h Run Rate',
       estimated: Math.round(convertedEstimatedDaily * 100) / 100,
       actual: Math.round(convertedActualDaily * 100) / 100,
     },
@@ -1083,6 +1106,7 @@ export default async function DashboardPage() {
           hashrateSeries={hashrateSeries}
           sharesSeries={sharesSeries}
           estimatedVsActual={estimatedVsActual}
+          miningWindowLabel={miningWindowLabel}
         />
 
         <LivePaymentsPageClient />
