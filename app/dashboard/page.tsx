@@ -472,6 +472,16 @@ export default async function DashboardPage() {
             >
               Withdraw Funds
             </Link>
+            <Link
+              href="/dashboard/account/history"
+              className="inline-block px-5 py-2.5 rounded-full font-semibold text-sm md:text-base"
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                color: '#ffffff',
+              }}
+            >
+              Account History
+            </Link>
           </div>
         </div>
 
