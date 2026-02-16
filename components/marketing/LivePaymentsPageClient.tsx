@@ -609,9 +609,9 @@ export default function LivePaymentsPageClient() {
           </div>
         </div>
 
-        <div className="space-y-5">
+        <div className="flex flex-col gap-5">
           <div
-            className="rounded-3xl p-4"
+            className="order-2 rounded-3xl p-4 lg:order-1"
             style={{
               background: 'linear-gradient(150deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02))',
               border: '1px solid rgba(255, 255, 255, 0.16)',
@@ -649,7 +649,7 @@ export default function LivePaymentsPageClient() {
           </div>
 
           <div
-            className="rounded-3xl p-4"
+            className="order-3 rounded-3xl p-4 lg:order-2"
             style={{
               background: 'linear-gradient(150deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02))',
               border: '1px solid rgba(255, 255, 255, 0.16)',
@@ -676,7 +676,7 @@ export default function LivePaymentsPageClient() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs text-white/60">
+          <div className="order-1 rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs text-white/60 lg:order-3">
             Latest generator event: <span className="text-white/85">{flows[0]?.eventLabel ?? 'Waiting for feed...'}</span>
           </div>
         </div>
