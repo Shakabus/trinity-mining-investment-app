@@ -11,7 +11,7 @@ import {
   readStringField,
 } from '@/lib/requestValidation'
 
-const SUPPORTED_COINS = ['BTC', 'USDT', 'SOL'] as const
+const SUPPORTED_COINS = ['BTC', 'ETH', 'USDT', 'SOL'] as const
 const WITHDRAWAL_ALLOWED_FIELDS = ['coinType', 'amountUsd'] as const
 
 export async function POST(req: Request) {

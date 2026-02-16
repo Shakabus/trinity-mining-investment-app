@@ -25,15 +25,16 @@ type Props = {
   tradingReadyUsd: number
   referralReadyUsd: number
   walletOptions: {
-    coinType: 'BTC' | 'SOL' | 'USDT'
+    coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
     address: string
   }[]
   entries: WithdrawalEntry[]
 }
 
-const COINS = ['USDT', 'BTC', 'SOL'] as const
+const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
 const NETWORK_MAP: Record<(typeof COINS)[number], string> = {
   BTC: 'Bitcoin',
+  ETH: 'Ethereum',
   USDT: 'USDT (ERC-20)',
   SOL: 'Solana',
 }
@@ -158,7 +159,7 @@ export default function AccountWithdrawPageClient({
         >
           <div className="text-rose-100 font-semibold">No payout wallets configured.</div>
           <p className="text-sm text-rose-100/85 mt-2">
-            Add your BTC, USDT, or SOL wallet in Settings before requesting withdrawals.
+            Add your BTC, ETH, USDT, or SOL wallet in Settings before requesting withdrawals.
           </p>
           <Link href="/dashboard/settings/wallet" className="inline-block mt-3 text-sm text-white underline underline-offset-4">
             Open Wallet Settings {'>'}

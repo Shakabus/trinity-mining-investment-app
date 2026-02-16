@@ -18,6 +18,7 @@ export default async function WithdrawAccountPage() {
     select: {
       id: true,
       btcWalletAddress: true,
+      ethWalletAddress: true,
       walletAddress: true,
     },
   })
@@ -84,13 +85,14 @@ export default async function WithdrawAccountPage() {
 
   const walletOptions = [
     user.btcWalletAddress ? { coinType: 'BTC', address: user.btcWalletAddress } : null,
+    user.ethWalletAddress ? { coinType: 'ETH', address: user.ethWalletAddress } : null,
     solAddress ? { coinType: 'SOL', address: solAddress } : null,
     user.walletAddress ? { coinType: 'USDT', address: user.walletAddress } : null,
   ].filter(
     (
       option
     ): option is {
-      coinType: 'BTC' | 'SOL' | 'USDT'
+      coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
       address: string
     } => Boolean(option)
   )

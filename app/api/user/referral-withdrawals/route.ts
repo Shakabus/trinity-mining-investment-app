@@ -15,7 +15,7 @@ const DEFAULT_REFERRAL_SETTINGS = {
   minWithdrawalUsd: 50,
 }
 
-const SUPPORTED_COINS = ['BTC', 'USDT', 'SOL'] as const
+const SUPPORTED_COINS = ['BTC', 'ETH', 'USDT', 'SOL'] as const
 const REFERRAL_WITHDRAWAL_ALLOWED_FIELDS = ['coinType', 'amountUsd'] as const
 
 export async function POST(req: Request) {
