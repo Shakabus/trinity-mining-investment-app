@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
+import { getMiningDailyYieldPerTh } from '@/lib/mining-engine'
 
-const DAILY_YIELD_PER_TH_BTC = 0.00000022
 const TH_PER_PH = 1000
 const MAX_OFFERED_HASHRATE_PH = 200
 
@@ -13,7 +13,7 @@ export default function RevenueCalculator() {
 
   // Keep calculator aligned with the same BTC yield model used in mining earnings logic.
   const btcPerPhPerDay = useMemo(
-    () => DAILY_YIELD_PER_TH_BTC * TH_PER_PH,
+    () => getMiningDailyYieldPerTh('BTC') * TH_PER_PH,
     [],
   )
 

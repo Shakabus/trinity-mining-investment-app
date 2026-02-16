@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
+import { getMiningDailyYieldPerTh } from '@/lib/mining-engine'
 
 interface MiningDashboardProps {
   mining: {
@@ -99,7 +100,7 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
       } catch {
         // Ignore polling errors to keep UI stable.
       }
-    }, 10000)
+    }, 4000)
 
     return () => clearInterval(interval)
   }, [])
@@ -139,21 +140,15 @@ export default function MiningDashboard({ mining }: MiningDashboardProps) {
     ? data.assetStats!.reduce((sum, asset) => sum + asset.totalEarnedCrypto, 0)
     : data.totalEarnedCrypto
 
-  const DAILY_YIELD_PER_TH: Record<string, number> = {
-    BTC: 0.00000022,
-    ETH: 0.0000035,
-    LTC: 0.000015,
-  }
-
   const fallbackEstimatedDailyCrypto = hasMultiAssets
     ? data.assetStats!.reduce((sum, asset) => {
         if (asset.estimatedDailyCrypto && asset.estimatedDailyCrypto > 0) {
           return sum + asset.estimatedDailyCrypto
         }
-        const yieldPerTh = DAILY_YIELD_PER_TH[asset.coinType] ?? DAILY_YIELD_PER_TH.BTC
+        const yieldPerTh = getMiningDailyYieldPerTh(asset.coinType)
         return sum + asset.assignedHashrate * yieldPerTh
       }, 0)
-    : data.assignedHashrate * (DAILY_YIELD_PER_TH[data.coinType] ?? DAILY_YIELD_PER_TH.BTC)
+    : data.assignedHashrate * getMiningDailyYieldPerTh(data.coinType)
 
   const estimatedDailyCrypto =
     typeof data.estimatedDailyCrypto === 'number' && data.estimatedDailyCrypto > 0

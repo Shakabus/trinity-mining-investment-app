@@ -1,11 +1,6 @@
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
-
-const DAILY_YIELD_PER_TH: Record<string, number> = {
-  BTC: 0.00000022,
-  ETH: 0.0000035,
-  LTC: 0.000015,
-}
+import { computeDailyCryptoEstimate } from '@/lib/mining-engine'
 
 const PRICE_CACHE: {
   fetchedAt: number
@@ -13,13 +8,6 @@ const PRICE_CACHE: {
 } = {
   fetchedAt: 0,
   data: null,
-}
-
-export function normalizeHashrateToTH(hashrate: number, unit: string) {
-  if (unit === 'PH/s') return hashrate * 1000
-  if (unit === 'GH/s') return hashrate / 1000
-  if (unit === 'MH/s') return hashrate / 1_000_000
-  return hashrate
 }
 
 export async function getCryptoPricesUsd() {
@@ -48,12 +36,6 @@ export async function getCryptoPricesUsd() {
   } catch {
     return PRICE_CACHE.data || { BTC: 0, ETH: 0, LTC: 0 }
   }
-}
-
-export function computeDailyCryptoEstimate(coinType: string, hashrate: number, unit: string) {
-  const hashrateTH = normalizeHashrateToTH(hashrate, unit)
-  const yieldPerTh = DAILY_YIELD_PER_TH[coinType] ?? DAILY_YIELD_PER_TH.BTC
-  return hashrateTH * yieldPerTh
 }
 
 export async function autoUpdateEarnings({

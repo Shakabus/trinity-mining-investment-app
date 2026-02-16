@@ -1,24 +1,13 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
-
-const HASHRATE_UNIT_FACTORS: Record<string, number> = {
-  'PH/s': 1000,
-  'TH/s': 1,
-  'GH/s': 1 / 1000,
-  'MH/s': 1 / 1_000_000,
-  'KH/s': 1 / 1_000_000_000,
-}
-
-const DAILY_YIELD_PER_TH: Record<string, number> = {
-  BTC: 0.00000022,
-  ETH: 0.0000035,
-  LTC: 0.000015,
-}
-
-function normalizeHashrateToTH(hashrate: number, unit: string) {
-  return hashrate * (HASHRATE_UNIT_FACTORS[unit] ?? 1)
-}
+import {
+  computeDailyCryptoEstimate,
+  computeEarningsIncrement,
+  computeShareRatePerSecond,
+  getMiningDailyYieldPerTh,
+  normalizeHashrateToTH,
+} from '@/lib/mining-engine'
 
 function seededRandom(seed: number) {
   const x = Math.sin(seed) * 10000
@@ -38,22 +27,6 @@ function computeHashrate(assignedHashrate: number, seed: number, when: Date) {
   const noise = seededRandom(seed + bucket * 17)
   const variance = 0.92 + noise * 0.08
   return Math.min(assignedHashrate, assignedHashrate * variance)
-}
-
-function computeShareRatePerSecond(hashrateTH: number, uptimeFactor: number, performanceFactor: number) {
-  return hashrateTH * 0.0000045 * uptimeFactor * performanceFactor
-}
-
-function computeEarningsIncrement(
-  coinType: string,
-  assignedHashrate: number,
-  unit: string,
-  performanceFactor: number,
-  elapsedSeconds: number
-) {
-  const hashrateTH = normalizeHashrateToTH(assignedHashrate, unit)
-  const dailyYield = DAILY_YIELD_PER_TH[coinType] ?? DAILY_YIELD_PER_TH.BTC
-  return (elapsedSeconds / 86400) * dailyYield * hashrateTH * performanceFactor
 }
 
 export async function GET() {
@@ -107,7 +80,7 @@ export async function GET() {
   const performanceFactor = assignedHashrate > 0 ? currentHashrate / assignedHashrate : 0
   const hashrateTH = normalizeHashrateToTH(assignedHashrate, miningStats.hashrateUnit)
   const shareRatePerSecond = isMiningActive
-    ? computeShareRatePerSecond(hashrateTH, uptimeFactor, performanceFactor)
+    ? computeShareRatePerSecond({ hashrateTH, uptimeFactor, performanceFactor })
     : 0
   const nowBucketSeed = Math.floor(now.getTime() / (1000 * 60 * 10))
   const latencyMs = Math.round(30 + seededRandom(miningStats.id + nowBucketSeed) * 70)
@@ -175,7 +148,13 @@ export async function GET() {
     const avgHashrate = isMiningActive ? computeHashrate(assignedHashrate, miningStats.id + 37, dayTime) : 0
     const dailyPerformanceFactor = assignedHashrate > 0 ? avgHashrate / assignedHashrate : 0
     const dailyShares = isMiningActive
-      ? Math.round(computeShareRatePerSecond(hashrateTH, uptimeFactor, dailyPerformanceFactor) * 86400)
+      ? Math.round(
+          computeShareRatePerSecond({
+            hashrateTH,
+            uptimeFactor,
+            performanceFactor: dailyPerformanceFactor,
+          }) * 86400
+        )
       : 0
     return {
       day: dayLabels[dayTime.getDay()],
@@ -253,13 +232,13 @@ export async function GET() {
         earningsRecord.lastCalculatedAt ?? miningStats.userPlan.startDate ?? miningStats.createdAt ?? now
       const elapsedSeconds = Math.max(0, (now.getTime() - lastCalculatedAt.getTime()) / 1000)
       const earnedIncrement = isMiningActive && !earningsRecord.isAdminOverride
-        ? computeEarningsIncrement(
-            allocation.coinType,
-            allocationHashrate,
-            allocation.hashrateUnit,
-            allocationPerformance,
-            elapsedSeconds
-          )
+        ? computeEarningsIncrement({
+            coinType: allocation.coinType,
+            assignedHashrate: allocationHashrate,
+            unit: allocation.hashrateUnit,
+            performanceFactor: allocationPerformance,
+            elapsedSeconds,
+          })
         : 0
       const totalEarnedCrypto = parseFloat(earningsRecord.totalEarnedCrypto.toString()) + earnedIncrement
       const estimateCrypto = parseFloat(earningsRecord.dailyEstimateCrypto.toString())
@@ -275,7 +254,7 @@ export async function GET() {
           return recordEstimate
         }
         const hashrateTH = normalizeHashrateToTH(allocationHashrate, allocation.hashrateUnit)
-        const yieldPerTh = DAILY_YIELD_PER_TH[allocation.coinType] ?? DAILY_YIELD_PER_TH.BTC
+        const yieldPerTh = getMiningDailyYieldPerTh(allocation.coinType)
         return hashrateTH * yieldPerTh
       })()
 
@@ -329,13 +308,13 @@ export async function GET() {
       earningsRecord.lastCalculatedAt ?? miningStats.userPlan.startDate ?? miningStats.createdAt ?? now
     const elapsedSeconds = Math.max(0, (now.getTime() - lastCalculatedAt.getTime()) / 1000)
     const earnedIncrement = isMiningActive && !earningsRecord.isAdminOverride
-      ? computeEarningsIncrement(
-          miningStats.userPlan.plan.coinType,
+      ? computeEarningsIncrement({
+          coinType: miningStats.userPlan.plan.coinType,
           assignedHashrate,
-          miningStats.hashrateUnit,
+          unit: miningStats.hashrateUnit,
           performanceFactor,
-          elapsedSeconds
-        )
+          elapsedSeconds,
+        })
       : 0
     totalEarnedCrypto = parseFloat(earningsRecord.totalEarnedCrypto.toString()) + earnedIncrement
     const estimateCrypto = parseFloat(earningsRecord.dailyEstimateCrypto.toString())
@@ -350,8 +329,11 @@ export async function GET() {
       if (recordEstimate > 0) {
         return recordEstimate
       }
-      const yieldPerTh = DAILY_YIELD_PER_TH[miningStats.userPlan.plan.coinType] ?? DAILY_YIELD_PER_TH.BTC
-      return normalizeHashrateToTH(assignedHashrate, miningStats.hashrateUnit) * yieldPerTh
+      return computeDailyCryptoEstimate(
+        miningStats.userPlan.plan.coinType,
+        assignedHashrate,
+        miningStats.hashrateUnit
+      )
     })()
 
     if (isMiningActive && elapsedSeconds > 0 && !earningsRecord.isAdminOverride) {
