@@ -238,6 +238,7 @@ export async function GET() {
             unit: allocation.hashrateUnit,
             performanceFactor: allocationPerformance,
             elapsedSeconds,
+            dailyEstimateCryptoOverride: parseFloat(earningsRecord.dailyEstimateCrypto.toString()),
           })
         : 0
       const totalEarnedCrypto = parseFloat(earningsRecord.totalEarnedCrypto.toString()) + earnedIncrement
@@ -314,6 +315,7 @@ export async function GET() {
           unit: miningStats.hashrateUnit,
           performanceFactor,
           elapsedSeconds,
+          dailyEstimateCryptoOverride: parseFloat(earningsRecord.dailyEstimateCrypto.toString()),
         })
       : 0
     totalEarnedCrypto = parseFloat(earningsRecord.totalEarnedCrypto.toString()) + earnedIncrement

@@ -3,6 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import { randomUUID } from 'crypto'
 import { prisma } from '@/lib/db'
 import { scalePlanHashrateDecimal } from '@/lib/mining-hashrate'
+import { getCryptoPricesUsd } from '@/lib/earnings'
+import { computeTargetDailyCryptoEstimate } from '@/lib/mining-engine'
 import {
   ACCOUNT_BALANCE_ENTRY_ACTION,
   createAccountBalanceEntry,
@@ -191,6 +193,7 @@ async function applyMiningPlanReview(params: {
   const amountCrypto =
     readMetadataNumber(params.metadata, 'amountCrypto') ??
     convertUsdToCoin(params.amountUsd, coinType, prices)
+  const miningPrices = await getCryptoPricesUsd()
 
   await prisma.$transaction(async tx => {
     const userPlan = await tx.userPlan.findUnique({
@@ -335,6 +338,7 @@ async function applyMiningPlanReview(params: {
     })
 
     if (existingEarningsCount === 0) {
+      const durationDays = Math.max(1, userPlan.selectedDurationDays || 7)
       if (userPlan.plan.coinType === 'MULTI') {
         const allocationSplits = [
           { coinType: 'BTC', ratio: 0.6, algorithm: 'SHA-256', hardwareModel: 'Antminer S21 Hydro' },
@@ -357,25 +361,43 @@ async function applyMiningPlanReview(params: {
         })
 
         await tx.earnings.createMany({
-          data: allocationSplits.map(split => ({
-            userId: userPlan.userId,
-            userPlanId: userPlan.id,
-            coinType: split.coinType,
-            dailyEstimateUsd: 0,
-            dailyEstimateCrypto: 0,
-            totalEarnedUsd: 0,
-            totalEarnedCrypto: 0,
-            isActive: true,
-          })),
+          data: allocationSplits.map(split => {
+            const coinPrice = miningPrices[split.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
+            const dailyEstimateCrypto = computeTargetDailyCryptoEstimate({
+              planSlug: userPlan.plan.slug,
+              finalPriceUsd: Number(userPlan.finalPrice),
+              durationDays,
+              coinUsdPrice: coinPrice,
+              allocationWeight: split.ratio,
+            })
+            return {
+              userId: userPlan.userId,
+              userPlanId: userPlan.id,
+              coinType: split.coinType,
+              dailyEstimateUsd: coinPrice > 0 ? dailyEstimateCrypto * coinPrice : 0,
+              dailyEstimateCrypto,
+              totalEarnedUsd: 0,
+              totalEarnedCrypto: 0,
+              isActive: true,
+            }
+          }),
         })
       } else {
+        const coinPrice = miningPrices[userPlan.plan.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
+        const dailyEstimateCrypto = computeTargetDailyCryptoEstimate({
+          planSlug: userPlan.plan.slug,
+          finalPriceUsd: Number(userPlan.finalPrice),
+          durationDays,
+          coinUsdPrice: coinPrice,
+        })
+
         await tx.earnings.create({
           data: {
             userId: userPlan.userId,
             userPlanId: userPlan.id,
             coinType: userPlan.plan.coinType,
-            dailyEstimateUsd: 0,
-            dailyEstimateCrypto: 0,
+            dailyEstimateUsd: coinPrice > 0 ? dailyEstimateCrypto * coinPrice : 0,
+            dailyEstimateCrypto,
             totalEarnedUsd: 0,
             totalEarnedCrypto: 0,
             isActive: true,

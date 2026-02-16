@@ -4,6 +4,8 @@ import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { scalePlanHashrateDecimal } from '@/lib/mining-hashrate'
 import { createAccountBalanceEntry, hasSettledEntryForReference } from '@/lib/account-balance'
+import { getCryptoPricesUsd } from '@/lib/earnings'
+import { computeTargetDailyCryptoEstimate } from '@/lib/mining-engine'
 import {
   convertUsdToCoin,
   getTrackedCryptoPricesUsd,
@@ -127,6 +129,8 @@ export async function POST(req: Request) {
     }
 
     const scaledPlanHashrate = scalePlanHashrateDecimal(userPlan.plan.baseHashrate)
+    const miningPrices = await getCryptoPricesUsd()
+    const durationDays = Math.max(1, userPlan.selectedDurationDays || 7)
 
     // Create mining stats for the user
     await prisma.miningStats.create({
@@ -166,26 +170,44 @@ export async function POST(req: Request) {
       })
 
       await prisma.earnings.createMany({
-        data: allocationSplits.map(split => ({
-          userId: userPlan.userId,
-          userPlanId: userPlan.id,
-          coinType: split.coinType,
-          dailyEstimateUsd: 0,
-          dailyEstimateCrypto: 0,
-          totalEarnedUsd: 0,
-          totalEarnedCrypto: 0,
-          isActive: true,
-        })),
+        data: allocationSplits.map(split => {
+          const coinPrice = miningPrices[split.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
+          const dailyEstimateCrypto = computeTargetDailyCryptoEstimate({
+            planSlug: userPlan.plan.slug,
+            finalPriceUsd: Number(userPlan.finalPrice),
+            durationDays,
+            coinUsdPrice: coinPrice,
+            allocationWeight: split.ratio,
+          })
+          return {
+            userId: userPlan.userId,
+            userPlanId: userPlan.id,
+            coinType: split.coinType,
+            dailyEstimateUsd: coinPrice > 0 ? dailyEstimateCrypto * coinPrice : 0,
+            dailyEstimateCrypto,
+            totalEarnedUsd: 0,
+            totalEarnedCrypto: 0,
+            isActive: true,
+          }
+        }),
       })
     } else {
+      const coinPrice = miningPrices[userPlan.plan.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
+      const dailyEstimateCrypto = computeTargetDailyCryptoEstimate({
+        planSlug: userPlan.plan.slug,
+        finalPriceUsd: Number(userPlan.finalPrice),
+        durationDays,
+        coinUsdPrice: coinPrice,
+      })
+
       // Create earnings record
       await prisma.earnings.create({
         data: {
           userId: userPlan.userId,
           userPlanId: userPlan.id,
           coinType: userPlan.plan.coinType,
-          dailyEstimateUsd: 0, // Admin can set this later
-          dailyEstimateCrypto: 0,
+          dailyEstimateUsd: coinPrice > 0 ? dailyEstimateCrypto * coinPrice : 0,
+          dailyEstimateCrypto,
           totalEarnedUsd: 0,
           totalEarnedCrypto: 0,
           isActive: true

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
-import { computeDailyCryptoEstimate } from '@/lib/mining-engine'
+import { computeDailyCryptoEstimate, computeTargetDailyCryptoEstimate } from '@/lib/mining-engine'
 
 const PRICE_CACHE: {
   fetchedAt: number
@@ -62,10 +62,11 @@ export async function autoUpdateEarnings({
     userPlan: {
       status: string
       selectedDurationDays?: number
+      finalPrice?: any
       startDate?: Date | null
       endDate?: Date | null
       createdAt?: Date
-      plan: { coinType: string; name?: string; baseHashrate: any; hashrateUnit: string }
+      plan: { coinType: string; slug?: string; name?: string; baseHashrate: any; hashrateUnit: string }
       multiAssetAllocations: Array<{ coinType: string; hashrate: any; hashrateUnit: string }>
     }
   }>
@@ -147,18 +148,44 @@ export async function autoUpdateEarnings({
         : 999
 
       if (!record.isHistorical) {
+        const durationDays = Math.max(1, Number(record.userPlan.selectedDurationDays ?? 7))
+        const planPriceUsd = Number(record.userPlan.finalPrice ?? 0)
+        const coinPriceUsd = prices[record.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
+        let targetWeight = 1
+
+        if (record.userPlan.plan.coinType === 'MULTI') {
+          const totalAllocationHashrate = record.userPlan.multiAssetAllocations.reduce(
+            (sum, item) => sum + Number(item.hashrate || 0),
+            0
+          )
+          const currentAllocation = record.userPlan.multiAssetAllocations.find(
+            item => item.coinType === record.coinType
+          )
+          if (currentAllocation && totalAllocationHashrate > 0) {
+            targetWeight = Number(currentAllocation.hashrate || 0) / totalAllocationHashrate
+          }
+        }
+
+        targetDailyEstimateCrypto = computeTargetDailyCryptoEstimate({
+          planSlug: record.userPlan.plan.slug,
+          finalPriceUsd: planPriceUsd,
+          durationDays,
+          coinUsdPrice: coinPriceUsd,
+          allocationWeight: targetWeight,
+        })
+
         if (record.userPlan.plan.coinType === 'MULTI') {
           const allocation = record.userPlan.multiAssetAllocations.find(
             item => item.coinType === record.coinType
           )
-          if (allocation) {
+          if (allocation && targetDailyEstimateCrypto <= 0) {
             targetDailyEstimateCrypto = computeDailyCryptoEstimate(
               allocation.coinType,
               Number(allocation.hashrate),
               allocation.hashrateUnit
             )
           }
-        } else if (miningStats) {
+        } else if (miningStats && targetDailyEstimateCrypto <= 0) {
           targetDailyEstimateCrypto = computeDailyCryptoEstimate(
             record.coinType,
             Number(miningStats.assignedHashrate),
