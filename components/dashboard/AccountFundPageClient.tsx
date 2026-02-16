@@ -293,6 +293,8 @@ export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, p
         </div>
       </div>
 
+      <LivePaymentsPageClient />
+
       <div
         className="p-6 rounded-3xl"
         style={{
@@ -343,7 +345,6 @@ export default function AccountFundPageClient({ balanceUsd, pendingCreditsUsd, p
         </div>
       )}
 
-      <LivePaymentsPageClient />
     </div>
   )
 }
