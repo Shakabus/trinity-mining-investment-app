@@ -6,6 +6,7 @@ import {
 import AccountBalanceOperationApproval, {
   type AccountBalanceOperationRow,
 } from '@/components/admin/AccountBalanceOperationApproval'
+import AccountBalanceManualAdjustments from '@/components/admin/AccountBalanceManualAdjustments'
 import { REAL_ESTATE_BUY_IN_TICKET_PREFIX } from '@/lib/real-estate-dashboard'
 
 export const dynamic = 'force-dynamic'
@@ -24,6 +25,21 @@ type ReviewableSource =
   | 'trading_plan_purchase'
   | 'real_estate_buy_in'
   | 'account_balance_withdrawal'
+
+type ManualAdjustmentRow = {
+  entryId: number
+  referenceId: string
+  userId: number
+  userName: string
+  userEmail: string
+  direction: AccountBalanceDirection
+  amountUsd: number
+  coinType: string
+  amountCrypto: number | null
+  paymentMethod: string | null
+  note: string | null
+  createdAt: string
+}
 
 const asNumber = (value: unknown) => {
   const parsed = Number(value)
@@ -77,13 +93,11 @@ export default async function AdminAccountBalancePage() {
     .filter(entry => entry.status === 'pending')
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
-  const userIds = [...new Set(pendingRows.map(entry => entry.userId))]
-  const users = userIds.length
-    ? await prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, fullName: true, email: true },
-      })
-    : []
+  const users = await prisma.user.findMany({
+    select: { id: true, fullName: true, email: true },
+    orderBy: { createdAt: 'desc' },
+    take: 5000,
+  })
   const userMap = new Map(users.map(user => [user.id, user]))
 
   const miningPlanIds = [
@@ -201,6 +215,41 @@ export default async function AdminAccountBalancePage() {
     }
   )
 
+  const manualAdjustments: ManualAdjustmentRow[] = logs
+    .map(log => {
+      const parsed = parseAccountBalanceEntryDetail(log.detail)
+      if (!parsed || parsed.source !== 'admin_manual_adjustment') return null
+
+      const user = userMap.get(log.userId)
+      const coinType = asString(parsed.metadata?.coinType)?.toUpperCase() ?? 'USDT'
+      const amountCrypto = asNumber(parsed.metadata?.amountCrypto)
+      const paymentMethod = asString(parsed.metadata?.customPaymentMethod)
+      const entryNote = asString(parsed.note)
+
+      return {
+        entryId: log.id,
+        referenceId: parsed.referenceId,
+        userId: log.userId,
+        userName: user?.fullName || user?.email || 'Unknown',
+        userEmail: user?.email || '',
+        direction: parsed.direction,
+        amountUsd: parsed.amountUsd,
+        coinType,
+        amountCrypto,
+        paymentMethod,
+        note: entryNote,
+        createdAt: log.createdAt.toISOString(),
+      }
+    })
+    .filter((entry): entry is ManualAdjustmentRow => Boolean(entry))
+    .slice(0, 80)
+
+  const manualUsers = users.map(user => ({
+    id: user.id,
+    name: user.fullName || user.email || `User #${user.id}`,
+    email: user.email || '',
+  }))
+
   return (
     <div className="space-y-6">
       <div>
@@ -217,6 +266,8 @@ export default async function AdminAccountBalancePage() {
         <MetricCard label="Trading pending" value={sourceCounts.trading_plan_purchase} />
         <MetricCard label="Real-estate pending" value={sourceCounts.real_estate_buy_in} />
       </div>
+
+      <AccountBalanceManualAdjustments users={manualUsers} adjustments={manualAdjustments} />
 
       {operations.length === 0 ? (
         <div

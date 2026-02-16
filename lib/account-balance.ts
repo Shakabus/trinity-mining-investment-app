@@ -25,6 +25,7 @@ export type AccountBalanceSource =
   | 'referral_withdrawal'
   | 'external_payment'
   | 'external_trading_payment'
+  | 'admin_manual_adjustment'
   | 'withdrawal_reversal'
 
 type DbClient = PrismaClient | Prisma.TransactionClient
@@ -84,6 +85,7 @@ const isSource = (value: unknown): value is AccountBalanceSource =>
   value === 'referral_withdrawal' ||
   value === 'external_payment' ||
   value === 'external_trading_payment' ||
+  value === 'admin_manual_adjustment' ||
   value === 'withdrawal_reversal'
 
 export function parseAccountBalanceEntryDetail(detail: string | null): StoredBalanceEntry | null {
@@ -202,6 +204,8 @@ function fallbackCoinBySource(source: AccountBalanceSource): TrackedAssetCoin | 
     case 'account_balance_withdrawal':
       return 'USDT'
     case 'real_estate_buy_in':
+      return 'USDT'
+    case 'admin_manual_adjustment':
       return 'USDT'
     case 'external_payment':
     case 'mining_plan_purchase':
@@ -373,6 +377,8 @@ export function formatAccountBalanceSource(source: AccountBalanceSource) {
       return 'Payment proof approved (mining)'
     case 'external_trading_payment':
       return 'Payment proof approved (trading)'
+    case 'admin_manual_adjustment':
+      return 'Admin manual adjustment'
     case 'withdrawal_reversal':
       return 'Withdrawal reversal'
     default:

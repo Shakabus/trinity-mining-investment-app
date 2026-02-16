@@ -42,6 +42,7 @@ const sourceLabel: Record<string, string> = {
   referral_withdrawal: 'Referral withdrawal',
   external_payment: 'Approved mining payment',
   external_trading_payment: 'Approved trading payment',
+  admin_manual_adjustment: 'Manual admin adjustment',
   withdrawal_reversal: 'Withdrawal reversal',
 }
 

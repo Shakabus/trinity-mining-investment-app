@@ -254,7 +254,7 @@ export default async function DashboardPage() {
       entry =>
         entry.direction === 'credit' &&
         entry.status === 'settled' &&
-        ['funding_deposit', 'external_payment', 'external_trading_payment'].includes(entry.source)
+        ['funding_deposit', 'external_payment', 'external_trading_payment', 'admin_manual_adjustment'].includes(entry.source)
     )
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
@@ -272,7 +272,7 @@ export default async function DashboardPage() {
       entry =>
         entry.direction === 'debit' &&
         entry.status === 'settled' &&
-        entry.source === 'account_balance_withdrawal'
+        ['account_balance_withdrawal', 'admin_manual_adjustment'].includes(entry.source)
     )
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
