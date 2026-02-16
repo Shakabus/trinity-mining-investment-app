@@ -24,12 +24,13 @@ export default async function SettingsWalletPage() {
       }}
     >
       <h2 className="text-2xl font-bold text-white mb-2">Withdrawal Wallet</h2>
-      <p className="text-white/70 mb-6">Add your cryptocurrency wallet addresses to receive mining payouts</p>
+      <p className="text-white/70 mb-6">Add your cryptocurrency wallet addresses for payout destinations</p>
 
       <WalletSettingsForm
-        btcAddress={user?.btcWalletAddress || user?.walletAddress || ''}
+        btcAddress={user?.btcWalletAddress || ''}
         ethAddress={user?.ethWalletAddress || ''}
         ltcAddress={user?.ltcWalletAddress || ''}
+        usdtAddress={user?.walletAddress || ''}
       />
     </div>
   )

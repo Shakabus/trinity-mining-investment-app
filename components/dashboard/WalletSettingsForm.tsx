@@ -7,16 +7,19 @@ interface WalletSettingsFormProps {
   btcAddress: string
   ethAddress: string
   ltcAddress: string
+  usdtAddress: string
 }
 
 export default function WalletSettingsForm({
   btcAddress,
   ethAddress,
   ltcAddress,
+  usdtAddress,
 }: WalletSettingsFormProps) {
   const [btcValue, setBtcValue] = useState(btcAddress)
   const [ethValue, setEthValue] = useState(ethAddress)
   const [ltcValue, setLtcValue] = useState(ltcAddress)
+  const [usdtValue, setUsdtValue] = useState(usdtAddress)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -26,6 +29,7 @@ export default function WalletSettingsForm({
     const btcRegex = /^(bc1)[0-9a-z]{25,59}$|^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/i
     const ethRegex = /^0x[a-fA-F0-9]{40}$/
     const ltcRegex = /^(ltc1)[0-9a-z]{26,59}$|^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$/i
+    const usdtRegex = /^0x[a-fA-F0-9]{40}$|^T[1-9A-HJ-NP-Za-km-z]{33}$/
 
     if (label === 'BTC' && !btcRegex.test(trimmed)) {
       return 'BTC address format is invalid.'
@@ -36,6 +40,9 @@ export default function WalletSettingsForm({
     if (label === 'LTC' && !ltcRegex.test(trimmed)) {
       return 'LTC address format is invalid.'
     }
+    if (label === 'USDT' && !usdtRegex.test(trimmed)) {
+      return 'USDT address format is invalid.'
+    }
     return null
   }
 
@@ -43,13 +50,15 @@ export default function WalletSettingsForm({
     const trimmedBtc = btcValue.trim()
     const trimmedEth = ethValue.trim()
     const trimmedLtc = ltcValue.trim()
+    const trimmedUsdt = usdtValue.trim()
 
     const btcError = validateAddress('BTC', trimmedBtc)
     const ethError = validateAddress('ETH', trimmedEth)
     const ltcError = validateAddress('LTC', trimmedLtc)
+    const usdtError = validateAddress('USDT', trimmedUsdt)
 
-    if (btcError || ethError || ltcError) {
-      setStatus({ type: 'error', message: btcError || ethError || ltcError || 'Invalid wallet address.' })
+    if (btcError || ethError || ltcError || usdtError) {
+      setStatus({ type: 'error', message: btcError || ethError || ltcError || usdtError || 'Invalid wallet address.' })
       return
     }
 
@@ -64,6 +73,7 @@ export default function WalletSettingsForm({
           btcAddress: trimmedBtc,
           ethAddress: trimmedEth,
           ltcAddress: trimmedLtc,
+          usdtAddress: trimmedUsdt,
         }),
       })
 
@@ -113,6 +123,21 @@ export default function WalletSettingsForm({
           placeholder="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
         />
         <p className="text-xs text-white/50 mt-1">ERC-20 compatible address for Ethereum payouts</p>
+      </div>
+
+      {/* USDT Wallet */}
+      <div>
+        <label className="block text-sm font-medium text-white/80 mb-2">
+          USDT Address <span className="text-white/50 text-xs">(Optional)</span>
+        </label>
+        <input
+          type="text"
+          value={usdtValue}
+          onChange={event => setUsdtValue(event.target.value)}
+          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none font-mono text-sm"
+          placeholder="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb or TRC20 T..."
+        />
+        <p className="text-xs text-white/50 mt-1">Supports ERC-20 and TRC-20 destination formats</p>
       </div>
 
       {/* Litecoin Wallet */}

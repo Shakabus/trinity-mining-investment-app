@@ -8,7 +8,7 @@ import {
   readStringField,
 } from '@/lib/requestValidation'
 
-const UPDATE_WALLET_ALLOWED_FIELDS = ['btcAddress', 'ethAddress', 'ltcAddress'] as const
+const UPDATE_WALLET_ALLOWED_FIELDS = ['btcAddress', 'ethAddress', 'ltcAddress', 'usdtAddress'] as const
 
 function validateAddress(label: string, value: string) {
   if (!value) return null
@@ -18,10 +18,12 @@ function validateAddress(label: string, value: string) {
   const btcRegex = /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/i
   const ethRegex = /^0x[a-fA-F0-9]{40}$/
   const ltcRegex = /^(ltc1|[LM3])[a-zA-HJ-NP-Z0-9]{25,62}$/i
+  const usdtRegex = /^0x[a-fA-F0-9]{40}$|^T[1-9A-HJ-NP-Za-km-z]{33}$/
 
   if (label === 'BTC' && !btcRegex.test(value)) return 'BTC address format looks invalid.'
   if (label === 'ETH' && !ethRegex.test(value)) return 'ETH address format looks invalid.'
   if (label === 'LTC' && !ltcRegex.test(value)) return 'LTC address format looks invalid.'
+  if (label === 'USDT' && !usdtRegex.test(value)) return 'USDT address format looks invalid.'
 
   return null
 }
@@ -38,13 +40,15 @@ export async function POST(req: Request) {
     const btcAddress = readStringField(body, 'btcAddress', { maxLength: 120 }) || ''
     const ethAddress = readStringField(body, 'ethAddress', { maxLength: 120 }) || ''
     const ltcAddress = readStringField(body, 'ltcAddress', { maxLength: 120 }) || ''
+    const usdtAddress = readStringField(body, 'usdtAddress', { maxLength: 120 }) || ''
 
     const btcError = validateAddress('BTC', btcAddress)
     const ethError = validateAddress('ETH', ethAddress)
     const ltcError = validateAddress('LTC', ltcAddress)
+    const usdtError = validateAddress('USDT', usdtAddress)
 
-    if (btcError || ethError || ltcError) {
-      return NextResponse.json({ error: btcError || ethError || ltcError }, { status: 400 })
+    if (btcError || ethError || ltcError || usdtError) {
+      return NextResponse.json({ error: btcError || ethError || ltcError || usdtError }, { status: 400 })
     }
 
     const currentUser = await prisma.user.findUnique({
@@ -57,6 +61,7 @@ export async function POST(req: Request) {
         btcWalletAddress: btcAddress || null,
         ethWalletAddress: ethAddress || null,
         ltcWalletAddress: ltcAddress || null,
+        walletAddress: usdtAddress || null,
       },
     })
 
@@ -65,6 +70,7 @@ export async function POST(req: Request) {
       if ((currentUser.btcWalletAddress || '') !== btcAddress) changed.push('BTC')
       if ((currentUser.ethWalletAddress || '') !== ethAddress) changed.push('ETH')
       if ((currentUser.ltcWalletAddress || '') !== ltcAddress) changed.push('LTC')
+      if ((currentUser.walletAddress || '') !== usdtAddress) changed.push('USDT')
 
       if (changed.length > 0) {
         await logUserActivity({

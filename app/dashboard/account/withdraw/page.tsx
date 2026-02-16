@@ -14,7 +14,12 @@ export default async function WithdrawAccountPage() {
 
   const user = await prisma.user.findUnique({
     where: { clerkUserId: userId },
-    select: { id: true },
+    select: {
+      id: true,
+      btcWalletAddress: true,
+      ethWalletAddress: true,
+      walletAddress: true,
+    },
   })
 
   if (!user) {
@@ -76,6 +81,19 @@ export default async function WithdrawAccountPage() {
       createdAt: entry.createdAt.toISOString(),
     }))
 
+  const walletOptions = [
+    user.btcWalletAddress ? { coinType: 'BTC', address: user.btcWalletAddress } : null,
+    user.ethWalletAddress ? { coinType: 'ETH', address: user.ethWalletAddress } : null,
+    user.walletAddress ? { coinType: 'USDT', address: user.walletAddress } : null,
+  ].filter(
+    (
+      option
+    ): option is {
+      coinType: 'BTC' | 'ETH' | 'USDT'
+      address: string
+    } => Boolean(option)
+  )
+
   return (
     <AccountWithdrawPageClient
       balanceUsd={summary.availableToSpendUsd}
@@ -85,6 +103,7 @@ export default async function WithdrawAccountPage() {
       miningReadyUsd={Number(miningReady._sum.totalEarnedUsd ?? 0)}
       tradingReadyUsd={Number(tradingReady._sum.totalEarnedUsd ?? 0)}
       referralReadyUsd={Number(referralReady._sum.amountUsd ?? 0)}
+      walletOptions={walletOptions}
       entries={withdrawalEntries}
     />
   )

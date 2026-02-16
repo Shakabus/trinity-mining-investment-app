@@ -24,15 +24,18 @@ type Props = {
   miningReadyUsd: number
   tradingReadyUsd: number
   referralReadyUsd: number
+  walletOptions: {
+    coinType: 'BTC' | 'ETH' | 'USDT'
+    address: string
+  }[]
   entries: WithdrawalEntry[]
 }
 
-const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
+const COINS = ['USDT', 'BTC', 'ETH'] as const
 const NETWORK_MAP: Record<(typeof COINS)[number], string> = {
   BTC: 'Bitcoin',
   ETH: 'Ethereum (ERC-20)',
   USDT: 'USDT (ERC-20)',
-  SOL: 'Solana',
 }
 
 export default function AccountWithdrawPageClient({
@@ -43,13 +46,20 @@ export default function AccountWithdrawPageClient({
   miningReadyUsd,
   tradingReadyUsd,
   referralReadyUsd,
+  walletOptions,
   entries,
 }: Props) {
   const [amountUsd, setAmountUsd] = useState('')
-  const [coinType, setCoinType] = useState<(typeof COINS)[number]>('USDT')
-  const [walletAddress, setWalletAddress] = useState('')
+  const defaultCoin = useMemo(
+    () => (walletOptions[0]?.coinType || 'USDT') as (typeof COINS)[number],
+    [walletOptions]
+  )
+  const [coinType, setCoinType] = useState<(typeof COINS)[number]>(defaultCoin)
   const [customMethod, setCustomMethod] = useState(false)
   const [customMethodNote, setCustomMethodNote] = useState('')
+  const [selectedWalletAddress, setSelectedWalletAddress] = useState(
+    walletOptions.find(option => option.coinType === defaultCoin)?.address || ''
+  )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [status, setStatus] = useState<{ type: 'idle' | 'error' | 'success'; message: string }>({
     type: 'idle',
@@ -60,6 +70,24 @@ export default function AccountWithdrawPageClient({
     () => entries.filter(entry => entry.status === 'pending').length,
     [entries]
   )
+  const availableCoins = useMemo(
+    () => [...new Set(walletOptions.map(option => option.coinType))] as (typeof COINS)[number][],
+    [walletOptions]
+  )
+  const walletsForSelectedCoin = useMemo(
+    () => walletOptions.filter(option => option.coinType === coinType),
+    [walletOptions, coinType]
+  )
+  const effectiveWalletAddress =
+    walletsForSelectedCoin.find(option => option.address === selectedWalletAddress)?.address ||
+    walletsForSelectedCoin[0]?.address ||
+    ''
+
+  const updateCoin = (nextCoin: (typeof COINS)[number]) => {
+    setCoinType(nextCoin)
+    const firstWallet = walletOptions.find(option => option.coinType === nextCoin)?.address || ''
+    setSelectedWalletAddress(firstWallet)
+  }
 
   const submit = async () => {
     const amount = Number(amountUsd)
@@ -67,8 +95,8 @@ export default function AccountWithdrawPageClient({
       setStatus({ type: 'error', message: 'Enter a valid amount (minimum $10).' })
       return
     }
-    if (!customMethod && walletAddress.trim().length < 8) {
-      setStatus({ type: 'error', message: 'Enter a valid destination wallet address.' })
+    if (!customMethod && !effectiveWalletAddress) {
+      setStatus({ type: 'error', message: 'Set your wallet first in Settings > Wallet.' })
       return
     }
     if (customMethod && customMethodNote.trim().length < 12) {
@@ -86,7 +114,7 @@ export default function AccountWithdrawPageClient({
         body: JSON.stringify({
           amountUsd: amount,
           coinType,
-          walletAddress: walletAddress.trim(),
+          walletAddress: effectiveWalletAddress,
           customMethod,
           customMethodNote: customMethod ? customMethodNote.trim() : '',
         }),
@@ -99,7 +127,6 @@ export default function AccountWithdrawPageClient({
 
       setStatus({ type: 'success', message: 'Withdrawal request submitted. Awaiting admin approval.' })
       setAmountUsd('')
-      setWalletAddress('')
       setCustomMethod(false)
       setCustomMethodNote('')
       setTimeout(() => window.location.reload(), 900)
@@ -124,6 +151,24 @@ export default function AccountWithdrawPageClient({
           Back to dashboard
         </Link>
       </div>
+
+      {walletOptions.length === 0 && (
+        <div
+          className="p-5 rounded-2xl"
+          style={{
+            background: 'rgba(239, 68, 68, 0.12)',
+            border: '1px solid rgba(239, 68, 68, 0.35)',
+          }}
+        >
+          <div className="text-rose-100 font-semibold">No payout wallets configured.</div>
+          <p className="text-sm text-rose-100/85 mt-2">
+            Add your BTC, ETH, or USDT wallet in Settings before requesting withdrawals.
+          </p>
+          <Link href="/dashboard/settings/wallet" className="inline-block mt-3 text-sm text-white underline underline-offset-4">
+            Open Wallet Settings {'>'}
+          </Link>
+        </div>
+      )}
 
       {(miningReadyUsd > 0 || tradingReadyUsd > 0 || referralReadyUsd > 0) && (
         <div
@@ -253,10 +298,11 @@ export default function AccountWithdrawPageClient({
             <label className="block text-sm text-white/80 mb-2">Payout coin</label>
             <select
               value={coinType}
-              onChange={event => setCoinType(event.target.value as (typeof COINS)[number])}
+              onChange={event => updateCoin(event.target.value as (typeof COINS)[number])}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
+              disabled={walletOptions.length === 0}
             >
-              {COINS.map(coin => (
+              {(availableCoins.length > 0 ? availableCoins : COINS).map(coin => (
                 <option key={coin} value={coin} className="bg-zinc-900">
                   {coin}
                 </option>
@@ -266,14 +312,22 @@ export default function AccountWithdrawPageClient({
           </div>
           <div>
             <label className="block text-sm text-white/80 mb-2">Destination wallet</label>
-            <input
-              type="text"
-              value={walletAddress}
-              onChange={event => setWalletAddress(event.target.value)}
+            <select
+              value={effectiveWalletAddress}
+              onChange={event => setSelectedWalletAddress(event.target.value)}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
-              placeholder={customMethod ? 'Optional when custom method is used' : 'Enter destination address'}
-              disabled={customMethod}
-            />
+              disabled={customMethod || walletOptions.length === 0 || walletsForSelectedCoin.length === 0}
+            >
+              {walletsForSelectedCoin.length === 0 ? (
+                <option value="" className="bg-zinc-900">No wallet configured for this coin</option>
+              ) : (
+                walletsForSelectedCoin.map(option => (
+                  <option key={`${option.coinType}-${option.address}`} value={option.address} className="bg-zinc-900">
+                    {option.coinType}: {option.address}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
         </div>
 
@@ -323,6 +377,7 @@ export default function AccountWithdrawPageClient({
             background: 'linear-gradient(135deg, #582dff, #3a137a)',
             color: '#ffffff',
           }}
+          disabled={!customMethod && walletOptions.length === 0}
         >
           Submit withdrawal request
         </LoadingButton>

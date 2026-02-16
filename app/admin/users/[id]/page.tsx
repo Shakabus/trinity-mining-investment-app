@@ -165,6 +165,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           btcWalletAddress: user.btcWalletAddress,
           ethWalletAddress: user.ethWalletAddress,
           ltcWalletAddress: user.ltcWalletAddress,
+          usdtWalletAddress: user.walletAddress,
         }}
         currentPlan={
           currentPlan

@@ -7,7 +7,7 @@ import {
   getAccountBalanceEntries,
   getAccountBalanceSummary,
 } from '@/lib/account-balance'
-import { convertUsdToCoin, getTrackedCryptoPricesUsd, type TrackedAssetCoin } from '@/lib/crypto-prices'
+import { convertUsdToCoin, getTrackedCryptoPricesUsd } from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
 import {
   isInputValidationError,
@@ -24,7 +24,8 @@ const WITHDRAW_ALLOWED_FIELDS = [
   'customMethod',
   'customMethodNote',
 ] as const
-const ALLOWED_COINS = ['BTC', 'ETH', 'USDT', 'SOL'] as const
+const ALLOWED_COINS = ['BTC', 'ETH', 'USDT'] as const
+type WithdrawCoin = (typeof ALLOWED_COINS)[number]
 
 export async function GET() {
   try {
@@ -35,7 +36,12 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
-      select: { id: true },
+      select: {
+        id: true,
+        btcWalletAddress: true,
+        ethWalletAddress: true,
+        walletAddress: true,
+      },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
@@ -78,23 +84,25 @@ export async function POST(req: Request) {
       required: true,
       toUpperCase: true,
       enumValues: ALLOWED_COINS,
-    })! as TrackedAssetCoin
+    })! as WithdrawCoin
     const customMethod = readBooleanField(body, 'customMethod') ?? false
     const customMethodNote = readStringField(body, 'customMethodNote', {
       maxLength: 240,
     })
     const walletAddress = readStringField(body, 'walletAddress', { maxLength: 180 })
 
-    if (!customMethod && !walletAddress) {
-      return NextResponse.json({ error: 'Wallet address is required.' }, { status: 400 })
-    }
     if (customMethod && !customMethodNote) {
       return NextResponse.json({ error: 'Describe your custom payout method.' }, { status: 400 })
     }
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
-      select: { id: true },
+      select: {
+        id: true,
+        btcWalletAddress: true,
+        ethWalletAddress: true,
+        walletAddress: true,
+      },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
@@ -106,6 +114,20 @@ export async function POST(req: Request) {
         {
           error: `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.`,
         },
+        { status: 400 }
+      )
+    }
+
+    const presetWalletByCoin = {
+      BTC: user.btcWalletAddress?.trim() || '',
+      ETH: user.ethWalletAddress?.trim() || '',
+      USDT: user.walletAddress?.trim() || '',
+    }
+    const presetWallet = presetWalletByCoin[coinType]
+
+    if (!customMethod && !presetWallet) {
+      return NextResponse.json(
+        { error: `No ${coinType} wallet set in Settings. Add it before withdrawing.` },
         { status: 400 }
       )
     }
@@ -125,7 +147,7 @@ export async function POST(req: Request) {
       metadata: {
         coinType,
         amountCrypto,
-        walletAddress: walletAddress || null,
+        walletAddress: customMethod ? (walletAddress || null) : presetWallet,
         customMethod,
         customMethodNote: customMethodNote || null,
         usdPriceAtRequest: prices[coinType],

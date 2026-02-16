@@ -19,6 +19,7 @@ interface UserDetailProps {
     btcWalletAddress?: string | null
     ethWalletAddress?: string | null
     ltcWalletAddress?: string | null
+    usdtWalletAddress?: string | null
   }
   currentPlan?: {
     id: number
@@ -535,6 +536,7 @@ export default function UserDetail({
             <div className="text-white/50 text-xs mt-3">BTC: {user.btcWalletAddress || 'Not set'}</div>
             <div className="text-white/50 text-xs">ETH: {user.ethWalletAddress || 'Not set'}</div>
             <div className="text-white/50 text-xs">LTC: {user.ltcWalletAddress || 'Not set'}</div>
+            <div className="text-white/50 text-xs">USDT: {user.usdtWalletAddress || 'Not set'}</div>
           </div>
           <div className="flex flex-wrap gap-3">
             <button
