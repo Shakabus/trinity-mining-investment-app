@@ -68,10 +68,18 @@ async function countAdmins() {
   return Number(rows?.[0]?.count ?? 0)
 }
 
+async function countActiveUsers() {
+  const rows = await prisma.$queryRawUnsafe(
+    "SELECT COUNT(*) AS count FROM `users` WHERE `account_status` = 'active'"
+  )
+  return Number(rows?.[0]?.count ?? 0)
+}
+
 async function getCounts(existingTables) {
   const counts = {
     users: tableExists(existingTables, 'users') ? await countTable('users') : 0,
     admins: tableExists(existingTables, 'users') ? await countAdmins() : 0,
+    activeUsers: tableExists(existingTables, 'users') ? await countActiveUsers() : 0,
   }
 
   for (const table of HISTORY_TABLES) {
@@ -103,13 +111,16 @@ async function main() {
       if (!tableExists(existingTables, table)) continue
       await prisma.$executeRawUnsafe(`DELETE FROM \`${table}\``)
     }
+    if (tableExists(existingTables, 'users')) {
+      await prisma.$executeRawUnsafe("UPDATE `users` SET `account_status` = 'inactive'")
+    }
   } finally {
     await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 1')
   }
 
   const after = await getCounts(existingTables)
   printCounts('Record counts after reset', after)
-  console.log('\nDone. User accounts were kept, admin roles were not modified.')
+  console.log('\nDone. User accounts were kept, admin roles were not modified, and all accounts were set to inactive.')
 }
 
 main()
