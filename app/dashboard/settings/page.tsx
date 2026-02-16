@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import AccountSettingsForm from '@/components/dashboard/AccountSettingsForm'
+import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm'
 import { isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import { translate, isSupportedLanguage, type LanguageCode, languageFromCurrency } from '@/lib/i18n'
 
@@ -96,6 +97,8 @@ export default async function SettingsAccountPage() {
             {t('securityHelp')}
           </p>
         </div>
+
+        <ChangePasswordForm />
 
         <div className="pt-2"></div>
       </div>

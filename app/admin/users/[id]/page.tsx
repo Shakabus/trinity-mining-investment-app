@@ -3,6 +3,7 @@ import UserDetail from '@/components/admin/UserDetail'
 import { notFound } from 'next/navigation'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 import { scalePlanHashrate } from '@/lib/mining-hashrate'
+import { clerkClient } from '@clerk/nextjs/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,6 +63,14 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
 
   if (!user) {
     notFound()
+  }
+  let passwordEnabled: boolean | null = null
+  try {
+    const clerk = await clerkClient()
+    const clerkUser = await clerk.users.getUser(user.clerkUserId)
+    passwordEnabled = clerkUser.passwordEnabled
+  } catch {
+    passwordEnabled = null
   }
 
   const realEstateData = await getRealEstateDashboardData(user.clerkUserId)
@@ -166,6 +175,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           ethWalletAddress: user.ethWalletAddress,
           ltcWalletAddress: user.ltcWalletAddress,
           usdtWalletAddress: user.walletAddress,
+          passwordEnabled,
         }}
         currentPlan={
           currentPlan

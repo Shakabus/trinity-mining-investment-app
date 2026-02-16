@@ -20,6 +20,7 @@ interface UserDetailProps {
     ethWalletAddress?: string | null
     ltcWalletAddress?: string | null
     usdtWalletAddress?: string | null
+    passwordEnabled?: boolean | null
   }
   currentPlan?: {
     id: number
@@ -524,6 +525,9 @@ export default function UserDetail({
             <div className="text-white/60">{user.email}</div>
             <div className="text-white/60 text-sm mt-2">Role: {user.role}</div>
             <div className="text-white/60 text-sm">Status: {user.accountStatus}</div>
+            <div className="text-white/60 text-sm">
+              Password: {user.passwordEnabled === null || user.passwordEnabled === undefined ? 'Unavailable' : user.passwordEnabled ? 'Set (Clerk)' : 'Not set (Clerk)'}
+            </div>
             <div className="text-white/60 text-sm flex items-center gap-2 mt-1">
               Presence:
               <span className="inline-flex items-center gap-2">
