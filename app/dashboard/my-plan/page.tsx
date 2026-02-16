@@ -6,6 +6,9 @@ import { Calendar, Hash, Zap, TrendingUp, Clock } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { scalePlanHashrate } from '@/lib/mining-hashrate'
+import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
+
+export const dynamic = 'force-dynamic'
 
 export default async function MyPlanPage() {
   const { userId } = await auth()
@@ -124,20 +127,22 @@ export default async function MyPlanPage() {
     ? new Date(effectiveStart.getTime() + planData.selectedDurationDays * 24 * 60 * 60 * 1000)
     : null
 
-  const daysElapsed = effectiveStart
-    ? Math.max(0, Math.floor((now.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)))
+  const durationMs = Math.max(1, planData.selectedDurationDays * 24 * 60 * 60 * 1000)
+  const elapsedMs = effectiveStart
+    ? Math.max(0, now.getTime() - effectiveStart.getTime())
     : 0
 
   const daysRemaining = effectiveEnd
     ? Math.max(0, Math.ceil((effectiveEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-    : Math.max(0, planData.selectedDurationDays - daysElapsed)
+    : Math.max(0, Math.ceil((durationMs - elapsedMs) / (1000 * 60 * 60 * 24)))
 
   const progressPercentage = planData.selectedDurationDays > 0
-    ? Math.min(100, Math.max(0, (daysElapsed / planData.selectedDurationDays) * 100))
+    ? Math.min(100, Math.max(0, (elapsedMs / durationMs) * 100))
     : 0
 
   return (
     <div className="w-full px-2 sm:px-4 lg:px-6 py-6">
+      <DashboardAutoRefresh intervalMs={30000} />
       <div className="space-y-6">
         {/* Header */}
         <div>
