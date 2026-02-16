@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import AccountWithdrawPageClient from '@/components/dashboard/AccountWithdrawPageClient'
 import { getAccountBalanceEntries, getAccountBalanceSummary } from '@/lib/account-balance'
+import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +55,7 @@ export default async function WithdrawAccountPage() {
       _sum: { amountUsd: true },
     }),
   ])
+  const solAddress = await getLatestSolWalletAddress(user.id)
 
   const latestEntriesByReference = entries.reduce<Map<string, (typeof entries)[number]>>((map, entry) => {
     const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
@@ -84,12 +86,13 @@ export default async function WithdrawAccountPage() {
   const walletOptions = [
     user.btcWalletAddress ? { coinType: 'BTC', address: user.btcWalletAddress } : null,
     user.ethWalletAddress ? { coinType: 'ETH', address: user.ethWalletAddress } : null,
+    solAddress ? { coinType: 'SOL', address: solAddress } : null,
     user.walletAddress ? { coinType: 'USDT', address: user.walletAddress } : null,
   ].filter(
     (
       option
     ): option is {
-      coinType: 'BTC' | 'ETH' | 'USDT'
+      coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
       address: string
     } => Boolean(option)
   )

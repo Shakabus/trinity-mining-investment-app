@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import WalletSettingsForm from '@/components/dashboard/WalletSettingsForm'
+import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
 
 export default async function SettingsWalletPage() {
   const { userId } = await auth()
@@ -13,6 +14,7 @@ export default async function SettingsWalletPage() {
   const user = await prisma.user.findUnique({
     where: { clerkUserId: userId },
   })
+  const solAddress = user ? await getLatestSolWalletAddress(user.id) : ''
 
   return (
     <div
@@ -31,6 +33,7 @@ export default async function SettingsWalletPage() {
         ethAddress={user?.ethWalletAddress || ''}
         ltcAddress={user?.ltcWalletAddress || ''}
         usdtAddress={user?.walletAddress || ''}
+        solAddress={solAddress}
       />
     </div>
   )

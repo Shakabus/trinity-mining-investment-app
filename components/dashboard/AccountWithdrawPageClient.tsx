@@ -25,17 +25,18 @@ type Props = {
   tradingReadyUsd: number
   referralReadyUsd: number
   walletOptions: {
-    coinType: 'BTC' | 'ETH' | 'USDT'
+    coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
     address: string
   }[]
   entries: WithdrawalEntry[]
 }
 
-const COINS = ['USDT', 'BTC', 'ETH'] as const
+const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
 const NETWORK_MAP: Record<(typeof COINS)[number], string> = {
   BTC: 'Bitcoin',
   ETH: 'Ethereum (ERC-20)',
   USDT: 'USDT (ERC-20)',
+  SOL: 'Solana',
 }
 
 export default function AccountWithdrawPageClient({

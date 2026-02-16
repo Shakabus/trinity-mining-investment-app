@@ -16,6 +16,7 @@ import {
   readNumberField,
   readStringField,
 } from '@/lib/requestValidation'
+import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
 
 const WITHDRAW_ALLOWED_FIELDS = [
   'amountUsd',
@@ -24,7 +25,7 @@ const WITHDRAW_ALLOWED_FIELDS = [
   'customMethod',
   'customMethodNote',
 ] as const
-const ALLOWED_COINS = ['BTC', 'ETH', 'USDT'] as const
+const ALLOWED_COINS = ['BTC', 'ETH', 'USDT', 'SOL'] as const
 type WithdrawCoin = (typeof ALLOWED_COINS)[number]
 
 export async function GET() {
@@ -122,6 +123,7 @@ export async function POST(req: Request) {
       BTC: user.btcWalletAddress?.trim() || '',
       ETH: user.ethWalletAddress?.trim() || '',
       USDT: user.walletAddress?.trim() || '',
+      SOL: (await getLatestSolWalletAddress(user.id)).trim(),
     }
     const presetWallet = presetWalletByCoin[coinType]
 

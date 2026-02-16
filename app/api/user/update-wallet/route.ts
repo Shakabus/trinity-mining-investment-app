@@ -3,12 +3,23 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import {
+  buildSolWalletAddressDetail,
+  getLatestSolWalletAddress,
+  SOL_WALLET_ACTIVITY_ACTION,
+} from '@/lib/wallet-addresses'
+import {
   isInputValidationError,
   readJsonObject,
   readStringField,
 } from '@/lib/requestValidation'
 
-const UPDATE_WALLET_ALLOWED_FIELDS = ['btcAddress', 'ethAddress', 'ltcAddress', 'usdtAddress'] as const
+const UPDATE_WALLET_ALLOWED_FIELDS = [
+  'btcAddress',
+  'ethAddress',
+  'ltcAddress',
+  'usdtAddress',
+  'solAddress',
+] as const
 
 function validateAddress(label: string, value: string) {
   if (!value) return null
@@ -19,11 +30,13 @@ function validateAddress(label: string, value: string) {
   const ethRegex = /^0x[a-fA-F0-9]{40}$/
   const ltcRegex = /^(ltc1|[LM3])[a-zA-HJ-NP-Z0-9]{25,62}$/i
   const usdtRegex = /^0x[a-fA-F0-9]{40}$|^T[1-9A-HJ-NP-Za-km-z]{33}$/
+  const solRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 
   if (label === 'BTC' && !btcRegex.test(value)) return 'BTC address format looks invalid.'
   if (label === 'ETH' && !ethRegex.test(value)) return 'ETH address format looks invalid.'
   if (label === 'LTC' && !ltcRegex.test(value)) return 'LTC address format looks invalid.'
   if (label === 'USDT' && !usdtRegex.test(value)) return 'USDT address format looks invalid.'
+  if (label === 'SOL' && !solRegex.test(value)) return 'SOL address format looks invalid.'
 
   return null
 }
@@ -41,19 +54,22 @@ export async function POST(req: Request) {
     const ethAddress = readStringField(body, 'ethAddress', { maxLength: 120 }) || ''
     const ltcAddress = readStringField(body, 'ltcAddress', { maxLength: 120 }) || ''
     const usdtAddress = readStringField(body, 'usdtAddress', { maxLength: 120 }) || ''
+    const solAddress = readStringField(body, 'solAddress', { maxLength: 120 }) || ''
 
     const btcError = validateAddress('BTC', btcAddress)
     const ethError = validateAddress('ETH', ethAddress)
     const ltcError = validateAddress('LTC', ltcAddress)
     const usdtError = validateAddress('USDT', usdtAddress)
+    const solError = validateAddress('SOL', solAddress)
 
-    if (btcError || ethError || ltcError || usdtError) {
-      return NextResponse.json({ error: btcError || ethError || ltcError || usdtError }, { status: 400 })
+    if (btcError || ethError || ltcError || usdtError || solError) {
+      return NextResponse.json({ error: btcError || ethError || ltcError || usdtError || solError }, { status: 400 })
     }
 
     const currentUser = await prisma.user.findUnique({
       where: { clerkUserId: userId },
     })
+    const currentSolAddress = currentUser ? await getLatestSolWalletAddress(currentUser.id) : ''
 
     await prisma.user.update({
       where: { clerkUserId: userId },
@@ -65,12 +81,23 @@ export async function POST(req: Request) {
       },
     })
 
+    if (currentUser && currentSolAddress !== solAddress) {
+      await prisma.userActivityLog.create({
+        data: {
+          userId: currentUser.id,
+          action: SOL_WALLET_ACTIVITY_ACTION,
+          detail: buildSolWalletAddressDetail(solAddress),
+        },
+      })
+    }
+
     if (currentUser) {
       const changed: string[] = []
       if ((currentUser.btcWalletAddress || '') !== btcAddress) changed.push('BTC')
       if ((currentUser.ethWalletAddress || '') !== ethAddress) changed.push('ETH')
       if ((currentUser.ltcWalletAddress || '') !== ltcAddress) changed.push('LTC')
       if ((currentUser.walletAddress || '') !== usdtAddress) changed.push('USDT')
+      if (currentSolAddress !== solAddress) changed.push('SOL')
 
       if (changed.length > 0) {
         await logUserActivity({

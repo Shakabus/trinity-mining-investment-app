@@ -8,6 +8,7 @@ interface WalletSettingsFormProps {
   ethAddress: string
   ltcAddress: string
   usdtAddress: string
+  solAddress: string
 }
 
 export default function WalletSettingsForm({
@@ -15,11 +16,13 @@ export default function WalletSettingsForm({
   ethAddress,
   ltcAddress,
   usdtAddress,
+  solAddress,
 }: WalletSettingsFormProps) {
   const [btcValue, setBtcValue] = useState(btcAddress)
   const [ethValue, setEthValue] = useState(ethAddress)
   const [ltcValue, setLtcValue] = useState(ltcAddress)
   const [usdtValue, setUsdtValue] = useState(usdtAddress)
+  const [solValue, setSolValue] = useState(solAddress)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -30,6 +33,7 @@ export default function WalletSettingsForm({
     const ethRegex = /^0x[a-fA-F0-9]{40}$/
     const ltcRegex = /^(ltc1)[0-9a-z]{26,59}$|^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$/i
     const usdtRegex = /^0x[a-fA-F0-9]{40}$|^T[1-9A-HJ-NP-Za-km-z]{33}$/
+    const solRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 
     if (label === 'BTC' && !btcRegex.test(trimmed)) {
       return 'BTC address format is invalid.'
@@ -43,6 +47,9 @@ export default function WalletSettingsForm({
     if (label === 'USDT' && !usdtRegex.test(trimmed)) {
       return 'USDT address format is invalid.'
     }
+    if (label === 'SOL' && !solRegex.test(trimmed)) {
+      return 'SOL address format is invalid.'
+    }
     return null
   }
 
@@ -51,14 +58,19 @@ export default function WalletSettingsForm({
     const trimmedEth = ethValue.trim()
     const trimmedLtc = ltcValue.trim()
     const trimmedUsdt = usdtValue.trim()
+    const trimmedSol = solValue.trim()
 
     const btcError = validateAddress('BTC', trimmedBtc)
     const ethError = validateAddress('ETH', trimmedEth)
     const ltcError = validateAddress('LTC', trimmedLtc)
     const usdtError = validateAddress('USDT', trimmedUsdt)
+    const solError = validateAddress('SOL', trimmedSol)
 
-    if (btcError || ethError || ltcError || usdtError) {
-      setStatus({ type: 'error', message: btcError || ethError || ltcError || usdtError || 'Invalid wallet address.' })
+    if (btcError || ethError || ltcError || usdtError || solError) {
+      setStatus({
+        type: 'error',
+        message: btcError || ethError || ltcError || usdtError || solError || 'Invalid wallet address.',
+      })
       return
     }
 
@@ -74,6 +86,7 @@ export default function WalletSettingsForm({
           ethAddress: trimmedEth,
           ltcAddress: trimmedLtc,
           usdtAddress: trimmedUsdt,
+          solAddress: trimmedSol,
         }),
       })
 
@@ -153,6 +166,21 @@ export default function WalletSettingsForm({
           placeholder="LdP8Qox1VAhCzLJNqrr74YovaWYyNBUWvL"
         />
         <p className="text-xs text-white/50 mt-1">Only for Litecoin mining plan payouts</p>
+      </div>
+
+      {/* Solana Wallet */}
+      <div>
+        <label className="block text-sm font-medium text-white/80 mb-2">
+          Solana (SOL) Address <span className="text-white/50 text-xs">(Optional)</span>
+        </label>
+        <input
+          type="text"
+          value={solValue}
+          onChange={event => setSolValue(event.target.value)}
+          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none font-mono text-sm"
+          placeholder="5hG9... (Base58 Solana address)"
+        />
+        <p className="text-xs text-white/50 mt-1">Used for SOL payout destinations</p>
       </div>
 
       {/* Warning Box */}
