@@ -61,7 +61,7 @@ export default function ReferralDashboard({
   const rate = rates[currency] || 1
   const toUsd = (value: number) => (rate ? value / rate : value)
   const [origin, setOrigin] = useState('')
-  const [withdrawCoin, setWithdrawCoin] = useState<'BTC' | 'ETH' | 'LTC'>('BTC')
+  const [withdrawCoin, setWithdrawCoin] = useState<'BTC' | 'USDT' | 'SOL'>('BTC')
   const [withdrawAmountUsd, setWithdrawAmountUsd] = useState(convert(minWithdrawalUsd).toFixed(2))
   const [withdrawStatus, setWithdrawStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isRequesting, setIsRequesting] = useState(false)
@@ -233,7 +233,7 @@ export default function ReferralDashboard({
             <label className="block text-xs text-white/60 mb-1">{t('withdrawalCoinLabel')}</label>
             <select
               value={withdrawCoin}
-              onChange={event => setWithdrawCoin(event.target.value as 'BTC' | 'ETH' | 'LTC')}
+              onChange={event => setWithdrawCoin(event.target.value as 'BTC' | 'USDT' | 'SOL')}
               className="w-full px-3 py-2 rounded-lg text-sm"
               style={{
                 background: 'rgba(255, 255, 255, 0.05)',
@@ -244,11 +244,11 @@ export default function ReferralDashboard({
               <option value="BTC" style={{ color: '#000000' }}>
                 BTC
               </option>
-              <option value="ETH" style={{ color: '#000000' }}>
-                ETH
+              <option value="USDT" style={{ color: '#000000' }}>
+                USDT
               </option>
-              <option value="LTC" style={{ color: '#000000' }}>
-                LTC
+              <option value="SOL" style={{ color: '#000000' }}>
+                SOL
               </option>
             </select>
           </div>

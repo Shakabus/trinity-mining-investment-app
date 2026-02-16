@@ -385,7 +385,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="w-full">
-      <DashboardAutoRefresh intervalMs={60000} />
+      <DashboardAutoRefresh intervalMs={10000} />
       {/* Sticky Ticker Tape (must remain inside Overview content) */}
       <TickerTape />
 

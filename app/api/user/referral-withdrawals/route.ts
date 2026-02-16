@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
-import { getCryptoPricesUsd } from '@/lib/earnings'
+import { convertUsdToCoin, getTrackedCryptoPricesUsd } from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
 import {
   isInputValidationError,
@@ -15,7 +15,7 @@ const DEFAULT_REFERRAL_SETTINGS = {
   minWithdrawalUsd: 50,
 }
 
-const SUPPORTED_COINS = ['BTC', 'ETH', 'LTC'] as const
+const SUPPORTED_COINS = ['BTC', 'USDT', 'SOL'] as const
 const REFERRAL_WITHDRAWAL_ALLOWED_FIELDS = ['coinType', 'amountUsd'] as const
 
 export async function POST(req: Request) {
@@ -76,13 +76,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Amount exceeds available referral balance.' }, { status: 400 })
     }
 
-    const prices = await getCryptoPricesUsd()
-    const price = prices[coinType] || 0
-    if (!price) {
+    const prices = await getTrackedCryptoPricesUsd()
+    const price = prices[coinType]
+    if (!price || !Number.isFinite(price) || price <= 0) {
       return NextResponse.json({ error: 'Unable to fetch coin price.' }, { status: 400 })
     }
 
-    const amountCrypto = amountUsd / price
+    const amountCrypto = convertUsdToCoin(amountUsd, coinType, prices)
 
     const withdrawal = await prisma.referralWithdrawal.create({
       data: {
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     await logUserActivity({
       userId: user.id,
       action: 'ReferralWithdrawalToAccountBalanceRequested',
-      detail: `Requested $${amountUsd.toFixed(2)} referral transfer to account balance.`,
+      detail: `Requested $${amountUsd.toFixed(2)} referral transfer to account balance (${coinType}).`,
     })
 
     return NextResponse.json({ success: true, withdrawalId: withdrawal.id })

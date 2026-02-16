@@ -231,7 +231,16 @@ function getEntryCryptoAmount(
   prices: CryptoPriceMap
 ) {
   const metadataAmount = Number(entry.metadata?.amountCrypto)
-  if (Number.isFinite(metadataAmount) && metadataAmount > 0) {
+  const metadataCoin =
+    typeof entry.metadata?.coinType === 'string' ? entry.metadata.coinType.toUpperCase() : null
+  // Only trust stored crypto amount if it is explicitly tagged with the same tracked coin.
+  if (
+    Number.isFinite(metadataAmount) &&
+    metadataAmount > 0 &&
+    metadataCoin &&
+    isTrackedAssetCoin(metadataCoin) &&
+    metadataCoin === coinType
+  ) {
     return Number(metadataAmount.toFixed(8))
   }
 
