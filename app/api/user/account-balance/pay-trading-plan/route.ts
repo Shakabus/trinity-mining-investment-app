@@ -3,9 +3,9 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import {
   createAccountBalanceEntry,
+  getAccountBalanceEntries,
   getAccountBalanceAssetSummary,
   getAccountBalanceSummary,
-  hasSettledEntryForReference,
 } from '@/lib/account-balance'
 import {
   TRACKED_ASSET_COINS,
@@ -101,9 +101,28 @@ export async function POST(req: Request) {
     }
 
     const debitReference = `trading-plan:${tradingPlan.id}`
-    const alreadyDebited = await hasSettledEntryForReference(user.id, debitReference, 'debit')
-    if (alreadyDebited) {
-      return NextResponse.json({ error: 'This trading plan has already been funded from account balance.' }, { status: 409 })
+    const existingEntries = await getAccountBalanceEntries(user.id, { limit: 3000 })
+    const latestPaymentEntry = existingEntries
+      .filter(
+        entry =>
+          entry.referenceId === debitReference &&
+          entry.source === 'trading_plan_purchase' &&
+          entry.direction === 'debit'
+      )
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+
+    if (latestPaymentEntry?.status === 'pending') {
+      return NextResponse.json(
+        { error: 'This account-balance payment is already pending admin approval.' },
+        { status: 409 }
+      )
+    }
+
+    if (latestPaymentEntry?.status === 'settled') {
+      return NextResponse.json(
+        { error: 'This trading plan has already been funded from account balance.' },
+        { status: 409 }
+      )
     }
 
     await prisma.$transaction(async tx => {
@@ -111,113 +130,76 @@ export async function POST(req: Request) {
         {
           userId: user.id,
           direction: 'debit',
-          status: 'settled',
+          status: 'pending',
           amountUsd: investmentUsd,
           source: 'trading_plan_purchase',
           referenceId: debitReference,
-          note: `Account balance used for ${tradingPlan.plan.name}.`,
+          note: `Account-balance payment submitted for ${tradingPlan.plan.name}.`,
           metadata: {
             tradingUserPlanId: tradingPlan.id,
             coinType: selectedCoin,
             amountCrypto: requiredCoinAmount,
-            usdPriceAtSettlement: cryptoPrices[selectedCoin],
+            usdPriceAtRequest: cryptoPrices[selectedCoin],
           },
         },
         tx
       )
 
-      const startDate = new Date()
-      const endDate = new Date(startDate.getTime() + tradingPlan.durationHours * 60 * 60 * 1000)
-
       await tx.tradingUserPlan.update({
         where: { id: tradingPlan.id },
         data: {
-          status: 'active',
-          paymentStatus: 'confirmed',
-          startDate,
-          endDate,
+          status: 'awaiting_payment',
+          paymentStatus: 'pending',
+          startDate: null,
+          endDate: null,
         },
       })
-
-      await tx.user.update({
-        where: { id: tradingPlan.userId },
-        data: { accountStatus: 'active' },
-      })
-
-      const existingStats = await tx.tradingStat.findFirst({
-        where: { tradingUserPlanId: tradingPlan.id },
-      })
-
-      if (!existingStats) {
-        await tx.tradingStat.create({
-          data: {
-            userId: tradingPlan.userId,
-            tradingUserPlanId: tradingPlan.id,
-            isActive: true,
-            botSpeed: 1.0,
-            strategy: 'Portfolio Balance',
-            riskLevel: 'balanced',
-          },
-        })
-      }
-
-      const existingEarnings = await tx.tradingEarning.findFirst({
-        where: { tradingUserPlanId: tradingPlan.id },
-      })
-
-      if (!existingEarnings) {
-        await tx.tradingEarning.create({
-          data: {
-            userId: tradingPlan.userId,
-            tradingUserPlanId: tradingPlan.id,
-            totalEarnedUsd: 0,
-            dailyEstimateUsd: Number(tradingPlan.expectedReturnUsd) / (tradingPlan.durationHours / 24),
-            isActive: true,
-          },
-        })
-      }
 
       const existingPayment = await tx.tradingPayment.findFirst({
         where: { tradingUserPlanId: tradingPlan.id, status: 'pending' },
         orderBy: { createdAt: 'desc' },
       })
 
-      if (existingPayment) {
-        await tx.tradingPayment.update({
-          where: { id: existingPayment.id },
-          data: {
-            cryptoType: selectedCoin,
-            transactionId: 'Account Balance',
-            status: 'confirmed',
-            confirmations: 999,
-            confirmedByAdminId: null,
-            confirmedAt: new Date(),
-          },
-        })
-      } else {
-        await tx.tradingPayment.create({
-          data: {
-            userId: tradingPlan.userId,
-            tradingUserPlanId: tradingPlan.id,
-            amountUsd: tradingPlan.investmentUsd,
-            cryptoType: selectedCoin,
-            walletAddress: 'Account Balance',
-            transactionId: 'Account Balance',
-            status: 'confirmed',
-            confirmations: 999,
-            confirmedAt: new Date(),
-          },
-        })
-      }
+      await (existingPayment
+        ? await tx.tradingPayment.update({
+            where: { id: existingPayment.id },
+            data: {
+              amountUsd: tradingPlan.investmentUsd,
+              walletAddress: 'Account Balance',
+              cryptoType: selectedCoin,
+              transactionId: 'Account Balance - Pending Admin Approval',
+              paymentProofUrl: null,
+              status: 'pending',
+              confirmations: 0,
+              confirmedByAdminId: null,
+              confirmedAt: null,
+            },
+          })
+        : await tx.tradingPayment.create({
+            data: {
+              userId: tradingPlan.userId,
+              tradingUserPlanId: tradingPlan.id,
+              amountUsd: tradingPlan.investmentUsd,
+              cryptoType: selectedCoin,
+              walletAddress: 'Account Balance',
+              transactionId: 'Account Balance - Pending Admin Approval',
+              status: 'pending',
+              confirmations: 0,
+              confirmedAt: null,
+            },
+          }))
     })
 
     await logUserActivity({
       userId: user.id,
-      action: 'AccountBalanceTradingPurchase',
-      detail: `Activated ${tradingPlan.plan.name} using account balance.`,
+      action: 'AccountBalanceTradingPurchaseSubmitted',
+      detail: `Submitted ${tradingPlan.plan.name} for admin approval using account balance.`,
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({
+      success: true,
+      message: 'Account-balance payment submitted. Awaiting admin approval.',
+    })
   } catch (error) {
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })

@@ -43,7 +43,8 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
         return
       }
 
-      showToast('Trading plan activated using account balance.', 'success')
+      const data = await response.json().catch(() => null)
+      showToast(data?.message || 'Payment submitted for admin approval.', 'success')
       window.location.href = '/dashboard/investment-trading'
     } catch (error) {
       console.error('Trading pay from account balance error:', error)
@@ -59,7 +60,7 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
     <div className="space-y-6 py-4">
       <div className="text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Trading Plan Payment</h1>
-        <p className="text-white/70">All trading plan payments are processed from account balance only.</p>
+        <p className="text-white/70">Trading payments submit from account balance and finalize after admin approval.</p>
       </div>
 
       <div
@@ -116,7 +117,7 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
                 color: '#ffffff',
               }}
             >
-              Pay with Account Balance
+              Submit from Account Balance
             </LoadingButton>
             <Link href="/dashboard/account/fund" className="text-sm font-semibold text-emerald-100 underline underline-offset-4">
               Fund Account
