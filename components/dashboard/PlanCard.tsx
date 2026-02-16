@@ -9,6 +9,7 @@ interface PlanCardProps {
     id: number
     name: string
     slug: string
+    updatedAt: string
     basePrice: number
     coinType: string
     baseHashrate: number
@@ -30,6 +31,7 @@ interface PlanCardProps {
       isEligible: boolean
       isExtension: boolean
     }[]
+    primaryDurationLabel: string
     isUpgradeMode?: boolean
   }
 }
@@ -42,6 +44,13 @@ export default function PlanCard({ plan }: PlanCardProps) {
   const isUpgradeMode = Boolean(plan.isUpgradeMode)
   const hashrate = plan.baseHashrate
   const hasEligibleOption = plan.durationOptions.some(option => option.isEligible)
+  const formattedUpdatedAt = new Date(plan.updatedAt).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
   return (
     <>
@@ -57,7 +66,6 @@ export default function PlanCard({ plan }: PlanCardProps) {
           boxShadow: '0 4px 24px rgba(0, 0, 0, 0.1)',
         }}
       >
-        {/* Coin Type Badge */}
         <div className="flex items-center justify-between mb-3">
           <span
             className="px-3 py-1 rounded-full text-xs font-semibold"
@@ -72,15 +80,13 @@ export default function PlanCard({ plan }: PlanCardProps) {
           {plan.slug.includes('vip') || plan.slug.includes('elite') ? <span className="text-xl">*</span> : null}
         </div>
 
-        {/* Plan Name */}
         <h3 className="text-xl md:text-2xl font-bold text-white mb-2">{plan.name}</h3>
 
-        {/* Hashrate */}
-        <p className="text-sm text-white/60 mb-4">
+        <p className="text-sm text-white/60 mb-2">
           {hashrate.toLocaleString()} {plan.hashrateUnit} - {plan.algorithm}
         </p>
+        <p className="text-xs text-white/55 mb-4">Cycle: {plan.primaryDurationLabel}</p>
 
-        {/* Price */}
         <div className="mb-6">
           <div className="text-3xl md:text-4xl font-bold text-white">{format(basePrice)}</div>
           <div className="text-xs text-white/50 mt-1">
@@ -88,17 +94,17 @@ export default function PlanCard({ plan }: PlanCardProps) {
           </div>
         </div>
 
-        {/* Features */}
         <ul className="space-y-2 flex-grow mb-6">
           {plan.features.map((feature, index) => (
             <li key={index} className="flex items-start gap-2 text-white/80 text-sm">
-              <span className="text-green-400 mt-0.5 flex-shrink-0">✓</span>
+              <span className="text-green-400 mt-0.5 flex-shrink-0">-</span>
               <span>{feature.featureText}</span>
             </li>
           ))}
         </ul>
 
-        {/* View Plan Button */}
+        <div className="text-[11px] text-white/45 mb-3">Last updated: {formattedUpdatedAt}</div>
+
         <button
           className="w-full py-3 rounded-full font-semibold transition-all group-hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
@@ -112,7 +118,6 @@ export default function PlanCard({ plan }: PlanCardProps) {
         </button>
       </div>
 
-      {/* Plan Modal */}
       {isModalOpen && (
         <PlanModal plan={{ ...plan, isUpgradeMode }} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       )}

@@ -139,6 +139,7 @@ export default async function PlansPage() {
           id: opt.id,
           durationDays: opt.durationDays,
           durationLabel: opt.durationLabel,
+          createdAt: opt.createdAt,
           priceMultiplier,
           isDefault: opt.isDefault,
           finalPrice,
@@ -150,11 +151,17 @@ export default async function PlansPage() {
       })
 
       const hasEligibleOption = durationOptions.some(option => option.isEligible)
+      const lastCatalogUpdate = [
+        plan.createdAt,
+        ...plan.durationOptions.map(option => option.createdAt),
+        ...plan.features.map(feature => feature.createdAt),
+      ].reduce((latest, entry) => (entry.getTime() > latest.getTime() ? entry : latest), plan.createdAt)
 
       return {
         id: plan.id,
         name: plan.name,
         slug: plan.slug,
+        updatedAt: lastCatalogUpdate.toISOString(),
         basePrice,
         coinType: plan.coinType,
         baseHashrate,
@@ -163,6 +170,8 @@ export default async function PlansPage() {
         hardwareModel: plan.hardwareModel,
         features,
         durationOptions,
+        primaryDurationLabel:
+          durationOptions.find(option => option.isDefault)?.durationLabel ?? durationOptions[0]?.durationLabel ?? '',
         isUpgradeMode,
         hasEligibleOption,
         isSamePlan,
