@@ -25,16 +25,15 @@ type Props = {
   tradingReadyUsd: number
   referralReadyUsd: number
   walletOptions: {
-    coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
+    coinType: 'BTC' | 'SOL' | 'USDT'
     address: string
   }[]
   entries: WithdrawalEntry[]
 }
 
-const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
+const COINS = ['USDT', 'BTC', 'SOL'] as const
 const NETWORK_MAP: Record<(typeof COINS)[number], string> = {
   BTC: 'Bitcoin',
-  ETH: 'Ethereum (ERC-20)',
   USDT: 'USDT (ERC-20)',
   SOL: 'Solana',
 }
@@ -70,10 +69,6 @@ export default function AccountWithdrawPageClient({
   const pendingRequests = useMemo(
     () => entries.filter(entry => entry.status === 'pending').length,
     [entries]
-  )
-  const availableCoins = useMemo(
-    () => [...new Set(walletOptions.map(option => option.coinType))] as (typeof COINS)[number][],
-    [walletOptions]
   )
   const walletsForSelectedCoin = useMemo(
     () => walletOptions.filter(option => option.coinType === coinType),
@@ -163,7 +158,7 @@ export default function AccountWithdrawPageClient({
         >
           <div className="text-rose-100 font-semibold">No payout wallets configured.</div>
           <p className="text-sm text-rose-100/85 mt-2">
-            Add your BTC, ETH, or USDT wallet in Settings before requesting withdrawals.
+            Add your BTC, USDT, or SOL wallet in Settings before requesting withdrawals.
           </p>
           <Link href="/dashboard/settings/wallet" className="inline-block mt-3 text-sm text-white underline underline-offset-4">
             Open Wallet Settings {'>'}
@@ -301,9 +296,8 @@ export default function AccountWithdrawPageClient({
               value={coinType}
               onChange={event => updateCoin(event.target.value as (typeof COINS)[number])}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
-              disabled={walletOptions.length === 0}
             >
-              {(availableCoins.length > 0 ? availableCoins : COINS).map(coin => (
+              {COINS.map(coin => (
                 <option key={coin} value={coin} className="bg-zinc-900">
                   {coin}
                 </option>
