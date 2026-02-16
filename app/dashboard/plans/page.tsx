@@ -7,6 +7,7 @@ import { Clock } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { scalePlanHashrate } from '@/lib/mining-hashrate'
+import { syncMiningPlanCatalog } from '@/lib/mining-plan-catalog'
 
 export default async function PlansPage() {
   const { userId } = await auth()
@@ -73,6 +74,8 @@ export default async function PlansPage() {
     ? (user.preferredLanguage as LanguageCode)
     : languageFromCurrency(preferredCurrency)
   const t = (key: string) => translate(key, preferredLanguage)
+
+  await syncMiningPlanCatalog()
 
   const plansData = await prisma.plan.findMany({
     where: { status: 'active' },

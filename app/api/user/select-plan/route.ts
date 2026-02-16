@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { syncMiningPlanCatalog } from '@/lib/mining-plan-catalog'
 import {
   isInputValidationError,
   readJsonObject,
@@ -23,9 +24,26 @@ export async function POST(req: Request) {
     const durationDays = readNumberField(body, 'durationDays', { required: true, integer: true, min: 1 })!
     const finalPrice = readNumberField(body, 'finalPrice', { required: true, min: 0.01 })!
 
+    await syncMiningPlanCatalog()
+
     const selectedPlan = await prisma.plan.findUnique({
       where: { id: planId },
+      include: { durationOptions: true },
     })
+
+    if (!selectedPlan || selectedPlan.status !== 'active') {
+      return NextResponse.json({ error: 'Selected plan is not available.' }, { status: 404 })
+    }
+
+    const selectedDuration = selectedPlan.durationOptions.find(option => option.durationDays === durationDays)
+    if (!selectedDuration) {
+      return NextResponse.json({ error: 'Invalid duration selected for this plan.' }, { status: 400 })
+    }
+
+    const computedFinalPrice = Number(selectedPlan.basePrice) * Number(selectedDuration.priceMultiplier)
+    if (Math.abs(computedFinalPrice - finalPrice) > 0.01) {
+      return NextResponse.json({ error: 'Plan price mismatch. Refresh and try again.' }, { status: 400 })
+    }
 
     // Get user from database
     const user = await prisma.user.findUnique({
@@ -56,7 +74,7 @@ export async function POST(req: Request) {
         userId: user.id,
         planId,
         selectedDurationDays: durationDays,
-        finalPrice,
+        finalPrice: computedFinalPrice,
         status: 'awaiting_payment',
         paymentStatus: 'pending'
       }

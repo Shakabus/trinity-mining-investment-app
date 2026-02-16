@@ -109,6 +109,16 @@ export async function autoUpdateEarnings({
           ? new Date(planStart.getTime() + record.userPlan.selectedDurationDays * 24 * 60 * 60 * 1000)
           : null)
       const isCompleted = Boolean(planEnd && now.getTime() >= planEnd.getTime())
+      const withdrawalUnlockAt = new Date(planStart.getTime() + 2 * 24 * 60 * 60 * 1000)
+      const shouldBeWithdrawable = isCompleted || now.getTime() >= withdrawalUnlockAt.getTime()
+
+      if (record.isWithdrawable !== shouldBeWithdrawable) {
+        await prisma.earnings.update({
+          where: { id: record.id },
+          data: { isWithdrawable: shouldBeWithdrawable },
+        })
+        record.isWithdrawable = shouldBeWithdrawable
+      }
 
       if (record.userPlan.status === 'active' && isCompleted && !completedPlans.has(record.userPlanId)) {
         completedPlans.add(record.userPlanId)

@@ -27,6 +27,8 @@ const GLOBAL_PARAMETERS: string[] = [
   'Average Block Time Target: ~10 minutes',
   'Pool Strategy: PPS+ with uptime-aware routing',
   'Per-User Allocation Controls: Applied by plan tier',
+  'Contract Duration: 7 days across all mining plans',
+  'Withdrawal Window: opens after 48 hours',
   'Operational Uptime Target: 99.9%',
 ]
 
@@ -35,13 +37,13 @@ const PLANS: Plan[] = [
     id: 'starter',
     title: 'Starter Plan',
     subtitle: 'Low-risk entry and system familiarization',
-    price: '$50',
+    price: '$2,000',
     features: [
       '2 PH/s (2,000 TH/s) Hash Rate',
       'SHA-256 Allocation',
-      '30 / 60 / 90 day duration',
+      '7 day duration cycle',
       'Real-time monitoring',
-      'Daily automated payouts',
+      'Withdrawals available after 48 hours',
     ],
     modalSubtitle:
       'Designed for users entering the system with controlled exposure and transparent cycle tracking.',
@@ -59,10 +61,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 30 / 60 / 90 days',
-          'Entry Cost: $50',
+          'Duration: 7 days',
+          'Entry Cost: $2,000',
           'Maintenance + power charges applied transparently',
-          'Optional renewal at cycle completion',
+          'Withdrawals unlocked after 48 hours',
         ],
       },
       {
@@ -79,13 +81,13 @@ const PLANS: Plan[] = [
     id: 'growth',
     title: 'Growth Plan',
     subtitle: 'Balanced efficiency and moderate scale',
-    price: '$120',
+    price: '$5,000',
     features: [
       '6 PH/s (6,000 TH/s) Hash Rate',
       'Antminer S19 Pro-class routing',
-      '90 / 180 day duration',
+      '7 day duration cycle',
       'Priority pool routing',
-      'Enhanced reporting metrics',
+      'Withdrawals available after 48 hours',
     ],
     modalSubtitle:
       'Built for users moving beyond starter cycles into stronger hashrate exposure with better route efficiency.',
@@ -102,10 +104,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 90 / 180 days',
-          'Entry Cost: $120',
+          'Duration: 7 days',
+          'Entry Cost: $5,000',
           'Transparent daily operational costing',
-          'Upgrade path to higher tiers at renewal',
+          'Withdrawals unlocked after 48 hours',
         ],
       },
       {
@@ -122,13 +124,13 @@ const PLANS: Plan[] = [
     id: 'standard',
     title: 'Standard Plan',
     subtitle: 'Long-term consistency and optimized fees',
-    price: '$200',
+    price: '$10,000',
     features: [
       '10 PH/s (10,000 TH/s) Hash Rate',
       'Antminer S19 XP-class efficiency',
-      '180 / 365 day duration',
-      '+10% renewal bonus',
+      '7 day duration cycle',
       'Advanced performance dashboards',
+      'Withdrawals available after 48 hours',
     ],
     modalSubtitle:
       'Structured for users prioritizing lower operational friction and more consistent long-cycle performance.',
@@ -145,10 +147,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 180 / 365 days',
-          'Entry Cost: $200',
+          'Duration: 7 days',
+          'Entry Cost: $10,000',
           'Fee structure optimized for medium to long duration',
-          'Renewal bonus: +10% hashrate uplift at extension',
+          'Withdrawals unlocked after 48 hours',
         ],
       },
       {
@@ -165,13 +167,13 @@ const PLANS: Plan[] = [
     id: 'pro',
     title: 'Pro Plan',
     subtitle: 'Serious miners optimizing long-term output',
-    price: '$800',
+    price: '$20,000',
     features: [
       '40 PH/s (40,000 TH/s) Hash Rate',
       'S21 / S19 XP Hydro-class access',
-      '1 / 2 / 3 year duration',
+      '7 day duration cycle',
       'Intelligent pool optimization',
-      'Priority payout processing',
+      'Withdrawals available after 48 hours',
     ],
     modalSubtitle:
       'Engineered for high-cap users who need stronger allocation control, deeper reporting, and longer-cycle execution.',
@@ -188,10 +190,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: 1 / 2 / 3 years',
-          'Entry Cost: $800',
+          'Duration: 7 days',
+          'Entry Cost: $20,000',
           'Longer-term structure with lower relative operational drag',
-          'Priority processing on payout windows',
+          'Withdrawals unlocked after 48 hours',
         ],
       },
       {
@@ -208,13 +210,13 @@ const PLANS: Plan[] = [
     id: 'vip',
     title: 'VIP Plan',
     subtitle: 'Institutional-grade mining exposure',
-    price: 'From $5,000',
+    price: 'From $50,000',
     features: [
       '200 PH/s (200,000 TH/s) Hash Rate',
       'Enterprise ASIC cluster allocation',
-      'Custom 2-5 year duration',
+      '7 day duration cycle',
       'Dedicated account management',
-      'SLA-backed uptime controls',
+      'Withdrawals available after 48 hours',
     ],
     modalSubtitle:
       'High-capacity plan tier for advanced operators requiring dedicated support and enterprise-level execution reliability.',
@@ -231,10 +233,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: custom 2-5 years',
-          'Entry Cost: from $5,000',
+          'Duration: 7 days',
+          'Entry Cost: from $50,000',
           'Plan economics tuned for scale commitments',
-          'Custom payout and reporting cadence options',
+          'Withdrawals unlocked after 48 hours',
         ],
       },
       {
@@ -251,13 +253,13 @@ const PLANS: Plan[] = [
     id: 'elite',
     title: 'Elite Multi-Asset Plan',
     subtitle: 'Diversified BTC, ETH & LTC mining exposure',
-    price: 'From $12,000',
+    price: 'From $100,000',
     features: [
       '200 PH/s BTC allocation',
       'ETH-equivalent + LTC mining routing',
       'Enterprise ASIC + GPU clusters',
-      'Custom 2-5 year duration',
-      'Priority payout and reporting',
+      '7 day duration cycle',
+      'Withdrawals available after 48 hours',
     ],
     modalSubtitle:
       'Premium tier combining multi-network mining allocation with deeper portfolio-style reporting and high-touch operations support.',
@@ -274,10 +276,10 @@ const PLANS: Plan[] = [
       {
         title: 'Contract Terms',
         items: [
-          'Duration: custom 2-5 years',
-          'Entry Cost: from $12,000',
+          'Duration: 7 days',
+          'Entry Cost: from $100,000',
           'Network-specific cost components disclosed in-plan',
-          'Custom reporting granularity and payout controls',
+          'Withdrawals unlocked after 48 hours',
         ],
       },
       {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { syncMiningPlanCatalog } from '@/lib/mining-plan-catalog'
 import {
   isInputValidationError,
   readJsonObject,
@@ -35,6 +36,8 @@ export async function POST(req: Request) {
     const body = await readJsonObject(req, { allowedKeys: UPGRADE_PLAN_ALLOWED_FIELDS })
     const planId = readNumberField(body, 'planId', { required: true, integer: true, min: 1 })!
     const durationDays = readNumberField(body, 'durationDays', { required: true, integer: true, min: 1 })!
+
+    await syncMiningPlanCatalog()
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
