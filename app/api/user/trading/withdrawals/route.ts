@@ -3,15 +3,13 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { simulateTradingProgress } from '@/lib/trading'
-import { createAccountBalanceEntry, getAccountBalanceSummary } from '@/lib/account-balance'
 import {
   isInputValidationError,
   readJsonObject,
   readNumberField,
-  readStringField,
 } from '@/lib/requestValidation'
 
-const TRADING_WITHDRAWAL_ALLOWED_FIELDS = ['amountUsd', 'walletAddress'] as const
+const TRADING_WITHDRAWAL_ALLOWED_FIELDS = ['amountUsd'] as const
 
 export async function POST(req: Request) {
   try {
@@ -22,11 +20,6 @@ export async function POST(req: Request) {
 
     const body = await readJsonObject(req, { allowedKeys: TRADING_WITHDRAWAL_ALLOWED_FIELDS })
     const amountUsd = readNumberField(body, 'amountUsd', { required: true, min: 0.01 })!
-    const walletAddress = readStringField(body, 'walletAddress', {
-      required: true,
-      minLength: 10,
-      maxLength: 120,
-    })!
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -79,10 +72,12 @@ export async function POST(req: Request) {
     }
 
     const totalWithdrawn = user.tradingWithdrawals
-      .filter(withdrawal => withdrawal.tradingUserPlanId === activePlan.id)
+      .filter(withdrawal => withdrawal.tradingUserPlanId === activePlan.id && withdrawal.status !== 'rejected')
       .reduce((sum, w) => sum + Number(w.amountUsd), 0)
     const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
-    const minWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
+    const baseMinWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
+    const minWithdrawalUsd =
+      availableUsd > 0 ? Math.max(1, Math.min(baseMinWithdrawalUsd, availableUsd)) : baseMinWithdrawalUsd
 
     if (amountUsd < minWithdrawalUsd) {
       return NextResponse.json({ error: `Minimum withdrawal is $${minWithdrawalUsd.toFixed(2)}.` }, { status: 400 })
@@ -92,44 +87,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Amount exceeds available balance.' }, { status: 400 })
     }
 
-    const accountSummary = await getAccountBalanceSummary(user.id)
-    if (amountUsd > accountSummary.availableToSpendUsd) {
-      return NextResponse.json(
-        { error: `Amount exceeds account balance. Available: $${accountSummary.availableToSpendUsd.toFixed(2)}.` },
-        { status: 400 }
-      )
-    }
-
     const withdrawal = await prisma.tradingWithdrawal.create({
       data: {
         userId: user.id,
         tradingUserPlanId: activePlan.id,
         amountUsd,
-        walletAddress,
+        walletAddress: 'Account Balance',
         status: 'pending',
-      },
-    })
-
-    await createAccountBalanceEntry({
-      userId: user.id,
-      direction: 'debit',
-      status: 'pending',
-      amountUsd,
-      source: 'trading_withdrawal',
-      referenceId: `trading-withdrawal:${withdrawal.id}`,
-      note: 'Trading withdrawal request submitted.',
-      metadata: {
-        withdrawalId: withdrawal.id,
-        tradingUserPlanId: activePlan.id,
-        coinType: 'USDT',
-        amountCrypto: Number(amountUsd.toFixed(8)),
       },
     })
 
     await logUserActivity({
       userId: user.id,
-      action: 'TradingWithdrawalRequested',
-      detail: `Trading withdrawal requested for $${amountUsd.toFixed(2)}.`,
+      action: 'TradingWithdrawalToAccountBalanceRequested',
+      detail: `Requested $${amountUsd.toFixed(2)} trading transfer to account balance.`,
     })
 
     return NextResponse.json({ success: true, withdrawalId: withdrawal.id })

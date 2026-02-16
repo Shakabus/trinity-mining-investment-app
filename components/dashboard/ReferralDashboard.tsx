@@ -39,11 +39,6 @@ interface ReferralDashboardProps {
   referrals: ReferralItem[]
   bonuses: ReferralBonusEntry[]
   withdrawals: ReferralWithdrawalEntry[]
-  walletAddresses: {
-    BTC: string
-    ETH: string
-    LTC: string
-  }
 }
 
 function formatDate(value: string) {
@@ -60,7 +55,6 @@ export default function ReferralDashboard({
   referrals,
   bonuses,
   withdrawals,
-  walletAddresses,
 }: ReferralDashboardProps) {
   const { currency, rates, format, convert } = useCurrency()
   const { t } = useLanguage()
@@ -109,11 +103,6 @@ export default function ReferralDashboard({
       setWithdrawStatus({ type: 'error', message: t('referralAmountExceeds') })
       return
     }
-    if (!walletAddresses[withdrawCoin]) {
-      setWithdrawStatus({ type: 'error', message: t('walletMissing').replace('{coin}', withdrawCoin) })
-      return
-    }
-
     setIsRequesting(true)
     setWithdrawStatus(null)
     try {
@@ -126,7 +115,7 @@ export default function ReferralDashboard({
         const data = await response.json().catch(() => null)
         throw new Error(data?.error || t('referralWithdrawalFailed'))
       }
-        setWithdrawStatus({ type: 'success', message: t('referralWithdrawalSubmitted') })
+        setWithdrawStatus({ type: 'success', message: 'Referral withdrawal to account balance submitted for approval.' })
         setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
       } catch (error: any) {
       setWithdrawStatus({
@@ -219,7 +208,7 @@ export default function ReferralDashboard({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <h3 className="text-white font-semibold">{t('referralWithdrawalTitle')}</h3>
           <div className="text-xs text-white/50">
-            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)} | {t('walletLabel')}: {walletAddresses[withdrawCoin] || t('notSet')}
+            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)} | Destination: Account Balance (admin approval required)
           </div>
         </div>
 
@@ -288,7 +277,7 @@ export default function ReferralDashboard({
             color: '#ffffff',
           }}
         >
-          {t('requestReferralWithdrawal')}
+          Withdraw to Account Balance
         </LoadingButton>
       </div>
 

@@ -641,7 +641,7 @@ export default async function DashboardPage() {
                       color: '#d1fae5',
                     }}
                   >
-                    Request Mining Withdrawal {'>'}
+                    Withdraw Mining to Account Balance {'>'}
                   </Link>
                 )}
                 {completedTradingAvailable && (
@@ -654,7 +654,7 @@ export default async function DashboardPage() {
                       color: '#d1fae5',
                     }}
                   >
-                    Request Trading Withdrawal {'>'}
+                    Withdraw Trading to Account Balance {'>'}
                   </Link>
                 )}
               </div>

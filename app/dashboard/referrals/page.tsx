@@ -2,8 +2,6 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import ReferralDashboard from '@/components/dashboard/ReferralDashboard'
-import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
-import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 
 const DEFAULT_REFERRAL_SETTINGS = {
   bonusPercent: 5,
@@ -63,15 +61,6 @@ export default async function ReferralsPage() {
     .reduce((sum, item) => sum + Number(item.amountUsd), 0)
 
   const availableUsd = Math.max(0, totalBonusUsd - reservedUsd)
-  const rates = await getFxRates()
-  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
-    ? (user?.preferredCurrency as CurrencyCode)
-    : 'USD'
-  const preferredLanguage: LanguageCode = user?.preferredLanguage
-    ? (user?.preferredLanguage as LanguageCode)
-    : languageFromCurrency(preferredCurrency)
-  const t = (key: string) => translate(key, preferredLanguage)
-
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-6">
       <ReferralDashboard
@@ -102,11 +91,6 @@ export default async function ReferralsPage() {
           requestedAt: item.requestedAt.toISOString(),
           coinType: item.coinType,
         }))}
-        walletAddresses={{
-          BTC: user.btcWalletAddress || user.walletAddress || '',
-          ETH: user.ethWalletAddress || '',
-          LTC: user.ltcWalletAddress || '',
-        }}
       />
     </div>
   )

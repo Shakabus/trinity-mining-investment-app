@@ -67,7 +67,7 @@ export default function TradingWithdrawalApproval({ withdrawal }: TradingWithdra
           <div className="text-white/70 text-sm">
             ${withdrawal.amountUsd.toFixed(2)} (Trading)
           </div>
-          <div className="text-xs text-white/50">Wallet: {withdrawal.walletAddress}</div>
+          <div className="text-xs text-white/50">Destination: {withdrawal.walletAddress || 'Account Balance'}</div>
           <div className="text-xs text-white/40">Requested: {new Date(withdrawal.requestedAt).toLocaleString()}</div>
         </div>
 

@@ -38,11 +38,6 @@ interface EarningsDisplayProps {
   withdrawableUsd: number
   pendingUsd: number
   minWithdrawalUsd: number
-  walletAddresses: {
-    BTC: string
-    ETH: string
-    LTC: string
-  }
 }
 
 export default function EarningsDisplay({
@@ -54,7 +49,6 @@ export default function EarningsDisplay({
   withdrawableUsd,
   pendingUsd,
   minWithdrawalUsd,
-  walletAddresses,
 }: EarningsDisplayProps) {
   const { currency, rates, format, convert } = useCurrency()
   const { t } = useLanguage()
@@ -131,10 +125,6 @@ export default function EarningsDisplay({
       setWithdrawStatus({ type: 'error', message: t('withdrawExceeds') })
       return
     }
-    if (!walletAddresses[withdrawCoin]) {
-      setWithdrawStatus({ type: 'error', message: t('walletMissing').replace('{coin}', withdrawCoin) })
-      return
-    }
 
     setIsRequesting(true)
     setWithdrawStatus(null)
@@ -142,13 +132,16 @@ export default function EarningsDisplay({
       const response = await fetch('/api/user/withdrawals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ coinType: withdrawCoin, amountUsd, amountCrypto: 0 }),
+        body: JSON.stringify({ coinType: withdrawCoin, amountUsd }),
       })
       if (!response.ok) {
         const data = await response.json().catch(() => null)
         throw new Error(data?.error || t('withdrawFailed'))
       }
-      setWithdrawStatus({ type: 'success', message: t('withdrawSubmitted') })
+      setWithdrawStatus({
+        type: 'success',
+        message: 'Withdrawal to account balance submitted for admin approval.',
+      })
       setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
     } catch (error: any) {
       setWithdrawStatus({
@@ -408,7 +401,7 @@ export default function EarningsDisplay({
             </div>
           </div>
           <div className="text-xs text-white/50">
-            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)}. {t('walletLabel')}: {walletAddresses[withdrawCoin] || t('notSet')}
+            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)}. Destination: Account Balance (admin approval required)
           </div>
           {withdrawStatus && (
             <div
@@ -432,7 +425,7 @@ export default function EarningsDisplay({
               color: '#ffffff',
             }}
           >
-            {t('requestWithdrawal')}
+            Withdraw to Account Balance
           </LoadingButton>
         </div>
 

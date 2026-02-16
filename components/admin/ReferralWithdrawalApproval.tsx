@@ -61,7 +61,7 @@ export default function ReferralWithdrawalApproval({ withdrawal }: ReferralWithd
         </div>
       </div>
 
-      <div className="text-xs text-white/50 break-all">Wallet: {withdrawal.walletAddress}</div>
+      <div className="text-xs text-white/50 break-all">Destination: {withdrawal.walletAddress || 'Account Balance'}</div>
 
       <div className="flex flex-col md:flex-row gap-3">
         <select

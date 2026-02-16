@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatCurrency } from '@/lib/forex'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { logUserActivity } from '@/lib/user-activity'
 import { simulateTradingProgress } from '@/lib/trading'
 
 export const dynamic = 'force-dynamic'
@@ -27,6 +28,10 @@ export default async function TradingWithdrawalsPage() {
     },
   })
 
+  if (!user) {
+    redirect('/sign-in')
+  }
+
   const activePlan = user?.tradingPlans.find(plan => ['active', 'completed'].includes(plan.status)) ?? null
   const activeEarning = activePlan
     ? (user?.tradingEarnings.find(
@@ -38,6 +43,30 @@ export default async function TradingWithdrawalsPage() {
   const now = new Date()
   const liveSeed = activePlan ? (user?.id || 1) * 13 + activePlan.id * 7 : (user?.id || 1) * 13
   let totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
+  if (activePlan) {
+    const startDate = activePlan.startDate ?? activePlan.createdAt ?? now
+    const endDate = activePlan.endDate ?? new Date(startDate.getTime() + activePlan.durationHours * 60 * 60 * 1000)
+    const isCompletedByTime = now.getTime() >= endDate.getTime()
+
+    if (activePlan.status === 'active' && isCompletedByTime) {
+      await prisma.tradingUserPlan.update({
+        where: { id: activePlan.id },
+        data: { status: 'completed', endDate },
+      })
+
+      await prisma.tradingStat.updateMany({
+        where: { tradingUserPlanId: activePlan.id },
+        data: { isActive: false },
+      })
+
+      await logUserActivity({
+        userId: user.id,
+        action: 'TradingPlanCompleted',
+        detail: 'Trading plan completed. Funds are now available for withdrawal.',
+      })
+    }
+  }
+
   if (activePlan && activeEarning && !activeEarning.isAdminOverride) {
     const startDate = activePlan.startDate ?? activePlan.createdAt ?? now
     const snapshot = simulateTradingProgress({
@@ -59,10 +88,12 @@ export default async function TradingWithdrawalsPage() {
     })
   }
   const totalWithdrawn = user?.tradingWithdrawals
-    .filter(w => (activePlan ? w.tradingUserPlanId === activePlan.id : true))
+    .filter(w => (activePlan ? w.tradingUserPlanId === activePlan.id : true) && w.status !== 'rejected')
     .reduce((sum, w) => sum + Number(w.amountUsd), 0) ?? 0
   const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
-  const minWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
+  const baseMinWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
+  const minWithdrawalUsd =
+    availableUsd > 0 ? Math.max(1, Math.min(baseMinWithdrawalUsd, availableUsd)) : baseMinWithdrawalUsd
   const rates = await getFxRates()
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
     ? (user?.preferredCurrency as CurrencyCode)
@@ -98,7 +129,7 @@ export default async function TradingWithdrawalsPage() {
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <div>
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('tradingWithdrawalsTitle')}</h1>
-        <p className="text-white/70">Request withdrawals from your trading earnings.</p>
+        <p className="text-white/70">Request withdrawals from trading earnings to your account balance.</p>
       </div>
 
       {activePlan ? (
@@ -163,7 +194,7 @@ export default async function TradingWithdrawalsPage() {
             {user.tradingWithdrawals.slice(0, 8).map(withdrawal => (
               <div key={withdrawal.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div className="text-white font-semibold">{formatMoney(Number(withdrawal.amountUsd))}</div>
-                <div className="text-white/60">{withdrawal.walletAddress}</div>
+                <div className="text-white/60">{withdrawal.walletAddress || 'Account Balance'}</div>
                 <div className="text-white/50">{withdrawal.status}</div>
                 <div className="text-white/40 text-xs">{new Date(withdrawal.requestedAt).toLocaleString()}</div>
               </div>

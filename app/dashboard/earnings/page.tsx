@@ -102,7 +102,9 @@ export default async function EarningsPage() {
     .reduce((sum, record) => sum + record.dailyEstimateUsd, 0)
   const estimatedTotalUsd =
     activePlan && dailyActiveUsd > 0 ? dailyActiveUsd * (activePlan.selectedDurationDays ?? 0) : 0
-  const minWithdrawalUsd = estimatedTotalUsd > 0 && estimatedTotalUsd < 100 ? estimatedTotalUsd : 100
+  const baseMinWithdrawalUsd = estimatedTotalUsd > 0 && estimatedTotalUsd < 100 ? estimatedTotalUsd : 100
+  const minWithdrawalUsd =
+    availableUsd > 0 ? Math.max(1, Math.min(baseMinWithdrawalUsd, availableUsd)) : baseMinWithdrawalUsd
 
   const payouts = user.withdrawals.map(item => ({
     id: item.id.toString(),
@@ -129,11 +131,6 @@ export default async function EarningsPage() {
           withdrawableUsd={availableUsd}
           pendingUsd={reservedUsd}
           minWithdrawalUsd={minWithdrawalUsd}
-          walletAddresses={{
-            BTC: user.btcWalletAddress || user.walletAddress || '',
-            ETH: user.ethWalletAddress || '',
-            LTC: user.ltcWalletAddress || '',
-          }}
         />
       </div>
     </div>

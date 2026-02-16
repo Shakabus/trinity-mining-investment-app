@@ -69,7 +69,7 @@ export default function WithdrawalApproval({ withdrawal }: WithdrawalApprovalPro
           <div className="text-white/70 text-sm">
             {withdrawal.amountCrypto.toFixed(8)} {withdrawal.coinType} (${withdrawal.amountUsd.toFixed(2)})
           </div>
-          <div className="text-xs text-white/50">Wallet: {withdrawal.walletAddress}</div>
+          <div className="text-xs text-white/50">Destination: {withdrawal.walletAddress || 'Account Balance'}</div>
           <div className="text-xs text-white/40">Requested: {new Date(withdrawal.requestedAt).toLocaleString()}</div>
         </div>
 

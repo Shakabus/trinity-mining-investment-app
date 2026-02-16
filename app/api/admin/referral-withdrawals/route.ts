@@ -58,21 +58,22 @@ export async function PATCH(req: Request) {
     const withdrawalReference = `referral-withdrawal:${updated.id}`
     const movesToSettled = ['approved', 'processed'].includes(status) && !['approved', 'processed'].includes(existing.status)
     if (movesToSettled) {
-      const hasDebit = await hasSettledEntryForReference(updated.userId, withdrawalReference, 'debit')
-      if (!hasDebit) {
+      const hasCredit = await hasSettledEntryForReference(updated.userId, withdrawalReference, 'credit')
+      if (!hasCredit) {
         await createAccountBalanceEntry({
           userId: updated.userId,
-          direction: 'debit',
+          direction: 'credit',
           status: 'settled',
           amountUsd: Number(updated.amountUsd),
           source: 'referral_withdrawal',
           referenceId: withdrawalReference,
-          note: 'Referral withdrawal approved.',
+          note: 'Referral withdrawal released to account balance.',
           metadata: {
             withdrawalId: updated.id,
             status,
             coinType: existing.coinType,
             amountCrypto: Number(existing.amountCrypto),
+            destination: 'account_balance',
           },
         })
       }
@@ -82,17 +83,18 @@ export async function PATCH(req: Request) {
     if (rejectedFromPending) {
       await createAccountBalanceEntry({
         userId: updated.userId,
-        direction: 'debit',
+        direction: 'credit',
         status: 'rejected',
         amountUsd: Number(updated.amountUsd),
         source: 'referral_withdrawal',
         referenceId: withdrawalReference,
-        note: 'Referral withdrawal request rejected.',
+        note: 'Referral withdrawal to account balance rejected.',
         metadata: {
           withdrawalId: updated.id,
           previousStatus: existing.status,
           coinType: existing.coinType,
           amountCrypto: Number(existing.amountCrypto),
+          destination: 'account_balance',
         },
       })
     }
@@ -100,16 +102,16 @@ export async function PATCH(req: Request) {
     const reversalReference = `referral-withdrawal-reversal:${updated.id}`
     const becomesRejectedAfterSettled = status === 'rejected' && ['approved', 'processed'].includes(existing.status)
     if (becomesRejectedAfterSettled) {
-      const hasReversal = await hasSettledEntryForReference(updated.userId, reversalReference, 'credit')
+      const hasReversal = await hasSettledEntryForReference(updated.userId, reversalReference, 'debit')
       if (!hasReversal) {
         await createAccountBalanceEntry({
           userId: updated.userId,
-          direction: 'credit',
+          direction: 'debit',
           status: 'settled',
           amountUsd: Number(updated.amountUsd),
           source: 'withdrawal_reversal',
           referenceId: reversalReference,
-          note: 'Referral withdrawal reversed after rejection.',
+          note: 'Referral account-balance withdrawal reversed after rejection.',
           metadata: {
             withdrawalId: updated.id,
             previousStatus: existing.status,

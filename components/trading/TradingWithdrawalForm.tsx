@@ -18,7 +18,6 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
   const rate = rates[currency] || 1
   const toUsd = (value: number) => (rate ? value / rate : value)
   const [amountUsd, setAmountUsd] = useState(convert(minWithdrawalUsd))
-  const [walletAddress, setWalletAddress] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
@@ -32,26 +31,20 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
       showToast('Amount exceeds available balance.', 'error')
       return
     }
-    if (!walletAddress.trim()) {
-      showToast('Wallet address is required.', 'error')
-      return
-    }
-
     setIsSubmitting(true)
     try {
       const response = await fetch('/api/user/trading/withdrawals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amountUsd: amountUsdValue, walletAddress }),
+        body: JSON.stringify({ amountUsd: amountUsdValue }),
       })
 
       if (!response.ok) {
         const data = await response.json().catch(() => null)
         showToast(data?.error || 'Unable to submit withdrawal.', 'error')
       } else {
-        showToast('Withdrawal request submitted.', 'success')
+        showToast('Withdrawal to account balance submitted for admin approval.', 'success')
         setAmountUsd(convert(minWithdrawalUsd))
-        setWalletAddress('')
         router.refresh()
       }
     } finally {
@@ -88,19 +81,8 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
         />
       </div>
 
-      <div>
-        <label className="text-xs text-white/60">Wallet Address</label>
-        <input
-          type="text"
-          value={walletAddress}
-          onChange={event => setWalletAddress(event.target.value)}
-          className="w-full mt-2 px-3 py-2 rounded-lg text-sm"
-          style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#ffffff',
-          }}
-        />
+      <div className="text-xs text-white/60">
+        Destination: Account Balance (admin approval required)
       </div>
 
       <LoadingButton
@@ -113,7 +95,7 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
           color: '#ffffff',
         }}
       >
-        Submit Withdrawal Request
+        Withdraw to Account Balance
       </LoadingButton>
     </div>
   )

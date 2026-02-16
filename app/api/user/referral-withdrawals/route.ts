@@ -3,7 +3,6 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { getCryptoPricesUsd } from '@/lib/earnings'
 import { logUserActivity } from '@/lib/user-activity'
-import { createAccountBalanceEntry, getAccountBalanceSummary } from '@/lib/account-balance'
 import {
   isInputValidationError,
   readJsonObject,
@@ -77,25 +76,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Amount exceeds available referral balance.' }, { status: 400 })
     }
 
-    const accountSummary = await getAccountBalanceSummary(user.id)
-    if (amountUsd > accountSummary.availableToSpendUsd) {
-      return NextResponse.json(
-        { error: `Amount exceeds account balance. Available: $${accountSummary.availableToSpendUsd.toFixed(2)}.` },
-        { status: 400 }
-      )
-    }
-
-    const walletAddress =
-      coinType === 'BTC'
-        ? user.btcWalletAddress || user.walletAddress
-        : coinType === 'ETH'
-        ? user.ethWalletAddress
-        : user.ltcWalletAddress
-
-    if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address not found.' }, { status: 400 })
-    }
-
     const prices = await getCryptoPricesUsd()
     const price = prices[coinType] || 0
     if (!price) {
@@ -110,26 +90,15 @@ export async function POST(req: Request) {
         coinType,
         amountUsd,
         amountCrypto,
-        walletAddress,
+        walletAddress: 'Account Balance',
         status: 'pending',
       },
     })
 
-    await createAccountBalanceEntry({
-      userId: user.id,
-      direction: 'debit',
-      status: 'pending',
-      amountUsd,
-      source: 'referral_withdrawal',
-      referenceId: `referral-withdrawal:${withdrawal.id}`,
-      note: 'Referral withdrawal request submitted.',
-      metadata: { withdrawalId: withdrawal.id, coinType, amountCrypto, usdPriceAtRequest: price },
-    })
-
     await logUserActivity({
       userId: user.id,
-      action: 'ReferralWithdrawalRequested',
-      detail: `Requested $${amountUsd.toFixed(2)} referral withdrawal in ${coinType}.`,
+      action: 'ReferralWithdrawalToAccountBalanceRequested',
+      detail: `Requested $${amountUsd.toFixed(2)} referral transfer to account balance.`,
     })
 
     return NextResponse.json({ success: true, withdrawalId: withdrawal.id })

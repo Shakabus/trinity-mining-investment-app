@@ -72,21 +72,22 @@ export async function PATCH(req: Request) {
     const withdrawalReference = `trading-withdrawal:${withdrawal.id}`
     const movesToSettled = ['approved', 'processed'].includes(status) && !['approved', 'processed'].includes(existing.status)
     if (movesToSettled) {
-      const hasDebit = await hasSettledEntryForReference(withdrawal.userId, withdrawalReference, 'debit')
-      if (!hasDebit) {
+      const hasCredit = await hasSettledEntryForReference(withdrawal.userId, withdrawalReference, 'credit')
+      if (!hasCredit) {
         await createAccountBalanceEntry({
           userId: withdrawal.userId,
-          direction: 'debit',
+          direction: 'credit',
           status: 'settled',
           amountUsd: Number(withdrawal.amountUsd),
           source: 'trading_withdrawal',
           referenceId: withdrawalReference,
-          note: 'Trading withdrawal approved.',
+          note: 'Trading withdrawal released to account balance.',
           metadata: {
             withdrawalId: withdrawal.id,
             status,
             coinType: 'USDT',
             amountCrypto: Number(Number(withdrawal.amountUsd).toFixed(8)),
+            destination: 'account_balance',
           },
         })
       }
@@ -96,17 +97,18 @@ export async function PATCH(req: Request) {
     if (rejectedFromPending) {
       await createAccountBalanceEntry({
         userId: withdrawal.userId,
-        direction: 'debit',
+        direction: 'credit',
         status: 'rejected',
         amountUsd: Number(withdrawal.amountUsd),
         source: 'trading_withdrawal',
         referenceId: withdrawalReference,
-        note: 'Trading withdrawal request rejected.',
+        note: 'Trading withdrawal to account balance rejected.',
         metadata: {
           withdrawalId: withdrawal.id,
           previousStatus: existing.status,
           coinType: 'USDT',
           amountCrypto: Number(Number(withdrawal.amountUsd).toFixed(8)),
+          destination: 'account_balance',
         },
       })
     }
@@ -114,16 +116,16 @@ export async function PATCH(req: Request) {
     const reversalReference = `trading-withdrawal-reversal:${withdrawal.id}`
     const becomesRejectedAfterSettled = status === 'rejected' && ['approved', 'processed'].includes(existing.status)
     if (becomesRejectedAfterSettled) {
-      const hasReversal = await hasSettledEntryForReference(withdrawal.userId, reversalReference, 'credit')
+      const hasReversal = await hasSettledEntryForReference(withdrawal.userId, reversalReference, 'debit')
       if (!hasReversal) {
         await createAccountBalanceEntry({
           userId: withdrawal.userId,
-          direction: 'credit',
+          direction: 'debit',
           status: 'settled',
           amountUsd: Number(withdrawal.amountUsd),
           source: 'withdrawal_reversal',
           referenceId: reversalReference,
-          note: 'Trading withdrawal reversed after rejection.',
+          note: 'Trading account-balance withdrawal reversed after rejection.',
           metadata: {
             withdrawalId: withdrawal.id,
             previousStatus: existing.status,
