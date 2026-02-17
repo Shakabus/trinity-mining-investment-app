@@ -17,6 +17,9 @@ export default async function AdminPaymentsPage() {
     where: {
       status: 'awaiting_payment',
       paymentStatus: 'pending',
+      payments: {
+        some: { status: 'pending' },
+      },
     },
     include: {
       user: true,
@@ -56,6 +59,9 @@ export default async function AdminPaymentsPage() {
     where: {
       status: { in: ['awaiting_payment', 'selected'] },
       paymentStatus: 'pending',
+      payments: {
+        some: { status: 'pending' },
+      },
     },
     include: {
       user: true,
