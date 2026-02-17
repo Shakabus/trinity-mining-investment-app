@@ -390,9 +390,9 @@ export default function AccountWithdrawPageClient({
         </LoadingButton>
       </div>
 
-      <LivePaymentsPageClient />
-
       <WalletConversionCard walletFlow={walletFlow} />
+
+      <LivePaymentsPageClient />
 
       <div
         className="p-6 rounded-3xl"
