@@ -3,7 +3,6 @@ import PaymentApproval from '@/components/admin/PaymentApproval'
 import TradingPaymentApproval from '@/components/admin/TradingPaymentApproval'
 import RealEstatePaymentApproval from '@/components/admin/RealEstatePaymentApproval'
 import { REAL_ESTATE_BUY_IN_TICKET_PREFIX } from '@/lib/real-estate-dashboard'
-import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,15 +17,6 @@ export default async function AdminPaymentsPage() {
     where: {
       status: 'awaiting_payment',
       paymentStatus: 'pending',
-      payments: {
-        none: {
-          status: 'pending',
-          OR: [
-            { transactionId: { startsWith: 'Account Balance - Pending Review' } },
-            { transactionId: { startsWith: 'Account Balance - Pending Admin Approval' } },
-          ],
-        },
-      },
     },
     include: {
       user: true,
@@ -66,15 +56,6 @@ export default async function AdminPaymentsPage() {
     where: {
       status: { in: ['awaiting_payment', 'selected'] },
       paymentStatus: 'pending',
-      payments: {
-        none: {
-          status: 'pending',
-          OR: [
-            { transactionId: { startsWith: 'Account Balance - Pending Review' } },
-            { transactionId: { startsWith: 'Account Balance - Pending Admin Approval' } },
-          ],
-        },
-      },
     },
     include: {
       user: true,
@@ -160,28 +141,6 @@ export default async function AdminPaymentsPage() {
         <p className="text-white/70">
           Review and approve pending payment requests ({totalPendingPayments} pending)
         </p>
-      </div>
-
-      <div
-        className="p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3"
-        style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(16, 185, 129, 0.04))',
-          border: '1px solid rgba(16, 185, 129, 0.28)',
-        }}
-      >
-        <div className="text-sm text-emerald-100/90">
-          Account-balance deposits and account-balance plan payments are reviewed in Account Balance Controls.
-        </div>
-        <Link
-          href="/admin/account-balance"
-          className="px-4 py-2 rounded-full text-sm font-semibold"
-          style={{
-            background: 'linear-gradient(135deg, #10b981, #047857)',
-            color: '#ffffff',
-          }}
-        >
-          Open Account Balance Controls
-        </Link>
       </div>
 
       {totalPendingPayments === 0 ? (
