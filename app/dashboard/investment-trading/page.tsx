@@ -13,6 +13,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import TradingLiveOverviewCards from '@/components/trading/TradingLiveOverviewCards'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+import { isPaymentReminderVisible } from '@/lib/payment-reminder'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,6 +68,8 @@ export default async function TradingInvestmentPage() {
     ? user?.tradingEarnings.find(earning => earning.tradingUserPlanId === activePlan.id && earning.isActive) ?? null
     : null
   const now = new Date()
+  const showPendingPlanReminder = pendingPlan ? isPaymentReminderVisible(pendingPlan.createdAt, now) : false
+  const showSelectedPlanReminder = selectedPlan ? isPaymentReminderVisible(selectedPlan.createdAt, now) : false
 
   let snapshot = null as null | {
     progress: number
@@ -207,7 +210,7 @@ export default async function TradingInvestmentPage() {
         </Link>
       </div>
 
-      {pendingPlan && (
+      {pendingPlan && showPendingPlanReminder && (
         <div
           className="p-5 rounded-2xl text-white/80"
           style={{
@@ -232,7 +235,7 @@ export default async function TradingInvestmentPage() {
         </div>
       )}
 
-      {selectedPlan && !pendingPlan && (
+      {selectedPlan && !pendingPlan && showSelectedPlanReminder && (
         <div
           className="p-5 rounded-2xl text-white/80"
           style={{

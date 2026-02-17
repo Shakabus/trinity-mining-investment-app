@@ -5,14 +5,11 @@ import { Building2, LineChart, Wallet } from 'lucide-react'
 import RealEstatePropertySpotlight from '@/components/marketing/RealEstatePropertySpotlight'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 import { getRealEstatePropertySpotlightItems } from '@/lib/real-estate-property-spotlight'
+import { isPaymentReminderVisible } from '@/lib/payment-reminder'
 
 export const dynamic = 'force-dynamic'
 
-export default async function RealEstatePortfolioDashboardPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ buyin?: string | string[] }>
-}) {
+export default async function RealEstatePortfolioDashboardPage() {
   const { userId } = await auth()
   if (!userId) {
     redirect('/sign-in')
@@ -21,11 +18,11 @@ export default async function RealEstatePortfolioDashboardPage({
   const data = await getRealEstateDashboardData(userId)
   const spotlightProperties = await getRealEstatePropertySpotlightItems()
   const hasPendingBuyIn = !data.canCreateNewBuyIn
-  const resolvedParams = searchParams ? await searchParams : undefined
-  const buyInFlag = Array.isArray(resolvedParams?.buyin)
-    ? resolvedParams?.buyin[0]
-    : resolvedParams?.buyin
-
+  const latestPendingBuyInAt = data.positions
+    .filter(position => position.status === 'submitted' || position.status === 'under_review')
+    .map(position => new Date(position.submittedAt))
+    .sort((a, b) => b.getTime() - a.getTime())[0] ?? null
+  const showPendingBuyInReminder = hasPendingBuyIn && isPaymentReminderVisible(latestPendingBuyInAt)
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8">
       <div>
@@ -36,7 +33,7 @@ export default async function RealEstatePortfolioDashboardPage({
         </p>
       </div>
 
-      {(hasPendingBuyIn || buyInFlag === 'pending') && (
+      {showPendingBuyInReminder && (
         <div
           className="rounded-2xl p-4 text-sm text-white/85"
           style={{

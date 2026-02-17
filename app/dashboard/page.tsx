@@ -27,6 +27,7 @@ import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type Curre
 import type { TradingEarning } from '@prisma/client'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { formatPlanDurationLabel } from '@/lib/mining-duration'
+import { isPaymentReminderVisible } from '@/lib/payment-reminder'
 
 import TickerTape from '@/components/dashboard/TickerTape'
 import AdvancedChart from '@/components/dashboard/AdvancedChart'
@@ -50,6 +51,11 @@ export default async function DashboardPage() {
         },
         include: {
           plan: true,
+          payments: {
+            where: { status: 'pending' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -77,6 +83,11 @@ export default async function DashboardPage() {
         },
         include: {
           plan: true,
+          payments: {
+            where: { status: 'pending' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -135,6 +146,14 @@ export default async function DashboardPage() {
   const hasTradingSelected = tradingPlan?.status === 'selected'
   const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
   const now = new Date()
+  const miningReminderAnchor = currentPlan?.payments?.[0]?.createdAt ?? currentPlan?.createdAt ?? null
+  const tradingReminderAnchor = tradingPlan?.payments?.[0]?.createdAt ?? tradingPlan?.createdAt ?? null
+  const showMiningPaymentReminder =
+    (currentPlan?.status === 'selected' || currentPlan?.status === 'awaiting_payment') &&
+    isPaymentReminderVisible(miningReminderAnchor, now)
+  const showTradingPaymentReminder =
+    (tradingPlan?.status === 'selected' || tradingPlan?.status === 'awaiting_payment') &&
+    isPaymentReminderVisible(tradingReminderAnchor, now)
   const activeTradingEarning = activeTradingPlan
     ? (tradingEarnings.find(
         earning => earning.tradingUserPlanId === activeTradingPlan.id && earning.isActive
@@ -671,7 +690,7 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {!hasActivePlans && user?.accountStatus === 'pending' && (
+          {!hasActivePlans && user?.accountStatus === 'pending' && (showMiningPaymentReminder || showTradingPaymentReminder) && (
             <div className="space-y-4">
               <p className="text-sm md:text-base text-white/80">
                 {t('paymentProcessingMessage')}
@@ -686,10 +705,11 @@ export default async function DashboardPage() {
           )}
             </div>
 
-          {(hasMiningSelected || hasTradingSelected) && user?.accountStatus !== 'pending' && (
+          {((hasMiningSelected && showMiningPaymentReminder) || (hasTradingSelected && showTradingPaymentReminder)) &&
+            user?.accountStatus !== 'pending' && (
             <div className="w-full lg:w-80 xl:w-96 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
-                {hasMiningSelected && (
+                {hasMiningSelected && showMiningPaymentReminder && (
                   <span
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
                     style={{
@@ -701,7 +721,7 @@ export default async function DashboardPage() {
                     {t('proofNotSubmittedMining')}
                   </span>
                 )}
-                {hasTradingSelected && (
+                {hasTradingSelected && showTradingPaymentReminder && (
                   <span
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
                     style={{
@@ -715,7 +735,7 @@ export default async function DashboardPage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-3">
-                {hasMiningSelected && (
+                {hasMiningSelected && showMiningPaymentReminder && (
                   <Link
                     href="/dashboard/payment?verify=1"
                     className="inline-block px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all text-sm md:text-base"
@@ -727,7 +747,7 @@ export default async function DashboardPage() {
                     {t('uploadMiningProof')} {'>'}
                   </Link>
                 )}
-                {hasTradingSelected && (
+                {hasTradingSelected && showTradingPaymentReminder && (
                   <Link
                     href="/dashboard/investment-trading/payment"
                     className="inline-block px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all text-sm md:text-base"

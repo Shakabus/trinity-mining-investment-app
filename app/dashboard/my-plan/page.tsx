@@ -8,6 +8,7 @@ import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { scalePlanHashrate } from '@/lib/mining-hashrate'
 import { formatPlanDurationLabel, formatRemainingPlanTime } from '@/lib/mining-duration'
 import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
+import { isPaymentReminderVisible } from '@/lib/payment-reminder'
 
 export const dynamic = 'force-dynamic'
 
@@ -121,6 +122,10 @@ export default async function MyPlanPage() {
   }
 
   const now = new Date()
+  const showPendingUpgradeReminder = pendingUpgrade
+    ? isPaymentReminderVisible(pendingUpgrade.createdAt, now)
+    : false
+  const showPlanPaymentReminder = isPaymentReminderVisible(planData.createdAt, now)
   const effectiveStart = planData.startDate ?? planData.createdAt
   const effectiveEnd = planData.endDate
     ? new Date(planData.endDate)
@@ -152,7 +157,7 @@ export default async function MyPlanPage() {
         </div>
 
         {/* Status Badge */}
-        {pendingUpgrade && (
+        {pendingUpgrade && showPendingUpgradeReminder && (
           <div 
             className="p-6 rounded-3xl"
             style={{
@@ -183,7 +188,7 @@ export default async function MyPlanPage() {
           </div>
         )}
 
-        {planData.status === 'selected' && !pendingUpgrade && (
+        {planData.status === 'selected' && !pendingUpgrade && showPlanPaymentReminder && (
           <div 
             className="p-6 rounded-3xl"
             style={{
@@ -214,7 +219,7 @@ export default async function MyPlanPage() {
           </div>
         )}
 
-        {planData.status === 'awaiting_payment' && !pendingUpgrade && (
+        {planData.status === 'awaiting_payment' && !pendingUpgrade && showPlanPaymentReminder && (
           <div 
             className="p-6 rounded-3xl"
             style={{

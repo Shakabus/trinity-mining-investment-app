@@ -8,6 +8,7 @@ import { getFxRates, isSupportedCurrency, type CurrencyCode, convertUsd, formatC
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { scalePlanHashrate } from '@/lib/mining-hashrate'
 import { syncMiningPlanCatalog } from '@/lib/mining-plan-catalog'
+import { isPaymentReminderVisible } from '@/lib/payment-reminder'
 
 export default async function PlansPage() {
   const { userId } = await auth()
@@ -50,6 +51,9 @@ export default async function PlansPage() {
       })
     : null
   const now = new Date()
+  const showPendingSelectionReminder = pendingSelection
+    ? isPaymentReminderVisible(pendingSelection.createdAt, now)
+    : false
 
   const remainingDays = activePlan?.endDate
     ? Math.max(0, Math.ceil((activePlan.endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
@@ -192,7 +196,7 @@ export default async function PlansPage() {
           </p>
         </div>
 
-        {pendingSelection && (
+        {showPendingSelectionReminder && pendingSelection && (
           <div
             className="mx-4 p-4 rounded-2xl text-sm"
             style={{
