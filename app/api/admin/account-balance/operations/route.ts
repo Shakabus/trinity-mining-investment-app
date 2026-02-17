@@ -238,8 +238,8 @@ async function applyMiningPlanReview(params: {
       await tx.userPlan.update({
         where: { id: userPlan.id },
         data: {
-          status: 'selected',
-          paymentStatus: 'pending',
+          status: 'rejected',
+          paymentStatus: 'rejected',
           startDate: null,
           endDate: null,
         },
@@ -473,7 +473,7 @@ async function applyMiningPlanReview(params: {
         }
       }
     }
-  })
+  }, { maxWait: 5_000, timeout: 30_000 })
 
   await logUserActivity({
     userId: params.userId,
@@ -552,8 +552,8 @@ async function applyTradingPlanReview(params: {
       await tx.tradingUserPlan.update({
         where: { id: tradingPlan.id },
         data: {
-          status: 'selected',
-          paymentStatus: 'pending',
+          status: 'rejected',
+          paymentStatus: 'rejected',
           startDate: null,
           endDate: null,
         },
@@ -660,7 +660,7 @@ async function applyTradingPlanReview(params: {
         },
       })
     }
-  })
+  }, { maxWait: 5_000, timeout: 30_000 })
 
   await logUserActivity({
     userId: params.userId,

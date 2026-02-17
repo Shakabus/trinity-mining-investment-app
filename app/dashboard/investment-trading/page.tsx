@@ -13,6 +13,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import TradingLiveOverviewCards from '@/components/trading/TradingLiveOverviewCards'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
 import { isPaymentReminderVisible } from '@/lib/payment-reminder'
 
 export const dynamic = 'force-dynamic'
@@ -24,8 +25,18 @@ export default async function TradingInvestmentPage() {
     redirect('/sign-in')
   }
 
-  const user = await prisma.user.findUnique({
+  const userBase = await prisma.user.findUnique({
     where: { clerkUserId: userId },
+    select: { id: true },
+  })
+  if (!userBase) {
+    redirect('/sign-in')
+  }
+
+  await reconcileRejectedTradingPendingPlans(userBase.id)
+
+  const user = await prisma.user.findUnique({
+    where: { id: userBase.id },
     include: {
       tradingPlans: {
         include: { plan: true },

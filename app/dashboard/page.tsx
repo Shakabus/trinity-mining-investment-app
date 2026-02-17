@@ -34,6 +34,7 @@ import AdvancedChart from '@/components/dashboard/AdvancedChart'
 import NewsTimeline from '@/components/dashboard/NewsTimeline'
 import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
+import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -42,8 +43,18 @@ export default async function DashboardPage() {
     redirect('/sign-in')
   }
 
-  const user = await prisma.user.findUnique({
+  const userBase = await prisma.user.findUnique({
     where: { clerkUserId: userId },
+    select: { id: true },
+  })
+  if (!userBase) {
+    redirect('/sign-in')
+  }
+
+  await reconcileRejectedTradingPendingPlans(userBase.id)
+
+  const user = await prisma.user.findUnique({
+    where: { id: userBase.id },
     include: {
       userPlans: {
         where: {

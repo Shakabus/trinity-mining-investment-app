@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { pickTradingPlanReturn } from '@/lib/trading'
 import { logUserActivity } from '@/lib/user-activity'
+import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
 import {
   isInputValidationError,
   readJsonObject,
@@ -29,6 +30,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
 
+    await reconcileRejectedTradingPendingPlans(user.id)
+
     const plan = await prisma.tradingPlan.findUnique({ where: { id: planId } })
     if (!plan) {
       return NextResponse.json({ error: 'Trading plan not found.' }, { status: 404 })
@@ -39,38 +42,10 @@ export async function POST(req: Request) {
         userId: user.id,
         status: { in: ['active', 'awaiting_payment', 'selected'] },
       },
-      include: {
-        payments: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-      },
       orderBy: { createdAt: 'desc' },
     })
 
-    const latestPaymentStatus = existingPlan?.payments[0]?.status ?? null
-    const staleRejectedPendingPlan =
-      existingPlan &&
-      ['awaiting_payment', 'selected'].includes(existingPlan.status) &&
-      latestPaymentStatus === 'rejected'
-
-    if (staleRejectedPendingPlan && existingPlan) {
-      await prisma.tradingUserPlan.update({
-        where: { id: existingPlan.id },
-        data: {
-          status: 'rejected',
-          paymentStatus: 'rejected',
-          startDate: null,
-          endDate: null,
-        },
-      })
-    }
-
-    if (
-      existingPlan &&
-      !staleRejectedPendingPlan &&
-      (existingPlan.status === 'awaiting_payment' || existingPlan.status === 'selected')
-    ) {
+    if (existingPlan?.status === 'awaiting_payment' || existingPlan?.status === 'selected') {
       return NextResponse.json({ error: 'You already have a pending trading payment.' }, { status: 409 })
     }
 

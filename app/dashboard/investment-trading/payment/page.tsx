@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import TradingPaymentInstructions from '@/components/trading/TradingPaymentInstructions'
 import { getAccountBalanceSummary } from '@/lib/account-balance'
+import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,8 +13,18 @@ export default async function TradingPaymentPage() {
     redirect('/sign-in')
   }
 
-  const user = await prisma.user.findUnique({
+  const userBase = await prisma.user.findUnique({
     where: { clerkUserId: userId },
+    select: { id: true },
+  })
+  if (!userBase) {
+    redirect('/sign-in')
+  }
+
+  await reconcileRejectedTradingPendingPlans(userBase.id)
+
+  const user = await prisma.user.findUnique({
+    where: { id: userBase.id },
     include: {
       tradingPlans: {
         where: {
@@ -59,7 +70,7 @@ export default async function TradingPaymentPage() {
       : null,
   }
 
-  const balanceSummary = await getAccountBalanceSummary(user.id)
+  const balanceSummary = await getAccountBalanceSummary(userBase.id)
 
   return (
     <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
