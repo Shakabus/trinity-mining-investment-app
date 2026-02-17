@@ -57,8 +57,9 @@ export async function POST(req: Request) {
     const balancePayment = isAccountBalancePending(pendingPayment?.transactionId)
     const purchaseRef = `mining-plan:${userPlan.id}`
 
-    await prisma.$transaction(async tx => {
-      if (balancePayment) {
+    await prisma.$transaction(
+      async tx => {
+        if (balancePayment) {
         const entries = await getAccountBalanceEntries(userPlan.userId, { limit: 3000 }, tx)
         const latestByReference = new Map<string, (typeof entries)[number]>()
         for (const entry of entries) {
@@ -94,9 +95,9 @@ export async function POST(req: Request) {
             tx
           )
         }
-      }
+        }
 
-      await tx.userPlan.update({
+        await tx.userPlan.update({
         where: { id: userPlan.id },
         data: {
           status: 'selected',
@@ -106,8 +107,8 @@ export async function POST(req: Request) {
         },
       })
 
-      if (pendingPayment) {
-        await tx.payment.update({
+        if (pendingPayment) {
+          await tx.payment.update({
           where: { id: pendingPayment.id },
           data: {
             status: 'rejected',
@@ -117,20 +118,22 @@ export async function POST(req: Request) {
             confirmedByAdminId: null,
           },
         })
-      }
+        }
 
-      const hasActiveMining = await tx.userPlan.count({
-        where: { userId: userPlan.userId, status: 'active' },
-      })
-      const hasActiveTrading = await tx.tradingUserPlan.count({
-        where: { userId: userPlan.userId, status: 'active' },
-      })
+        const hasActiveMining = await tx.userPlan.count({
+          where: { userId: userPlan.userId, status: 'active' },
+        })
+        const hasActiveTrading = await tx.tradingUserPlan.count({
+          where: { userId: userPlan.userId, status: 'active' },
+        })
 
-      await tx.user.update({
-        where: { id: userPlan.userId },
-        data: { accountStatus: hasActiveMining > 0 || hasActiveTrading > 0 ? 'active' : 'inactive' },
-      })
-    })
+        await tx.user.update({
+          where: { id: userPlan.userId },
+          data: { accountStatus: hasActiveMining > 0 || hasActiveTrading > 0 ? 'active' : 'inactive' },
+        })
+      },
+      { maxWait: 5_000, timeout: 15_000 }
+    )
 
     await logUserActivity({
       userId: userPlan.userId,
@@ -147,6 +150,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
     console.error('Error rejecting payment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

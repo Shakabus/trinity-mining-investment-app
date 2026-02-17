@@ -83,12 +83,13 @@ export async function POST(req: Request) {
     const trackedPrices = await getTrackedCryptoPricesUsd()
     const purchaseRef = `trading-plan:${tradingPlan.id}`
 
-    await prisma.$transaction(async tx => {
-      let paymentCoin: TrackedAssetCoin = 'USDT'
-      let settledAmountCrypto = 0
-      let isMixedBalancePayment = false
+    await prisma.$transaction(
+      async tx => {
+        let paymentCoin: TrackedAssetCoin = 'USDT'
+        let settledAmountCrypto = 0
+        let isMixedBalancePayment = false
 
-      if (balancePayment) {
+        if (balancePayment) {
         const entries = await getAccountBalanceEntries(tradingPlan.userId, { limit: 3000 }, tx)
         const latestByReference = new Map<string, (typeof entries)[number]>()
         for (const entry of entries) {
@@ -164,7 +165,7 @@ export async function POST(req: Request) {
             tx
           )
         }
-      } else {
+        } else {
         const paymentCoinRaw = (pendingPayment?.cryptoType || 'USDT').toUpperCase()
         paymentCoin = isTrackedAssetCoin(paymentCoinRaw) ? paymentCoinRaw : 'USDT'
         settledAmountCrypto = convertUsdToCoin(Number(tradingPlan.investmentUsd), paymentCoin, trackedPrices)
@@ -223,10 +224,10 @@ export async function POST(req: Request) {
         }
       }
 
-      const startDate = new Date()
-      const endDate = new Date(startDate.getTime() + tradingPlan.durationHours * 60 * 60 * 1000)
+        const startDate = new Date()
+        const endDate = new Date(startDate.getTime() + tradingPlan.durationHours * 60 * 60 * 1000)
 
-      await tx.tradingUserPlan.update({
+        await tx.tradingUserPlan.update({
         where: { id: tradingPlan.id },
         data: {
           status: 'active',
@@ -236,14 +237,14 @@ export async function POST(req: Request) {
         },
       })
 
-      await tx.user.update({
+        await tx.user.update({
         where: { id: tradingPlan.userId },
         data: { accountStatus: 'active' },
       })
 
-      const existingStats = await tx.tradingStat.findFirst({ where: { tradingUserPlanId: tradingPlan.id } })
-      if (!existingStats) {
-        await tx.tradingStat.create({
+        const existingStats = await tx.tradingStat.findFirst({ where: { tradingUserPlanId: tradingPlan.id } })
+        if (!existingStats) {
+          await tx.tradingStat.create({
           data: {
             userId: tradingPlan.userId,
             tradingUserPlanId: tradingPlan.id,
@@ -255,10 +256,10 @@ export async function POST(req: Request) {
         })
       }
 
-      const existingEarnings = await tx.tradingEarning.findFirst({ where: { tradingUserPlanId: tradingPlan.id } })
-      if (!existingEarnings) {
-        const durationDays = Math.max(1, tradingPlan.durationHours / 24)
-        await tx.tradingEarning.create({
+        const existingEarnings = await tx.tradingEarning.findFirst({ where: { tradingUserPlanId: tradingPlan.id } })
+        if (!existingEarnings) {
+          const durationDays = Math.max(1, tradingPlan.durationHours / 24)
+          await tx.tradingEarning.create({
           data: {
             userId: tradingPlan.userId,
             tradingUserPlanId: tradingPlan.id,
@@ -269,8 +270,8 @@ export async function POST(req: Request) {
         })
       }
 
-      if (pendingPayment) {
-        await tx.tradingPayment.update({
+        if (pendingPayment) {
+          await tx.tradingPayment.update({
           where: { id: pendingPayment.id },
           data: {
             amountUsd: tradingPlan.investmentUsd,
@@ -289,8 +290,8 @@ export async function POST(req: Request) {
             confirmedAt: new Date(),
           },
         })
-      } else {
-        await tx.tradingPayment.create({
+        } else {
+          await tx.tradingPayment.create({
           data: {
             userId: tradingPlan.userId,
             tradingUserPlanId: tradingPlan.id,
@@ -308,8 +309,10 @@ export async function POST(req: Request) {
             confirmedAt: new Date(),
           },
         })
-      }
-    })
+        }
+      },
+      { maxWait: 5_000, timeout: 30_000 }
+    )
 
     await logUserActivity({
       userId: tradingPlan.userId,

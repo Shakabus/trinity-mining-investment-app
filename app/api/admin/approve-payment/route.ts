@@ -102,89 +102,90 @@ export async function POST(req: Request) {
     const miningPrices = await getCryptoPricesUsd()
     const purchaseRef = `mining-plan:${userPlan.id}`
 
-    await prisma.$transaction(async tx => {
-      let paymentCoin: TrackedAssetCoin = 'BTC'
-      let settledAmountCrypto = 0
-      let isMixedBalancePayment = false
+    await prisma.$transaction(
+      async tx => {
+        let paymentCoin: TrackedAssetCoin = 'BTC'
+        let settledAmountCrypto = 0
+        let isMixedBalancePayment = false
 
-      if (balancePayment) {
-        const balanceEntries = await getAccountBalanceEntries(userPlan.userId, { limit: 3000 }, tx)
-        const latestByReference = new Map<string, (typeof balanceEntries)[number]>()
-        for (const entry of balanceEntries) {
-          if (entry.source !== 'mining_plan_purchase' || entry.direction !== 'debit') continue
-          const metadataPlanId = Number(entry.metadata?.userPlanId)
-          const matchesPlanByMetadata = Number.isFinite(metadataPlanId) && metadataPlanId === userPlan.id
-          const matchesPlanByReference =
-            entry.referenceId === purchaseRef || entry.referenceId.startsWith(`${purchaseRef}:`)
-          if (!matchesPlanByMetadata && !matchesPlanByReference) continue
-          const current = latestByReference.get(entry.referenceId)
-          if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
-            latestByReference.set(entry.referenceId, entry)
-          }
-        }
-
-        const latestSegments = [...latestByReference.values()]
-        if (latestSegments.some(entry => entry.status === 'settled')) {
-          throw new Error('This plan has already been funded from account balance.')
-        }
-
-        const pendingSegments = latestSegments
-          .filter(entry => entry.status === 'pending')
-          .sort((a, b) => b.amountUsd - a.amountUsd)
-
-        if (!pendingSegments.length) {
-          throw new Error('No pending account-balance debit found for this plan.')
-        }
-
-        isMixedBalancePayment = pendingSegments.length > 1
-        const primarySegment = pendingSegments[0]
-        const primaryRawCoin =
-          typeof primarySegment.metadata?.coinType === 'string'
-            ? primarySegment.metadata.coinType.toUpperCase()
-            : userPlan.plan.coinType.toUpperCase()
-        paymentCoin = isTrackedAssetCoin(primaryRawCoin) ? primaryRawCoin : 'BTC'
-
-        for (const pendingSegment of pendingSegments) {
-          const rawCoin =
-            typeof pendingSegment.metadata?.coinType === 'string'
-              ? pendingSegment.metadata.coinType.toUpperCase()
-              : paymentCoin
-          const segmentCoin = isTrackedAssetCoin(rawCoin) ? rawCoin : paymentCoin
-          const amountCryptoFromEntry = Number(pendingSegment.metadata?.amountCrypto)
-          const segmentAmountCrypto =
-            Number.isFinite(amountCryptoFromEntry) && amountCryptoFromEntry > 0
-              ? Number(amountCryptoFromEntry.toFixed(8))
-              : convertUsdToCoin(Number(pendingSegment.amountUsd), segmentCoin, trackedPrices)
-
-          if (pendingSegment.referenceId === primarySegment.referenceId) {
-            settledAmountCrypto = segmentAmountCrypto
-            paymentCoin = segmentCoin
+        if (balancePayment) {
+          const balanceEntries = await getAccountBalanceEntries(userPlan.userId, { limit: 3000 }, tx)
+          const latestByReference = new Map<string, (typeof balanceEntries)[number]>()
+          for (const entry of balanceEntries) {
+            if (entry.source !== 'mining_plan_purchase' || entry.direction !== 'debit') continue
+            const metadataPlanId = Number(entry.metadata?.userPlanId)
+            const matchesPlanByMetadata = Number.isFinite(metadataPlanId) && metadataPlanId === userPlan.id
+            const matchesPlanByReference =
+              entry.referenceId === purchaseRef || entry.referenceId.startsWith(`${purchaseRef}:`)
+            if (!matchesPlanByMetadata && !matchesPlanByReference) continue
+            const current = latestByReference.get(entry.referenceId)
+            if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
+              latestByReference.set(entry.referenceId, entry)
+            }
           }
 
-          await createAccountBalanceEntry(
-            {
-              userId: userPlan.userId,
-              direction: 'debit',
-              status: 'settled',
-              amountUsd: Number(pendingSegment.amountUsd),
-              source: 'mining_plan_purchase',
-              referenceId: pendingSegment.referenceId,
-              note: `Mining plan payment approved (${userPlan.plan.name}).`,
-              metadata: {
-                ...(pendingSegment.metadata ?? {}),
-                coinType: segmentCoin,
-                amountCrypto: segmentAmountCrypto,
-                usdPriceAtSettlement: trackedPrices[segmentCoin],
-                reviewedByAdminId: adminUser.id,
-                reviewedAt: new Date().toISOString(),
+          const latestSegments = [...latestByReference.values()]
+          if (latestSegments.some(entry => entry.status === 'settled')) {
+            throw new Error('This plan has already been funded from account balance.')
+          }
+
+          const pendingSegments = latestSegments
+            .filter(entry => entry.status === 'pending')
+            .sort((a, b) => b.amountUsd - a.amountUsd)
+
+          if (!pendingSegments.length) {
+            throw new Error('No pending account-balance debit found for this plan.')
+          }
+
+          isMixedBalancePayment = pendingSegments.length > 1
+          const primarySegment = pendingSegments[0]
+          const primaryRawCoin =
+            typeof primarySegment.metadata?.coinType === 'string'
+              ? primarySegment.metadata.coinType.toUpperCase()
+              : userPlan.plan.coinType.toUpperCase()
+          paymentCoin = isTrackedAssetCoin(primaryRawCoin) ? primaryRawCoin : 'BTC'
+
+          for (const pendingSegment of pendingSegments) {
+            const rawCoin =
+              typeof pendingSegment.metadata?.coinType === 'string'
+                ? pendingSegment.metadata.coinType.toUpperCase()
+                : paymentCoin
+            const segmentCoin = isTrackedAssetCoin(rawCoin) ? rawCoin : paymentCoin
+            const amountCryptoFromEntry = Number(pendingSegment.metadata?.amountCrypto)
+            const segmentAmountCrypto =
+              Number.isFinite(amountCryptoFromEntry) && amountCryptoFromEntry > 0
+                ? Number(amountCryptoFromEntry.toFixed(8))
+                : convertUsdToCoin(Number(pendingSegment.amountUsd), segmentCoin, trackedPrices)
+
+            if (pendingSegment.referenceId === primarySegment.referenceId) {
+              settledAmountCrypto = segmentAmountCrypto
+              paymentCoin = segmentCoin
+            }
+
+            await createAccountBalanceEntry(
+              {
+                userId: userPlan.userId,
+                direction: 'debit',
+                status: 'settled',
+                amountUsd: Number(pendingSegment.amountUsd),
+                source: 'mining_plan_purchase',
+                referenceId: pendingSegment.referenceId,
+                note: `Mining plan payment approved (${userPlan.plan.name}).`,
+                metadata: {
+                  ...(pendingSegment.metadata ?? {}),
+                  coinType: segmentCoin,
+                  amountCrypto: segmentAmountCrypto,
+                  usdPriceAtSettlement: trackedPrices[segmentCoin],
+                  reviewedByAdminId: adminUser.id,
+                  reviewedAt: new Date().toISOString(),
+                },
               },
-            },
-            tx
-          )
-        }
-      } else {
-        const paymentCoinRaw = (pendingPayment?.cryptoType || userPlan.plan.coinType || 'BTC').toUpperCase()
-        paymentCoin = isTrackedAssetCoin(paymentCoinRaw) ? paymentCoinRaw : 'BTC'
+              tx
+            )
+          }
+        } else {
+          const paymentCoinRaw = (pendingPayment?.cryptoType || userPlan.plan.coinType || 'BTC').toUpperCase()
+          paymentCoin = isTrackedAssetCoin(paymentCoinRaw) ? paymentCoinRaw : 'BTC'
 
         const amountCryptoFromPayment = Number((pendingPayment as { amountCrypto?: unknown } | null)?.amountCrypto ?? 0)
         settledAmountCrypto =
@@ -432,7 +433,7 @@ export async function POST(req: Request) {
         })
       }
 
-      if (priorConfirmedPayments === 0 && userPlan.user.referredById) {
+        if (priorConfirmedPayments === 0 && userPlan.user.referredById) {
         const existingBonus = await tx.referralBonus.findFirst({
           where: { refereeId: userPlan.userId },
         })
@@ -461,8 +462,10 @@ export async function POST(req: Request) {
             })
           }
         }
-      }
-    })
+        }
+      },
+      { maxWait: 5_000, timeout: 30_000 }
+    )
 
     await logUserActivity({
       userId: userPlan.userId,
