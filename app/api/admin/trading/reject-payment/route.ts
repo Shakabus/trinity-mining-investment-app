@@ -104,8 +104,8 @@ export async function POST(req: Request) {
         await tx.tradingUserPlan.update({
         where: { id: tradingPlan.id },
         data: {
-          status: 'selected',
-          paymentStatus: 'pending',
+          status: 'rejected',
+          paymentStatus: 'rejected',
           startDate: null,
           endDate: null,
         },
