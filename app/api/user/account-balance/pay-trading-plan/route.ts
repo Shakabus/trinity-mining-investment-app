@@ -142,8 +142,9 @@ export async function POST(req: Request) {
     const investmentUsd = Number(tradingPlan.investmentUsd)
     const debitReference = `trading-plan:${tradingPlan.id}`
 
-    await prisma.$transaction(async tx => {
-      await lockUserBalanceForUpdate(user.id, tx)
+    await prisma.$transaction(
+      async tx => {
+        await lockUserBalanceForUpdate(user.id, tx)
 
       const summary = await getAccountBalanceSummary(user.id, tx)
       if (summary.availableToSpendUsd < investmentUsd) {
@@ -225,35 +226,37 @@ export async function POST(req: Request) {
         orderBy: { createdAt: 'desc' },
       })
 
-      await (existingPayment
-        ? await tx.tradingPayment.update({
-            where: { id: existingPayment.id },
-            data: {
-              amountUsd: tradingPlan.investmentUsd,
-              walletAddress: 'Account Balance',
-              cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
-              transactionId: 'Account Balance - Pending Review',
-              paymentProofUrl: null,
-              status: 'pending',
-              confirmations: 0,
-              confirmedByAdminId: null,
-              confirmedAt: null,
-            },
-          })
-        : await tx.tradingPayment.create({
-            data: {
-              userId: tradingPlan.userId,
-              tradingUserPlanId: tradingPlan.id,
-              amountUsd: tradingPlan.investmentUsd,
-              cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
-              walletAddress: 'Account Balance',
-              transactionId: 'Account Balance - Pending Review',
-              status: 'pending',
-              confirmations: 0,
-              confirmedAt: null,
-            },
-          }))
-    })
+        await (existingPayment
+          ? await tx.tradingPayment.update({
+              where: { id: existingPayment.id },
+              data: {
+                amountUsd: tradingPlan.investmentUsd,
+                walletAddress: 'Account Balance',
+                cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
+                transactionId: 'Account Balance - Pending Review',
+                paymentProofUrl: null,
+                status: 'pending',
+                confirmations: 0,
+                confirmedByAdminId: null,
+                confirmedAt: null,
+              },
+            })
+          : await tx.tradingPayment.create({
+              data: {
+                userId: tradingPlan.userId,
+                tradingUserPlanId: tradingPlan.id,
+                amountUsd: tradingPlan.investmentUsd,
+                cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
+                walletAddress: 'Account Balance',
+                transactionId: 'Account Balance - Pending Review',
+                status: 'pending',
+                confirmations: 0,
+                confirmedAt: null,
+              },
+            }))
+      },
+      { maxWait: 5_000, timeout: 20_000 }
+    )
 
     await logUserActivity({
       userId: user.id,

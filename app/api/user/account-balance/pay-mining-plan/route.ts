@@ -142,8 +142,9 @@ export async function POST(req: Request) {
     const finalPriceUsd = Number(userPlan.finalPrice)
     const debitReference = `mining-plan:${userPlan.id}`
 
-    await prisma.$transaction(async tx => {
-      await lockUserBalanceForUpdate(user.id, tx)
+    await prisma.$transaction(
+      async tx => {
+        await lockUserBalanceForUpdate(user.id, tx)
 
       const currentBalance = await getAccountBalanceSummary(user.id, tx)
       if (currentBalance.availableToSpendUsd < finalPriceUsd) {
@@ -225,37 +226,39 @@ export async function POST(req: Request) {
         orderBy: { createdAt: 'desc' },
       })
 
-      await (existingPayment
-        ? await tx.payment.update({
-            where: { id: existingPayment.id },
-            data: {
-              amountUsd: userPlan.finalPrice,
-              amountCrypto: contributions.length > 1 ? null : contributions[0].amountCrypto,
-              cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
-              walletAddress: 'Account Balance',
-              transactionId: 'Account Balance - Pending Review',
-              paymentProofUrl: null,
-              status: 'pending',
-              confirmations: 0,
-              confirmedByAdminId: null,
-              confirmedAt: null,
-            },
-          })
-        : await tx.payment.create({
-            data: {
-              userId: userPlan.userId,
-              userPlanId: userPlan.id,
-              amountUsd: userPlan.finalPrice,
-              amountCrypto: contributions.length > 1 ? null : contributions[0].amountCrypto,
-              cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
-              walletAddress: 'Account Balance',
-              transactionId: 'Account Balance - Pending Review',
-              status: 'pending',
-              confirmations: 0,
-              confirmedAt: null,
-            },
-          }))
-    })
+        await (existingPayment
+          ? await tx.payment.update({
+              where: { id: existingPayment.id },
+              data: {
+                amountUsd: userPlan.finalPrice,
+                amountCrypto: contributions.length > 1 ? null : contributions[0].amountCrypto,
+                cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
+                walletAddress: 'Account Balance',
+                transactionId: 'Account Balance - Pending Review',
+                paymentProofUrl: null,
+                status: 'pending',
+                confirmations: 0,
+                confirmedByAdminId: null,
+                confirmedAt: null,
+              },
+            })
+          : await tx.payment.create({
+              data: {
+                userId: userPlan.userId,
+                userPlanId: userPlan.id,
+                amountUsd: userPlan.finalPrice,
+                amountCrypto: contributions.length > 1 ? null : contributions[0].amountCrypto,
+                cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
+                walletAddress: 'Account Balance',
+                transactionId: 'Account Balance - Pending Review',
+                status: 'pending',
+                confirmations: 0,
+                confirmedAt: null,
+              },
+            }))
+      },
+      { maxWait: 5_000, timeout: 20_000 }
+    )
 
     await logUserActivity({
       userId: user.id,
