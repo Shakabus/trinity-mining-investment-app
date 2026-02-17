@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import LoadingButton from '@/components/ui/LoadingButton'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
+import WalletConversionCard from '@/components/dashboard/WalletConversionCard'
 
 type WithdrawalEntry = {
   id: number
@@ -20,6 +21,15 @@ type Props = {
   balanceUsd: number
   pendingCreditsUsd: number
   pendingDebitsUsd: number
+  walletFlow: {
+    coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
+    totalInCrypto: number
+    totalOutCrypto: number
+    netCrypto: number
+    totalInUsd: number
+    totalOutUsd: number
+    netUsd: number
+  }[]
   totalWithdrawnUsd: number
   miningReadyUsd: number
   tradingReadyUsd: number
@@ -43,6 +53,7 @@ export default function AccountWithdrawPageClient({
   balanceUsd,
   pendingCreditsUsd,
   pendingDebitsUsd,
+  walletFlow,
   totalWithdrawnUsd,
   miningReadyUsd,
   tradingReadyUsd,
@@ -380,6 +391,8 @@ export default function AccountWithdrawPageClient({
       </div>
 
       <LivePaymentsPageClient />
+
+      <WalletConversionCard walletFlow={walletFlow} />
 
       <div
         className="p-6 rounded-3xl"

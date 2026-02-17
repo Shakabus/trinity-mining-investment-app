@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Check, Copy } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
+import WalletConversionCard from '@/components/dashboard/WalletConversionCard'
 
 type BalanceEntry = {
   id: number
@@ -47,6 +48,7 @@ const sourceLabel: Record<string, string> = {
   trading_plan_purchase: 'Trading plan purchase',
   real_estate_buy_in: 'Real estate buy-in',
   real_estate_withdrawal: 'Real estate withdrawal',
+  wallet_conversion: 'Wallet conversion',
   mining_withdrawal: 'Mining withdrawal',
   trading_withdrawal: 'Trading withdrawal',
   referral_withdrawal: 'Referral withdrawal',
@@ -218,6 +220,8 @@ export default function AccountFundPageClient({
           ))}
         </div>
       </div>
+
+      <WalletConversionCard walletFlow={walletFlow} />
 
       <div
         className="p-6 md:p-8 rounded-3xl space-y-4"

@@ -20,6 +20,7 @@ export type AccountBalanceSource =
   | 'trading_plan_purchase'
   | 'real_estate_buy_in'
   | 'real_estate_withdrawal'
+  | 'wallet_conversion'
   | 'account_balance_withdrawal'
   | 'mining_withdrawal'
   | 'trading_withdrawal'
@@ -91,6 +92,7 @@ const isSource = (value: unknown): value is AccountBalanceSource =>
   value === 'trading_plan_purchase' ||
   value === 'real_estate_buy_in' ||
   value === 'real_estate_withdrawal' ||
+  value === 'wallet_conversion' ||
   value === 'account_balance_withdrawal' ||
   value === 'mining_withdrawal' ||
   value === 'trading_withdrawal' ||
@@ -217,6 +219,7 @@ function fallbackCoinBySource(source: AccountBalanceSource): TrackedAssetCoin | 
       return 'USDT'
     case 'real_estate_buy_in':
     case 'real_estate_withdrawal':
+    case 'wallet_conversion':
       return 'USDT'
     case 'admin_manual_adjustment':
       return 'USDT'
@@ -463,6 +466,8 @@ export function formatAccountBalanceSource(source: AccountBalanceSource) {
       return 'Real estate buy-in'
     case 'real_estate_withdrawal':
       return 'Real estate withdrawal'
+    case 'wallet_conversion':
+      return 'Wallet conversion'
     case 'account_balance_withdrawal':
       return 'Account withdrawal'
     case 'mining_withdrawal':

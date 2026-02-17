@@ -2,7 +2,12 @@ import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import AccountWithdrawPageClient from '@/components/dashboard/AccountWithdrawPageClient'
-import { getAccountBalanceEntries, getAccountBalanceSummary } from '@/lib/account-balance'
+import {
+  getAccountBalanceAssetSummary,
+  getAccountBalanceEntries,
+  getAccountBalanceSummary,
+} from '@/lib/account-balance'
+import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
 import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
 
 export const dynamic = 'force-dynamic'
@@ -27,9 +32,11 @@ export default async function WithdrawAccountPage() {
     redirect('/sign-in')
   }
 
-  const [summary, entries, miningReady, tradingReady, referralReady] = await Promise.all([
+  const prices = await getTrackedCryptoPricesUsd()
+  const [summary, entries, assetSummary, miningReady, tradingReady, referralReady] = await Promise.all([
     getAccountBalanceSummary(user.id),
     getAccountBalanceEntries(user.id, { limit: 800 }),
+    getAccountBalanceAssetSummary(user.id, prices),
     prisma.earnings.aggregate({
       where: {
         userId: user.id,
@@ -102,6 +109,7 @@ export default async function WithdrawAccountPage() {
       balanceUsd={summary.availableToSpendUsd}
       pendingCreditsUsd={summary.pendingCreditsUsd}
       pendingDebitsUsd={summary.pendingDebitsUsd}
+      walletFlow={TRACKED_ASSET_COINS.map(coinType => assetSummary.byCoin[coinType])}
       totalWithdrawnUsd={totalWithdrawnUsd}
       miningReadyUsd={Number(miningReady._sum.totalEarnedUsd ?? 0)}
       tradingReadyUsd={Number(tradingReady._sum.totalEarnedUsd ?? 0)}
