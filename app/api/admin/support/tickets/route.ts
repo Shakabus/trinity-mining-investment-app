@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { createAccountBalanceEntry, getAccountBalanceEntries } from '@/lib/account-balance'
+import { convertUsdToCoin, getTrackedCryptoPricesUsd, isTrackedAssetCoin } from '@/lib/crypto-prices'
 import {
   REAL_ESTATE_BUY_IN_TICKET_PREFIX,
   REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
@@ -16,6 +17,17 @@ import {
 
 const ALLOWED_STATUSES = ['open', 'waiting', 'closed', 'rejected']
 const ADMIN_SUPPORT_TICKET_FIELDS = ['ticketId', 'status'] as const
+
+const parseLabel = (body: string, label: string) => {
+  const regex = new RegExp(`^${label}:\\s*(.+)$`, 'im')
+  const match = body.match(regex)
+  return match?.[1]?.trim() ?? ''
+}
+
+const parseAmount = (value: string) => {
+  const num = Number(value.replace(/[^0-9.]/g, ''))
+  return Number.isFinite(num) ? num : 0
+}
 
 export async function PATCH(req: Request) {
   try {
@@ -136,6 +148,109 @@ export async function PATCH(req: Request) {
         })
       }
     } else if (isRealEstateWithdrawal) {
+      const referenceId = `real-estate-withdrawal:${ticket.id}`
+      const relatedEntries = await getAccountBalanceEntries(ticket.userId, { limit: 2000 })
+      const latestRelatedEntry = relatedEntries
+        .filter(entry => entry.referenceId === referenceId && entry.source === 'real_estate_withdrawal')
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+
+      const userMessage = await prisma.supportMessage.findFirst({
+        where: {
+          ticketId: ticket.id,
+          senderRole: 'user',
+        },
+        orderBy: { createdAt: 'desc' },
+        select: { body: true },
+      })
+
+      const bodyText = userMessage?.body || ''
+      const requestedAmountUsd = parseAmount(
+        parseLabel(bodyText, 'Requested Amount USD') || parseLabel(bodyText, 'Amount')
+      )
+      const rawCoinType =
+        (parseLabel(bodyText, 'Coin') ||
+          parseLabel(bodyText, 'Payout Coin') ||
+          parseLabel(bodyText, 'Payment Coin') ||
+          'USDT').toUpperCase()
+      const coinType = isTrackedAssetCoin(rawCoinType) ? rawCoinType : 'USDT'
+      const method = parseLabel(bodyText, 'Method') || parseLabel(bodyText, 'Payout Method') || null
+      const destination = parseLabel(bodyText, 'Destination') || parseLabel(bodyText, 'Wallet') || null
+      const prices = status === 'closed' ? await getTrackedCryptoPricesUsd() : null
+      const amountCrypto =
+        status === 'closed' && requestedAmountUsd > 0 && prices
+          ? convertUsdToCoin(requestedAmountUsd, coinType, prices)
+          : undefined
+
+      if (requestedAmountUsd > 0 && status !== existingTicket.status) {
+        if (status === 'closed' && latestRelatedEntry?.status !== 'settled') {
+          await createAccountBalanceEntry({
+            userId: ticket.userId,
+            direction: 'credit',
+            status: 'settled',
+            amountUsd: requestedAmountUsd,
+            source: 'real_estate_withdrawal',
+            referenceId,
+            note: 'Real-estate withdrawal approved and credited to account balance.',
+            metadata: {
+              ticketId: ticket.id,
+              coinType,
+              amountCrypto,
+              usdPriceAtSettlement: prices?.[coinType],
+              method,
+              destination,
+            },
+          })
+        } else if (status === 'rejected' && latestRelatedEntry?.status !== 'rejected') {
+          await createAccountBalanceEntry({
+            userId: ticket.userId,
+            direction: 'credit',
+            status: 'rejected',
+            amountUsd: requestedAmountUsd,
+            source: 'real_estate_withdrawal',
+            referenceId,
+            note: 'Real-estate withdrawal rejected.',
+            metadata: {
+              ticketId: ticket.id,
+              coinType,
+              method,
+              destination,
+            },
+          })
+        }
+      }
+
+      if (
+        requestedAmountUsd > 0 &&
+        status === 'rejected' &&
+        ['closed'].includes(existingTicket.status)
+      ) {
+        const reversalReference = `real-estate-withdrawal-reversal:${ticket.id}`
+        const hasReversal = relatedEntries.some(
+          entry =>
+            entry.referenceId === reversalReference &&
+            entry.source === 'withdrawal_reversal' &&
+            entry.direction === 'debit' &&
+            entry.status === 'settled'
+        )
+        if (!hasReversal) {
+          await createAccountBalanceEntry({
+            userId: ticket.userId,
+            direction: 'debit',
+            status: 'settled',
+            amountUsd: requestedAmountUsd,
+            source: 'withdrawal_reversal',
+            referenceId: reversalReference,
+            note: 'Real-estate withdrawal credit reversed after rejection.',
+            metadata: {
+              ticketId: ticket.id,
+              coinType,
+              method,
+              destination,
+            },
+          })
+        }
+      }
+
       if (status === 'closed') {
         await logUserActivity({
           userId: ticket.userId,

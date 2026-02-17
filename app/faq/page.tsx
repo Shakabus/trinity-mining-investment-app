@@ -134,7 +134,7 @@ const FAQ_ITEMS: FaqItem[] = [
     category: 'Real Estate Portfolio',
     question: 'How does the real estate buy-in process work?',
     answer:
-      'Choose a property, select a tier, and submit payment proof from your dashboard flow. After review and approval, the position becomes active and starts tracking monthly earnings metrics in your property earnings view.',
+      'Choose a property, select a tier, and submit the request from your funded account balance. After review and approval, the position becomes active and starts tracking monthly earnings metrics in your property earnings view.',
   },
   {
     id: 're-2',
@@ -190,7 +190,7 @@ const FAQ_ITEMS: FaqItem[] = [
     category: 'Payments & Withdrawals',
     question: 'How are plan payments confirmed?',
     answer:
-      'Payments move through a review and confirmation flow before plan activation. You can track proof status, approval state, and order progression in the dashboard.',
+      'Payments move through account-balance review and confirmation before plan activation. You can track pending, approved, and rejected states in account history and dashboard activity.',
   },
   {
     id: 'pay-2',
@@ -307,7 +307,7 @@ const KNOWLEDGE_PANELS = [
   },
   {
     title: 'When To Reach Support',
-    text: 'Contact support when a status appears stalled, payment proof is pending too long, or payout records show mismatch with your expected cycle state. Provide full context in one message.',
+    text: 'Contact support when a status appears stalled, account-balance reviews are pending too long, or payout records show mismatch with your expected cycle state. Provide full context in one message.',
   },
 ]
 

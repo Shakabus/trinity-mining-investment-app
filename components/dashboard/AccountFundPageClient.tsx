@@ -46,6 +46,7 @@ const sourceLabel: Record<string, string> = {
   mining_plan_purchase: 'Mining plan purchase',
   trading_plan_purchase: 'Trading plan purchase',
   real_estate_buy_in: 'Real estate buy-in',
+  real_estate_withdrawal: 'Real estate withdrawal',
   mining_withdrawal: 'Mining withdrawal',
   trading_withdrawal: 'Trading withdrawal',
   referral_withdrawal: 'Referral withdrawal',

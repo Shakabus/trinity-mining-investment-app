@@ -36,7 +36,7 @@ export default async function RealEstatePropertyEarningsPage() {
           <h2 className="text-xl font-semibold text-white">No active allocation yet</h2>
           <p className="text-white/70 mt-3 max-w-2xl">
             Earnings are generated from your approved real-estate allocations. Submit your first
-            buy-in proof to activate this ledger.
+            buy-in request to activate this ledger.
           </p>
           <Link
             href="/dashboard/real-estate"

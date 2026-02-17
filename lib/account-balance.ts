@@ -19,6 +19,7 @@ export type AccountBalanceSource =
   | 'mining_plan_purchase'
   | 'trading_plan_purchase'
   | 'real_estate_buy_in'
+  | 'real_estate_withdrawal'
   | 'account_balance_withdrawal'
   | 'mining_withdrawal'
   | 'trading_withdrawal'
@@ -57,6 +58,16 @@ export type AccountBalanceCoinSummary = {
   netUsd: number
 }
 
+export type AccountBalanceCoinAvailability = {
+  coinType: TrackedAssetCoin
+  settledNetCrypto: number
+  reservedPendingDebitCrypto: number
+  availableCrypto: number
+  settledNetUsd: number
+  reservedPendingDebitUsd: number
+  availableUsd: number
+}
+
 type CreateEntryInput = {
   userId: number
   direction: AccountBalanceDirection
@@ -79,6 +90,7 @@ const isSource = (value: unknown): value is AccountBalanceSource =>
   value === 'mining_plan_purchase' ||
   value === 'trading_plan_purchase' ||
   value === 'real_estate_buy_in' ||
+  value === 'real_estate_withdrawal' ||
   value === 'account_balance_withdrawal' ||
   value === 'mining_withdrawal' ||
   value === 'trading_withdrawal' ||
@@ -204,6 +216,7 @@ function fallbackCoinBySource(source: AccountBalanceSource): TrackedAssetCoin | 
     case 'account_balance_withdrawal':
       return 'USDT'
     case 'real_estate_buy_in':
+    case 'real_estate_withdrawal':
       return 'USDT'
     case 'admin_manual_adjustment':
       return 'USDT'
@@ -303,6 +316,67 @@ export function summarizeAccountBalanceAssets(
   }
 }
 
+export function summarizeAccountBalanceCoinAvailability(
+  entries: AccountBalanceEntry[],
+  prices: CryptoPriceMap
+): {
+  byCoin: Record<TrackedAssetCoin, AccountBalanceCoinAvailability>
+} {
+  const latestEntries = [...getLatestAccountBalanceEntries(entries).values()]
+
+  const byCoin = TRACKED_ASSET_COINS.reduce<Record<TrackedAssetCoin, AccountBalanceCoinAvailability>>(
+    (map, coinType) => {
+      map[coinType] = {
+        coinType,
+        settledNetCrypto: 0,
+        reservedPendingDebitCrypto: 0,
+        availableCrypto: 0,
+        settledNetUsd: 0,
+        reservedPendingDebitUsd: 0,
+        availableUsd: 0,
+      }
+      return map
+    },
+    {} as Record<TrackedAssetCoin, AccountBalanceCoinAvailability>
+  )
+
+  for (const entry of latestEntries) {
+    const coinType = getEntryCoinType(entry)
+    if (!coinType) continue
+
+    const bucket = byCoin[coinType]
+    const cryptoAmount = getEntryCryptoAmount(entry, coinType, prices)
+
+    if (entry.status === 'settled') {
+      if (entry.direction === 'credit') {
+        bucket.settledNetCrypto = Number((bucket.settledNetCrypto + cryptoAmount).toFixed(8))
+        bucket.settledNetUsd = Number((bucket.settledNetUsd + entry.amountUsd).toFixed(2))
+      } else {
+        bucket.settledNetCrypto = Number((bucket.settledNetCrypto - cryptoAmount).toFixed(8))
+        bucket.settledNetUsd = Number((bucket.settledNetUsd - entry.amountUsd).toFixed(2))
+      }
+      continue
+    }
+
+    if (entry.status === 'pending' && entry.direction === 'debit') {
+      bucket.reservedPendingDebitCrypto = Number(
+        (bucket.reservedPendingDebitCrypto + cryptoAmount).toFixed(8)
+      )
+      bucket.reservedPendingDebitUsd = Number((bucket.reservedPendingDebitUsd + entry.amountUsd).toFixed(2))
+    }
+  }
+
+  for (const coinType of TRACKED_ASSET_COINS) {
+    const bucket = byCoin[coinType]
+    bucket.availableCrypto = Number(
+      Math.max(0, bucket.settledNetCrypto - bucket.reservedPendingDebitCrypto).toFixed(8)
+    )
+    bucket.availableUsd = convertCoinToUsd(bucket.availableCrypto, coinType, prices)
+  }
+
+  return { byCoin }
+}
+
 export async function getAccountBalanceAssetSummary(
   userId: number,
   prices: CryptoPriceMap,
@@ -310,6 +384,19 @@ export async function getAccountBalanceAssetSummary(
 ) {
   const entries = await getAccountBalanceEntries(userId, { limit: 3000 }, db)
   return summarizeAccountBalanceAssets(entries, prices)
+}
+
+export async function getAccountBalanceCoinAvailability(
+  userId: number,
+  prices: CryptoPriceMap,
+  db: DbClient = prisma
+) {
+  const entries = await getAccountBalanceEntries(userId, { limit: 3000 }, db)
+  return summarizeAccountBalanceCoinAvailability(entries, prices)
+}
+
+export async function lockUserBalanceForUpdate(userId: number, db: Prisma.TransactionClient) {
+  await db.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
 }
 
 export async function getAccountBalanceSummary(userId: number, db: DbClient = prisma) {
@@ -374,6 +461,8 @@ export function formatAccountBalanceSource(source: AccountBalanceSource) {
       return 'Trading plan purchase'
     case 'real_estate_buy_in':
       return 'Real estate buy-in'
+    case 'real_estate_withdrawal':
+      return 'Real estate withdrawal'
     case 'account_balance_withdrawal':
       return 'Account withdrawal'
     case 'mining_withdrawal':
@@ -383,9 +472,9 @@ export function formatAccountBalanceSource(source: AccountBalanceSource) {
     case 'referral_withdrawal':
       return 'Referral withdrawal'
     case 'external_payment':
-      return 'Payment proof approved (mining)'
+      return 'Mining payment settled'
     case 'external_trading_payment':
-      return 'Payment proof approved (trading)'
+      return 'Trading payment settled'
     case 'admin_manual_adjustment':
       return 'Admin manual adjustment'
     case 'withdrawal_reversal':

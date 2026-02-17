@@ -126,8 +126,8 @@ export default async function SupportInboxPage() {
             <div>
               <div className="text-white font-semibold mb-1">Payments</div>
               <div>
-                Approve or reject plan payments. Verify the payment proof and transaction ID before approval to activate
-                a plan. Rejecting cancels the pending plan selection.
+                Review account-balance payment operations. Approvals and rejections are handled from Account Balance
+                Controls, where pending deposits and plan purchases are finalized.
               </div>
             </div>
             <div>

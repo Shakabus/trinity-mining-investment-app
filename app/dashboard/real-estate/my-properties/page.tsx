@@ -40,7 +40,7 @@ export default async function RealEstateMyPropertiesPage() {
         </div>
         {hasPositions ? (
           <p className="text-white/70 mt-3 max-w-2xl">
-            This view is tied to your submitted buy-in proofs and approval flow. Allocation lanes,
+            This view is tied to your submitted buy-in requests and approval flow. Allocation lanes,
             status updates, and timeline progression are shown per property.
           </p>
         ) : (

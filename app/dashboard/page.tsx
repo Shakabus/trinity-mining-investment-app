@@ -264,7 +264,16 @@ export default async function DashboardPage() {
       entry =>
         entry.direction === 'credit' &&
         entry.status === 'settled' &&
-        ['funding_deposit', 'external_payment', 'external_trading_payment', 'admin_manual_adjustment'].includes(entry.source)
+        [
+          'funding_deposit',
+          'external_payment',
+          'external_trading_payment',
+          'mining_withdrawal',
+          'trading_withdrawal',
+          'referral_withdrawal',
+          'real_estate_withdrawal',
+          'admin_manual_adjustment',
+        ].includes(entry.source)
     )
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 

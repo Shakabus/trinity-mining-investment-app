@@ -16,6 +16,7 @@ const DEPOSIT_SOURCES = new Set([
   'mining_withdrawal',
   'trading_withdrawal',
   'referral_withdrawal',
+  'real_estate_withdrawal',
 ])
 
 const PURCHASE_SOURCES = new Set([

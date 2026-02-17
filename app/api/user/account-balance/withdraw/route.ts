@@ -4,8 +4,10 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import {
   createAccountBalanceEntry,
+  getAccountBalanceCoinAvailability,
   getAccountBalanceEntries,
   getAccountBalanceSummary,
+  lockUserBalanceForUpdate,
 } from '@/lib/account-balance'
 import { convertUsdToCoin, getTrackedCryptoPricesUsd } from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
@@ -27,6 +29,15 @@ const WITHDRAW_ALLOWED_FIELDS = [
 ] as const
 const ALLOWED_COINS = ['BTC', 'ETH', 'USDT', 'SOL'] as const
 type WithdrawCoin = (typeof ALLOWED_COINS)[number]
+
+class HttpError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
 
 export async function GET() {
   try {
@@ -109,16 +120,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
 
-    const summary = await getAccountBalanceSummary(user.id)
-    if (amountUsd > summary.availableToSpendUsd) {
-      return NextResponse.json(
-        {
-          error: `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.`,
-        },
-        { status: 400 }
-      )
-    }
-
     const presetWalletByCoin = {
       BTC: user.btcWalletAddress?.trim() || '',
       ETH: user.ethWalletAddress?.trim() || '',
@@ -138,22 +139,46 @@ export async function POST(req: Request) {
     const amountCrypto = convertUsdToCoin(amountUsd, coinType, prices)
     const referenceId = `account-withdrawal:${randomUUID()}`
 
-    await createAccountBalanceEntry({
-      userId: user.id,
-      direction: 'debit',
-      status: 'pending',
-      amountUsd,
-      source: 'account_balance_withdrawal',
-      referenceId,
-      note: 'Account withdrawal submitted. Awaiting admin approval.',
-      metadata: {
-        coinType,
-        amountCrypto,
-        walletAddress: customMethod ? (walletAddress || null) : presetWallet,
-        customMethod,
-        customMethodNote: customMethodNote || null,
-        usdPriceAtRequest: prices[coinType],
-      },
+    await prisma.$transaction(async tx => {
+      await lockUserBalanceForUpdate(user.id, tx)
+
+      const summary = await getAccountBalanceSummary(user.id, tx)
+      if (amountUsd > summary.availableToSpendUsd) {
+        throw new HttpError(
+          400,
+          `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.`
+        )
+      }
+
+      const coinAvailability = await getAccountBalanceCoinAvailability(user.id, prices, tx)
+      const availableCoinAmount = coinAvailability.byCoin[coinType]?.availableCrypto ?? 0
+      if (availableCoinAmount + 0.00000001 < amountCrypto) {
+        throw new HttpError(
+          400,
+          `Insufficient ${coinType} wallet balance. Available: ${availableCoinAmount.toFixed(8)} ${coinType}.`
+        )
+      }
+
+      await createAccountBalanceEntry(
+        {
+          userId: user.id,
+          direction: 'debit',
+          status: 'pending',
+          amountUsd,
+          source: 'account_balance_withdrawal',
+          referenceId,
+          note: 'Account withdrawal submitted. Awaiting admin approval.',
+          metadata: {
+            coinType,
+            amountCrypto,
+            walletAddress: customMethod ? (walletAddress || null) : presetWallet,
+            customMethod,
+            customMethodNote: customMethodNote || null,
+            usdPriceAtRequest: prices[coinType],
+          },
+        },
+        tx
+      )
     })
 
     await logUserActivity({
@@ -168,6 +193,9 @@ export async function POST(req: Request) {
       message: 'Withdrawal request submitted. Awaiting admin approval.',
     })
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

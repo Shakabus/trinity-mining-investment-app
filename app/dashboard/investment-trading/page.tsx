@@ -240,7 +240,7 @@ export default async function TradingInvestmentPage() {
             border: '1px solid rgba(234, 179, 8, 0.3)',
           }}
         >
-          Payment proof has not been submitted yet. Upload proof to start verification.
+          This plan has not been submitted from account balance yet. Complete balance payment to start verification.
           <div className="mt-3">
             <Link
               href="/dashboard/investment-trading/payment"
@@ -250,7 +250,7 @@ export default async function TradingInvestmentPage() {
                 color: '#ffffff',
               }}
             >
-              Upload payment proof
+              Pay with account balance
               <ArrowUpRight size={14} />
             </Link>
           </div>

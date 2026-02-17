@@ -82,7 +82,7 @@ export default function RealEstateMyPropertiesPanel({ positions }: { positions: 
 
         {positions.length === 0 ? (
           <div className="text-white/65 text-sm border border-white/10 rounded-2xl p-4 bg-white/[0.03]">
-            No real-estate buy-in submissions found for this account yet. Submit a property tier payment proof first.
+            No real-estate buy-in submissions found for this account yet. Fund account balance, then submit a property tier request.
           </div>
         ) : (
           <div className="overflow-x-auto">

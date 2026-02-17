@@ -3,9 +3,10 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import {
   createAccountBalanceEntry,
+  getAccountBalanceCoinAvailability,
   getAccountBalanceEntries,
-  getAccountBalanceAssetSummary,
   getAccountBalanceSummary,
+  lockUserBalanceForUpdate,
 } from '@/lib/account-balance'
 import {
   TRACKED_ASSET_COINS,
@@ -23,6 +24,15 @@ import {
 
 const PAY_TRADING_PLAN_FIELDS = ['tradingUserPlanId', 'coinType'] as const
 const PAYABLE_COINS = ['BTC', 'ETH', 'SOL', 'USDT'] as const
+
+class HttpError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
 
 export async function POST(req: Request) {
   try {
@@ -63,69 +73,68 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'This trading plan is not awaiting payment.' }, { status: 409 })
     }
 
-    const investmentUsd = Number(tradingPlan.investmentUsd)
-    const summary = await getAccountBalanceSummary(user.id)
-    if (summary.availableToSpendUsd < investmentUsd) {
-      return NextResponse.json(
-        { error: `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.` },
-        { status: 400 }
-      )
-    }
-
     const cryptoPrices = await getTrackedCryptoPricesUsd()
-    const assetSummary = await getAccountBalanceAssetSummary(user.id, cryptoPrices)
-    const selectedCoin =
-      requestedCoin ??
-      [...TRACKED_ASSET_COINS]
-        .sort((a, b) => (assetSummary.byCoin[b]?.netUsd ?? 0) - (assetSummary.byCoin[a]?.netUsd ?? 0))
-        .find(coin => (assetSummary.byCoin[coin]?.netUsd ?? 0) >= investmentUsd)
-
-    if (!selectedCoin) {
-      return NextResponse.json({ error: 'No funded wallet has enough balance for this purchase.' }, { status: 400 })
-    }
-
-    const requiredCoinAmount = convertUsdToCoin(investmentUsd, selectedCoin, cryptoPrices)
-    const availableCoinAmount = assetSummary.byCoin[selectedCoin]?.netCrypto ?? 0
-
-    if (requiredCoinAmount <= 0 || cryptoPrices[selectedCoin] <= 0) {
-      return NextResponse.json({ error: `Unable to resolve ${selectedCoin} conversion rate.` }, { status: 400 })
-    }
-
-    if (availableCoinAmount + 0.00000001 < requiredCoinAmount) {
-      return NextResponse.json(
-        {
-          error: `Insufficient ${selectedCoin} wallet balance. Available: ${availableCoinAmount.toFixed(8)} ${selectedCoin}.`,
-        },
-        { status: 400 }
-      )
-    }
-
+    const investmentUsd = Number(tradingPlan.investmentUsd)
     const debitReference = `trading-plan:${tradingPlan.id}`
-    const existingEntries = await getAccountBalanceEntries(user.id, { limit: 3000 })
-    const latestPaymentEntry = existingEntries
-      .filter(
-        entry =>
-          entry.referenceId === debitReference &&
-          entry.source === 'trading_plan_purchase' &&
-          entry.direction === 'debit'
-      )
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
-
-    if (latestPaymentEntry?.status === 'pending') {
-      return NextResponse.json(
-        { error: 'This account-balance payment is already pending admin approval.' },
-        { status: 409 }
-      )
-    }
-
-    if (latestPaymentEntry?.status === 'settled') {
-      return NextResponse.json(
-        { error: 'This trading plan has already been funded from account balance.' },
-        { status: 409 }
-      )
-    }
 
     await prisma.$transaction(async tx => {
+      await lockUserBalanceForUpdate(user.id, tx)
+
+      const summary = await getAccountBalanceSummary(user.id, tx)
+      if (summary.availableToSpendUsd < investmentUsd) {
+        throw new HttpError(
+          400,
+          `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.`
+        )
+      }
+
+      const coinAvailability = await getAccountBalanceCoinAvailability(user.id, cryptoPrices, tx)
+      const selectedCoin =
+        requestedCoin ??
+        [...TRACKED_ASSET_COINS]
+          .sort(
+            (a, b) =>
+              (coinAvailability.byCoin[b]?.availableUsd ?? 0) -
+              (coinAvailability.byCoin[a]?.availableUsd ?? 0)
+          )
+          .find(coin => (coinAvailability.byCoin[coin]?.availableUsd ?? 0) >= investmentUsd)
+
+      if (!selectedCoin) {
+        throw new HttpError(400, 'No funded wallet has enough available balance for this purchase.')
+      }
+
+      const requiredCoinAmount = convertUsdToCoin(investmentUsd, selectedCoin, cryptoPrices)
+      const availableCoinAmount = coinAvailability.byCoin[selectedCoin]?.availableCrypto ?? 0
+
+      if (requiredCoinAmount <= 0 || cryptoPrices[selectedCoin] <= 0) {
+        throw new HttpError(400, `Unable to resolve ${selectedCoin} conversion rate.`)
+      }
+
+      if (availableCoinAmount + 0.00000001 < requiredCoinAmount) {
+        throw new HttpError(
+          400,
+          `Insufficient ${selectedCoin} wallet balance. Available: ${availableCoinAmount.toFixed(8)} ${selectedCoin}.`
+        )
+      }
+
+      const existingEntries = await getAccountBalanceEntries(user.id, { limit: 3000 }, tx)
+      const latestPaymentEntry = existingEntries
+        .filter(
+          entry =>
+            entry.referenceId === debitReference &&
+            entry.source === 'trading_plan_purchase' &&
+            entry.direction === 'debit'
+        )
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+
+      if (latestPaymentEntry?.status === 'pending') {
+        throw new HttpError(409, 'This account-balance payment is already pending admin approval.')
+      }
+
+      if (latestPaymentEntry?.status === 'settled') {
+        throw new HttpError(409, 'This trading plan has already been funded from account balance.')
+      }
+
       await createAccountBalanceEntry(
         {
           userId: user.id,
@@ -201,6 +210,9 @@ export async function POST(req: Request) {
       message: 'Account-balance payment submitted. Awaiting admin approval.',
     })
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

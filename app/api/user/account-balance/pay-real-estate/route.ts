@@ -3,9 +3,10 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import {
   createAccountBalanceEntry,
-  getAccountBalanceAssetSummary,
+  getAccountBalanceCoinAvailability,
+  getAccountBalanceEntries,
   getAccountBalanceSummary,
-  hasSettledEntryForReference,
+  lockUserBalanceForUpdate,
 } from '@/lib/account-balance'
 import {
   TRACKED_ASSET_COINS,
@@ -35,6 +36,15 @@ const PAY_REAL_ESTATE_FIELDS = [
 const parseAmountUsd = (value: string) => {
   const amount = Number(value.replace(/[^0-9.]/g, ''))
   return Number.isFinite(amount) ? amount : 0
+}
+
+class HttpError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
 }
 
 export async function POST(req: Request) {
@@ -84,80 +94,107 @@ export async function POST(req: Request) {
       )
     }
 
-    const summary = await getAccountBalanceSummary(user.id)
-    if (summary.availableToSpendUsd < minimumUsd) {
-      return NextResponse.json(
-        { error: `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.` },
-        { status: 400 }
-      )
-    }
-
     const prices = await getTrackedCryptoPricesUsd()
-    const assetSummary = await getAccountBalanceAssetSummary(user.id, prices)
-    const selectedCoin = [...TRACKED_ASSET_COINS]
-      .sort((a, b) => (assetSummary.byCoin[b]?.netUsd ?? 0) - (assetSummary.byCoin[a]?.netUsd ?? 0))
-      .find(coin => (assetSummary.byCoin[coin]?.netUsd ?? 0) >= minimumUsd)
+    const ticket = await prisma.$transaction(async tx => {
+      await lockUserBalanceForUpdate(user.id, tx)
 
-    if (!selectedCoin) {
-      return NextResponse.json({ error: 'No funded wallet has enough balance for this purchase.' }, { status: 400 })
-    }
+      const summary = await getAccountBalanceSummary(user.id, tx)
+      if (summary.availableToSpendUsd < minimumUsd) {
+        throw new HttpError(
+          400,
+          `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.`
+        )
+      }
 
-    const amountCrypto = convertUsdToCoin(minimumUsd, selectedCoin, prices)
-    if (amountCrypto <= 0) {
-      return NextResponse.json({ error: `Unable to resolve ${selectedCoin} conversion rate.` }, { status: 400 })
-    }
+      const coinAvailability = await getAccountBalanceCoinAvailability(user.id, prices, tx)
+      const selectedCoin = [...TRACKED_ASSET_COINS]
+        .sort(
+          (a, b) =>
+            (coinAvailability.byCoin[b]?.availableUsd ?? 0) -
+            (coinAvailability.byCoin[a]?.availableUsd ?? 0)
+        )
+        .find(coin => (coinAvailability.byCoin[coin]?.availableUsd ?? 0) >= minimumUsd)
 
-    const ticket = await prisma.supportTicket.create({
-      data: {
-        userId: user.id,
-        subject: `${REAL_ESTATE_BUY_IN_TICKET_PREFIX} ${title} (${tier})`,
-        status: 'waiting',
-      },
-    })
+      if (!selectedCoin) {
+        throw new HttpError(400, 'No funded wallet has enough available balance for this purchase.')
+      }
 
-    const bodyLines = [
-      `Property: ${title}`,
-      `Location: ${location}`,
-      `Tier: ${tier}`,
-      `Minimum: $${minimumUsd.toFixed(2)}`,
-      `Duration: ${duration}`,
-      `Payout Model: ${payoutModel}`,
-      `Projected Band: ${projectedBand}`,
-      `Illustrative Outcome: ${illustrativeOutcome}`,
-      `Payment Coin: ${selectedCoin}`,
-      `TXID: Account Balance`,
-      'Request: Real-estate buy-in submitted from account balance. Please review and approve.',
-    ]
+      const amountCrypto = convertUsdToCoin(minimumUsd, selectedCoin, prices)
+      if (amountCrypto <= 0) {
+        throw new HttpError(400, `Unable to resolve ${selectedCoin} conversion rate.`)
+      }
 
-    await prisma.supportMessage.create({
-      data: {
-        ticketId: ticket.id,
-        senderUserId: user.id,
-        senderRole: 'user',
-        body: bodyLines.join('\n'),
-      },
-    })
-
-    const referenceId = `real-estate-buy-in:${ticket.id}`
-    const alreadyDebited = await hasSettledEntryForReference(user.id, referenceId, 'debit')
-    if (!alreadyDebited) {
-      await createAccountBalanceEntry({
-        userId: user.id,
-        direction: 'debit',
-        status: 'pending',
-        amountUsd: minimumUsd,
-        source: 'real_estate_buy_in',
-        referenceId,
-        note: `Real-estate buy-in submitted for ${title}.`,
-        metadata: {
-          ticketId: ticket.id,
-          propertyId,
-          coinType: selectedCoin,
-          amountCrypto,
-          usdPriceAtRequest: prices[selectedCoin],
+      const newTicket = await tx.supportTicket.create({
+        data: {
+          userId: user.id,
+          subject: `${REAL_ESTATE_BUY_IN_TICKET_PREFIX} ${title} (${tier})`,
+          status: 'waiting',
         },
       })
-    }
+
+      const bodyLines = [
+        `Property: ${title}`,
+        `Location: ${location}`,
+        `Tier: ${tier}`,
+        `Minimum: $${minimumUsd.toFixed(2)}`,
+        `Duration: ${duration}`,
+        `Payout Model: ${payoutModel}`,
+        `Projected Band: ${projectedBand}`,
+        `Illustrative Outcome: ${illustrativeOutcome}`,
+        `Payment Coin: ${selectedCoin}`,
+        `TXID: Account Balance`,
+        'Request: Real-estate buy-in submitted from account balance. Please review and approve.',
+      ]
+
+      await tx.supportMessage.create({
+        data: {
+          ticketId: newTicket.id,
+          senderUserId: user.id,
+          senderRole: 'user',
+          body: bodyLines.join('\n'),
+        },
+      })
+
+      const referenceId = `real-estate-buy-in:${newTicket.id}`
+      const existingEntries = await getAccountBalanceEntries(user.id, { limit: 3000 }, tx)
+      const latestPaymentEntry = existingEntries
+        .filter(
+          entry =>
+            entry.referenceId === referenceId &&
+            entry.source === 'real_estate_buy_in' &&
+            entry.direction === 'debit'
+        )
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+
+      if (latestPaymentEntry?.status === 'pending') {
+        throw new HttpError(409, 'This real-estate buy-in payment is already pending admin approval.')
+      }
+      if (latestPaymentEntry?.status === 'settled') {
+        throw new HttpError(409, 'This real-estate buy-in has already been funded from account balance.')
+      }
+
+      await createAccountBalanceEntry(
+        {
+          userId: user.id,
+          direction: 'debit',
+          status: 'pending',
+          amountUsd: minimumUsd,
+          source: 'real_estate_buy_in',
+          referenceId,
+          note: `Real-estate buy-in submitted for ${title}.`,
+          metadata: {
+            ticketId: newTicket.id,
+            propertyId,
+            coinType: selectedCoin,
+            amountCrypto,
+            usdPriceAtRequest: prices[selectedCoin],
+          },
+        },
+        tx
+      )
+
+      return newTicket
+    })
 
     await logUserActivity({
       userId: user.id,
@@ -171,6 +208,9 @@ export async function POST(req: Request) {
       message: 'Real-estate buy-in submitted for review.',
     })
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

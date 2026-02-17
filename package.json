@@ -10,6 +10,7 @@
     "migrate:mining-hashrate-scale": "node scripts/scale-existing-mining-hashrate.js",
     "migrate:mining-earnings-normalize": "node scripts/normalize-existing-mining-earnings.js",
     "reset:user-history": "node scripts/reset-user-history.js",
+    "test:account-balance": "ts-node --transpile-only --compiler-options \"{\\\"module\\\":\\\"CommonJS\\\",\\\"moduleResolution\\\":\\\"node\\\"}\" tests/account-balance.integration.test.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

@@ -29,15 +29,15 @@ async function main() {
       uptimeGuarantee: '99.5%',
       status: 'active',
       durationOptions: {
-        create: [{ durationDays: 7, durationLabel: '7 days', priceMultiplier: 1.0, isDefault: true }],
+        create: [{ durationDays: 1, durationLabel: '24 hours', priceMultiplier: 1.0, isDefault: true }],
       },
       features: {
         create: [
           { featureText: '10 TH/s Hash Rate', featureOrder: 1 },
           { featureText: 'SHA-256 Algorithm', featureOrder: 2 },
-          { featureText: '7 day duration cycle', featureOrder: 3 },
+          { featureText: '24 hour duration cycle', featureOrder: 3 },
           { featureText: 'Real-time monitoring', featureOrder: 4 },
-          { featureText: 'Withdrawals available after 48 hours', featureOrder: 5 },
+          { featureText: 'Withdrawals available at plan completion', featureOrder: 5 },
         ],
       },
     },
@@ -59,15 +59,15 @@ async function main() {
       uptimeGuarantee: '99.7%',
       status: 'active',
       durationOptions: {
-        create: [{ durationDays: 7, durationLabel: '7 days', priceMultiplier: 1.0, isDefault: true }],
+        create: [{ durationDays: 2, durationLabel: '48 hours', priceMultiplier: 1.0, isDefault: true }],
       },
       features: {
         create: [
           { featureText: '30 TH/s Hash Rate', featureOrder: 1 },
           { featureText: 'Antminer S19 Pro', featureOrder: 2 },
-          { featureText: '7 day duration cycle', featureOrder: 3 },
+          { featureText: '48 hour duration cycle', featureOrder: 3 },
           { featureText: 'Priority pool routing', featureOrder: 4 },
-          { featureText: 'Withdrawals available after 48 hours', featureOrder: 5 },
+          { featureText: 'Withdrawals available at plan completion', featureOrder: 5 },
         ],
       },
     },
@@ -89,15 +89,15 @@ async function main() {
       uptimeGuarantee: '99.8%',
       status: 'active',
       durationOptions: {
-        create: [{ durationDays: 7, durationLabel: '7 days', priceMultiplier: 1.0, isDefault: true }],
+        create: [{ durationDays: 2, durationLabel: '48 hours', priceMultiplier: 1.0, isDefault: true }],
       },
       features: {
         create: [
           { featureText: '50 TH/s Hash Rate', featureOrder: 1 },
           { featureText: 'Antminer S19 XP', featureOrder: 2 },
-          { featureText: '7 day duration cycle', featureOrder: 3 },
+          { featureText: '48 hour duration cycle', featureOrder: 3 },
           { featureText: 'Advanced performance dashboards', featureOrder: 4 },
-          { featureText: 'Withdrawals available after 48 hours', featureOrder: 5 },
+          { featureText: 'Withdrawals available at plan completion', featureOrder: 5 },
         ],
       },
     },
@@ -119,13 +119,13 @@ async function main() {
       uptimeGuarantee: '99.9%',
       status: 'active',
       durationOptions: {
-        create: [{ durationDays: 7, durationLabel: '7 days', priceMultiplier: 1.0, isDefault: true }],
+        create: [{ durationDays: 3, durationLabel: '72 hours', priceMultiplier: 1.0, isDefault: true }],
       },
       features: {
         create: [
           { featureText: '200 TH/s Hash Rate', featureOrder: 1 },
           { featureText: 'Antminer S21 / S19 XP Hydro', featureOrder: 2 },
-          { featureText: '7 day duration cycle', featureOrder: 3 },
+          { featureText: '72 hour duration cycle', featureOrder: 3 },
           { featureText: 'Intelligent pool optimization', featureOrder: 4 },
           { featureText: 'Withdrawals available after 48 hours', featureOrder: 5 },
         ],
@@ -149,13 +149,13 @@ async function main() {
       uptimeGuarantee: '99.95%',
       status: 'active',
       durationOptions: {
-        create: [{ durationDays: 7, durationLabel: '7 days', priceMultiplier: 1.0, isDefault: true }],
+        create: [{ durationDays: 4, durationLabel: '96 hours', priceMultiplier: 1.0, isDefault: true }],
       },
       features: {
         create: [
           { featureText: '1 PH/s (1,000 TH/s) Hash Rate', featureOrder: 1 },
           { featureText: 'Enterprise ASIC clusters', featureOrder: 2 },
-          { featureText: '7 day duration cycle', featureOrder: 3 },
+          { featureText: '96 hour duration cycle', featureOrder: 3 },
           { featureText: 'Dedicated account manager', featureOrder: 4 },
           { featureText: 'Withdrawals available after 48 hours', featureOrder: 5 },
         ],
@@ -179,14 +179,14 @@ async function main() {
       uptimeGuarantee: '99.95%',
       status: 'active',
       durationOptions: {
-        create: [{ durationDays: 7, durationLabel: '7 days', priceMultiplier: 1.0, isDefault: true }],
+        create: [{ durationDays: 4, durationLabel: '96 hours', priceMultiplier: 1.0, isDefault: true }],
       },
       features: {
         create: [
           { featureText: '1 PH/s BTC (SHA-256)', featureOrder: 1 },
           { featureText: 'ETH-equivalent & LTC mining allocation', featureOrder: 2 },
           { featureText: 'Enterprise ASIC + GPU clusters', featureOrder: 3 },
-          { featureText: '7 day duration cycle', featureOrder: 4 },
+          { featureText: '96 hour duration cycle', featureOrder: 4 },
           { featureText: 'Withdrawals available after 48 hours', featureOrder: 5 },
         ],
       },
