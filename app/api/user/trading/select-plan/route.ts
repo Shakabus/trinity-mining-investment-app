@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { pickTradingPlanReturn } from '@/lib/trading'
 import { logUserActivity } from '@/lib/user-activity'
 import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
+import { getAccountBalanceEntries } from '@/lib/account-balance'
 import {
   isInputValidationError,
   readJsonObject,
@@ -42,11 +43,47 @@ export async function POST(req: Request) {
         userId: user.id,
         status: { in: ['active', 'awaiting_payment', 'selected'] },
       },
+      include: {
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
       orderBy: { createdAt: 'desc' },
     })
 
     if (existingPlan?.status === 'awaiting_payment' || existingPlan?.status === 'selected') {
-      return NextResponse.json({ error: 'You already have a pending trading payment.' }, { status: 409 })
+      const balanceEntries = await getAccountBalanceEntries(user.id, { limit: 3000 })
+      const latestBalanceByReference = new Map<string, (typeof balanceEntries)[number]>()
+      for (const entry of balanceEntries) {
+        if (entry.source !== 'trading_plan_purchase' || entry.direction !== 'debit') continue
+        if (latestBalanceByReference.has(entry.referenceId)) continue
+        latestBalanceByReference.set(entry.referenceId, entry)
+      }
+
+      let hasPendingBalanceSubmission = false
+      for (const entry of latestBalanceByReference.values()) {
+        const metadataPlanId = Number(entry.metadata?.tradingUserPlanId)
+        if (!Number.isFinite(metadataPlanId) || metadataPlanId !== existingPlan.id) continue
+        if (entry.status === 'pending') {
+          hasPendingBalanceSubmission = true
+          break
+        }
+      }
+
+      const hasSubmittedPayment =
+        existingPlan.payments[0]?.status === 'pending' ||
+        existingPlan.payments[0]?.status === 'confirmed' ||
+        hasPendingBalanceSubmission
+
+      return NextResponse.json(
+        {
+          error: hasSubmittedPayment
+            ? 'Your last trading payment is under verification. You can select another plan after review is completed.'
+            : 'You selected a trading plan but payment has not been submitted yet. Complete payment first or wait for timeout reset.',
+        },
+        { status: 409 }
+      )
     }
 
     if (existingPlan?.status === 'active') {

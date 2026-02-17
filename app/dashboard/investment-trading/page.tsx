@@ -15,6 +15,7 @@ import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
 import { isPaymentReminderVisible } from '@/lib/payment-reminder'
+import { getAccountBalanceEntries } from '@/lib/account-balance'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +40,13 @@ export default async function TradingInvestmentPage() {
     where: { id: userBase.id },
     include: {
       tradingPlans: {
-        include: { plan: true },
+        include: {
+          plan: true,
+          payments: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
         orderBy: { createdAt: 'desc' },
       },
       tradingStats: {
@@ -68,10 +75,43 @@ export default async function TradingInvestmentPage() {
     where: { status: 'active' },
     orderBy: { minInvestmentUsd: 'asc' },
   })
+  const accountBalanceEntries = await getAccountBalanceEntries(user.id, { limit: 3000 })
+  const latestBalanceByReference = new Map<string, (typeof accountBalanceEntries)[number]>()
+  for (const entry of accountBalanceEntries) {
+    if (entry.source !== 'trading_plan_purchase' || entry.direction !== 'debit') continue
+    if (latestBalanceByReference.has(entry.referenceId)) continue
+    latestBalanceByReference.set(entry.referenceId, entry)
+  }
+
+  const resolveLedgerState = (tradingUserPlanId: number) => {
+    let hasPending = false
+    let hasRejected = false
+    let hasSettled = false
+    for (const entry of latestBalanceByReference.values()) {
+      const metadataPlanId = Number(entry.metadata?.tradingUserPlanId)
+      if (!Number.isFinite(metadataPlanId) || metadataPlanId !== tradingUserPlanId) continue
+      if (entry.status === 'pending') hasPending = true
+      if (entry.status === 'rejected') hasRejected = true
+      if (entry.status === 'settled') hasSettled = true
+    }
+    return { hasPending, hasRejected, hasSettled }
+  }
 
   const activePlan = user?.tradingPlans.find(plan => ['active', 'completed'].includes(plan.status)) ?? null
   const pendingPlan = user?.tradingPlans.find(plan => plan.status === 'awaiting_payment') ?? null
   const selectedPlan = user?.tradingPlans.find(plan => plan.status === 'selected') ?? null
+  const pendingPlanLedgerState = pendingPlan ? resolveLedgerState(pendingPlan.id) : null
+  const selectedPlanLedgerState = selectedPlan ? resolveLedgerState(selectedPlan.id) : null
+  const pendingPlanPaymentStatus = pendingPlan?.payments?.[0]?.status ?? null
+  const selectedPlanPaymentStatus = selectedPlan?.payments?.[0]?.status ?? null
+  const pendingPlanUnderReview = Boolean(
+    pendingPlan &&
+      (pendingPlanPaymentStatus === 'pending' || pendingPlanLedgerState?.hasPending)
+  )
+  const selectedPlanUnderReview = Boolean(
+    selectedPlan &&
+      (selectedPlanPaymentStatus === 'pending' || selectedPlanLedgerState?.hasPending)
+  )
   const activeStats = activePlan
     ? user?.tradingStats.find(stat => stat.tradingUserPlanId === activePlan.id && stat.isActive) ?? null
     : null
@@ -194,9 +234,13 @@ export default async function TradingInvestmentPage() {
       ? 'Completed'
       : 'Active'
     : pendingPlan
-      ? 'Awaiting Payment'
+      ? pendingPlanUnderReview
+        ? 'Payment Under Review'
+        : 'Payment Submission Needed'
       : selectedPlan
-        ? 'Proof Not Submitted'
+        ? selectedPlanUnderReview
+          ? 'Payment Under Review'
+          : 'Payment Not Submitted'
         : 'Inactive'
 
   return (
@@ -229,7 +273,9 @@ export default async function TradingInvestmentPage() {
             border: '1px solid rgba(59, 130, 246, 0.3)',
           }}
         >
-          {t('tradingAwaitingPayment')}
+          {pendingPlanUnderReview
+            ? 'Payment has been submitted and is currently under verification.'
+            : 'A trading plan is selected, but payment has not been submitted from account balance yet.'}
           <div className="mt-3">
             <Link
               href="/dashboard/investment-trading/payment"
@@ -239,23 +285,23 @@ export default async function TradingInvestmentPage() {
                 color: '#ffffff',
               }}
             >
-              {t('viewPaymentInstructions')}
+              {pendingPlanUnderReview ? 'View payment status' : 'Complete payment'}
               <ArrowUpRight size={14} />
             </Link>
           </div>
         </div>
       )}
 
-      {selectedPlan && !pendingPlan && showSelectedPlanReminder && (
+      {selectedPlan && !pendingPlan && showSelectedPlanReminder && !selectedPlanUnderReview && (
         <div
           className="p-5 rounded-2xl text-white/80"
           style={{
             background: 'rgba(234, 179, 8, 0.1)',
             border: '1px solid rgba(234, 179, 8, 0.3)',
           }}
-        >
-          This plan has not been submitted from account balance yet. Complete balance payment to start verification.
-          <div className="mt-3">
+          >
+            This plan has not been submitted from account balance yet. Complete balance payment to start verification.
+            <div className="mt-3">
             <Link
               href="/dashboard/investment-trading/payment"
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold"
@@ -308,6 +354,32 @@ export default async function TradingInvestmentPage() {
           allocationSeries={allocationSeries}
           performanceSeries={performanceSeries}
         />
+      ) : (pendingPlan && pendingPlanUnderReview) || (selectedPlan && selectedPlanUnderReview) ? (
+        <div
+          className="p-6 rounded-2xl text-white/80"
+          style={{
+            background: 'rgba(59, 130, 246, 0.08)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+          }}
+        >
+          <div className="text-lg font-semibold text-white">Payment under review</div>
+          <p className="mt-2 text-white/70">
+            Your trading payment has been received and is awaiting verification. A new plan can be selected after this review is completed.
+          </p>
+          <div className="mt-3">
+            <Link
+              href="/dashboard/investment-trading/payment"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                color: '#ffffff',
+              }}
+            >
+              View payment status
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
+        </div>
       ) : (
         <EmptyState
           title={t('tradingEmptyTitle')}
