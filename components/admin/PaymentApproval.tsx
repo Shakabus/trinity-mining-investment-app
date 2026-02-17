@@ -37,8 +37,10 @@ export default function PaymentApproval({ payment }: PaymentApprovalProps) {
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [confirmApprove, setConfirmApprove] = useState(false)
   const [confirmReject, setConfirmReject] = useState(false)
+  const isAccountBalancePayment = (payment.proof?.transactionId || '').startsWith('Account Balance -')
 
   const getTxidError = (value: string) => {
+    if (isAccountBalancePayment) return null
     if (!value) return null
     const trimmed = value.trim()
     const coin = payment.coinType?.toUpperCase() || ''
@@ -82,7 +84,7 @@ export default function PaymentApproval({ payment }: PaymentApprovalProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userPlanId: payment.id,
-          txid: txid || null
+          txid: isAccountBalancePayment ? null : txid || null
         })
       })
 
@@ -246,8 +248,9 @@ export default function PaymentApproval({ payment }: PaymentApprovalProps) {
           {/* TXID Input */}
           <input
             type="text"
-            placeholder="Transaction ID (optional)"
+            placeholder={isAccountBalancePayment ? 'Account balance payment (TXID not required)' : 'Transaction ID (optional)'}
             value={txid}
+            disabled={isAccountBalancePayment}
             onChange={(e) => {
               setTxid(e.target.value)
               if (txidError) {
@@ -256,9 +259,10 @@ export default function PaymentApproval({ payment }: PaymentApprovalProps) {
             }}
             className="px-4 py-2 rounded-lg text-sm font-mono"
             style={{
-              background: 'rgba(255, 255, 255, 0.05)',
+              background: isAccountBalancePayment ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.05)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               color: '#ffffff',
+              opacity: isAccountBalancePayment ? 0.75 : 1,
             }}
           />
           {txidError && <div className="text-xs text-red-300">{txidError}</div>}
