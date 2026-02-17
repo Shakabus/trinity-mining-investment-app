@@ -93,7 +93,11 @@ export async function POST(req: Request) {
         const latestByReference = new Map<string, (typeof entries)[number]>()
         for (const entry of entries) {
           if (entry.source !== 'trading_plan_purchase' || entry.direction !== 'debit') continue
-          if (Number(entry.metadata?.tradingUserPlanId) !== tradingPlan.id) continue
+          const metadataPlanId = Number(entry.metadata?.tradingUserPlanId)
+          const matchesPlanByMetadata = Number.isFinite(metadataPlanId) && metadataPlanId === tradingPlan.id
+          const matchesPlanByReference =
+            entry.referenceId === purchaseRef || entry.referenceId.startsWith(`${purchaseRef}:`)
+          if (!matchesPlanByMetadata && !matchesPlanByReference) continue
           const current = latestByReference.get(entry.referenceId)
           if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
             latestByReference.set(entry.referenceId, entry)
@@ -328,6 +332,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
     console.error('Error approving trading payment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

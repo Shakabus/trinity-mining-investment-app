@@ -58,6 +58,7 @@ export async function POST(req: Request) {
 
     const pendingPayment = tradingPlan.payments[0] ?? null
     const balancePayment = isAccountBalancePending(pendingPayment?.transactionId)
+    const purchaseRef = `trading-plan:${tradingPlan.id}`
 
     await prisma.$transaction(async tx => {
       if (balancePayment) {
@@ -65,7 +66,11 @@ export async function POST(req: Request) {
         const latestByReference = new Map<string, (typeof entries)[number]>()
         for (const entry of entries) {
           if (entry.source !== 'trading_plan_purchase' || entry.direction !== 'debit') continue
-          if (Number(entry.metadata?.tradingUserPlanId) !== tradingPlan.id) continue
+          const metadataPlanId = Number(entry.metadata?.tradingUserPlanId)
+          const matchesPlanByMetadata = Number.isFinite(metadataPlanId) && metadataPlanId === tradingPlan.id
+          const matchesPlanByReference =
+            entry.referenceId === purchaseRef || entry.referenceId.startsWith(`${purchaseRef}:`)
+          if (!matchesPlanByMetadata && !matchesPlanByReference) continue
           const current = latestByReference.get(entry.referenceId)
           if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
             latestByReference.set(entry.referenceId, entry)

@@ -112,7 +112,11 @@ export async function POST(req: Request) {
         const latestByReference = new Map<string, (typeof balanceEntries)[number]>()
         for (const entry of balanceEntries) {
           if (entry.source !== 'mining_plan_purchase' || entry.direction !== 'debit') continue
-          if (Number(entry.metadata?.userPlanId) !== userPlan.id) continue
+          const metadataPlanId = Number(entry.metadata?.userPlanId)
+          const matchesPlanByMetadata = Number.isFinite(metadataPlanId) && metadataPlanId === userPlan.id
+          const matchesPlanByReference =
+            entry.referenceId === purchaseRef || entry.referenceId.startsWith(`${purchaseRef}:`)
+          if (!matchesPlanByMetadata && !matchesPlanByReference) continue
           const current = latestByReference.get(entry.referenceId)
           if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
             latestByReference.set(entry.referenceId, entry)
@@ -475,6 +479,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
     console.error('Error approving payment:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
