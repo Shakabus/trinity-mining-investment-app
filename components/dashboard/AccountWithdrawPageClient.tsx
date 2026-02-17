@@ -122,7 +122,7 @@ export default function AccountWithdrawPageClient({
         throw new Error(data?.error || 'Unable to submit withdrawal request.')
       }
 
-      setStatus({ type: 'success', message: 'Withdrawal request submitted. Awaiting admin approval.' })
+      setStatus({ type: 'success', message: 'Withdrawal request submitted. Awaiting review.' })
       setAmountUsd('')
       setCustomMethod(false)
       setCustomMethodNote('')

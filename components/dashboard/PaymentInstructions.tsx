@@ -44,7 +44,7 @@ export default function PaymentInstructions({ plan, accountBalanceUsd }: Payment
       }
 
       const data = await response.json().catch(() => null)
-      showToast(data?.message || 'Payment submitted for admin approval.', 'success')
+      showToast(data?.message || 'Payment submitted for review.', 'success')
       window.location.href = '/dashboard'
     } catch (error) {
       console.error('Pay from account balance error:', error)

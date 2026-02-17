@@ -1,6 +1,10 @@
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
-import { computeDailyCryptoEstimate, computeTargetDailyCryptoEstimate } from '@/lib/mining-engine'
+import {
+  computeDailyCryptoEstimate,
+  computeTargetDailyCryptoEstimate,
+  getMiningPlanTargetMultiplier,
+} from '@/lib/mining-engine'
 
 const PRICE_CACHE: {
   fetchedAt: number
@@ -83,15 +87,24 @@ export async function autoUpdateEarnings({
     let totalEarnedCrypto = Number(record.totalEarnedCrypto)
     let totalEarnedUsd = Number(record.totalEarnedUsd)
     let targetDailyEstimateCrypto: number | null = null
+    let targetProgressUsd = 0
+    let targetTotalUsd = 0
+    let coinPriceUsd = prices[record.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
 
     if (!record.isAdminOverride) {
       const planStart = record.userPlan.startDate ?? record.userPlan.createdAt ?? now
+      const durationDays = Math.max(1, Number(record.userPlan.selectedDurationDays ?? 7))
+      const durationMs = durationDays * 24 * 60 * 60 * 1000
       const planEnd =
         record.userPlan.endDate ??
         (record.userPlan.selectedDurationDays
-          ? new Date(planStart.getTime() + record.userPlan.selectedDurationDays * 24 * 60 * 60 * 1000)
+          ? new Date(planStart.getTime() + durationMs)
           : null)
       const isCompleted = Boolean(planEnd && now.getTime() >= planEnd.getTime())
+      const cycleProgress = Math.min(
+        1,
+        Math.max(0, (now.getTime() - planStart.getTime()) / Math.max(1, durationMs))
+      )
       const withdrawalUnlockAt = new Date(planStart.getTime() + 2 * 24 * 60 * 60 * 1000)
       const shouldBeWithdrawable = isCompleted || now.getTime() >= withdrawalUnlockAt.getTime()
 
@@ -148,9 +161,7 @@ export async function autoUpdateEarnings({
         : 999
 
       if (!record.isHistorical) {
-        const durationDays = Math.max(1, Number(record.userPlan.selectedDurationDays ?? 7))
         const planPriceUsd = Number(record.userPlan.finalPrice ?? 0)
-        const coinPriceUsd = prices[record.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
         let targetWeight = 1
 
         if (record.userPlan.plan.coinType === 'MULTI') {
@@ -166,6 +177,9 @@ export async function autoUpdateEarnings({
           }
         }
 
+        const targetMultiplier = getMiningPlanTargetMultiplier(record.userPlan.plan.slug)
+        targetTotalUsd = Math.max(0, planPriceUsd * targetMultiplier * targetWeight)
+        targetProgressUsd = targetTotalUsd * cycleProgress
         targetDailyEstimateCrypto = computeTargetDailyCryptoEstimate({
           planSlug: record.userPlan.plan.slug,
           finalPriceUsd: planPriceUsd,
@@ -242,7 +256,7 @@ export async function autoUpdateEarnings({
         ? (now.getTime() - record.lastUsdUpdateAt.getTime()) / (1000 * 60 * 60)
         : 999
       if (earnedTicked || usdAgeHours >= 1) {
-        const price = prices[record.coinType as 'BTC' | 'ETH' | 'LTC'] || 0
+        const price = coinPriceUsd
         if (price > 0) {
           totalEarnedUsd = totalEarnedCrypto * price
           await prisma.earnings.update({
@@ -253,6 +267,23 @@ export async function autoUpdateEarnings({
             },
           })
         }
+      }
+
+      const minUsdFloor = isCompleted ? targetTotalUsd : targetProgressUsd
+      if (minUsdFloor > 0 && totalEarnedUsd + 0.01 < minUsdFloor) {
+        totalEarnedUsd = minUsdFloor
+        if (coinPriceUsd > 0) {
+          totalEarnedCrypto = totalEarnedUsd / coinPriceUsd
+        }
+        await prisma.earnings.update({
+          where: { id: record.id },
+          data: {
+            totalEarnedUsd,
+            totalEarnedCrypto,
+            lastCalculatedAt: now,
+            lastUsdUpdateAt: now,
+          },
+        })
       }
     }
 

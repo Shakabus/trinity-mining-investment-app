@@ -44,7 +44,7 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
       }
 
       const data = await response.json().catch(() => null)
-      showToast(data?.message || 'Payment submitted for admin approval.', 'success')
+      showToast(data?.message || 'Payment submitted for review.', 'success')
       window.location.href = '/dashboard/investment-trading'
     } catch (error) {
       console.error('Trading pay from account balance error:', error)
@@ -60,7 +60,7 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
     <div className="space-y-6 py-4">
       <div className="text-center">
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">Trading Plan Payment</h1>
-        <p className="text-white/70">Trading payments submit from account balance and finalize after admin approval.</p>
+        <p className="text-white/70">Trading payments submit from account balance and finalize after review.</p>
       </div>
 
       <div

@@ -208,7 +208,7 @@ export default function ReferralDashboard({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <h3 className="text-white font-semibold">{t('referralWithdrawalTitle')}</h3>
           <div className="text-xs text-white/50">
-            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)} | Destination: Account Balance (admin approval required)
+            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)} | Destination: Account Balance (review required)
           </div>
         </div>
 

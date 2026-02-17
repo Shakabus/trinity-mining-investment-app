@@ -150,8 +150,8 @@ async function applyFundingReview(params: {
     referenceId: params.referenceId,
     note:
       params.decision === 'approve'
-        ? 'Funding request approved by admin.'
-        : 'Funding request rejected by admin.',
+        ? 'Funding request approved.'
+        : 'Funding request rejected.',
     metadata: {
       ...(params.metadata ?? {}),
       coinType,
@@ -252,8 +252,8 @@ async function applyMiningPlanReview(params: {
         },
         data: {
           status: 'rejected',
-          transactionId: 'Account Balance - Rejected by Admin',
-          adminNotes: params.note ?? 'Account-balance payment rejected by admin.',
+          transactionId: 'Account Balance - Rejected',
+          adminNotes: params.note ?? 'Account-balance payment rejected.',
           confirmations: 0,
           confirmedAt: null,
           confirmedByAdminId: null,
@@ -419,7 +419,7 @@ async function applyMiningPlanReview(params: {
             amountCrypto,
             cryptoType: coinType,
             walletAddress: 'Account Balance',
-            transactionId: 'Account Balance - Approved by Admin',
+            transactionId: 'Account Balance - Approved',
             status: 'confirmed',
             confirmations: 999,
             adminNotes: params.note ?? null,
@@ -435,7 +435,7 @@ async function applyMiningPlanReview(params: {
             amountCrypto,
             cryptoType: coinType,
             walletAddress: 'Account Balance',
-            transactionId: 'Account Balance - Approved by Admin',
+            transactionId: 'Account Balance - Approved',
             status: 'confirmed',
             confirmations: 999,
             confirmedByAdminId: params.adminId,
@@ -566,7 +566,7 @@ async function applyTradingPlanReview(params: {
         },
         data: {
           status: 'rejected',
-          transactionId: 'Account Balance - Rejected by Admin',
+            transactionId: 'Account Balance - Rejected',
           confirmations: 0,
           confirmedAt: null,
           confirmedByAdminId: null,
@@ -637,7 +637,7 @@ async function applyTradingPlanReview(params: {
           amountUsd: tradingPlan.investmentUsd,
           cryptoType: coinType,
           walletAddress: 'Account Balance',
-          transactionId: 'Account Balance - Approved by Admin',
+          transactionId: 'Account Balance - Approved',
           status: 'confirmed',
           confirmations: 999,
           confirmedByAdminId: params.adminId,
@@ -652,7 +652,7 @@ async function applyTradingPlanReview(params: {
           amountUsd: tradingPlan.investmentUsd,
           cryptoType: coinType,
           walletAddress: 'Account Balance',
-          transactionId: 'Account Balance - Approved by Admin',
+          transactionId: 'Account Balance - Approved',
           status: 'confirmed',
           confirmations: 999,
           confirmedByAdminId: params.adminId,
@@ -764,8 +764,8 @@ async function applyAccountWithdrawalReview(params: {
     referenceId: params.referenceId,
     note:
       params.decision === 'approve'
-        ? 'Account withdrawal approved by admin.'
-        : 'Account withdrawal rejected by admin.',
+        ? 'Account withdrawal approved.'
+        : 'Account withdrawal rejected.',
     metadata: {
       ...(params.metadata ?? {}),
       reviewedByAdminId: params.adminId,
@@ -935,7 +935,7 @@ export async function POST(req: Request) {
       referenceId,
       note:
         note ??
-        `${adjustmentTypeRaw === 'deposit' ? 'Manual deposit' : 'Manual withdrawal'} recorded by admin.`,
+        `${adjustmentTypeRaw === 'deposit' ? 'Manual deposit' : 'Manual withdrawal'} recorded.`,
       metadata: {
         coinType: coinTypeRaw,
         amountCrypto,
@@ -959,7 +959,7 @@ export async function POST(req: Request) {
     await logUserActivity({
       userId: targetUserId,
       action: 'AccountBalanceManualAdjustmentRecorded',
-      detail: `Admin recorded a ${adjustmentTypeRaw} of $${amountUsd.toFixed(2)} via ${paymentMethod}.`,
+      detail: `${adjustmentTypeRaw === 'deposit' ? 'Manual deposit' : 'Manual withdrawal'} recorded for $${amountUsd.toFixed(2)} via ${paymentMethod}.`,
     })
 
     return NextResponse.json({
@@ -1000,7 +1000,7 @@ export async function DELETE(req: Request) {
       integer: true,
       min: 1,
     })!
-    const reason = readStringField(body, 'reason', { maxLength: 240 }) || 'Manual correction by admin.'
+    const reason = readStringField(body, 'reason', { maxLength: 240 }) || 'Manual correction.'
 
     const log = await prisma.userActivityLog.findUnique({
       where: { id: entryId },
@@ -1035,7 +1035,7 @@ export async function DELETE(req: Request) {
     await logUserActivity({
       userId: log.userId,
       action: 'AccountBalanceManualAdjustmentRemoved',
-      detail: 'Admin removed a manual account-balance adjustment record.',
+      detail: 'Manual account-balance adjustment record was removed.',
     })
 
     return NextResponse.json({ success: true })

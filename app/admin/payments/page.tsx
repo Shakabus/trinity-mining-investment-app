@@ -21,7 +21,10 @@ export default async function AdminPaymentsPage() {
       payments: {
         none: {
           status: 'pending',
-          transactionId: { startsWith: 'Account Balance - Pending Admin Approval' },
+          OR: [
+            { transactionId: { startsWith: 'Account Balance - Pending Review' } },
+            { transactionId: { startsWith: 'Account Balance - Pending Admin Approval' } },
+          ],
         },
       },
     },
@@ -66,7 +69,10 @@ export default async function AdminPaymentsPage() {
       payments: {
         none: {
           status: 'pending',
-          transactionId: { startsWith: 'Account Balance - Pending Admin Approval' },
+          OR: [
+            { transactionId: { startsWith: 'Account Balance - Pending Review' } },
+            { transactionId: { startsWith: 'Account Balance - Pending Admin Approval' } },
+          ],
         },
       },
     },

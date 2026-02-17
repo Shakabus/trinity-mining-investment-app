@@ -121,7 +121,7 @@ export async function POST(req: Request) {
       amountUsd,
       source: 'funding_deposit',
       referenceId: requestId,
-      note: 'Funding request submitted. Awaiting admin approval.',
+      note: 'Funding request submitted. Awaiting review.',
       metadata: {
         coinType,
         txid: normalizedTxid,
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       requestId,
-      message: 'Funding request submitted and is pending approval.',
+      message: 'Funding request submitted and is pending review.',
     })
   } catch (error) {
     if (isInputValidationError(error)) {

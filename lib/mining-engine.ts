@@ -99,6 +99,12 @@ export function computeEarningsIncrement({
     return hashrateTH * getMiningDailyYieldPerTh(coinType)
   })()
 
+  // When a plan-level target estimate is set, keep accrual deterministic so the cycle
+  // reaches its target by the configured plan end time.
+  if (override !== null) {
+    return (elapsedSeconds / 86400) * dailyYield
+  }
+
   return (elapsedSeconds / 86400) * dailyYield * performanceFactor
 }
 

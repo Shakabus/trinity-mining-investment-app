@@ -8,6 +8,7 @@ import {
   getMiningDailyYieldPerTh,
   normalizeHashrateToTH,
 } from '@/lib/mining-engine'
+import { autoUpdateEarnings } from '@/lib/earnings'
 import {
   buildChartSampleOffsets,
   buildCycleSegments,
@@ -47,6 +48,17 @@ export async function GET() {
   const user = await prisma.user.findUnique({
     where: { clerkUserId: userId },
     include: {
+      earnings: {
+        where: { isActive: true },
+        include: {
+          userPlan: {
+            include: {
+              plan: true,
+              multiAssetAllocations: true,
+            },
+          },
+        },
+      },
       miningStats: {
         where: { isActive: true },
         include: {
@@ -72,13 +84,45 @@ export async function GET() {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const miningStats = user.miningStats[0]
+  let miningStats: (typeof user.miningStats)[number] | null = user.miningStats[0] ?? null
+  const now = new Date()
+
+  if (user.earnings.length > 0) {
+    await autoUpdateEarnings({
+      userId: user.id,
+      earnings: user.earnings,
+      miningStats: miningStats
+        ? {
+            assignedHashrate: miningStats.assignedHashrate,
+            hashrateUnit: miningStats.hashrateUnit,
+            isActive: miningStats.isActive,
+          }
+        : null,
+      now,
+    })
+
+    if (miningStats) {
+      const refreshedStats = await prisma.miningStats.findUnique({
+        where: { id: miningStats.id },
+        include: {
+          userPlan: {
+            include: {
+              plan: true,
+              multiAssetAllocations: true,
+              earnings: {
+                where: { isActive: true },
+              },
+            },
+          },
+        },
+      })
+      miningStats = refreshedStats && refreshedStats.isActive ? refreshedStats : null
+    }
+  }
 
   if (!miningStats || user.accountStatus !== 'active') {
     return NextResponse.json({ error: 'Mining inactive' }, { status: 404 })
   }
-
-  const now = new Date()
 
   const assignedHashrate = parseFloat(miningStats.assignedHashrate.toString())
   const uptimePercentage = parseFloat(miningStats.uptimePercentage.toString())

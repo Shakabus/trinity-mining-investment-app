@@ -128,7 +128,7 @@ export async function POST(req: Request) {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
 
       if (latestPaymentEntry?.status === 'pending') {
-        throw new HttpError(409, 'This account-balance payment is already pending admin approval.')
+        throw new HttpError(409, 'This account-balance payment is already pending review.')
       }
 
       if (latestPaymentEntry?.status === 'settled') {
@@ -176,7 +176,7 @@ export async function POST(req: Request) {
               amountUsd: tradingPlan.investmentUsd,
               walletAddress: 'Account Balance',
               cryptoType: selectedCoin,
-              transactionId: 'Account Balance - Pending Admin Approval',
+              transactionId: 'Account Balance - Pending Review',
               paymentProofUrl: null,
               status: 'pending',
               confirmations: 0,
@@ -191,7 +191,7 @@ export async function POST(req: Request) {
               amountUsd: tradingPlan.investmentUsd,
               cryptoType: selectedCoin,
               walletAddress: 'Account Balance',
-              transactionId: 'Account Balance - Pending Admin Approval',
+              transactionId: 'Account Balance - Pending Review',
               status: 'pending',
               confirmations: 0,
               confirmedAt: null,
@@ -202,12 +202,12 @@ export async function POST(req: Request) {
     await logUserActivity({
       userId: user.id,
       action: 'AccountBalanceTradingPurchaseSubmitted',
-      detail: `Submitted ${tradingPlan.plan.name} for admin approval using account balance.`,
+      detail: `Submitted ${tradingPlan.plan.name} from account balance for review.`,
     })
 
     return NextResponse.json({
       success: true,
-      message: 'Account-balance payment submitted. Awaiting admin approval.',
+      message: 'Account-balance payment submitted. Awaiting review.',
     })
   } catch (error) {
     if (error instanceof HttpError) {

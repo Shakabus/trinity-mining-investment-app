@@ -43,7 +43,7 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
         const data = await response.json().catch(() => null)
         showToast(data?.error || 'Unable to submit withdrawal.', 'error')
       } else {
-        showToast('Withdrawal to account balance submitted for admin approval.', 'success')
+        showToast('Withdrawal to account balance submitted for review.', 'success')
         setAmountUsd(convert(minWithdrawalUsd))
         router.refresh()
       }
@@ -82,7 +82,7 @@ export default function TradingWithdrawalForm({ availableUsd, minWithdrawalUsd }
       </div>
 
       <div className="text-xs text-white/60">
-        Destination: Account Balance (admin approval required)
+        Destination: Account Balance (review required)
       </div>
 
       <LoadingButton

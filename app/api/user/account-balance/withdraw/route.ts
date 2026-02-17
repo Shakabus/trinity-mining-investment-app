@@ -167,7 +167,7 @@ export async function POST(req: Request) {
           amountUsd,
           source: 'account_balance_withdrawal',
           referenceId,
-          note: 'Account withdrawal submitted. Awaiting admin approval.',
+          note: 'Account withdrawal submitted. Awaiting review.',
           metadata: {
             coinType,
             amountCrypto,
@@ -190,7 +190,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       referenceId,
-      message: 'Withdrawal request submitted. Awaiting admin approval.',
+      message: 'Withdrawal request submitted. Awaiting review.',
     })
   } catch (error) {
     if (error instanceof HttpError) {

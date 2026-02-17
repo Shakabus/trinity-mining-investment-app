@@ -202,7 +202,7 @@ async function runReconciliation(options: { apply: boolean; maxAgeMinutes: numbe
         amountUsd: candidate.amountUsd,
         source: candidate.source,
         referenceId: candidate.referenceId,
-        note: `Reconciled by admin automation: ${decision.reason}`,
+        note: `Reconciled automatically: ${decision.reason}`,
         metadata: {
           ...(candidate.metadata ?? {}),
           coinType,

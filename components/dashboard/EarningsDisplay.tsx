@@ -168,7 +168,7 @@ export default function EarningsDisplay({
       }
       setWithdrawStatus({
         type: 'success',
-        message: 'Withdrawal to account balance submitted for admin approval.',
+        message: 'Withdrawal to account balance submitted for review.',
       })
       setWithdrawAmountUsd(convert(minWithdrawalUsd).toFixed(2))
     } catch (error: any) {
@@ -437,7 +437,7 @@ export default function EarningsDisplay({
             </div>
           </div>
           <div className="text-xs text-white/50">
-            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)}. Destination: Account Balance (admin approval required)
+            {t('minWithdrawalLabel')}: {format(minWithdrawalUsd)}. Destination: Account Balance (review required)
           </div>
           {withdrawStatus && (
             <div

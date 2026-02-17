@@ -167,7 +167,7 @@ export async function POST(req: Request) {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
 
       if (latestPaymentEntry?.status === 'pending') {
-        throw new HttpError(409, 'This real-estate buy-in payment is already pending admin approval.')
+        throw new HttpError(409, 'This real-estate buy-in payment is already pending review.')
       }
       if (latestPaymentEntry?.status === 'settled') {
         throw new HttpError(409, 'This real-estate buy-in has already been funded from account balance.')

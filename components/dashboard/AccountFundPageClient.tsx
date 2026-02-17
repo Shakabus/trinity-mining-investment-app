@@ -52,7 +52,7 @@ const sourceLabel: Record<string, string> = {
   referral_withdrawal: 'Referral withdrawal',
   external_payment: 'Approved mining payment',
   external_trading_payment: 'Approved trading payment',
-  admin_manual_adjustment: 'Manual admin adjustment',
+  admin_manual_adjustment: 'Manual adjustment',
   withdrawal_reversal: 'Withdrawal reversal',
   account_balance_withdrawal: 'Account withdrawal',
 }
@@ -122,7 +122,7 @@ export default function AccountFundPageClient({
         throw new Error(data?.error || 'Funding request failed.')
       }
 
-      setStatus({ type: 'success', message: 'Funding request submitted. Awaiting admin approval.' })
+      setStatus({ type: 'success', message: 'Funding request submitted. Awaiting review.' })
       setAmountUsd('')
       setTxid('')
       setProofFile(null)
@@ -142,7 +142,7 @@ export default function AccountFundPageClient({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-white">Fund Account</h1>
-          <p className="text-white/70 mt-2">Submit funding proof. Balance updates after admin approval.</p>
+          <p className="text-white/70 mt-2">Submit funding proof. Balance updates after review.</p>
         </div>
         <Link href="/dashboard" className="text-sm font-semibold text-white/85 underline underline-offset-4">
           Back to dashboard

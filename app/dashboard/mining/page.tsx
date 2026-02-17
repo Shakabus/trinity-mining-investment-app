@@ -5,6 +5,7 @@ import MiningDashboard from '@/components/dashboard/MiningDashboard'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import Link from 'next/link'
+import { autoUpdateEarnings } from '@/lib/earnings'
 import {
   computeDailyCryptoEstimate,
   computeEarningsIncrement,
@@ -74,6 +75,7 @@ export default async function MiningPage() {
           userPlan: {
             include: {
               plan: true,
+              multiAssetAllocations: true,
             },
           },
         },
@@ -94,7 +96,38 @@ export default async function MiningPage() {
     : languageFromCurrency(preferredCurrency)
   const t = (key: string) => translate(key, preferredLanguage)
 
-  const miningStats = user.miningStats[0]
+  let miningStats: (typeof user.miningStats)[number] | null = user.miningStats[0] ?? null
+  const now = new Date()
+  await autoUpdateEarnings({
+    userId: user.id,
+    earnings: user.earnings,
+    miningStats: miningStats
+      ? {
+          assignedHashrate: miningStats.assignedHashrate,
+          hashrateUnit: miningStats.hashrateUnit,
+          isActive: miningStats.isActive,
+        }
+      : null,
+    now,
+  })
+
+  if (miningStats) {
+    const refreshedStats = await prisma.miningStats.findUnique({
+      where: { id: miningStats.id },
+      include: {
+        userPlan: {
+          include: {
+            plan: true,
+            multiAssetAllocations: true,
+            earnings: {
+              where: { isActive: true }
+            }
+          }
+        }
+      }
+    })
+    miningStats = refreshedStats && refreshedStats.isActive ? refreshedStats : null
+  }
 
   // If no active mining
   if (!miningStats || user.accountStatus !== 'active') {
@@ -137,8 +170,6 @@ export default async function MiningPage() {
       </div>
     )
   }
-
-  const now = new Date()
 
   // Convert Decimals to numbers
   const assignedHashrate = parseFloat(miningStats.assignedHashrate.toString())
