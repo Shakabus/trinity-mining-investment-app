@@ -576,46 +576,47 @@ export default async function DashboardPage() {
             </div>
           </div>
         )}
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.05))',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
-            }}
-          >
-            <div className="text-xs text-emerald-100/80 mb-1">Total Deposits</div>
-            <div className="text-xl font-semibold text-emerald-200" title={formatMoney(totalDepositedUsd)}>
-              {formatMoney(totalDepositedUsd)}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.05))',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+              }}
+            >
+              <div className="text-xs text-emerald-100/80 mb-1">Total Deposits</div>
+              <div className="text-base md:text-xl font-semibold text-emerald-200" title={formatMoney(totalDepositedUsd)}>
+                {formatMoney(totalDepositedUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
+                border: '1px solid rgba(88, 45, 255, 0.35)',
+              }}
+            >
+              <div className="text-xs text-violet-100/80 mb-1">Total Invested</div>
+              <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(totalInvestedUsd)}>
+                {formatMoney(totalInvestedUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(239, 68, 68, 0.05))',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+              }}
+            >
+              <div className="text-xs text-rose-100/80 mb-1">Total Withdrawn</div>
+              <div className="text-base md:text-xl font-semibold text-rose-200" title={formatMoney(totalWithdrawnUsd)}>
+                {formatMoney(totalWithdrawnUsd)}
+              </div>
             </div>
           </div>
           <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
-              border: '1px solid rgba(88, 45, 255, 0.35)',
-            }}
-          >
-            <div className="text-xs text-violet-100/80 mb-1">Total Invested</div>
-            <div className="text-xl font-semibold text-violet-200" title={formatMoney(totalInvestedUsd)}>
-              {formatMoney(totalInvestedUsd)}
-            </div>
-          </div>
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(239, 68, 68, 0.05))',
-              border: '1px solid rgba(239, 68, 68, 0.35)',
-            }}
-          >
-            <div className="text-xs text-rose-100/80 mb-1">Total Withdrawn</div>
-            <div className="text-xl font-semibold text-rose-200" title={formatMoney(totalWithdrawnUsd)}>
-              {formatMoney(totalWithdrawnUsd)}
-            </div>
-          </div>
-          <div
-            className="p-4 rounded-2xl"
+            className="p-4 rounded-2xl h-full"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03))',
               border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -629,7 +630,7 @@ export default async function DashboardPage() {
                     <div className="min-w-0">
                       <div className="truncate text-white/75">{formatAccountBalanceSource(entry.source)}</div>
                       <div className="text-[11px] text-white/45">
-                        {entry.createdAt.toLocaleDateString()} • {entry.status}
+                        {entry.createdAt.toLocaleDateString()} - {entry.status}
                       </div>
                     </div>
                     <span className={`shrink-0 ${entry.direction === 'credit' ? 'text-emerald-300' : 'text-rose-300'}`}>
