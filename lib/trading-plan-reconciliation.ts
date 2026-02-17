@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getAccountBalanceEntries } from '@/lib/account-balance'
+import { PAYMENT_REMINDER_TIMEOUT_MS } from '@/lib/payment-reminder'
 
 export async function reconcileRejectedTradingPendingPlans(userId: number) {
   const [candidates, balanceEntries] = await Promise.all([
@@ -44,15 +45,25 @@ export async function reconcileRejectedTradingPendingPlans(userId: number) {
     ledgerStateByPlanId.set(tradingUserPlanId, state)
   }
 
+  const nowMs = Date.now()
+  const reminderCutoffMs = nowMs - PAYMENT_REMINDER_TIMEOUT_MS
+
   const staleIds = candidates
     .filter(plan => {
       const latestPaymentStatus = plan.payments[0]?.status ?? null
       if (latestPaymentStatus === 'rejected') return true
 
       const ledgerState = ledgerStateByPlanId.get(plan.id)
-      if (!ledgerState) return false
+      const hasOpenReview = latestPaymentStatus === 'pending' || Boolean(ledgerState?.hasPending)
+      if (ledgerState?.hasRejected && !ledgerState.hasPending && !ledgerState.hasSettled) {
+        return true
+      }
 
-      return ledgerState.hasRejected && !ledgerState.hasPending && !ledgerState.hasSettled
+      // If plan stayed unsubmitted past reminder timeout, auto-clear it so user can select again.
+      const isExpiredUnsubmitted =
+        plan.createdAt.getTime() <= reminderCutoffMs && !hasOpenReview
+
+      return isExpiredUnsubmitted
     })
     .map(plan => plan.id)
 
