@@ -60,24 +60,26 @@ export async function POST(req: Request) {
     await prisma.$transaction(async tx => {
       if (balancePayment) {
         const entries = await getAccountBalanceEntries(userPlan.userId, { limit: 3000 }, tx)
-        const pendingEntry = entries
-          .filter(
-            entry =>
-              entry.referenceId === purchaseRef &&
-              entry.source === 'mining_plan_purchase' &&
-              entry.direction === 'debit'
-          )
-          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+        const latestByReference = new Map<string, (typeof entries)[number]>()
+        for (const entry of entries) {
+          if (entry.source !== 'mining_plan_purchase' || entry.direction !== 'debit') continue
+          if (Number(entry.metadata?.userPlanId) !== userPlan.id) continue
+          const current = latestByReference.get(entry.referenceId)
+          if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
+            latestByReference.set(entry.referenceId, entry)
+          }
+        }
+        const pendingSegments = [...latestByReference.values()].filter(entry => entry.status === 'pending')
 
-        if (pendingEntry?.status === 'pending') {
+        for (const pendingEntry of pendingSegments) {
           await createAccountBalanceEntry(
             {
               userId: userPlan.userId,
               direction: 'debit',
               status: 'rejected',
-              amountUsd: Number(userPlan.finalPrice),
+              amountUsd: Number(pendingEntry.amountUsd),
               source: 'mining_plan_purchase',
-              referenceId: purchaseRef,
+              referenceId: pendingEntry.referenceId,
               note: `Mining plan payment rejected (${userPlan.plan.name}).`,
               metadata: {
                 ...(pendingEntry.metadata ?? {}),

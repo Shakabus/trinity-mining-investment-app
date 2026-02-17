@@ -105,54 +105,79 @@ export async function POST(req: Request) {
     await prisma.$transaction(async tx => {
       let paymentCoin: TrackedAssetCoin = 'BTC'
       let settledAmountCrypto = 0
+      let isMixedBalancePayment = false
 
       if (balancePayment) {
         const balanceEntries = await getAccountBalanceEntries(userPlan.userId, { limit: 3000 }, tx)
-        const pendingEntry = balanceEntries
-          .filter(
-            entry =>
-              entry.referenceId === purchaseRef &&
-              entry.source === 'mining_plan_purchase' &&
-              entry.direction === 'debit'
-          )
-          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+        const latestByReference = new Map<string, (typeof balanceEntries)[number]>()
+        for (const entry of balanceEntries) {
+          if (entry.source !== 'mining_plan_purchase' || entry.direction !== 'debit') continue
+          if (Number(entry.metadata?.userPlanId) !== userPlan.id) continue
+          const current = latestByReference.get(entry.referenceId)
+          if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
+            latestByReference.set(entry.referenceId, entry)
+          }
+        }
 
-        if (!pendingEntry || pendingEntry.status !== 'pending') {
+        const latestSegments = [...latestByReference.values()]
+        if (latestSegments.some(entry => entry.status === 'settled')) {
+          throw new Error('This plan has already been funded from account balance.')
+        }
+
+        const pendingSegments = latestSegments
+          .filter(entry => entry.status === 'pending')
+          .sort((a, b) => b.amountUsd - a.amountUsd)
+
+        if (!pendingSegments.length) {
           throw new Error('No pending account-balance debit found for this plan.')
         }
 
-        const rawCoin =
-          typeof pendingEntry.metadata?.coinType === 'string'
-            ? pendingEntry.metadata.coinType.toUpperCase()
+        isMixedBalancePayment = pendingSegments.length > 1
+        const primarySegment = pendingSegments[0]
+        const primaryRawCoin =
+          typeof primarySegment.metadata?.coinType === 'string'
+            ? primarySegment.metadata.coinType.toUpperCase()
             : userPlan.plan.coinType.toUpperCase()
-        paymentCoin = isTrackedAssetCoin(rawCoin) ? rawCoin : 'BTC'
+        paymentCoin = isTrackedAssetCoin(primaryRawCoin) ? primaryRawCoin : 'BTC'
 
-        const amountCryptoFromEntry = Number(pendingEntry.metadata?.amountCrypto)
-        settledAmountCrypto =
-          Number.isFinite(amountCryptoFromEntry) && amountCryptoFromEntry > 0
-            ? Number(amountCryptoFromEntry.toFixed(8))
-            : convertUsdToCoin(Number(userPlan.finalPrice), paymentCoin, trackedPrices)
+        for (const pendingSegment of pendingSegments) {
+          const rawCoin =
+            typeof pendingSegment.metadata?.coinType === 'string'
+              ? pendingSegment.metadata.coinType.toUpperCase()
+              : paymentCoin
+          const segmentCoin = isTrackedAssetCoin(rawCoin) ? rawCoin : paymentCoin
+          const amountCryptoFromEntry = Number(pendingSegment.metadata?.amountCrypto)
+          const segmentAmountCrypto =
+            Number.isFinite(amountCryptoFromEntry) && amountCryptoFromEntry > 0
+              ? Number(amountCryptoFromEntry.toFixed(8))
+              : convertUsdToCoin(Number(pendingSegment.amountUsd), segmentCoin, trackedPrices)
 
-        await createAccountBalanceEntry(
-          {
-            userId: userPlan.userId,
-            direction: 'debit',
-            status: 'settled',
-            amountUsd: Number(userPlan.finalPrice),
-            source: 'mining_plan_purchase',
-            referenceId: purchaseRef,
-            note: `Mining plan payment approved (${userPlan.plan.name}).`,
-            metadata: {
-              ...(pendingEntry.metadata ?? {}),
-              coinType: paymentCoin,
-              amountCrypto: settledAmountCrypto,
-              usdPriceAtSettlement: trackedPrices[paymentCoin],
-              reviewedByAdminId: adminUser.id,
-              reviewedAt: new Date().toISOString(),
+          if (pendingSegment.referenceId === primarySegment.referenceId) {
+            settledAmountCrypto = segmentAmountCrypto
+            paymentCoin = segmentCoin
+          }
+
+          await createAccountBalanceEntry(
+            {
+              userId: userPlan.userId,
+              direction: 'debit',
+              status: 'settled',
+              amountUsd: Number(pendingSegment.amountUsd),
+              source: 'mining_plan_purchase',
+              referenceId: pendingSegment.referenceId,
+              note: `Mining plan payment approved (${userPlan.plan.name}).`,
+              metadata: {
+                ...(pendingSegment.metadata ?? {}),
+                coinType: segmentCoin,
+                amountCrypto: segmentAmountCrypto,
+                usdPriceAtSettlement: trackedPrices[segmentCoin],
+                reviewedByAdminId: adminUser.id,
+                reviewedAt: new Date().toISOString(),
+              },
             },
-          },
-          tx
-        )
+            tx
+          )
+        }
       } else {
         const paymentCoinRaw = (pendingPayment?.cryptoType || userPlan.plan.coinType || 'BTC').toUpperCase()
         paymentCoin = isTrackedAssetCoin(paymentCoinRaw) ? paymentCoinRaw : 'BTC'
@@ -359,14 +384,18 @@ export async function POST(req: Request) {
           where: { id: pendingPayment.id },
           data: {
             amountUsd: userPlan.finalPrice,
-            amountCrypto: settledAmountCrypto,
+            amountCrypto: balancePayment && isMixedBalancePayment ? null : settledAmountCrypto,
             cryptoType:
-              (isTrackedAssetCoin((pendingPayment.cryptoType || '').toUpperCase())
-                ? (pendingPayment.cryptoType || '').toUpperCase()
-                : null) ||
-              (isTrackedAssetCoin(userPlan.plan.coinType.toUpperCase())
-                ? userPlan.plan.coinType.toUpperCase()
-                : 'BTC'),
+              balancePayment
+                ? isMixedBalancePayment
+                  ? 'MIXED'
+                  : paymentCoin
+                : (isTrackedAssetCoin((pendingPayment.cryptoType || '').toUpperCase())
+                    ? (pendingPayment.cryptoType || '').toUpperCase()
+                    : null) ||
+                  (isTrackedAssetCoin(userPlan.plan.coinType.toUpperCase())
+                    ? userPlan.plan.coinType.toUpperCase()
+                    : 'BTC'),
             walletAddress: balancePayment ? 'Account Balance' : pendingPayment.walletAddress || 'Approved',
             transactionId: balancePayment ? 'Account Balance - Approved' : txid || pendingPayment.transactionId || 'Manual Approval',
             status: 'confirmed',
@@ -381,8 +410,14 @@ export async function POST(req: Request) {
             userId: userPlan.userId,
             userPlanId: userPlan.id,
             amountUsd: userPlan.finalPrice,
-            amountCrypto: settledAmountCrypto,
-            cryptoType: isTrackedAssetCoin(userPlan.plan.coinType.toUpperCase()) ? userPlan.plan.coinType.toUpperCase() : 'BTC',
+            amountCrypto: balancePayment && isMixedBalancePayment ? null : settledAmountCrypto,
+            cryptoType: balancePayment
+              ? isMixedBalancePayment
+                ? 'MIXED'
+                : paymentCoin
+              : isTrackedAssetCoin(userPlan.plan.coinType.toUpperCase())
+                ? userPlan.plan.coinType.toUpperCase()
+                : 'BTC',
             walletAddress: balancePayment ? 'Account Balance' : 'Approved',
             transactionId: balancePayment ? 'Account Balance - Approved' : txid || 'Manual Approval',
             status: 'confirmed',

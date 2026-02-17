@@ -24,6 +24,7 @@ import {
 
 const PAY_MINING_PLAN_FIELDS = ['userPlanId', 'coinType'] as const
 const PAYABLE_COINS = ['BTC', 'ETH', 'SOL', 'USDT'] as const
+const COIN_EPSILON = 0.00000001
 
 class HttpError extends Error {
   status: number
@@ -32,6 +33,71 @@ class HttpError extends Error {
     super(message)
     this.status = status
   }
+}
+
+type CoinContribution = {
+  coinType: TrackedAssetCoin
+  amountUsd: number
+  amountCrypto: number
+  usdPrice: number
+}
+
+const resolveCoinContributions = ({
+  amountUsd,
+  requestedCoin,
+  availability,
+  prices,
+}: {
+  amountUsd: number
+  requestedCoin: TrackedAssetCoin | null
+  availability: Awaited<ReturnType<typeof getAccountBalanceCoinAvailability>>
+  prices: Awaited<ReturnType<typeof getTrackedCryptoPricesUsd>>
+}): CoinContribution[] => {
+  let remainingCents = Math.round(amountUsd * 100)
+  if (remainingCents <= 0) return []
+
+  const allCoins = [...TRACKED_ASSET_COINS]
+  const rankedCoins = allCoins.sort(
+    (a, b) => (availability.byCoin[b]?.availableUsd ?? 0) - (availability.byCoin[a]?.availableUsd ?? 0)
+  )
+
+  const coins: TrackedAssetCoin[] = requestedCoin
+    ? [requestedCoin, ...rankedCoins.filter(coin => coin !== requestedCoin)]
+    : rankedCoins
+
+  const contributions: CoinContribution[] = []
+
+  for (const coinType of coins) {
+    if (remainingCents <= 0) break
+
+    const availableUsd = Math.max(0, availability.byCoin[coinType]?.availableUsd ?? 0)
+    const availableCrypto = Math.max(0, availability.byCoin[coinType]?.availableCrypto ?? 0)
+    const usdPrice = prices[coinType]
+    if (availableUsd <= 0 || availableCrypto <= 0 || usdPrice <= 0) continue
+
+    let takeCents = Math.min(remainingCents, Math.floor(availableUsd * 100))
+    while (takeCents > 0) {
+      const amountUsdPart = Number((takeCents / 100).toFixed(2))
+      const amountCryptoPart = convertUsdToCoin(amountUsdPart, coinType, prices)
+      if (amountCryptoPart > 0 && amountCryptoPart <= availableCrypto + COIN_EPSILON) {
+        contributions.push({
+          coinType,
+          amountUsd: amountUsdPart,
+          amountCrypto: amountCryptoPart,
+          usdPrice,
+        })
+        remainingCents -= takeCents
+        break
+      }
+      takeCents -= 1
+    }
+  }
+
+  if (remainingCents > 0) {
+    return []
+  }
+
+  return contributions
 }
 
 export async function POST(req: Request) {
@@ -88,70 +154,61 @@ export async function POST(req: Request) {
       }
 
       const coinAvailability = await getAccountBalanceCoinAvailability(user.id, cryptoPrices, tx)
-      const selectedCoin =
-        requestedCoin ??
-        [...TRACKED_ASSET_COINS]
-          .sort(
-            (a, b) =>
-              (coinAvailability.byCoin[b]?.availableUsd ?? 0) -
-              (coinAvailability.byCoin[a]?.availableUsd ?? 0)
-          )
-          .find(coin => (coinAvailability.byCoin[coin]?.availableUsd ?? 0) >= finalPriceUsd)
+      const contributions = resolveCoinContributions({
+        amountUsd: finalPriceUsd,
+        requestedCoin,
+        availability: coinAvailability,
+        prices: cryptoPrices,
+      })
 
-      if (!selectedCoin) {
-        throw new HttpError(400, 'No funded wallet has enough available balance for this purchase.')
-      }
-
-      const requiredCoinAmount = convertUsdToCoin(finalPriceUsd, selectedCoin, cryptoPrices)
-      const availableCoinAmount = coinAvailability.byCoin[selectedCoin]?.availableCrypto ?? 0
-
-      if (requiredCoinAmount <= 0 || cryptoPrices[selectedCoin] <= 0) {
-        throw new HttpError(400, `Unable to resolve ${selectedCoin} conversion rate.`)
-      }
-
-      if (availableCoinAmount + 0.00000001 < requiredCoinAmount) {
-        throw new HttpError(
-          400,
-          `Insufficient ${selectedCoin} wallet balance. Available: ${availableCoinAmount.toFixed(8)} ${selectedCoin}.`
-        )
+      if (!contributions.length) {
+        throw new HttpError(400, 'Insufficient wallet funds across all supported coins for this purchase.')
       }
 
       const existingEntries = await getAccountBalanceEntries(user.id, { limit: 3000 }, tx)
-      const latestPaymentEntry = existingEntries
-        .filter(
-          entry =>
-            entry.referenceId === debitReference &&
-            entry.source === 'mining_plan_purchase' &&
-            entry.direction === 'debit'
-        )
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+      const latestByReference = new Map<string, (typeof existingEntries)[number]>()
+      for (const entry of existingEntries) {
+        if (entry.source !== 'mining_plan_purchase' || entry.direction !== 'debit') continue
+        if (Number(entry.metadata?.userPlanId) !== userPlan.id) continue
+        const current = latestByReference.get(entry.referenceId)
+        if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
+          latestByReference.set(entry.referenceId, entry)
+        }
+      }
+      const latestPlanEntries = [...latestByReference.values()]
 
-      if (latestPaymentEntry?.status === 'pending') {
+      if (latestPlanEntries.some(entry => entry.status === 'pending')) {
         throw new HttpError(409, 'This account-balance payment is already pending review.')
       }
 
-      if (latestPaymentEntry?.status === 'settled') {
+      if (latestPlanEntries.some(entry => entry.status === 'settled')) {
         throw new HttpError(409, 'This plan has already been funded from account balance.')
       }
 
-      await createAccountBalanceEntry(
-        {
-          userId: user.id,
-          direction: 'debit',
-          status: 'pending',
-          amountUsd: finalPriceUsd,
-          source: 'mining_plan_purchase',
-          referenceId: debitReference,
-          note: `Account-balance payment submitted for ${userPlan.plan.name}.`,
-          metadata: {
-            userPlanId: userPlan.id,
-            coinType: selectedCoin,
-            amountCrypto: requiredCoinAmount,
-            usdPriceAtRequest: cryptoPrices[selectedCoin],
+      for (let index = 0; index < contributions.length; index += 1) {
+        const contribution = contributions[index]
+        await createAccountBalanceEntry(
+          {
+            userId: user.id,
+            direction: 'debit',
+            status: 'pending',
+            amountUsd: contribution.amountUsd,
+            source: 'mining_plan_purchase',
+            referenceId: `${debitReference}:${contribution.coinType}:${index + 1}`,
+            note: `Account-balance payment submitted for ${userPlan.plan.name}.`,
+            metadata: {
+              userPlanId: userPlan.id,
+              planReference: debitReference,
+              segmentIndex: index + 1,
+              segmentCount: contributions.length,
+              coinType: contribution.coinType,
+              amountCrypto: contribution.amountCrypto,
+              usdPriceAtRequest: contribution.usdPrice,
+            },
           },
-        },
-        tx
-      )
+          tx
+        )
+      }
 
       await tx.userPlan.update({
         where: { id: userPlan.id },
@@ -173,8 +230,8 @@ export async function POST(req: Request) {
             where: { id: existingPayment.id },
             data: {
               amountUsd: userPlan.finalPrice,
-              amountCrypto: requiredCoinAmount,
-              cryptoType: selectedCoin,
+              amountCrypto: contributions.length > 1 ? null : contributions[0].amountCrypto,
+              cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
               walletAddress: 'Account Balance',
               transactionId: 'Account Balance - Pending Review',
               paymentProofUrl: null,
@@ -189,8 +246,8 @@ export async function POST(req: Request) {
               userId: userPlan.userId,
               userPlanId: userPlan.id,
               amountUsd: userPlan.finalPrice,
-              amountCrypto: requiredCoinAmount,
-              cryptoType: selectedCoin,
+              amountCrypto: contributions.length > 1 ? null : contributions[0].amountCrypto,
+              cryptoType: contributions.length > 1 ? 'MIXED' : contributions[0].coinType,
               walletAddress: 'Account Balance',
               transactionId: 'Account Balance - Pending Review',
               status: 'pending',
@@ -218,6 +275,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
     console.error('Pay mining plan from account balance error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

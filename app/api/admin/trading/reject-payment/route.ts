@@ -58,29 +58,31 @@ export async function POST(req: Request) {
 
     const pendingPayment = tradingPlan.payments[0] ?? null
     const balancePayment = isAccountBalancePending(pendingPayment?.transactionId)
-    const purchaseRef = `trading-plan:${tradingPlan.id}`
 
     await prisma.$transaction(async tx => {
       if (balancePayment) {
         const entries = await getAccountBalanceEntries(tradingPlan.userId, { limit: 3000 }, tx)
-        const pendingEntry = entries
-          .filter(
-            entry =>
-              entry.referenceId === purchaseRef &&
-              entry.source === 'trading_plan_purchase' &&
-              entry.direction === 'debit'
-          )
-          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+        const latestByReference = new Map<string, (typeof entries)[number]>()
+        for (const entry of entries) {
+          if (entry.source !== 'trading_plan_purchase' || entry.direction !== 'debit') continue
+          if (Number(entry.metadata?.tradingUserPlanId) !== tradingPlan.id) continue
+          const current = latestByReference.get(entry.referenceId)
+          if (!current || current.createdAt.getTime() < entry.createdAt.getTime()) {
+            latestByReference.set(entry.referenceId, entry)
+          }
+        }
 
-        if (pendingEntry?.status === 'pending') {
+        const pendingSegments = [...latestByReference.values()].filter(entry => entry.status === 'pending')
+
+        for (const pendingEntry of pendingSegments) {
           await createAccountBalanceEntry(
             {
               userId: tradingPlan.userId,
               direction: 'debit',
               status: 'rejected',
-              amountUsd: Number(tradingPlan.investmentUsd),
+              amountUsd: Number(pendingEntry.amountUsd),
               source: 'trading_plan_purchase',
-              referenceId: purchaseRef,
+              referenceId: pendingEntry.referenceId,
               note: `Trading plan payment rejected (${tradingPlan.plan.name}).`,
               metadata: {
                 ...(pendingEntry.metadata ?? {}),
