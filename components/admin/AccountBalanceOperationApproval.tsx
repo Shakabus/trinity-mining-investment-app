@@ -22,6 +22,8 @@ export type AccountBalanceOperationRow = {
   coinType: string | null
   amountCrypto: number | null
   subtitle: string
+  txid: string | null
+  proofUrl: string | null
 }
 
 const sourceLabel: Record<ReviewableSource, string> = {
@@ -124,6 +126,19 @@ export default function AccountBalanceOperationApproval({
         <div>{operation.subtitle}</div>
         <div>Reference: {operation.referenceId}</div>
         <div>Submitted: {new Date(operation.createdAt).toLocaleString()}</div>
+        {operation.txid && <div>TXID: {operation.txid}</div>}
+        {operation.proofUrl && (
+          <div>
+            <a
+              href={operation.proofUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-blue-200 hover:text-blue-100 underline"
+            >
+              View submitted proof
+            </a>
+          </div>
+        )}
       </div>
 
       <textarea

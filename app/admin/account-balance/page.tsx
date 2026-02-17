@@ -156,11 +156,12 @@ export default async function AdminAccountBalancePage() {
     const user = userMap.get(row.userId)
     const coinType = asString(row.metadata?.coinType)?.toUpperCase() ?? null
     const amountCrypto = asNumber(row.metadata?.amountCrypto)
+    const proofUrl = asString(row.metadata?.proofUrl)
+    const txid = asString(row.metadata?.txid)
 
     let subtitle = 'Pending account-balance operation.'
     if (row.source === 'funding_deposit') {
-      const txid = asString(row.metadata?.txid) ?? 'N/A'
-      subtitle = `Funding request TXID: ${txid}`
+      subtitle = `Funding request TXID: ${txid ?? 'N/A'}`
     } else if (row.source === 'mining_plan_purchase') {
       const userPlanId = asNumber(row.metadata?.userPlanId)
       const plan = userPlanId ? miningPlanMap.get(userPlanId) : null
@@ -198,6 +199,8 @@ export default async function AdminAccountBalancePage() {
       coinType,
       amountCrypto,
       subtitle,
+      txid,
+      proofUrl,
     }
   })
 
