@@ -117,7 +117,7 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
                 color: '#ffffff',
               }}
             >
-              Submit from Account Balance
+              Pay from Account Balance
             </LoadingButton>
             <Link href="/dashboard/account/fund" className="text-sm font-semibold text-emerald-100 underline underline-offset-4">
               Fund Account
