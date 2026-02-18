@@ -34,6 +34,8 @@ type Props = {
   entries: BalanceEntry[]
 }
 
+type FundingMethod = 'crypto_transfer' | 'card_provider'
+
 const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
 const WALLET_ADDRESSES: Record<(typeof COINS)[number], string> = {
   BTC: 'bc1q76ztuupz9sycs3hf0l8q0t3mt5j78rxr29cwv4',
@@ -41,6 +43,24 @@ const WALLET_ADDRESSES: Record<(typeof COINS)[number], string> = {
   USDT: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
   SOL: '54fnCmk1gLDhtzDcd8xt7ar4YKKu9sJqqwyXNoDZMpw8',
 }
+
+const CARD_PROVIDERS = [
+  {
+    id: 'moonpay',
+    name: 'MoonPay',
+    description: 'Buy crypto with bank card and then fund your account wallet.',
+  },
+  {
+    id: 'transak',
+    name: 'Transak',
+    description: 'Alternative card on-ramp provider for crypto purchases.',
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe Crypto',
+    description: 'Card-based crypto purchase option (availability varies by region).',
+  },
+] as const
 
 const sourceLabel: Record<string, string> = {
   funding_deposit: 'Account funding',
@@ -67,6 +87,7 @@ export default function AccountFundPageClient({
   entries,
 }: Props) {
   const [amountUsd, setAmountUsd] = useState('')
+  const [fundingMethod, setFundingMethod] = useState<FundingMethod>('crypto_transfer')
   const [coinType, setCoinType] = useState<(typeof COINS)[number]>('USDT')
   const [txid, setTxid] = useState('')
   const [proofFile, setProofFile] = useState<File | null>(null)
@@ -222,6 +243,61 @@ export default function AccountFundPageClient({
       </div>
 
       <WalletConversionCard walletFlow={walletFlow} />
+
+      <div
+        className="p-6 rounded-3xl space-y-4"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
+        <h2 className="text-xl font-semibold text-white">Funding options</h2>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setFundingMethod('crypto_transfer')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              fundingMethod === 'crypto_transfer'
+                ? 'bg-white text-black'
+                : 'bg-white/10 text-white hover:bg-white/15'
+            }`}
+          >
+            Crypto transfer (default)
+          </button>
+          <button
+            type="button"
+            onClick={() => setFundingMethod('card_provider')}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+              fundingMethod === 'card_provider'
+                ? 'bg-white text-black'
+                : 'bg-white/10 text-white hover:bg-white/15'
+            }`}
+          >
+            Card providers (optional)
+          </button>
+        </div>
+
+        {fundingMethod === 'card_provider' && (
+          <div className="rounded-2xl border border-white/10 p-4 space-y-3">
+            <p className="text-sm text-white/80">
+              Card checkout is optional. You can use any provider below, then return and submit funding proof
+              for review.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {CARD_PROVIDERS.map(provider => (
+                <div key={provider.id} className="rounded-xl border border-white/10 p-3">
+                  <div className="text-sm font-semibold text-white">{provider.name}</div>
+                  <p className="text-xs text-white/65 mt-1">{provider.description}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-white/60">
+              The current default flow remains direct wallet transfer and proof submission.
+            </p>
+          </div>
+        )}
+      </div>
 
       <div
         className="p-6 md:p-8 rounded-3xl space-y-4"
