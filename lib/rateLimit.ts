@@ -1,3 +1,5 @@
+import { getUpstashConfig } from '@/lib/security-env'
+
 type RateLimitResult = {
   ok: boolean
   remaining: number
@@ -14,13 +16,6 @@ const memoryStore = new Map<string, { count: number; resetAt: number }>()
 
 // The app runs on both local dev and serverless. We use Upstash when configured,
 // then transparently fall back to in-memory buckets for development.
-
-const getUpstashConfig = () => {
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
-  return { url, token }
-}
 
 const fromMemory = ({ key, limit, windowSec }: RateLimitOptions): RateLimitResult => {
   const now = Date.now()

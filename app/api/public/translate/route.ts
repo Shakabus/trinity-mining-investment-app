@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isInputValidationError, readJsonObject, readStringField } from '@/lib/requestValidation'
 import { isSupportedLanguage } from '@/lib/i18n'
+import { getGoogleTranslateApiKey } from '@/lib/security-env'
 
 const TRANSLATE_ALLOWED_FIELDS = ['text', 'language'] as const
 const MAX_TEXT_LENGTH = 420
@@ -18,6 +19,14 @@ function extractTranslatedText(payload: unknown) {
     .trim()
 
   return translated || null
+}
+
+function extractTranslatedTextV2(payload: unknown) {
+  if (!payload || typeof payload !== 'object') return null
+  const data = (payload as { data?: { translations?: Array<{ translatedText?: unknown }> } }).data
+  const first = data?.translations?.[0]
+  if (!first || typeof first.translatedText !== 'string') return null
+  return first.translatedText.trim() || null
 }
 
 export async function POST(req: Request) {
@@ -38,25 +47,52 @@ export async function POST(req: Request) {
       return NextResponse.json({ translated: text })
     }
 
-    const params = new URLSearchParams({
-      client: 'gtx',
-      sl: 'auto',
-      tl: language,
-      dt: 't',
-      q: text,
-    })
+    const googleApiKey = getGoogleTranslateApiKey()
+    let translated: string | null = null
 
-    const upstream = await fetch(`https://translate.googleapis.com/translate_a/single?${params.toString()}`, {
-      method: 'GET',
-      cache: 'no-store',
-    })
+    if (googleApiKey) {
+      const params = new URLSearchParams({ key: googleApiKey })
+      const upstream = await fetch(`https://translation.googleapis.com/language/translate/v2?${params.toString()}`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: text,
+          target: language,
+          format: 'text',
+        }),
+      })
 
-    if (!upstream.ok) {
-      return NextResponse.json({ translated: null }, { status: 200 })
+      if (upstream.ok) {
+        const payload = await upstream.json().catch(() => null)
+        translated = extractTranslatedTextV2(payload)
+      }
     }
 
-    const payload = await upstream.json().catch(() => null)
-    const translated = extractTranslatedText(payload)
+    if (!translated) {
+      const params = new URLSearchParams({
+        client: 'gtx',
+        sl: 'auto',
+        tl: language,
+        dt: 't',
+        q: text,
+      })
+
+      const upstream = await fetch(`https://translate.googleapis.com/translate_a/single?${params.toString()}`, {
+        method: 'GET',
+        cache: 'no-store',
+      })
+
+      if (!upstream.ok) {
+        return NextResponse.json({ translated: null }, { status: 200 })
+      }
+
+      const payload = await upstream.json().catch(() => null)
+      translated = extractTranslatedText(payload)
+    }
+
     return NextResponse.json({ translated })
   } catch (error) {
     if (isInputValidationError(error)) {

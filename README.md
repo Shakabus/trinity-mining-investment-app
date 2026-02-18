@@ -29,6 +29,15 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Environment and Key Security
+
+Copy `.env.example` to `.env.local` and set values before running locally.
+
+- Keep all secrets server-side only (no `NEXT_PUBLIC_` prefix for private keys).
+- Rotate secrets by setting a new value and (for cron) placing the previous value in `CRON_SECRET_PREVIOUS` during cutover.
+- After rotation, remove `CRON_SECRET_PREVIOUS`.
+- Never commit `.env.local` or raw keys to git.
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

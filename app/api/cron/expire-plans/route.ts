@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getCronSecrets, matchesAnySecret } from '@/lib/security-env'
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get('authorization')
-    const secret = process.env.CRON_SECRET
+    const authHeader = req.headers.get('authorization') || ''
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+    const cronSecrets = getCronSecrets()
 
-    if (!secret || authHeader !== `Bearer ${secret}`) {
+    if (!token || cronSecrets.length === 0 || !matchesAnySecret(token, cronSecrets)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

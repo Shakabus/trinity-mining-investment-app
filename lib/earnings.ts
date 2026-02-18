@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { getCoinGeckoConfig } from '@/lib/security-env'
 import {
   computeDailyCryptoEstimate,
   computeTargetDailyCryptoEstimate,
@@ -21,9 +22,14 @@ export async function getCryptoPricesUsd() {
   }
 
   try {
+    const config = getCoinGeckoConfig()
+    const headers: HeadersInit | undefined = config.apiKey
+      ? { [config.apiKeyHeader]: config.apiKey }
+      : undefined
+
     const response = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,litecoin&vs_currencies=usd',
-      { cache: 'no-store' }
+      `${config.apiBaseUrl}/simple/price?ids=bitcoin,ethereum,litecoin&vs_currencies=usd`,
+      { cache: 'no-store', headers }
     )
     if (!response.ok) {
       throw new Error('Price fetch failed')
