@@ -1,10 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, Globe2 } from 'lucide-react'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import MarketingLiveTape from '@/components/marketing/MarketingLiveTape'
 import MarketingWithdrawalAlert from '@/components/marketing/MarketingWithdrawalAlert'
+import DashboardAutoTranslate from '@/components/i18n/DashboardAutoTranslate'
+import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES, type LanguageCode, isSupportedLanguage } from '@/lib/i18n'
 
 const NAV_ITEMS = [
   { label: 'Features', href: '/features' },
@@ -13,11 +16,40 @@ const NAV_ITEMS = [
   { label: 'How It Works', href: '/how-it-works' },
 ]
 
+const MARKETING_LANGUAGE_STORAGE_KEY = 'marketing_language_preference'
+
 export default function BitryxHeader() {
   const [open, setOpen] = useState(false)
+  const [language, setLanguage] = useState<LanguageCode>(() => {
+    if (typeof window === 'undefined') return 'en'
+    const stored = window.localStorage.getItem(MARKETING_LANGUAGE_STORAGE_KEY)
+    return stored && isSupportedLanguage(stored) ? stored : 'en'
+  })
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false)
+  const languageMenuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.localStorage.setItem(MARKETING_LANGUAGE_STORAGE_KEY, language)
+    document.documentElement.lang = language
+  }, [language])
+
+  useEffect(() => {
+    if (!languageMenuOpen) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+        setLanguageMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('pointerdown', handlePointerDown)
+    return () => window.removeEventListener('pointerdown', handlePointerDown)
+  }, [languageMenuOpen])
 
   return (
     <>
+      <DashboardAutoTranslate language={language} />
       <MarketingLiveTape />
       <MarketingWithdrawalAlert
         minIntervalMs={2000}
@@ -42,16 +74,54 @@ export default function BitryxHeader() {
             </Link>
           </nav>
 
-          <button
-            className="bitryx-toggle"
-            aria-label="Toggle menu"
-            aria-expanded={open}
-            onClick={() => setOpen(prev => !prev)}
-            type="button"
-          >
-            <span />
-            <span />
-          </button>
+          <div className="bitryx-controls">
+            <div
+              ref={languageMenuRef}
+              className="bitryx-lang-wrapper"
+              data-no-auto-translate="true"
+            >
+              <button
+                className="bitryx-lang-toggle"
+                aria-label="Change language"
+                onClick={() => setLanguageMenuOpen(prev => !prev)}
+                type="button"
+                title={`Language: ${LANGUAGE_LABELS[language]}`}
+              >
+                <Globe2 size={16} />
+              </button>
+              {languageMenuOpen && (
+                <div className="bitryx-lang-menu">
+                  {SUPPORTED_LANGUAGES.map(code => (
+                    <button
+                      key={code}
+                      className="bitryx-lang-item"
+                      onClick={() => {
+                        setLanguage(code)
+                        setLanguageMenuOpen(false)
+                      }}
+                      type="button"
+                    >
+                      <span>{LANGUAGE_LABELS[code]}</span>
+                      {code === language ? <Check size={13} /> : null}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button
+              className="bitryx-toggle"
+              aria-label="Toggle menu"
+              aria-expanded={open}
+              onClick={() => {
+                setLanguageMenuOpen(false)
+                setOpen(prev => !prev)
+              }}
+              type="button"
+            >
+              <span />
+              <span />
+            </button>
+          </div>
         </div>
 
         <div className="bitryx-mobile-menu">
