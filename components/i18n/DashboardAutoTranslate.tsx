@@ -49,27 +49,20 @@ function canRequestRemoteTranslation(text: string) {
 }
 
 async function fetchGoogleTranslate(text: string, language: LanguageCode) {
-  const params = new URLSearchParams({
-    client: 'gtx',
-    sl: 'en',
-    tl: language,
-    dt: 't',
-    q: text,
+  const response = await fetch('/api/public/translate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      text,
+      language,
+    }),
   })
-
-  const response = await fetch(`https://translate.googleapis.com/translate_a/single?${params.toString()}`)
   if (!response.ok) return null
 
-  const payload = (await response.json()) as unknown
-  if (!Array.isArray(payload) || !Array.isArray(payload[0])) return null
-
-  const chunks = payload[0] as unknown[]
-  const translated = chunks
-    .map(chunk => (Array.isArray(chunk) ? chunk[0] : ''))
-    .filter(value => typeof value === 'string')
-    .join('')
-    .trim()
-
+  const payload = (await response.json().catch(() => null)) as { translated?: string | null } | null
+  const translated = typeof payload?.translated === 'string' ? payload.translated.trim() : ''
   return translated || null
 }
 
