@@ -26,6 +26,26 @@
   white-space: nowrap;
 }
 
+.soundToggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.78rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.soundToggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .track {
   display: inline-flex;
   min-width: max-content;
@@ -96,6 +116,12 @@
 
   .item {
     font-size: 0.69rem;
+  }
+
+  .soundToggle {
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.72rem;
   }
 }
 
