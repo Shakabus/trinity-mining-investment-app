@@ -37,6 +37,7 @@ Copy `.env.example` to `.env.local` and set values before running locally.
 - Rotate secrets by setting a new value and (for cron) placing the previous value in `CRON_SECRET_PREVIOUS` during cutover.
 - After rotation, remove `CRON_SECRET_PREVIOUS`.
 - Never commit `.env.local` or raw keys to git.
+- Optional card checkout uses MoonPay server-side signing (`MOONPAY_PUBLISHABLE_KEY`, `MOONPAY_SECRET_KEY`).
 
 ## Deploy on Vercel
 

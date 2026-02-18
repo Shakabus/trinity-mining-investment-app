@@ -6,6 +6,7 @@ import { Check, Copy } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 import WalletConversionCard from '@/components/dashboard/WalletConversionCard'
+import { FUNDING_COINS, SYSTEM_FUNDING_WALLETS, type FundingCoin } from '@/lib/system-funding-wallets'
 
 type BalanceEntry = {
   id: number
@@ -36,13 +37,7 @@ type Props = {
 
 type FundingMethod = 'crypto_transfer' | 'card_provider'
 
-const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
-const WALLET_ADDRESSES: Record<(typeof COINS)[number], string> = {
-  BTC: 'bc1q76ztuupz9sycs3hf0l8q0t3mt5j78rxr29cwv4',
-  ETH: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
-  USDT: '0x8610A9E40FAD02Ce4157FbbFb38752aBE1264334',
-  SOL: '54fnCmk1gLDhtzDcd8xt7ar4YKKu9sJqqwyXNoDZMpw8',
-}
+const COINS = FUNDING_COINS
 
 const CARD_PROVIDERS = [
   {
@@ -88,10 +83,11 @@ export default function AccountFundPageClient({
 }: Props) {
   const [amountUsd, setAmountUsd] = useState('')
   const [fundingMethod, setFundingMethod] = useState<FundingMethod>('crypto_transfer')
-  const [coinType, setCoinType] = useState<(typeof COINS)[number]>('USDT')
+  const [coinType, setCoinType] = useState<FundingCoin>('USDT')
   const [txid, setTxid] = useState('')
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [copiedAddress, setCopiedAddress] = useState(false)
+  const [launchingProvider, setLaunchingProvider] = useState<string | null>(null)
   const [status, setStatus] = useState<{ type: 'idle' | 'error' | 'success'; message: string }>({
     type: 'idle',
     message: '',
@@ -102,12 +98,56 @@ export default function AccountFundPageClient({
     () => entries.filter(entry => entry.source === 'funding_deposit' && entry.status === 'pending'),
     [entries]
   )
-  const walletAddress = WALLET_ADDRESSES[coinType]
+  const walletAddress = SYSTEM_FUNDING_WALLETS[coinType]
 
   const copyAddress = async () => {
     await navigator.clipboard.writeText(walletAddress)
     setCopiedAddress(true)
     setTimeout(() => setCopiedAddress(false), 1500)
+  }
+
+  const launchCardCheckout = async (providerId: string) => {
+    if (providerId !== 'moonpay') {
+      setStatus({ type: 'error', message: `${providerId} checkout is not configured yet.` })
+      return
+    }
+
+    const amount = Number(amountUsd)
+    if (!Number.isFinite(amount) || amount < 20) {
+      setStatus({ type: 'error', message: 'Enter at least $20 before launching card checkout.' })
+      return
+    }
+
+    try {
+      setLaunchingProvider(providerId)
+      const response = await fetch('/api/user/account-balance/card-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: providerId,
+          amountUsd: amount,
+          coinType,
+        }),
+      })
+
+      const payload = await response.json().catch(() => null)
+      if (!response.ok || !payload?.checkoutUrl) {
+        throw new Error(payload?.error || 'Unable to launch card checkout.')
+      }
+
+      window.open(payload.checkoutUrl, '_blank', 'noopener,noreferrer')
+      setStatus({
+        type: 'success',
+        message: 'Card checkout opened in a new tab. Complete payment, then return to submit proof if needed.',
+      })
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Unable to launch card checkout.',
+      })
+    } finally {
+      setLaunchingProvider(null)
+    }
   }
 
   const submit = async () => {
@@ -289,6 +329,24 @@ export default function AccountFundPageClient({
                 <div key={provider.id} className="rounded-xl border border-white/10 p-3">
                   <div className="text-sm font-semibold text-white">{provider.name}</div>
                   <p className="text-xs text-white/65 mt-1">{provider.description}</p>
+                  {provider.id === 'moonpay' ? (
+                    <LoadingButton
+                      onClick={() => launchCardCheckout(provider.id)}
+                      isLoading={launchingProvider === provider.id}
+                      loadingText="Opening..."
+                      className="mt-3 px-3 py-2 rounded-lg text-xs font-semibold"
+                      style={{
+                        background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                        color: '#ffffff',
+                      }}
+                    >
+                      Open checkout
+                    </LoadingButton>
+                  ) : (
+                    <div className="mt-3 inline-flex px-2 py-1 rounded-full text-[11px] border border-white/20 text-white/60">
+                      Coming soon
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -326,7 +384,7 @@ export default function AccountFundPageClient({
             <label className="block text-sm text-white/80 mb-2">Coin</label>
             <select
               value={coinType}
-              onChange={event => setCoinType(event.target.value as (typeof COINS)[number])}
+              onChange={event => setCoinType(event.target.value as FundingCoin)}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
             >
               {COINS.map(coin => (

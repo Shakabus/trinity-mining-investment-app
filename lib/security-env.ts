@@ -35,6 +35,18 @@ export function getGoogleTranslateApiKey() {
   return read('GOOGLE_TRANSLATE_API_KEY')
 }
 
+export function getMoonPayConfig() {
+  const publishableKey = read('MOONPAY_PUBLISHABLE_KEY')
+  const secretKey = read('MOONPAY_SECRET_KEY')
+  const baseUrl = read('MOONPAY_BASE_URL') || ('https://buy.moonpay.com' as NonEmptyString)
+
+  return {
+    publishableKey,
+    secretKey,
+    baseUrl,
+  }
+}
+
 export function getCronSecrets() {
   const current = read('CRON_SECRET')
   const previous = read('CRON_SECRET_PREVIOUS')
