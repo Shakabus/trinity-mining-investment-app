@@ -341,7 +341,7 @@ a[aria-disabled="true"],
 .bitryx-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .bitryx-lang-wrapper {
@@ -365,6 +365,10 @@ a[aria-disabled="true"],
 .bitryx-lang-toggle:hover {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08));
   border-color: rgba(255, 255, 255, 0.4);
+}
+
+.bitryx-login-desktop {
+  margin-top: 0;
 }
 
 .bitryx-lang-menu {
@@ -486,6 +490,10 @@ a[aria-disabled="true"],
 
 @media (max-width: 900px) {
   .bitryx-nav {
+    display: none;
+  }
+
+  .bitryx-login-desktop {
     display: none;
   }
 

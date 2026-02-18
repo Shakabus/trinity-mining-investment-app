@@ -69,9 +69,6 @@ export default function BitryxHeader() {
                 {item.label}
               </Link>
             ))}
-            <Link className="bitryx-login-btn" href="/sign-in">
-              Login
-            </Link>
           </nav>
 
           <div className="bitryx-controls">
@@ -108,6 +105,9 @@ export default function BitryxHeader() {
                 </div>
               )}
             </div>
+            <Link className="bitryx-login-btn bitryx-login-desktop" href="/sign-in">
+              Login
+            </Link>
             <button
               className="bitryx-toggle"
               aria-label="Toggle menu"
