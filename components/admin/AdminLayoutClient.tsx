@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
 import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, Building2, ChevronsLeft, ChevronsRight, Radio, Wallet } from 'lucide-react'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import LiveNotificationTicker from '@/components/notifications/LiveNotificationTicker'
 
 const menuItems = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
@@ -100,6 +101,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
             </div>
           </div>
         </nav>
+        <LiveNotificationTicker endpoint="/api/admin/notifications/ticker" label="Admin live updates" />
 
         <div className="flex flex-1 min-h-0">
           {/* Overlay */}

@@ -7,6 +7,7 @@ import UserPresenceTracker from './UserPresenceTracker'
 import MarketingWithdrawalAlert from '@/components/marketing/MarketingWithdrawalAlert'
 import { CurrencyProvider } from '@/components/currency/CurrencyProvider'
 import { LanguageProvider } from '@/components/i18n/LanguageProvider'
+import LiveNotificationTicker from '@/components/notifications/LiveNotificationTicker'
 import type { LanguageCode } from '@/lib/i18n'
 import type { CurrencyCode, FxRates } from '@/lib/forex'
 
@@ -59,6 +60,7 @@ export default function DashboardLayoutClient({
           <div className="flex-1 min-w-0 flex flex-col">
             {/* Top Navigation (sticky) */}
             <DashboardNav user={displayUser} onMenuClick={() => setIsSidebarOpen(true)} />
+            <LiveNotificationTicker endpoint="/api/user/notifications/ticker" />
 
             {/* Scroll Container: ONLY this scrolls (NO padding here) */}
             <main className="flex-1 min-h-0 overflow-y-auto glass-scroll">
