@@ -1,9 +1,27 @@
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
-import { Users, CreditCard, TrendingUp, Activity, Banknote, Building2 } from 'lucide-react'
+import { Users, CreditCard, TrendingUp, Activity, Banknote, Building2, BellRing, Clock3 } from 'lucide-react'
 import AdminAnalytics from '@/components/admin/AdminAnalytics'
 
 export const dynamic = 'force-dynamic'
+
+const REWARD_SOON_WINDOW_HOURS = 24
+
+type RewardAlert = {
+  id: string
+  userId: number
+  userName: string
+  planType: 'mining' | 'trading'
+  planName: string
+  dueAt: Date
+  amountUsd: number
+}
+
+function resolveUserName(fullName: string | null, email: string | null, userId: number) {
+  if (fullName && fullName.trim().length > 0) return fullName.trim()
+  if (email && email.trim().length > 0) return email.trim()
+  return `User #${userId}`
+}
 
 export default async function AdminPage() {
   // Get statistics
@@ -51,6 +69,110 @@ export default async function AdminPage() {
     : 0
 
   const processedTotalUsd = processedEarningsUsd + processedReferralUsd
+  const now = new Date()
+  const rewardSoonCutoff = new Date(now.getTime() + REWARD_SOON_WINDOW_HOURS * 60 * 60 * 1000)
+
+  const [miningRewardCandidates, tradingRewardCandidates] = await Promise.all([
+    prisma.userPlan.findMany({
+      where: {
+        paymentStatus: 'confirmed',
+        status: { in: ['active', 'completed'] },
+      },
+      select: {
+        id: true,
+        status: true,
+        startDate: true,
+        createdAt: true,
+        plan: { select: { name: true } },
+        user: { select: { id: true, fullName: true, email: true } },
+        earnings: {
+          select: {
+            totalEarnedUsd: true,
+            isHistorical: true,
+          },
+        },
+      },
+      take: 500,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.tradingUserPlan.findMany({
+      where: {
+        paymentStatus: 'confirmed',
+        status: { in: ['active', 'completed'] },
+      },
+      select: {
+        id: true,
+        status: true,
+        endDate: true,
+        createdAt: true,
+        durationHours: true,
+        expectedReturnUsd: true,
+        plan: { select: { name: true } },
+        user: { select: { id: true, fullName: true, email: true } },
+        earnings: {
+          select: {
+            totalEarnedUsd: true,
+          },
+        },
+      },
+      take: 500,
+      orderBy: { createdAt: 'desc' },
+    }),
+  ])
+
+  const rewardAlertsDueNow: RewardAlert[] = []
+  const rewardAlertsSoon: RewardAlert[] = []
+
+  for (const plan of miningRewardCandidates) {
+    const referenceStart = plan.startDate ?? plan.createdAt
+    const unlockAt = new Date(referenceStart.getTime() + 2 * 24 * 60 * 60 * 1000)
+    const isDueNow = plan.status === 'completed' || unlockAt.getTime() <= now.getTime()
+    const isDueSoon = !isDueNow && unlockAt.getTime() <= rewardSoonCutoff.getTime()
+    if (!isDueNow && !isDueSoon) continue
+
+    const earnedUsd = plan.earnings
+      .filter(entry => !entry.isHistorical)
+      .reduce((sum, entry) => sum + Number(entry.totalEarnedUsd || 0), 0)
+
+    const alert: RewardAlert = {
+      id: `mining-${plan.id}`,
+      userId: plan.user.id,
+      userName: resolveUserName(plan.user.fullName, plan.user.email, plan.user.id),
+      planType: 'mining',
+      planName: plan.plan.name,
+      dueAt: unlockAt,
+      amountUsd: Math.max(0, earnedUsd),
+    }
+
+    if (isDueNow) rewardAlertsDueNow.push(alert)
+    else rewardAlertsSoon.push(alert)
+  }
+
+  for (const plan of tradingRewardCandidates) {
+    const dueAt = plan.endDate ?? new Date(plan.createdAt.getTime() + plan.durationHours * 60 * 60 * 1000)
+    const isDueNow = plan.status === 'completed' || dueAt.getTime() <= now.getTime()
+    const isDueSoon = !isDueNow && dueAt.getTime() <= rewardSoonCutoff.getTime()
+    if (!isDueNow && !isDueSoon) continue
+
+    const earnedUsd = plan.earnings.reduce((sum, entry) => sum + Number(entry.totalEarnedUsd || 0), 0)
+    const fallbackExpectedUsd = Number(plan.expectedReturnUsd || 0)
+
+    const alert: RewardAlert = {
+      id: `trading-${plan.id}`,
+      userId: plan.user.id,
+      userName: resolveUserName(plan.user.fullName, plan.user.email, plan.user.id),
+      planType: 'trading',
+      planName: plan.plan.name,
+      dueAt,
+      amountUsd: Math.max(0, earnedUsd || fallbackExpectedUsd),
+    }
+
+    if (isDueNow) rewardAlertsDueNow.push(alert)
+    else rewardAlertsSoon.push(alert)
+  }
+
+  rewardAlertsDueNow.sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime())
+  rewardAlertsSoon.sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime())
 
   return (
     <div className="space-y-6">
@@ -62,6 +184,118 @@ export default async function AdminPage() {
         <p className="text-white/70">
           Monitor platform performance and manage operations
         </p>
+      </div>
+
+      <div
+        className="p-6 md:p-8 rounded-3xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+        }}
+      >
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div
+              className="p-3 rounded-xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(29, 78, 216, 0.2))',
+              }}
+            >
+              <BellRing size={22} className="text-blue-300" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Reward Due Notifications</h2>
+              <p className="text-sm text-white/60">
+                Alerts for client rewards that are due now or due within {REWARD_SOON_WINDOW_HOURS} hours.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span
+              className="px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.45)',
+                color: '#fecaca',
+              }}
+            >
+              Due now: {rewardAlertsDueNow.length}
+            </span>
+            <span
+              className="px-3 py-1 rounded-full text-xs font-semibold"
+              style={{
+                background: 'rgba(234, 179, 8, 0.2)',
+                border: '1px solid rgba(234, 179, 8, 0.45)',
+                color: '#fde68a',
+              }}
+            >
+              Due soon: {rewardAlertsSoon.length}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div
+            className="p-5 rounded-2xl"
+            style={{
+              background: 'rgba(239, 68, 68, 0.06)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Clock3 size={16} className="text-rose-300" />
+              <h3 className="text-white font-semibold">Due now</h3>
+            </div>
+            {rewardAlertsDueNow.length ? (
+              <div className="space-y-3">
+                {rewardAlertsDueNow.slice(0, 10).map(alert => (
+                  <div key={alert.id} className="text-sm">
+                    <div className="text-white font-medium">{alert.userName}</div>
+                    <div className="text-white/65">
+                      {alert.planType === 'mining' ? 'Mining' : 'Trading'} - {alert.planName}
+                    </div>
+                    <div className="text-rose-200 text-xs">
+                      Due since {alert.dueAt.toLocaleString()} • Estimated reward ${alert.amountUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-white/55">No reward due notifications right now.</div>
+            )}
+          </div>
+
+          <div
+            className="p-5 rounded-2xl"
+            style={{
+              background: 'rgba(234, 179, 8, 0.06)',
+              border: '1px solid rgba(234, 179, 8, 0.25)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Clock3 size={16} className="text-amber-300" />
+              <h3 className="text-white font-semibold">Due soon</h3>
+            </div>
+            {rewardAlertsSoon.length ? (
+              <div className="space-y-3">
+                {rewardAlertsSoon.slice(0, 10).map(alert => (
+                  <div key={alert.id} className="text-sm">
+                    <div className="text-white font-medium">{alert.userName}</div>
+                    <div className="text-white/65">
+                      {alert.planType === 'mining' ? 'Mining' : 'Trading'} - {alert.planName}
+                    </div>
+                    <div className="text-amber-200 text-xs">
+                      Due at {alert.dueAt.toLocaleString()} • Estimated reward ${alert.amountUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-white/55">No upcoming reward notifications in the next {REWARD_SOON_WINDOW_HOURS} hours.</div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}
