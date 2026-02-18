@@ -2,15 +2,30 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
 import { prisma } from '@/lib/db'
-import { getMoonPayConfig } from '@/lib/security-env'
+import { getBanxaConfig, getMoonPayConfig, getTransakConfig } from '@/lib/security-env'
 import { FUNDING_COINS, SYSTEM_FUNDING_WALLETS, toMoonPayCurrencyCode, type FundingCoin } from '@/lib/system-funding-wallets'
 import { isInputValidationError, readJsonObject, readNumberField, readStringField } from '@/lib/requestValidation'
 
 const CHECKOUT_ALLOWED_FIELDS = ['provider', 'amountUsd', 'coinType'] as const
-const SUPPORTED_PROVIDERS = ['moonpay'] as const
+const SUPPORTED_PROVIDERS = ['moonpay', 'transak', 'banxa'] as const
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+type CardProvider = (typeof SUPPORTED_PROVIDERS)[number]
+
+function toTransakCurrencyCode(coinType: FundingCoin) {
+  if (coinType === 'USDT') return 'USDT'
+  return coinType
+}
+
+function applyBanxaTemplate(template: string, values: Record<string, string>) {
+  let output = template
+  for (const [key, value] of Object.entries(values)) {
+    output = output.replaceAll(`{${key}}`, encodeURIComponent(value))
+  }
+  return output
+}
 
 export async function POST(request: Request) {
   try {
@@ -24,7 +39,7 @@ export async function POST(request: Request) {
       required: true,
       toLowerCase: true,
       enumValues: SUPPORTED_PROVIDERS,
-    })!
+    })! as CardProvider
     const amountUsd = readNumberField(body, 'amountUsd', {
       required: true,
       min: 20,
@@ -36,10 +51,6 @@ export async function POST(request: Request) {
       enumValues: FUNDING_COINS,
     })! as FundingCoin
 
-    if (provider !== 'moonpay') {
-      return NextResponse.json({ error: 'Provider is not available yet.' }, { status: 400 })
-    }
-
     const user = await prisma.user.findUnique({
       where: { clerkUserId },
       select: { id: true, email: true },
@@ -49,40 +60,89 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
 
-    const moonpay = getMoonPayConfig()
-    if (!moonpay.publishableKey) {
-      return NextResponse.json(
-        { error: 'MoonPay is not configured yet. Contact support.' },
-        { status: 503 },
-      )
-    }
-
     const redirectBase = new URL(request.url).origin
-    const params = new URLSearchParams({
-      apiKey: moonpay.publishableKey,
-      baseCurrencyCode: 'usd',
-      baseCurrencyAmount: amountUsd.toFixed(2),
-      currencyCode: toMoonPayCurrencyCode(coinType),
-      walletAddress: SYSTEM_FUNDING_WALLETS[coinType],
-      externalCustomerId: String(user.id),
-      showWalletAddressForm: 'false',
-      redirectURL: `${redirectBase}/dashboard/account/fund?cardProvider=moonpay`,
-    })
+    const redirectUrl = `${redirectBase}/dashboard/account/fund?cardProvider=${provider}`
+    const walletAddress = SYSTEM_FUNDING_WALLETS[coinType]
+    const amountLabel = amountUsd.toFixed(2)
 
-    if (user.email) {
-      params.set('email', user.email)
-    }
+    let checkoutUrl = ''
 
-    const unsignedUrl = `${moonpay.baseUrl}?${params.toString()}`
-    let checkoutUrl = unsignedUrl
+    if (provider === 'moonpay') {
+      const moonpay = getMoonPayConfig()
+      if (!moonpay.publishableKey) {
+        return NextResponse.json(
+          { error: 'MoonPay is not configured yet. Contact support.' },
+          { status: 503 },
+        )
+      }
 
-    if (moonpay.secretKey) {
-      const signature = createHmac('sha256', moonpay.secretKey).update(unsignedUrl).digest('base64')
-      checkoutUrl = `${unsignedUrl}&signature=${encodeURIComponent(signature)}`
+      const params = new URLSearchParams({
+        apiKey: moonpay.publishableKey,
+        baseCurrencyCode: 'usd',
+        baseCurrencyAmount: amountLabel,
+        currencyCode: toMoonPayCurrencyCode(coinType),
+        walletAddress,
+        externalCustomerId: String(user.id),
+        showWalletAddressForm: 'false',
+        redirectURL: redirectUrl,
+      })
+
+      if (user.email) {
+        params.set('email', user.email)
+      }
+
+      const unsignedUrl = `${moonpay.baseUrl}?${params.toString()}`
+      checkoutUrl = unsignedUrl
+
+      if (moonpay.secretKey) {
+        const signature = createHmac('sha256', moonpay.secretKey).update(unsignedUrl).digest('base64')
+        checkoutUrl = `${unsignedUrl}&signature=${encodeURIComponent(signature)}`
+      }
+    } else if (provider === 'transak') {
+      const transak = getTransakConfig()
+      if (!transak.apiKey) {
+        return NextResponse.json(
+          { error: 'Transak is not configured yet. Contact support.' },
+          { status: 503 },
+        )
+      }
+
+      const params = new URLSearchParams({
+        apiKey: transak.apiKey,
+        fiatCurrency: 'USD',
+        fiatAmount: amountLabel,
+        cryptoCurrencyCode: toTransakCurrencyCode(coinType),
+        walletAddress,
+        disableWalletAddressForm: 'true',
+        redirectURL: redirectUrl,
+      })
+
+      if (user.email) {
+        params.set('email', user.email)
+      }
+
+      checkoutUrl = `${transak.baseUrl}?${params.toString()}`
+    } else {
+      const banxa = getBanxaConfig()
+      if (!banxa.checkoutTemplate) {
+        return NextResponse.json(
+          { error: 'Banxa is not configured yet. Contact support.' },
+          { status: 503 },
+        )
+      }
+
+      checkoutUrl = applyBanxaTemplate(banxa.checkoutTemplate, {
+        amountUsd: amountLabel,
+        coinType,
+        walletAddress,
+        userId: String(user.id),
+        email: user.email || '',
+        redirectUrl,
+      })
     }
 
     return NextResponse.json({
-      provider: 'moonpay',
+      provider,
       checkoutUrl,
     })
   } catch (error) {
@@ -94,4 +154,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-

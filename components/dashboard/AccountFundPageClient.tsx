@@ -51,9 +51,9 @@ const CARD_PROVIDERS = [
     description: 'Alternative card on-ramp provider for crypto purchases.',
   },
   {
-    id: 'stripe',
-    name: 'Stripe Crypto',
-    description: 'Card-based crypto purchase option (availability varies by region).',
+    id: 'banxa',
+    name: 'Banxa',
+    description: 'Additional card checkout option for supported regions.',
   },
 ] as const
 
@@ -87,7 +87,7 @@ export default function AccountFundPageClient({
   const [txid, setTxid] = useState('')
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [copiedAddress, setCopiedAddress] = useState(false)
-  const [launchingProvider, setLaunchingProvider] = useState<string | null>(null)
+  const [launchingProvider, setLaunchingProvider] = useState<(typeof CARD_PROVIDERS)[number]['id'] | null>(null)
   const [status, setStatus] = useState<{ type: 'idle' | 'error' | 'success'; message: string }>({
     type: 'idle',
     message: '',
@@ -106,12 +106,7 @@ export default function AccountFundPageClient({
     setTimeout(() => setCopiedAddress(false), 1500)
   }
 
-  const launchCardCheckout = async (providerId: string) => {
-    if (providerId !== 'moonpay') {
-      setStatus({ type: 'error', message: `${providerId} checkout is not configured yet.` })
-      return
-    }
-
+  const launchCardCheckout = async (providerId: (typeof CARD_PROVIDERS)[number]['id']) => {
     const amount = Number(amountUsd)
     if (!Number.isFinite(amount) || amount < 20) {
       setStatus({ type: 'error', message: 'Enter at least $20 before launching card checkout.' })
@@ -329,24 +324,18 @@ export default function AccountFundPageClient({
                 <div key={provider.id} className="rounded-xl border border-white/10 p-3">
                   <div className="text-sm font-semibold text-white">{provider.name}</div>
                   <p className="text-xs text-white/65 mt-1">{provider.description}</p>
-                  {provider.id === 'moonpay' ? (
-                    <LoadingButton
-                      onClick={() => launchCardCheckout(provider.id)}
-                      isLoading={launchingProvider === provider.id}
-                      loadingText="Opening..."
-                      className="mt-3 px-3 py-2 rounded-lg text-xs font-semibold"
-                      style={{
-                        background: 'linear-gradient(135deg, #582dff, #3a137a)',
-                        color: '#ffffff',
-                      }}
-                    >
-                      Open checkout
-                    </LoadingButton>
-                  ) : (
-                    <div className="mt-3 inline-flex px-2 py-1 rounded-full text-[11px] border border-white/20 text-white/60">
-                      Coming soon
-                    </div>
-                  )}
+                  <LoadingButton
+                    onClick={() => launchCardCheckout(provider.id)}
+                    isLoading={launchingProvider === provider.id}
+                    loadingText="Opening..."
+                    className="mt-3 px-3 py-2 rounded-lg text-xs font-semibold"
+                    style={{
+                      background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                      color: '#ffffff',
+                    }}
+                  >
+                    Open checkout
+                  </LoadingButton>
                 </div>
               ))}
             </div>

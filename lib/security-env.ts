@@ -47,6 +47,26 @@ export function getMoonPayConfig() {
   }
 }
 
+export function getTransakConfig() {
+  const apiKey = read('TRANSAK_API_KEY')
+  const baseUrl = read('TRANSAK_BASE_URL') || ('https://global.transak.com' as NonEmptyString)
+
+  return {
+    apiKey,
+    baseUrl,
+  }
+}
+
+export function getBanxaConfig() {
+  // Banxa checkout params can vary by merchant setup.
+  // Template placeholders supported:
+  // {amountUsd} {coinType} {walletAddress} {userId} {email} {redirectUrl}
+  const checkoutTemplate = read('BANXA_CHECKOUT_URL_TEMPLATE')
+  return {
+    checkoutTemplate,
+  }
+}
+
 export function getCronSecrets() {
   const current = read('CRON_SECRET')
   const previous = read('CRON_SECRET_PREVIOUS')
