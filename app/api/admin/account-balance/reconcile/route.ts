@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import {
   ACCOUNT_BALANCE_ENTRY_ACTION,
@@ -102,10 +103,22 @@ async function resolveUpstreamState(candidate: PendingCandidate): Promise<Reconc
     const planId = Number(candidate.metadata?.tradingUserPlanId)
     if (!Number.isFinite(planId) || planId <= 0) return 'missing'
 
-    const plan = await prisma.tradingUserPlan.findUnique({
-      where: { id: planId },
-      select: { status: true, paymentStatus: true },
-    })
+    const planRows = await prisma.$queryRaw<
+      Array<{
+        status: string
+        paymentStatus: string
+      }>
+    >(
+      Prisma.sql`
+        SELECT
+          status,
+          payment_status AS paymentStatus
+        FROM trading_user_plans
+        WHERE id = ${planId}
+        LIMIT 1
+      `
+    )
+    const plan = planRows[0]
     if (!plan) return 'missing'
     if (plan.paymentStatus === 'confirmed' || plan.status === 'active' || plan.status === 'completed') {
       return 'confirmed'
