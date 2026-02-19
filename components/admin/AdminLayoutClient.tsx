@@ -104,7 +104,8 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
         </nav>
         <LiveNotificationTicker
           endpoint="/api/admin/notifications/ticker"
-          label="Admin live updates"
+          label="Financial news"
+          emptyText="Financial news feed is unavailable."
           tickerDurationSec={260}
           pollIntervalMs={60000}
         />
