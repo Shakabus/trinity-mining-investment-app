@@ -1,12 +1,11 @@
+'use client'
+
 import { CalendarClock, CircleDollarSign, LineChart, TrendingUp } from 'lucide-react'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 import type {
   RealEstateEarningsSummary,
   RealEstatePayoutEvent,
 } from '@/lib/real-estate-dashboard'
-
-function formatUsd(value: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
-}
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -18,6 +17,7 @@ type RealEstateEarningsPanelProps = {
 }
 
 export default function RealEstateEarningsPanel({ payouts, summary }: RealEstateEarningsPanelProps) {
+  const { format } = useCurrency()
   const approved = summary.approvedCount
   const pending = summary.pendingCount
 
@@ -26,11 +26,11 @@ export default function RealEstateEarningsPanel({ payouts, summary }: RealEstate
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><CircleDollarSign size={16} /> Realized Earnings</div>
-          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(summary.totalRealizedUsd)}</div>
+          <div className="text-white text-2xl font-semibold mt-2">{format(summary.totalRealizedUsd)}</div>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><TrendingUp size={16} /> Monthly Run Rate</div>
-          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(summary.monthlyRunRateUsd)}</div>
+          <div className="text-white text-2xl font-semibold mt-2">{format(summary.monthlyRunRateUsd)}</div>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><LineChart size={16} /> Avg Yield / Month</div>
@@ -38,7 +38,7 @@ export default function RealEstateEarningsPanel({ payouts, summary }: RealEstate
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><CalendarClock size={16} /> Next Payout (Net)</div>
-          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(summary.nextPayoutNetUsd)}</div>
+          <div className="text-white text-2xl font-semibold mt-2">{format(summary.nextPayoutNetUsd)}</div>
           <div className="text-white/60 text-xs mt-2">
             {summary.nextPayoutDate
               ? `${formatDate(summary.nextPayoutDate)}${summary.nextPayoutProperty ? ` - ${summary.nextPayoutProperty}` : ''}`
@@ -73,9 +73,9 @@ export default function RealEstateEarningsPanel({ payouts, summary }: RealEstate
                   <tr key={item.id} className="border-t border-white/10">
                     <td className="py-4 pr-4 text-white">{item.property}</td>
                     <td className="py-4 pr-4 text-white/80">{item.periodLabel}</td>
-                    <td className="py-4 pr-4 text-white">{formatUsd(item.grossUsd)}</td>
-                    <td className="py-4 pr-4 text-white/80">{formatUsd(item.feesUsd)}</td>
-                    <td className="py-4 pr-4 text-white font-semibold">{formatUsd(item.netUsd)}</td>
+                    <td className="py-4 pr-4 text-white">{format(item.grossUsd)}</td>
+                    <td className="py-4 pr-4 text-white/80">{format(item.feesUsd)}</td>
+                    <td className="py-4 pr-4 text-white font-semibold">{format(item.netUsd)}</td>
                     <td className="py-4 pr-4 text-white/80">{formatDate(item.payoutDate)}</td>
                     <td className="py-4 pr-0">
                       <span
@@ -106,10 +106,10 @@ export default function RealEstateEarningsPanel({ payouts, summary }: RealEstate
             Pending verification: <span className="text-white font-semibold">{pending}</span>
           </div>
           <div className="text-sm text-white/80">
-            Current monthly run rate: <span className="text-white font-semibold">{formatUsd(summary.monthlyRunRateUsd)}</span>
+            Current monthly run rate: <span className="text-white font-semibold">{format(summary.monthlyRunRateUsd)}</span>
           </div>
           <div className="text-sm text-white/80">
-            Upcoming payouts queued: <span className="text-white font-semibold">{formatUsd(summary.upcomingPayoutsNetUsd)}</span>
+            Upcoming payouts queued: <span className="text-white font-semibold">{format(summary.upcomingPayoutsNetUsd)}</span>
           </div>
           <div className="pt-3 border-t border-white/10 text-sm text-white/70 leading-6">
             This panel is user-specific. It only reflects payouts recorded against your own

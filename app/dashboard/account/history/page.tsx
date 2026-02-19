@@ -6,6 +6,13 @@ import {
   formatAccountBalanceSource,
   getAccountBalanceEntries,
 } from '@/lib/account-balance'
+import {
+  convertUsd,
+  formatCurrency,
+  getFxRates,
+  isSupportedCurrency,
+  type CurrencyCode,
+} from '@/lib/forex'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,13 +48,22 @@ export default async function AccountHistoryPage() {
 
   const user = await prisma.user.findUnique({
     where: { clerkUserId: userId },
-    select: { id: true },
+    select: {
+      id: true,
+      preferredCurrency: true,
+    },
   })
   if (!user) {
     redirect('/sign-in')
   }
 
   const entries = await getAccountBalanceEntries(user.id, { limit: 3000 })
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user.preferredCurrency || '')
+    ? (user.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const formatAmount = (amountUsd: number) =>
+    formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
   const latestEntriesByReference = entries.reduce<Map<string, (typeof entries)[number]>>((map, entry) => {
     const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
     const existing = map.get(key)
@@ -150,10 +166,7 @@ export default async function AccountHistoryPage() {
             <div className={`text-2xl font-bold mt-1 ${card.tone}`}>
               {card.integer
                 ? card.value.toLocaleString()
-                : `$${card.value.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`}
+                : formatAmount(card.value)}
             </div>
           </div>
         ))}
@@ -179,7 +192,7 @@ export default async function AccountHistoryPage() {
                   <th className="py-2 pr-3">Type</th>
                   <th className="py-2 pr-3">Status</th>
                   <th className="py-2 pr-3">Direction</th>
-                  <th className="py-2 pr-3">Amount (USD)</th>
+                  <th className="py-2 pr-3">Amount ({preferredCurrency})</th>
                   <th className="py-2 pr-3">Wallet Coin</th>
                   <th className="py-2 pr-3">Coin Amount</th>
                 </tr>
@@ -229,11 +242,7 @@ export default async function AccountHistoryPage() {
                       </td>
                       <td className="py-3 pr-3 whitespace-nowrap">
                         <span className={row.direction === 'credit' ? 'text-emerald-300' : 'text-rose-300'}>
-                          {row.direction === 'credit' ? '+' : '-'}$
-                          {row.amountUsd.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                          {row.direction === 'credit' ? '+' : '-'}{formatAmount(row.amountUsd)}
                         </span>
                       </td>
                       <td className="py-3 pr-3">{coinType}</td>

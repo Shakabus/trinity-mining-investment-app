@@ -6,6 +6,7 @@ import { Check, Copy } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 import WalletConversionCard from '@/components/dashboard/WalletConversionCard'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 import { FUNDING_COINS, SYSTEM_FUNDING_WALLETS, type FundingCoin } from '@/lib/system-funding-wallets'
 
 type BalanceEntry = {
@@ -93,6 +94,8 @@ export default function AccountFundPageClient({
     message: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { currency, rates, format } = useCurrency()
+  const displayRate = rates[currency] > 0 ? rates[currency] : 1
 
   const pendingFunding = useMemo(
     () => entries.filter(entry => entry.source === 'funding_deposit' && entry.status === 'pending'),
@@ -107,9 +110,13 @@ export default function AccountFundPageClient({
   }
 
   const launchCardCheckout = async (providerId: (typeof CARD_PROVIDERS)[number]['id']) => {
-    const amount = Number(amountUsd)
-    if (!Number.isFinite(amount) || amount < 20) {
-      setStatus({ type: 'error', message: 'Enter at least $20 before launching card checkout.' })
+    const amountDisplay = Number(amountUsd)
+    const amountUsdValue = amountDisplay / displayRate
+    if (!Number.isFinite(amountDisplay) || amountUsdValue < 20) {
+      setStatus({
+        type: 'error',
+        message: `Enter at least ${format(20)} before launching card checkout.`,
+      })
       return
     }
 
@@ -131,7 +138,7 @@ export default function AccountFundPageClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           provider: providerId,
-          amountUsd: amount,
+          amountUsd: amountUsdValue,
           coinType,
         }),
       })
@@ -158,9 +165,13 @@ export default function AccountFundPageClient({
   }
 
   const submit = async () => {
-    const amount = Number(amountUsd)
-    if (!Number.isFinite(amount) || amount < 10) {
-      setStatus({ type: 'error', message: 'Enter a valid amount (minimum $10).' })
+    const amountDisplay = Number(amountUsd)
+    const amountUsdValue = amountDisplay / displayRate
+    if (!Number.isFinite(amountDisplay) || amountUsdValue < 10) {
+      setStatus({
+        type: 'error',
+        message: `Enter a valid amount (minimum ${format(10)}).`,
+      })
       return
     }
     if (!txid.trim()) {
@@ -177,7 +188,7 @@ export default function AccountFundPageClient({
       setStatus({ type: 'idle', message: '' })
 
       const formData = new FormData()
-      formData.append('amountUsd', String(amount))
+      formData.append('amountUsd', String(amountUsdValue))
       formData.append('coinType', coinType)
       formData.append('txid', txid.trim())
       formData.append('file', proofFile)
@@ -229,7 +240,7 @@ export default function AccountFundPageClient({
         >
           <div className="text-sm text-emerald-100/80">Available balance</div>
           <div className="text-3xl font-bold text-emerald-200 mt-1">
-            ${balanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {format(balanceUsd)}
           </div>
         </div>
         <div
@@ -241,11 +252,11 @@ export default function AccountFundPageClient({
         >
           <div className="text-sm text-blue-100/80">Pending credits</div>
           <div className="text-3xl font-bold text-blue-200 mt-1">
-            ${pendingCreditsUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {format(pendingCreditsUsd)}
           </div>
           {pendingDebitsUsd > 0 && (
             <div className="text-xs text-amber-100/85 mt-2">
-              Pending debits: ${pendingDebitsUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Pending debits: {format(pendingDebitsUsd)}
             </div>
           )}
         </div>
@@ -335,7 +346,7 @@ export default function AccountFundPageClient({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm text-white/80 mb-2">Amount (USD)</label>
+            <label className="block text-sm text-white/80 mb-2">Amount ({currency})</label>
             <input
               type="number"
               min={10}
@@ -454,11 +465,7 @@ export default function AccountFundPageClient({
                 {item.coinType}
               </div>
               <div className="text-xs text-white/60 mt-1">
-                Value: $
-                {item.netUsd.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                Value: {format(item.netUsd)}
               </div>
               <div className="text-[11px] text-emerald-200/85 mt-2">
                 In: +{item.totalInCrypto.toFixed(8)} {item.coinType}
@@ -521,11 +528,7 @@ export default function AccountFundPageClient({
                       {sourceLabel[entry.source] || 'Balance event'}
                     </div>
                     <div className={`text-sm font-semibold ${amountClass}`}>
-                      {isCredit ? '+' : '-'}$
-                      {entry.amountUsd.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {isCredit ? '+' : '-'}{format(entry.amountUsd)}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mt-1 text-xs text-white/60">

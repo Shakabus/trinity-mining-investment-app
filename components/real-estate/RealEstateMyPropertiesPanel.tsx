@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import { Building2, CalendarClock, ChevronRight, CircleDollarSign, LandPlot } from 'lucide-react'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 import type { RealEstatePosition } from '@/lib/real-estate-dashboard'
 
 const statusStyle: Record<string, { bg: string; border: string; color: string; label: string }> = {
@@ -29,15 +32,12 @@ const statusStyle: Record<string, { bg: string; border: string; color: string; l
   },
 }
 
-function formatUsd(value: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
-}
-
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export default function RealEstateMyPropertiesPanel({ positions }: { positions: RealEstatePosition[] }) {
+  const { format } = useCurrency()
   const totalAllocation = positions.reduce((sum, item) => sum + item.allocationUsd, 0)
   const approvedCount = positions.filter(item => item.status === 'approved').length
   const pendingCount = positions.filter(item => item.status === 'submitted' || item.status === 'under_review').length
@@ -48,7 +48,7 @@ export default function RealEstateMyPropertiesPanel({ positions }: { positions: 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><LandPlot size={16} /> Total Allocation</div>
-          <div className="text-white text-2xl font-semibold mt-2">{formatUsd(totalAllocation)}</div>
+          <div className="text-white text-2xl font-semibold mt-2">{format(totalAllocation)}</div>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.18)' }}>
           <div className="flex items-center gap-2 text-white/70 text-sm"><CircleDollarSign size={16} /> Approved Lanes</div>
@@ -113,8 +113,8 @@ export default function RealEstateMyPropertiesPanel({ positions }: { positions: 
                     <td className="py-4 pr-4">
                       <div className="text-white/90">{position.tier}</div>
                     </td>
-                    <td className="py-4 pr-4 text-white">{formatUsd(position.allocationUsd)}</td>
-                    <td className="py-4 pr-4 text-white">{formatUsd(position.monthlyIncomeUsd)}</td>
+                    <td className="py-4 pr-4 text-white">{format(position.allocationUsd)}</td>
+                    <td className="py-4 pr-4 text-white">{format(position.monthlyIncomeUsd)}</td>
                     <td className="py-4 pr-4 text-white/90">{position.duration}</td>
                     <td className="py-4 pr-4 text-white/90">{position.projectedBand}</td>
                     <td className="py-4 pr-4 text-white/90">{position.coinType}</td>

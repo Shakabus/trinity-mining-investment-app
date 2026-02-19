@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import LoadingButton from '@/components/ui/LoadingButton'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 type WalletFlowItem = {
   coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
@@ -24,6 +25,8 @@ export default function WalletConversionCard({ walletFlow }: Props) {
     type: 'idle',
     message: '',
   })
+  const { currency, rates, format, convert } = useCurrency()
+  const displayRate = rates[currency] > 0 ? rates[currency] : 1
 
   const walletMap = useMemo(() => {
     return walletFlow.reduce<Record<WalletFlowItem['coinType'], WalletFlowItem>>((map, item) => {
@@ -35,23 +38,24 @@ export default function WalletConversionCard({ walletFlow }: Props) {
   const availableFromUsd = Math.max(0, walletMap[fromCoin]?.netUsd ?? 0)
 
   const setMax = () => {
-    setAmountUsd(availableFromUsd > 0 ? availableFromUsd.toFixed(2) : '')
+    setAmountUsd(availableFromUsd > 0 ? convert(availableFromUsd).toFixed(2) : '')
   }
 
   const submit = async () => {
-    const amount = Number(amountUsd)
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setStatus({ type: 'error', message: 'Enter a valid USD amount.' })
+    const amountDisplay = Number(amountUsd)
+    const amountUsdValue = amountDisplay / displayRate
+    if (!Number.isFinite(amountDisplay) || amountUsdValue <= 0) {
+      setStatus({ type: 'error', message: `Enter a valid ${currency} amount.` })
       return
     }
     if (fromCoin === toCoin) {
       setStatus({ type: 'error', message: 'Choose two different currencies.' })
       return
     }
-    if (amount > availableFromUsd) {
+    if (amountUsdValue > availableFromUsd) {
       setStatus({
         type: 'error',
-        message: `Amount exceeds available ${fromCoin} wallet value ($${availableFromUsd.toFixed(2)}).`,
+        message: `Amount exceeds available ${fromCoin} wallet value (${format(availableFromUsd)}).`,
       })
       return
     }
@@ -63,7 +67,7 @@ export default function WalletConversionCard({ walletFlow }: Props) {
       const response = await fetch('/api/user/account-balance/convert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fromCoin, toCoin, amountUsd: amount }),
+        body: JSON.stringify({ fromCoin, toCoin, amountUsd: amountUsdValue }),
       })
 
       const data = await response.json().catch(() => null)
@@ -73,7 +77,7 @@ export default function WalletConversionCard({ walletFlow }: Props) {
 
       setStatus({
         type: 'success',
-        message: `Converted $${amount.toFixed(2)} from ${fromCoin} to ${toCoin}.`,
+        message: `Converted ${format(amountUsdValue)} from ${fromCoin} to ${toCoin}.`,
       })
       setAmountUsd('')
       setTimeout(() => window.location.reload(), 800)
@@ -117,7 +121,7 @@ export default function WalletConversionCard({ walletFlow }: Props) {
               </option>
             ))}
           </select>
-          <div className="text-xs text-white/60 mt-2">Available: ${availableFromUsd.toFixed(2)}</div>
+          <div className="text-xs text-white/60 mt-2">Available: {format(availableFromUsd)}</div>
         </div>
         <div>
           <label className="block text-sm text-white/80 mb-2">To</label>
@@ -134,7 +138,7 @@ export default function WalletConversionCard({ walletFlow }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-sm text-white/80 mb-2">Amount (USD)</label>
+          <label className="block text-sm text-white/80 mb-2">Amount ({currency})</label>
           <div className="flex gap-2">
             <input
               type="number"
@@ -177,4 +181,3 @@ export default function WalletConversionCard({ walletFlow }: Props) {
     </div>
   )
 }
-

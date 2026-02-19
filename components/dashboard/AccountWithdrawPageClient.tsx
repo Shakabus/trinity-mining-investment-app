@@ -5,6 +5,7 @@ import Link from 'next/link'
 import LoadingButton from '@/components/ui/LoadingButton'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 import WalletConversionCard from '@/components/dashboard/WalletConversionCard'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 
 type WithdrawalEntry = {
   id: number
@@ -77,6 +78,8 @@ export default function AccountWithdrawPageClient({
     type: 'idle',
     message: '',
   })
+  const { currency, rates, format } = useCurrency()
+  const displayRate = rates[currency] > 0 ? rates[currency] : 1
 
   const pendingRequests = useMemo(
     () => entries.filter(entry => entry.status === 'pending').length,
@@ -98,9 +101,13 @@ export default function AccountWithdrawPageClient({
   }
 
   const submit = async () => {
-    const amount = Number(amountUsd)
-    if (!Number.isFinite(amount) || amount < 10) {
-      setStatus({ type: 'error', message: 'Enter a valid amount (minimum $10).' })
+    const amountDisplay = Number(amountUsd)
+    const amountUsdValue = amountDisplay / displayRate
+    if (!Number.isFinite(amountDisplay) || amountUsdValue < 10) {
+      setStatus({
+        type: 'error',
+        message: `Enter a valid amount (minimum ${format(10)}).`,
+      })
       return
     }
     if (!customMethod && !effectiveWalletAddress) {
@@ -120,7 +127,7 @@ export default function AccountWithdrawPageClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amountUsd: amount,
+          amountUsd: amountUsdValue,
           coinType,
           walletAddress: effectiveWalletAddress,
           customMethod,
@@ -201,7 +208,7 @@ export default function AccountWithdrawPageClient({
                   color: '#d1fae5',
                 }}
               >
-                Mining payout ready (${miningReadyUsd.toFixed(2)}) {'>'}
+                Mining payout ready ({format(miningReadyUsd)}) {'>'}
               </Link>
             )}
             {tradingReadyUsd > 0 && (
@@ -214,7 +221,7 @@ export default function AccountWithdrawPageClient({
                   color: '#d1fae5',
                 }}
               >
-                Trading payout ready (${tradingReadyUsd.toFixed(2)}) {'>'}
+                Trading payout ready ({format(tradingReadyUsd)}) {'>'}
               </Link>
             )}
             {referralReadyUsd > 0 && (
@@ -227,7 +234,7 @@ export default function AccountWithdrawPageClient({
                   color: '#d1fae5',
                 }}
               >
-                Referral payout ready (${referralReadyUsd.toFixed(2)}) {'>'}
+                Referral payout ready ({format(referralReadyUsd)}) {'>'}
               </Link>
             )}
           </div>
@@ -244,7 +251,7 @@ export default function AccountWithdrawPageClient({
         >
           <div className="text-sm text-emerald-100/80">Available balance</div>
           <div className="text-3xl font-bold text-emerald-200 mt-1">
-            ${balanceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {format(balanceUsd)}
           </div>
         </div>
         <div
@@ -256,7 +263,7 @@ export default function AccountWithdrawPageClient({
         >
           <div className="text-sm text-blue-100/80">Pending withdrawals</div>
           <div className="text-3xl font-bold text-blue-200 mt-1">
-            ${pendingDebitsUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {format(pendingDebitsUsd)}
           </div>
           <div className="text-xs text-blue-100/80 mt-2">{pendingRequests} request(s) awaiting review</div>
         </div>
@@ -269,11 +276,11 @@ export default function AccountWithdrawPageClient({
         >
           <div className="text-sm text-white/75">Total withdrawn</div>
           <div className="text-3xl font-bold text-white mt-1">
-            ${totalWithdrawnUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {format(totalWithdrawnUsd)}
           </div>
           {pendingCreditsUsd > 0 && (
             <div className="text-xs text-emerald-100/75 mt-2">
-              Pending credits: ${pendingCreditsUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Pending credits: {format(pendingCreditsUsd)}
             </div>
           )}
         </div>
@@ -291,7 +298,7 @@ export default function AccountWithdrawPageClient({
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm text-white/80 mb-2">Amount (USD)</label>
+            <label className="block text-sm text-white/80 mb-2">Amount ({currency})</label>
             <input
               type="number"
               min={10}
@@ -417,11 +424,7 @@ export default function AccountWithdrawPageClient({
                       {wallet ? <span className="text-white/60"> - {wallet.slice(0, 8)}...{wallet.slice(-6)}</span> : null}
                     </div>
                     <div className="text-sm font-semibold text-rose-300">
-                      -$
-                      {entry.amountUsd.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      -{format(entry.amountUsd)}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mt-1 text-xs text-white/60">

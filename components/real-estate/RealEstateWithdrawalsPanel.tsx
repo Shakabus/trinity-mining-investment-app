@@ -1,10 +1,9 @@
+'use client'
+
 import Link from 'next/link'
 import { BanknoteArrowDown, Clock3, ShieldCheck, Wallet } from 'lucide-react'
+import { useCurrency } from '@/components/currency/CurrencyProvider'
 import type { RealEstateWithdrawal } from '@/lib/real-estate-dashboard'
-
-function formatUsd(value: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
-}
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -50,6 +49,7 @@ export default function RealEstateWithdrawalsPanel({
   canRequestWithdrawal,
   nextWithdrawalEligibleAt,
 }: RealEstateWithdrawalsPanelProps) {
+  const { format } = useCurrency()
   const nextEligibleLabel = nextWithdrawalEligibleAt ? formatDate(nextWithdrawalEligibleAt) : null
 
   return (
@@ -59,7 +59,7 @@ export default function RealEstateWithdrawalsPanel({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-white/70 text-sm"><Wallet size={16} /> Available to Withdraw</div>
-              <div className="text-white text-3xl font-semibold mt-2">{formatUsd(availableWithdrawalUsd)}</div>
+              <div className="text-white text-3xl font-semibold mt-2">{format(availableWithdrawalUsd)}</div>
               <p className="text-white/60 text-sm mt-2">
                 Withdrawals open after 6 months from approved allocation start, with one request permitted every 6 months.
               </p>
@@ -136,7 +136,7 @@ export default function RealEstateWithdrawalsPanel({
                     <tr key={item.id} className="border-t border-white/10">
                       <td className="py-4 pr-4 text-white font-medium">{item.reference}</td>
                       <td className="py-4 pr-4 text-white/80">{formatDate(item.requestedAt)}</td>
-                      <td className="py-4 pr-4 text-white">{formatUsd(item.amountUsd)}</td>
+                      <td className="py-4 pr-4 text-white">{format(item.amountUsd)}</td>
                       <td className="py-4 pr-4 text-white/80">{item.method}</td>
                       <td className="py-4 pr-4 text-white/70">{item.destination}</td>
                       <td className="py-4 pr-0">
