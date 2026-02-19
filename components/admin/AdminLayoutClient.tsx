@@ -105,6 +105,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           endpoint="/api/admin/notifications/ticker"
           label="Admin live updates"
           tickerDurationSec={260}
+          pollIntervalMs={60000}
         />
 
         <div className="flex flex-1 min-h-0">

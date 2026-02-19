@@ -12,6 +12,7 @@ const DEFAULT_MIN_INTERVAL_MS = 2000
 const DEFAULT_MAX_INTERVAL_MS = 4000
 const BELL_PHASE_MS = 900
 const EXIT_PHASE_MS = 550
+const LIVE_FEED_POLL_INTERVAL_MS = 15000
 
 type AlertPhase = 'hidden' | 'bell' | 'open' | 'closing'
 
@@ -89,7 +90,7 @@ export default function MarketingWithdrawalAlert({
     }
 
     pullLiveFeed()
-    pollTimerRef.current = window.setInterval(pullLiveFeed, 2000)
+    pollTimerRef.current = window.setInterval(pullLiveFeed, LIVE_FEED_POLL_INTERVAL_MS)
 
     return () => {
       cancelled = true

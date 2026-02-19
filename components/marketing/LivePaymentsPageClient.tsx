@@ -24,6 +24,7 @@ const TARGET_NAME_POOL = 2000
 const FLOW_BATCH_SIZE = 3
 const LIVE_STREAM_STATE_KEY = 'live_payment_stream_state_v1'
 const MAX_PERSISTED_FLOWS = 220
+const LIVE_FEED_POLL_INTERVAL_MS = 15000
 
 const SYNTHETIC_FIRST_NAMES = [
   'Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas', 'Henry', 'Alexander',
@@ -313,7 +314,7 @@ export default function LivePaymentsPageClient() {
     }
 
     fetchFeed()
-    const timer = window.setInterval(fetchFeed, 4000)
+    const timer = window.setInterval(fetchFeed, LIVE_FEED_POLL_INTERVAL_MS)
 
     return () => {
       cancelled = true

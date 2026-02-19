@@ -22,6 +22,7 @@ const MAX_LIMIT = 120
 const VISIBILITY_DELAY_MS = 7000
 const SYNTHETIC_POOL_SIZE = 2000
 const SYNTHETIC_SHIFT_MS = 2000
+const LIVE_ACTIVITY_CACHE_TTL_MS = 15000
 
 type LiveActivityItem = {
   id: string
@@ -32,6 +33,23 @@ type LiveActivityItem = {
   tone: 'deposit' | 'withdrawal' | 'plan'
   createdAt: string
   source: 'approved' | 'generated'
+}
+
+type LiveActivityCacheState = {
+  expiresAt: number
+  items: LiveActivityItem[]
+}
+
+const globalForLiveActivityCache = globalThis as unknown as {
+  liveActivityCache: LiveActivityCacheState | null
+  liveActivityInFlight: Promise<LiveActivityItem[]> | null
+}
+
+if (!globalForLiveActivityCache.liveActivityCache) {
+  globalForLiveActivityCache.liveActivityCache = null
+}
+if (!globalForLiveActivityCache.liveActivityInFlight) {
+  globalForLiveActivityCache.liveActivityInFlight = null
 }
 
 function formatMemberName(fullName: string | null, email: string | null, userId: number) {
@@ -97,87 +115,115 @@ export async function GET(req: Request) {
       ? Math.max(1, Math.min(MAX_LIMIT, Math.floor(requestedLimit)))
       : DEFAULT_LIMIT
 
-    const visibleCutoff = new Date(Date.now() - VISIBILITY_DELAY_MS)
-    const since = new Date(Date.now() - 1000 * 60 * 60 * 12)
-
-    const approvalLogs = await prisma.userActivityLog.findMany({
-      where: {
-        action: { in: Array.from(TRACKED_ACTIONS) },
-        createdAt: { gte: since, lte: visibleCutoff },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
+    const nowMs = Date.now()
+    const cached = globalForLiveActivityCache.liveActivityCache
+    if (cached && cached.expiresAt > nowMs) {
+      return NextResponse.json(
+        { items: cached.items.slice(0, limit) },
+        {
+          headers: {
+            'Cache-Control': 'public, max-age=5, s-maxage=15, stale-while-revalidate=45',
           },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: Math.min(limit, 80),
-    })
+        }
+      )
+    }
 
-    const approvalItems = approvalLogs.reduce<LiveActivityItem[]>((accumulator, log) => {
-      const detail = log.detail ?? null
-      const isWithdrawal = WITHDRAWAL_ACTIONS.has(log.action)
-      const isPayment = PAYMENT_APPROVAL_ACTIONS.has(log.action)
+    if (!globalForLiveActivityCache.liveActivityInFlight) {
+      globalForLiveActivityCache.liveActivityInFlight = (async () => {
+        const visibleCutoff = new Date(Date.now() - VISIBILITY_DELAY_MS)
+        const since = new Date(Date.now() - 1000 * 60 * 60 * 12)
 
-      if (!isWithdrawal && !isPayment) {
-        return accumulator
-      }
+        const approvalLogs = await prisma.userActivityLog.findMany({
+          where: {
+            action: { in: Array.from(TRACKED_ACTIONS) },
+            createdAt: { gte: since, lte: visibleCutoff },
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 80,
+        })
 
-      if (isWithdrawal && !/(processed|paid|approved)/i.test(detail ?? '')) {
-        return accumulator
-      }
+        const approvalItems = approvalLogs.reduce<LiveActivityItem[]>((accumulator, log) => {
+          const detail = log.detail ?? null
+          const isWithdrawal = WITHDRAWAL_ACTIONS.has(log.action)
+          const isPayment = PAYMENT_APPROVAL_ACTIONS.has(log.action)
 
-      accumulator.push({
-        id: `approval-${log.id}`,
-        name: formatMemberName(log.user?.fullName ?? null, log.user?.email ?? null, log.userId),
-        country: 'Global',
-        action: isWithdrawal ? 'withdrawal completed for' : 'payment approved for',
-        value: isWithdrawal ? extractWithdrawalValue(detail) : extractValue(detail, log.action),
-        tone: isWithdrawal ? ('withdrawal' as const) : ('deposit' as const),
-        createdAt: log.createdAt.toISOString(),
-        source: 'approved' as const,
-      })
+          if (!isWithdrawal && !isPayment) {
+            return accumulator
+          }
 
-      return accumulator
-    }, [])
+          if (isWithdrawal && !/(processed|paid|approved)/i.test(detail ?? '')) {
+            return accumulator
+          }
 
-    const generatedItems = buildSyntheticWindow(limit * 3, Date.now()).map(item => ({
-      ...item,
-      createdAt: new Date().toISOString(),
-      source: 'generated' as const,
-    }))
+          accumulator.push({
+            id: `approval-${log.id}`,
+            name: formatMemberName(log.user?.fullName ?? null, log.user?.email ?? null, log.userId),
+            country: 'Global',
+            action: isWithdrawal ? 'withdrawal completed for' : 'payment approved for',
+            value: isWithdrawal ? extractWithdrawalValue(detail) : extractValue(detail, log.action),
+            tone: isWithdrawal ? ('withdrawal' as const) : ('deposit' as const),
+            createdAt: log.createdAt.toISOString(),
+            source: 'approved' as const,
+          })
 
-    const items: LiveActivityItem[] = []
-    let approvalIndex = 0
-    let generatedIndex = 0
+          return accumulator
+        }, [])
 
-    // Interleave approved payment events into the generated stream.
-    while (items.length < limit && (approvalIndex < approvalItems.length || generatedIndex < generatedItems.length)) {
-      if (approvalIndex < approvalItems.length) {
-        items.push(approvalItems[approvalIndex])
-        approvalIndex += 1
-        if (items.length >= limit) break
-      }
+        const generatedItems = buildSyntheticWindow(MAX_LIMIT * 3, Date.now()).map(item => ({
+          ...item,
+          createdAt: new Date().toISOString(),
+          source: 'generated' as const,
+        }))
 
-      let burst = 0
-      while (generatedIndex < generatedItems.length && burst < 4 && items.length < limit) {
-        items.push(generatedItems[generatedIndex])
-        generatedIndex += 1
-        burst += 1
-      }
+        const combined: LiveActivityItem[] = []
+        let approvalIndex = 0
+        let generatedIndex = 0
+
+        while (
+          combined.length < MAX_LIMIT &&
+          (approvalIndex < approvalItems.length || generatedIndex < generatedItems.length)
+        ) {
+          if (approvalIndex < approvalItems.length) {
+            combined.push(approvalItems[approvalIndex])
+            approvalIndex += 1
+            if (combined.length >= MAX_LIMIT) break
+          }
+
+          let burst = 0
+          while (generatedIndex < generatedItems.length && burst < 4 && combined.length < MAX_LIMIT) {
+            combined.push(generatedItems[generatedIndex])
+            generatedIndex += 1
+            burst += 1
+          }
+        }
+
+        return combined
+      })()
+        .finally(() => {
+          globalForLiveActivityCache.liveActivityInFlight = null
+        })
+    }
+
+    const items = await globalForLiveActivityCache.liveActivityInFlight
+    globalForLiveActivityCache.liveActivityCache = {
+      expiresAt: Date.now() + LIVE_ACTIVITY_CACHE_TTL_MS,
+      items,
     }
 
     return NextResponse.json(
-      { items },
+      { items: items.slice(0, limit) },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          Pragma: 'no-cache',
-          Expires: '0',
+          'Cache-Control': 'public, max-age=5, s-maxage=15, stale-while-revalidate=45',
         },
       }
     )

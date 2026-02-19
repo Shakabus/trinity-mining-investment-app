@@ -60,7 +60,7 @@ export default function DashboardLayoutClient({
           <div className="flex-1 min-w-0 flex flex-col">
             {/* Top Navigation (sticky) */}
             <DashboardNav user={displayUser} onMenuClick={() => setIsSidebarOpen(true)} />
-            <LiveNotificationTicker endpoint="/api/user/notifications/ticker" />
+            <LiveNotificationTicker endpoint="/api/user/notifications/ticker" pollIntervalMs={30000} />
 
             {/* Scroll Container: ONLY this scrolls (NO padding here) */}
             <main className="flex-1 min-h-0 overflow-y-auto glass-scroll">

@@ -6,6 +6,7 @@ import { generateMarketingLiveFeed, type MarketingLiveFeedItem } from '@/compone
 
 const TAPE_VISIBLE_OFFSET_PX = 32
 const BASE_FEED_COUNT = 1000
+const LIVE_FEED_POLL_INTERVAL_MS = 15000
 
 export default function MarketingLiveTape() {
   const [isVisible, setIsVisible] = useState(true)
@@ -72,7 +73,7 @@ export default function MarketingLiveTape() {
     }
 
     pullLiveApprovals()
-    fetchTimerRef.current = window.setInterval(pullLiveApprovals, 2000)
+    fetchTimerRef.current = window.setInterval(pullLiveApprovals, LIVE_FEED_POLL_INTERVAL_MS)
 
     return () => {
       cancelled = true
