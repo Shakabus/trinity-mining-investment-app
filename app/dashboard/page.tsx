@@ -43,6 +43,7 @@ export default async function DashboardPage() {
     redirect('/sign-in')
   }
 
+  try {
   const userBase = await prisma.user.findUnique({
     where: { clerkUserId: userId },
     select: { id: true },
@@ -1264,6 +1265,42 @@ export default async function DashboardPage() {
       </div>
     </div>
   )
+  } catch (error) {
+    console.error('[dashboard] render error', {
+      userId,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+
+    return (
+      <div className="p-6 md:p-8">
+        <div
+          className="rounded-3xl p-6 md:p-8"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          <h1 className="text-xl md:text-2xl font-bold text-white">Dashboard temporarily unavailable</h1>
+          <p className="text-sm md:text-base text-white/75 mt-2">
+            We hit a server error while loading your account data. Please refresh this page in a moment.
+          </p>
+          <div className="mt-4">
+            <Link
+              href="/dashboard/settings"
+              className="inline-block px-4 py-2 rounded-full text-sm font-semibold text-white"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+              }}
+            >
+              Open Settings
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 }
 
 
