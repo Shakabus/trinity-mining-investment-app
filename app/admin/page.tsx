@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import Link from 'next/link'
 import { Users, CreditCard, TrendingUp, Activity, Banknote, Building2, BellRing, Clock3 } from 'lucide-react'
 import AdminAnalytics from '@/components/admin/AdminAnalytics'
@@ -15,6 +16,20 @@ type RewardAlert = {
   planName: string
   dueAt: Date
   amountUsd: number
+}
+
+type TradingRewardCandidate = {
+  id: number
+  status: string
+  endDate: Date | string | null
+  createdAt: Date | string
+  durationHours: number
+  expectedReturnUsd: Prisma.Decimal | number
+  planName: string | null
+  userId: number
+  userFullName: string | null
+  userEmail: string | null
+  totalEarnedUsd: Prisma.Decimal | number
 }
 
 function resolveUserName(fullName: string | null, email: string | null, userId: number) {
@@ -95,29 +110,41 @@ export default async function AdminPage() {
       take: 500,
       orderBy: { createdAt: 'desc' },
     }),
-    prisma.tradingUserPlan.findMany({
-      where: {
-        paymentStatus: 'confirmed',
-        status: { in: ['active', 'completed'] },
-      },
-      select: {
-        id: true,
-        status: true,
-        endDate: true,
-        createdAt: true,
-        durationHours: true,
-        expectedReturnUsd: true,
-        plan: { select: { name: true } },
-        user: { select: { id: true, fullName: true, email: true } },
-        earnings: {
-          select: {
-            totalEarnedUsd: true,
-          },
-        },
-      },
-      take: 500,
-      orderBy: { createdAt: 'desc' },
-    }),
+    prisma.$queryRaw<TradingRewardCandidate[]>(
+      Prisma.sql`
+        SELECT
+          tup.id,
+          tup.status,
+          tup.end_date AS endDate,
+          tup.created_at AS createdAt,
+          tup.duration_hours AS durationHours,
+          tup.expected_return_usd AS expectedReturnUsd,
+          tp.name AS planName,
+          u.id AS userId,
+          u.full_name AS userFullName,
+          u.email AS userEmail,
+          COALESCE(SUM(te.total_earned_usd), 0) AS totalEarnedUsd
+        FROM trading_user_plans tup
+        LEFT JOIN trading_plans tp ON tp.id = tup.plan_id
+        LEFT JOIN users u ON u.id = tup.user_id
+        LEFT JOIN trading_earnings te ON te.trading_user_plan_id = tup.id
+        WHERE tup.payment_status = 'confirmed'
+          AND tup.status IN ('active', 'completed')
+        GROUP BY
+          tup.id,
+          tup.status,
+          tup.end_date,
+          tup.created_at,
+          tup.duration_hours,
+          tup.expected_return_usd,
+          tp.name,
+          u.id,
+          u.full_name,
+          u.email
+        ORDER BY tup.created_at DESC
+        LIMIT 500
+      `
+    ),
   ])
 
   const rewardAlertsDueNow: RewardAlert[] = []
@@ -149,20 +176,22 @@ export default async function AdminPage() {
   }
 
   for (const plan of tradingRewardCandidates) {
-    const dueAt = plan.endDate ?? new Date(plan.createdAt.getTime() + plan.durationHours * 60 * 60 * 1000)
+    const createdAt = plan.createdAt instanceof Date ? plan.createdAt : new Date(plan.createdAt)
+    const endDate = plan.endDate ? (plan.endDate instanceof Date ? plan.endDate : new Date(plan.endDate)) : null
+    const dueAt = endDate ?? new Date(createdAt.getTime() + plan.durationHours * 60 * 60 * 1000)
     const isDueNow = plan.status === 'completed' || dueAt.getTime() <= now.getTime()
     const isDueSoon = !isDueNow && dueAt.getTime() <= rewardSoonCutoff.getTime()
     if (!isDueNow && !isDueSoon) continue
 
-    const earnedUsd = plan.earnings.reduce((sum, entry) => sum + Number(entry.totalEarnedUsd || 0), 0)
+    const earnedUsd = Number(plan.totalEarnedUsd || 0)
     const fallbackExpectedUsd = Number(plan.expectedReturnUsd || 0)
 
     const alert: RewardAlert = {
       id: `trading-${plan.id}`,
-      userId: plan.user.id,
-      userName: resolveUserName(plan.user.fullName, plan.user.email, plan.user.id),
+      userId: plan.userId,
+      userName: resolveUserName(plan.userFullName, plan.userEmail, plan.userId),
       planType: 'trading',
-      planName: plan.plan.name,
+      planName: plan.planName || 'Trading plan',
       dueAt,
       amountUsd: Math.max(0, earnedUsd || fallbackExpectedUsd),
     }
