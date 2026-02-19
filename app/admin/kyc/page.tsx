@@ -1,32 +1,106 @@
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import KycReviewPanel from '@/components/admin/KycReviewPanel'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminKycPage() {
-  const records = await prisma.userKyc.findMany({
-    include: {
-      user: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-        },
-      },
-    },
-    orderBy: [{ status: 'asc' }, { submittedAt: 'desc' }, { updatedAt: 'desc' }],
-    take: 1500,
-  })
+  type RawKycRow = {
+    id: number
+    userId: number
+    status: string
+    firstName: string
+    lastName: string
+    dateOfBirth: Date | string
+    nationality: string
+    residenceCountry: string
+    addressLine1: string
+    addressLine2: string | null
+    city: string
+    state: string
+    postalCode: string
+    idType: string
+    idNumber: string
+    idIssuingCountry: string
+    idExpiryDate: Date | string | null
+    occupation: string | null
+    sourceOfFunds: string | null
+    pepDeclaration: number | boolean
+    termsAccepted: number | boolean
+    idDocumentFrontUrl: string
+    idDocumentBackUrl: string | null
+    selfieUrl: string
+    proofOfAddressUrl: string | null
+    reviewNote: string | null
+    submittedAt: Date | string | null
+    reviewedAt: Date | string | null
+    userName: string | null
+    userEmail: string | null
+  }
+
+  const records = await prisma.$queryRaw<RawKycRow[]>(
+    Prisma.sql`
+      SELECT
+        uk.id,
+        uk.user_id AS userId,
+        uk.status,
+        uk.first_name AS firstName,
+        uk.last_name AS lastName,
+        uk.date_of_birth AS dateOfBirth,
+        uk.nationality,
+        uk.residence_country AS residenceCountry,
+        uk.address_line_1 AS addressLine1,
+        uk.address_line_2 AS addressLine2,
+        uk.city,
+        uk.state,
+        uk.postal_code AS postalCode,
+        uk.id_type AS idType,
+        uk.id_number AS idNumber,
+        uk.id_issuing_country AS idIssuingCountry,
+        uk.id_expiry_date AS idExpiryDate,
+        uk.occupation,
+        uk.source_of_funds AS sourceOfFunds,
+        uk.pep_declaration AS pepDeclaration,
+        uk.terms_accepted AS termsAccepted,
+        uk.id_document_front_url AS idDocumentFrontUrl,
+        uk.id_document_back_url AS idDocumentBackUrl,
+        uk.selfie_url AS selfieUrl,
+        uk.proof_of_address_url AS proofOfAddressUrl,
+        uk.review_note AS reviewNote,
+        uk.submitted_at AS submittedAt,
+        uk.reviewed_at AS reviewedAt,
+        u.full_name AS userName,
+        u.email AS userEmail
+      FROM user_kyc uk
+      LEFT JOIN users u ON u.id = uk.user_id
+      ORDER BY
+        CASE uk.status
+          WHEN 'pending' THEN 0
+          WHEN 'rejected' THEN 1
+          WHEN 'approved' THEN 2
+          ELSE 3
+        END,
+        uk.submitted_at DESC,
+        uk.updated_at DESC
+      LIMIT 1500
+    `
+  )
+
+  const toIso = (value: Date | string | null) => {
+    if (!value) return null
+    const date = value instanceof Date ? value : new Date(value)
+    return Number.isNaN(date.getTime()) ? null : date.toISOString()
+  }
 
   const rows = records.map(record => ({
     id: record.id,
     userId: record.userId,
-    userName: record.user.fullName || record.user.email || `User #${record.user.id}`,
-    userEmail: record.user.email || '',
+    userName: record.userName || record.userEmail || `User #${record.userId}`,
+    userEmail: record.userEmail || '',
     status: record.status,
     firstName: record.firstName,
     lastName: record.lastName,
-    dateOfBirth: record.dateOfBirth.toISOString(),
+    dateOfBirth: toIso(record.dateOfBirth) || new Date(0).toISOString(),
     nationality: record.nationality,
     residenceCountry: record.residenceCountry,
     addressLine1: record.addressLine1,
@@ -37,18 +111,18 @@ export default async function AdminKycPage() {
     idType: record.idType,
     idNumber: record.idNumber,
     idIssuingCountry: record.idIssuingCountry,
-    idExpiryDate: record.idExpiryDate?.toISOString() ?? null,
+    idExpiryDate: toIso(record.idExpiryDate),
     occupation: record.occupation,
     sourceOfFunds: record.sourceOfFunds,
-    pepDeclaration: record.pepDeclaration,
-    termsAccepted: record.termsAccepted,
+    pepDeclaration: Boolean(record.pepDeclaration),
+    termsAccepted: Boolean(record.termsAccepted),
     idDocumentFrontUrl: record.idDocumentFrontUrl,
     idDocumentBackUrl: record.idDocumentBackUrl,
     selfieUrl: record.selfieUrl,
     proofOfAddressUrl: record.proofOfAddressUrl,
     reviewNote: record.reviewNote,
-    submittedAt: record.submittedAt?.toISOString() ?? null,
-    reviewedAt: record.reviewedAt?.toISOString() ?? null,
+    submittedAt: toIso(record.submittedAt),
+    reviewedAt: toIso(record.reviewedAt),
   }))
 
   return (
