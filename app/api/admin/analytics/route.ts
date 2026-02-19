@@ -114,7 +114,8 @@ export async function GET(req: Request) {
       },
     })
 
-    const activeTradingPlans = await prisma.tradingUserPlan.findMany({
+    const activeTradingPlans: Array<{ startDate: Date | null; endDate: Date | null }> =
+      await prisma.tradingUserPlan.findMany({
       where: {
         status: 'active',
       },
@@ -130,7 +131,8 @@ export async function GET(req: Request) {
       },
     })
 
-    const tradingPlanRows = await prisma.tradingUserPlan.findMany({
+    const tradingPlanRows: Array<{ plan: { name: string } | null }> =
+      await prisma.tradingUserPlan.findMany({
       select: {
         plan: { select: { name: true } },
       },
@@ -260,7 +262,7 @@ export async function GET(req: Request) {
         return sum + 1
       }, 0)
 
-      const activeTradingCount = activeTradingPlans.reduce((sum, plan) => {
+      const activeTradingCount = activeTradingPlans.reduce((sum: number, plan) => {
         if (!plan.startDate) return sum
         const start = startOfDayUTC(plan.startDate)
         const end = plan.endDate ? startOfDayUTC(plan.endDate) : null
