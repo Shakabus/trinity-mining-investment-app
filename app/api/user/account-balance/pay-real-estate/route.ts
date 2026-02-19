@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     }
 
     const prices = await getTrackedCryptoPricesUsd()
-    const ticket = await prisma.$transaction(async tx => {
+    const ticket = await prisma.$transaction(async (tx: any) => {
       await lockUserBalanceForUpdate(user.id, tx)
 
       const summary = await getAccountBalanceSummary(user.id, tx)

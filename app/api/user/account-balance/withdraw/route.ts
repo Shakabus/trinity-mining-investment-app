@@ -207,7 +207,7 @@ export async function POST(req: Request) {
     const amountCrypto = convertUsdToCoin(amountUsd, coinType, prices)
     const referenceId = `account-withdrawal:${randomUUID()}`
 
-    await prisma.$transaction(async tx => {
+    await prisma.$transaction(async (tx: any) => {
       await lockUserBalanceForUpdate(user.id, tx)
 
       const summary = await getAccountBalanceSummary(user.id, tx)

@@ -55,6 +55,7 @@ const DEFAULT_REFERRAL_SETTINGS = {
 
 type ReviewableSource = (typeof REVIEWABLE_SOURCES)[number]
 type ManualAdjustmentType = (typeof MANUAL_ADJUSTMENT_TYPES)[number]
+type UnsafeTx = Prisma.TransactionClient & Record<string, any>
 
 class HttpError extends Error {
   status: number
@@ -202,7 +203,7 @@ async function applyMiningPlanReview(params: {
     convertUsdToCoin(params.amountUsd, coinType, prices)
   const miningPrices = await getCryptoPricesUsd()
 
-  await prisma.$transaction(async tx => {
+  await prisma.$transaction(async (tx: UnsafeTx) => {
     const userPlan = await tx.userPlan.findUnique({
       where: { id: userPlanId },
       include: { user: true, plan: true },
@@ -519,7 +520,7 @@ async function applyTradingPlanReview(params: {
     readMetadataNumber(params.metadata, 'amountCrypto') ??
     convertUsdToCoin(params.amountUsd, coinType, prices)
 
-  await prisma.$transaction(async tx => {
+  await prisma.$transaction(async (tx: UnsafeTx) => {
     const tradingPlanRows = await tx.$queryRaw<
       Array<{
         id: number
@@ -745,7 +746,7 @@ async function applyRealEstateReview(params: {
     throw new HttpError(400, 'Missing real-estate ticket reference in payment metadata.')
   }
 
-  await prisma.$transaction(async tx => {
+  await prisma.$transaction(async (tx: UnsafeTx) => {
     const ticket = await tx.supportTicket.findUnique({
       where: { id: ticketId },
       select: { id: true, userId: true, subject: true, status: true },

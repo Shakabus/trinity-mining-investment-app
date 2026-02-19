@@ -192,7 +192,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: parsed.error }, { status: 400 })
     }
 
-    const property = await prisma.$transaction(async tx => {
+    const property = await prisma.$transaction(async (tx: any) => {
       const existing = await tx.realEstateProperty.findUnique({ where: { id: propertyId } })
       if (!existing) {
         throw new Error('Property not found')

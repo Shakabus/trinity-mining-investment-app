@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     const toAmountCrypto = convertUsdToCoin(amountUsd, toCoin, prices)
     const conversionReference = `wallet-conversion:${Date.now()}:${user.id}`
 
-    await prisma.$transaction(async tx => {
+    await prisma.$transaction(async (tx: any) => {
       await lockUserBalanceForUpdate(user.id, tx)
       const availability = await getAccountBalanceCoinAvailability(user.id, prices, tx)
       const availableFromCrypto = availability.byCoin[fromCoin]?.availableCrypto ?? 0
@@ -164,4 +164,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-
