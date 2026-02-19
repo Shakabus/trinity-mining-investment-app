@@ -69,6 +69,18 @@ const EDITABLE_LABELS: Record<EditableMetricKey, string> = {
   totalDebitsUsd: 'Net Debits',
 }
 
+const CONTROL_DIALS: Array<{
+  key: EditableMetricKey
+  toneClass: string
+}> = [
+  { key: 'balanceUsd', toneClass: 'text-emerald-300' },
+  { key: 'availableUsd', toneClass: 'text-cyan-300' },
+  { key: 'totalDepositsUsd', toneClass: 'text-blue-300' },
+  { key: 'totalWithdrawalsUsd', toneClass: 'text-rose-300' },
+  { key: 'totalCreditsUsd', toneClass: 'text-violet-300' },
+  { key: 'totalDebitsUsd', toneClass: 'text-amber-300' },
+]
+
 export default function AccountBalanceLedgerPanel({ summaries }: Props) {
   const router = useRouter()
   const { showToast } = useToast()
@@ -238,6 +250,21 @@ export default function AccountBalanceLedgerPanel({ summaries }: Props) {
               editable
               onEdit={() => setEditMetric('totalDebitsUsd')}
             />
+          </div>
+
+          <div className="mt-4">
+            <div className="text-sm text-white/80 mb-2">Control Dials</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+              {CONTROL_DIALS.map(dial => (
+                <ControlDial
+                  key={dial.key}
+                  label={EDITABLE_LABELS[dial.key]}
+                  value={selectedSummary[dial.key]}
+                  toneClass={dial.toneClass}
+                  onEdit={() => setEditMetric(dial.key)}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 mt-4">
@@ -412,6 +439,39 @@ function InfoDial({
       </div>
       <div className="text-sm text-white font-semibold mt-1">{value}</div>
       {subValue ? <div className="text-xs text-white/70 mt-0.5">{subValue}</div> : null}
+    </div>
+  )
+}
+
+function ControlDial({
+  label,
+  value,
+  toneClass,
+  onEdit,
+}: {
+  label: string
+  value: number
+  toneClass: string
+  onEdit: () => void
+}) {
+  return (
+    <div
+      className="rounded-lg px-3 py-3"
+      style={{
+        background: 'rgba(255, 255, 255, 0.04)',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+      }}
+    >
+      <div className="text-[11px] text-white/60 uppercase tracking-wide">{label}</div>
+      <div className={`text-sm font-semibold mt-1 ${toneClass}`}>{formatUsd(value)}</div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="mt-2 inline-flex items-center gap-1 text-[11px] text-blue-200 hover:text-white"
+      >
+        <Pencil size={12} />
+        Edit
+      </button>
     </div>
   )
 }

@@ -561,7 +561,7 @@ export default async function DashboardPage() {
             </div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,360px)_1fr] gap-3">
           <div className="flex flex-col gap-3">
             <div
               className="p-4 rounded-2xl"
@@ -578,18 +578,6 @@ export default async function DashboardPage() {
             <div
               className="p-4 rounded-2xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
-                border: '1px solid rgba(88, 45, 255, 0.35)',
-              }}
-            >
-              <div className="text-xs text-violet-100/80 mb-1">Total Earned Credited</div>
-              <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.earnedCreditsUsd)}>
-                {formatMoney(accountBalanceSummary.earnedCreditsUsd)}
-              </div>
-            </div>
-            <div
-              className="p-4 rounded-2xl"
-              style={{
                 background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0.05))',
                 border: '1px solid rgba(59, 130, 246, 0.35)',
               }}
@@ -597,54 +585,6 @@ export default async function DashboardPage() {
               <div className="text-xs text-blue-100/80 mb-1">Total Invested</div>
               <div className="text-base md:text-xl font-semibold text-blue-200" title={formatMoney(totalInvestedUsd)}>
                 {formatMoney(totalInvestedUsd)}
-              </div>
-            </div>
-            <div
-              className="p-4 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(168, 85, 247, 0.05))',
-                border: '1px solid rgba(168, 85, 247, 0.35)',
-              }}
-            >
-              <div className="text-xs text-violet-100/80 mb-1">Withdrawable Earnings</div>
-              <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}>
-                {formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
-              </div>
-            </div>
-            <div
-              className="p-4 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(14, 116, 144, 0.16), rgba(14, 116, 144, 0.05))',
-                border: '1px solid rgba(14, 116, 144, 0.35)',
-              }}
-            >
-              <div className="text-xs text-cyan-100/80 mb-1">Spendable for Plans</div>
-              <div className="text-base md:text-xl font-semibold text-cyan-200" title={formatMoney(accountBalanceSummary.availableToSpendUsd)}>
-                {formatMoney(accountBalanceSummary.availableToSpendUsd)}
-              </div>
-            </div>
-            <div
-              className="p-4 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
-                border: '1px solid rgba(88, 45, 255, 0.35)',
-              }}
-            >
-              <div className="text-xs text-violet-100/80 mb-1">Principal Balance</div>
-              <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.principalBalanceUsd)}>
-                {formatMoney(accountBalanceSummary.principalBalanceUsd)}
-              </div>
-            </div>
-            <div
-              className="p-4 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(120, 113, 108, 0.16), rgba(120, 113, 108, 0.05))',
-                border: '1px solid rgba(120, 113, 108, 0.35)',
-              }}
-            >
-              <div className="text-xs text-stone-100/80 mb-1">Earnings Balance</div>
-              <div className="text-base md:text-xl font-semibold text-stone-200" title={formatMoney(accountBalanceSummary.earningsBalanceUsd)}>
-                {formatMoney(accountBalanceSummary.earningsBalanceUsd)}
               </div>
             </div>
             <div
@@ -687,6 +627,81 @@ export default async function DashboardPage() {
               ) : (
                 <div className="text-xs text-white/50">No account transactions yet.</div>
               )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
+              border: '1px solid rgba(88, 45, 255, 0.35)',
+            }}
+          >
+            <div className="text-xs text-violet-100/80 mb-1">Total Earned Credited</div>
+            <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.earnedCreditsUsd)}>
+              {formatMoney(accountBalanceSummary.earnedCreditsUsd)}
+            </div>
+          </div>
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(168, 85, 247, 0.05))',
+              border: '1px solid rgba(168, 85, 247, 0.35)',
+            }}
+          >
+            <div className="text-xs text-violet-100/80 mb-1">Withdrawable Earnings</div>
+            <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}>
+              {formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
+            </div>
+          </div>
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(14, 116, 144, 0.16), rgba(14, 116, 144, 0.05))',
+              border: '1px solid rgba(14, 116, 144, 0.35)',
+            }}
+          >
+            <div className="text-xs text-cyan-100/80 mb-1">Spendable for Plans</div>
+            <div className="text-base md:text-xl font-semibold text-cyan-200" title={formatMoney(accountBalanceSummary.availableToSpendUsd)}>
+              {formatMoney(accountBalanceSummary.availableToSpendUsd)}
+            </div>
+          </div>
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
+              border: '1px solid rgba(88, 45, 255, 0.35)',
+            }}
+          >
+            <div className="text-xs text-violet-100/80 mb-1">Principal Balance</div>
+            <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.principalBalanceUsd)}>
+              {formatMoney(accountBalanceSummary.principalBalanceUsd)}
+            </div>
+          </div>
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(120, 113, 108, 0.16), rgba(120, 113, 108, 0.05))',
+              border: '1px solid rgba(120, 113, 108, 0.35)',
+            }}
+          >
+            <div className="text-xs text-stone-100/80 mb-1">Earnings Balance</div>
+            <div className="text-base md:text-xl font-semibold text-stone-200" title={formatMoney(accountBalanceSummary.earningsBalanceUsd)}>
+              {formatMoney(accountBalanceSummary.earningsBalanceUsd)}
+            </div>
+          </div>
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0.05))',
+              border: '1px solid rgba(59, 130, 246, 0.35)',
+            }}
+          >
+            <div className="text-xs text-blue-100/80 mb-1">Pending Withdrawals</div>
+            <div className="text-base md:text-xl font-semibold text-blue-200" title={formatMoney(accountBalanceSummary.pendingWithdrawalsUsd)}>
+              {formatMoney(accountBalanceSummary.pendingWithdrawalsUsd)}
             </div>
           </div>
         </div>
