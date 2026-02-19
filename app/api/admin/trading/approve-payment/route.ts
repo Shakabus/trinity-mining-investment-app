@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import {
@@ -21,6 +22,7 @@ import {
 } from '@/lib/requestValidation'
 
 const APPROVE_TRADING_PAYMENT_FIELDS = ['tradingUserPlanId', 'txid'] as const
+type UnsafeTx = Prisma.TransactionClient & Record<string, any>
 
 const isAccountBalancePending = (txid: string | null | undefined) =>
   typeof txid === 'string' && txid.startsWith('Account Balance - Pending')
@@ -84,7 +86,7 @@ export async function POST(req: Request) {
     const purchaseRef = `trading-plan:${tradingPlan.id}`
 
     await prisma.$transaction(
-      async tx => {
+      async (tx: UnsafeTx) => {
         let paymentCoin: TrackedAssetCoin = 'USDT'
         let settledAmountCrypto = 0
         let isMixedBalancePayment = false

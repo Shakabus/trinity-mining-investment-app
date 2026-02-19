@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { createAccountBalanceEntry, getAccountBalanceEntries } from '@/lib/account-balance'
@@ -10,6 +11,7 @@ import {
 } from '@/lib/requestValidation'
 
 const REJECT_TRADING_PAYMENT_FIELDS = ['tradingUserPlanId'] as const
+type UnsafeTx = Prisma.TransactionClient & Record<string, any>
 
 const isAccountBalancePending = (txid: string | null | undefined) =>
   typeof txid === 'string' && txid.startsWith('Account Balance - Pending')
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
     const purchaseRef = `trading-plan:${tradingPlan.id}`
 
     await prisma.$transaction(
-      async tx => {
+      async (tx: UnsafeTx) => {
         if (balancePayment) {
         const entries = await getAccountBalanceEntries(tradingPlan.userId, { limit: 3000 }, tx)
         const latestByReference = new Map<string, (typeof entries)[number]>()
