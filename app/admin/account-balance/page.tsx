@@ -507,20 +507,18 @@ export default async function AdminAccountBalancePage() {
     : []
 
   const tradingEarnings = userIds.length
-    ? await prisma.tradingEarning.findMany({
-        where: { userId: { in: userIds } },
-        select: {
-          userId: true,
-          totalEarnedUsd: true,
-          tradingUserPlan: {
-            select: {
-              plan: {
-                select: { name: true },
-              },
-            },
-          },
-        },
-      })
+    ? await prisma.$queryRaw<Array<{ userId: number; totalEarnedUsd: Prisma.Decimal; planName: string | null }>>(
+        Prisma.sql`
+          SELECT
+            te.user_id AS userId,
+            te.total_earned_usd AS totalEarnedUsd,
+            tp.name AS planName
+          FROM trading_earnings te
+          LEFT JOIN trading_user_plans tup ON tup.id = te.trading_user_plan_id
+          LEFT JOIN trading_plans tp ON tp.id = tup.plan_id
+          WHERE te.user_id IN (${Prisma.join(userIds)})
+        `
+      )
     : []
 
   const miningByUser = new Map<number, Map<string, number>>()
@@ -538,7 +536,7 @@ export default async function AdminAccountBalancePage() {
   }
 
   for (const row of tradingEarnings) {
-    const label = row.tradingUserPlan.plan.name || 'Trading plan'
+    const label = row.planName || 'Trading plan'
     const amount = asCurrencyNumber(row.totalEarnedUsd)
     if (amount <= 0) continue
 
