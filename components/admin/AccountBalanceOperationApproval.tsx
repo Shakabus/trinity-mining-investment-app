@@ -43,10 +43,12 @@ export default function AccountBalanceOperationApproval({
   const { showToast } = useToast()
   const [isBusy, setIsBusy] = useState(false)
   const [note, setNote] = useState('')
-  const [notifyUser, setNotifyUser] = useState(true)
   const [status, setStatus] = useState<'idle' | 'approved' | 'rejected' | 'error'>('idle')
 
   const review = async (decision: 'approve' | 'reject') => {
+    const notifyUser = window.confirm(
+      'Forward this review action to the user activity record?\n\nClick OK = Forward\nClick Cancel = Keep internal only'
+    )
     try {
       setIsBusy(true)
       const response = await fetch('/api/admin/account-balance/operations', {
@@ -150,15 +152,9 @@ export default function AccountBalanceOperationApproval({
         className="w-full min-h-20 rounded-lg bg-white/5 border border-white/15 px-3 py-2 text-sm text-white placeholder:text-white/35"
       />
 
-      <label className="flex items-center gap-2 text-xs text-white/75">
-        <input
-          type="checkbox"
-          checked={notifyUser}
-          onChange={event => setNotifyUser(event.target.checked)}
-          className="h-4 w-4 rounded border border-white/25 bg-white/10"
-        />
-        Send activity update to user after this review
-      </label>
+      <div className="text-[11px] text-white/60">
+        Before submit, you will be asked whether to forward this review to user activity.
+      </div>
 
       {status === 'error' && (
         <div className="text-sm text-rose-300">Request review failed. Check log and retry.</div>

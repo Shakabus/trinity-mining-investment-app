@@ -45,7 +45,6 @@ export default function AccountBalanceManualAdjustments({ users, adjustments }: 
   const [coinType, setCoinType] = useState<(typeof COIN_OPTIONS)[number]>('USDT')
   const [paymentMethod, setPaymentMethod] = useState('')
   const [note, setNote] = useState('')
-  const [notifyUser, setNotifyUser] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [removingEntryId, setRemovingEntryId] = useState<number | null>(null)
 
@@ -64,6 +63,10 @@ export default function AccountBalanceManualAdjustments({ users, adjustments }: 
       showToast('Provide user, amount, and payment method.', 'error')
       return
     }
+
+    const notifyUser = window.confirm(
+      'Forward this manual adjustment to the user activity record?\n\nClick OK = Forward\nClick Cancel = Keep internal only'
+    )
 
     try {
       setIsSaving(true)
@@ -100,6 +103,9 @@ export default function AccountBalanceManualAdjustments({ users, adjustments }: 
 
   const removeEntry = async (entryId: number) => {
     const reason = window.prompt('Reason for removal (optional):', 'Manual correction') || 'Manual correction'
+    const notifyUser = window.confirm(
+      'Forward this removal to the user activity record?\n\nClick OK = Forward\nClick Cancel = Keep internal only'
+    )
     try {
       setRemovingEntryId(entryId)
       const response = await fetch('/api/admin/account-balance/operations', {
@@ -258,15 +264,9 @@ export default function AccountBalanceManualAdjustments({ users, adjustments }: 
             Save Custom Transaction
           </LoadingButton>
 
-          <label className="flex items-center gap-2 text-xs text-white/75">
-            <input
-              type="checkbox"
-              checked={notifyUser}
-              onChange={event => setNotifyUser(event.target.checked)}
-              className="h-4 w-4 rounded border border-white/25 bg-white/10"
-            />
-            Send activity update to user after create/remove
-          </label>
+          <div className="text-[11px] text-white/60">
+            Before saving or removing, you will be asked whether to forward the action to user activity.
+          </div>
         </div>
       )}
 

@@ -93,6 +93,10 @@ type AccountActivityLogRow = {
   action: string
   detail: string | null
   createdAt: string
+  isBalanceEntry: boolean
+  hasFinancialImpact: boolean
+  balanceEntryStatus: 'pending' | 'settled' | 'rejected' | null
+  balanceEntrySource: string | null
 }
 
 const asNumber = (value: unknown) => {
@@ -365,6 +369,8 @@ export default async function AdminAccountBalancePage() {
     })
   ).map(log => {
     const user = userMap.get(log.userId)
+    const parsedBalanceEntry =
+      log.action === 'AccountBalanceEntry' ? parseAccountBalanceEntryDetail(log.detail) : null
     return {
       id: log.id,
       userId: log.userId,
@@ -373,6 +379,10 @@ export default async function AdminAccountBalancePage() {
       action: log.action,
       detail: log.detail,
       createdAt: log.createdAt.toISOString(),
+      isBalanceEntry: Boolean(parsedBalanceEntry),
+      hasFinancialImpact: parsedBalanceEntry?.status === 'settled',
+      balanceEntryStatus: parsedBalanceEntry?.status ?? null,
+      balanceEntrySource: parsedBalanceEntry?.source ?? null,
     }
   })
 

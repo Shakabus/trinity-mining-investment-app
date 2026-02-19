@@ -38,7 +38,13 @@ const ACCOUNT_BALANCE_MANUAL_CREATE_FIELDS = [
   'note',
   'notifyUser',
 ] as const
-const ACCOUNT_BALANCE_MANUAL_DELETE_FIELDS = ['entryId', 'reason', 'notifyUser', 'logType'] as const
+const ACCOUNT_BALANCE_MANUAL_DELETE_FIELDS = [
+  'entryId',
+  'reason',
+  'notifyUser',
+  'logType',
+  'deleteMode',
+] as const
 const REVIEWABLE_SOURCES = [
   'funding_deposit',
   'mining_plan_purchase',
@@ -55,6 +61,7 @@ const DEFAULT_REFERRAL_SETTINGS = {
 
 type ReviewableSource = (typeof REVIEWABLE_SOURCES)[number]
 type ManualAdjustmentType = (typeof MANUAL_ADJUSTMENT_TYPES)[number]
+type ActivityDeleteMode = 'log_only' | 'log_and_action'
 type UnsafeTx = Prisma.TransactionClient & Record<string, any>
 
 class HttpError extends Error {
@@ -1067,6 +1074,9 @@ export async function DELETE(req: Request) {
     const reason = readStringField(body, 'reason', { maxLength: 240 }) || 'Manual correction.'
     const notifyUser = readBooleanField(body, 'notifyUser') ?? true
     const logType = readStringField(body, 'logType', { enumValues: ['manual_adjustment', 'activity'] }) || 'manual_adjustment'
+    const deleteMode = (readStringField(body, 'deleteMode', {
+      enumValues: ['log_only', 'log_and_action'],
+    }) || 'log_only') as ActivityDeleteMode
 
     const log = await prisma.userActivityLog.findUnique({
       where: { id: entryId },
@@ -1081,6 +1091,9 @@ export async function DELETE(req: Request) {
     let adminLogDetail = `Removed user activity log #${log.id}. Reason: ${reason}`
     let userAction = 'AccountActivityLogRemovedByAdmin'
     let userDetail = 'An account activity log entry was removed during an admin correction.'
+    const parsedBalanceEntry = parseAccountBalanceEntryDetail(log.detail)
+    const isBalanceEntryAction = log.action === ACCOUNT_BALANCE_ENTRY_ACTION && Boolean(parsedBalanceEntry)
+    const hasFinancialImpact = isBalanceEntryAction && parsedBalanceEntry?.status === 'settled'
 
     if (logType === 'manual_adjustment') {
       if (log.action !== ACCOUNT_BALANCE_ENTRY_ACTION) {
@@ -1101,6 +1114,12 @@ export async function DELETE(req: Request) {
       userAction = 'AccountBalanceManualAdjustmentRemoved'
       userDetail = 'Manual account-balance adjustment record was removed.'
     } else {
+      if (deleteMode === 'log_only' && hasFinancialImpact) {
+        return NextResponse.json(
+          { error: 'This entry affects balance. Use "delete log + financial action".' },
+          { status: 409 }
+        )
+      }
       const isAccountRelatedActivity =
         log.action.startsWith('Account') ||
         log.action === 'RealEstateBuyInApproved' ||
@@ -1111,6 +1130,18 @@ export async function DELETE(req: Request) {
           { error: 'Only account-related activity logs can be removed from this control.' },
           { status: 400 }
         )
+      }
+      if (deleteMode === 'log_and_action') {
+        if (!hasFinancialImpact) {
+          return NextResponse.json(
+            { error: 'Selected log does not carry a settled financial effect.' },
+            { status: 400 }
+          )
+        }
+        adminLogAction = 'accountBalanceActivityAndEffectRemoved'
+        adminLogDetail = `Removed activity log #${log.id} and deleted linked financial effect. Reason: ${reason}`
+        userAction = 'AccountActivityAndEffectRemovedByAdmin'
+        userDetail = 'An account activity entry and its linked financial effect were removed during an admin correction.'
       }
     }
 
