@@ -11,6 +11,7 @@ import AccountBalanceOperationApproval, {
 import AccountBalanceManualAdjustments from '@/components/admin/AccountBalanceManualAdjustments'
 import AccountBalanceLedgerPanel from '@/components/admin/AccountBalanceLedgerPanel'
 import AccountActivityLogManager from '@/components/admin/AccountActivityLogManager'
+import AccountBalanceFreezeControls from '@/components/admin/AccountBalanceFreezeControls'
 import {
   REAL_ESTATE_BUY_IN_TICKET_PREFIX,
   REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
@@ -715,6 +716,8 @@ export default async function AdminAccountBalancePage() {
           <div id="manual-adjustments">
             <AccountBalanceManualAdjustments users={manualUsers} adjustments={manualAdjustments} />
           </div>
+
+          <AccountBalanceFreezeControls users={manualUsers} />
 
           <AccountActivityLogManager logs={accountActivityRows} />
 

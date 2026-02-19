@@ -4,6 +4,12 @@ import { put } from '@vercel/blob'
 import { randomUUID } from 'crypto'
 import { prisma } from '@/lib/db'
 import {
+  AccountFreezeError,
+  assertIncomingAllowed,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
+import {
   createAccountBalanceEntry,
   getAccountBalanceEntries,
   getAccountBalanceSummary,
@@ -16,6 +22,7 @@ import {
   readFormNumber,
   readFormString,
 } from '@/lib/requestValidation'
+import { isTrackedAssetCoin } from '@/lib/crypto-prices'
 
 export const runtime = 'nodejs'
 
@@ -92,6 +99,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
 
+    if (isTrackedAssetCoin(coinType)) {
+      const freezeQuery = await getAccountFreezeSettings(user.id)
+      if (freezeQuery.tableMissing) {
+        logAccountFreezeTableMissing('api/user/account-balance/fund:POST')
+      } else {
+        assertIncomingAllowed({
+          settings: freezeQuery.settings,
+          coinType,
+          context: 'account funding',
+        })
+      }
+    }
+
     const normalizedTxid = txid.trim()
     const isHex64 = /^[a-fA-F0-9]{64}$/.test(normalizedTxid)
     const isEthTx = /^0x[a-fA-F0-9]{64}$/.test(normalizedTxid)
@@ -141,6 +161,9 @@ export async function POST(req: Request) {
       message: 'Funding request submitted and is pending review.',
     })
   } catch (error) {
+    if (error instanceof AccountFreezeError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

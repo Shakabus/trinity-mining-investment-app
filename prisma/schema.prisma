@@ -51,6 +51,8 @@ model User {
   tradingPayments       TradingPayment[]
   tradingWithdrawals    TradingWithdrawal[] @relation("UserTradingWithdrawals")
   processedTradingWithdrawals TradingWithdrawal[] @relation("AdminProcessedTradingWithdrawals")
+  accountFreezeControl  AccountBalanceFreezeControl? @relation("AccountFreezeOwner")
+  freezeControlsUpdated AccountBalanceFreezeControl[] @relation("AccountFreezeUpdatedByAdmin")
   kycProfile           UserKyc?
   reviewedKycProfiles  UserKyc[] @relation("KycReviewedByAdmin")
 
@@ -574,4 +576,30 @@ model UserKyc {
   @@index([status], map: "user_kyc_status_idx")
   @@index([reviewedByAdminId], map: "user_kyc_reviewed_by_admin_id_idx")
   @@map("user_kyc")
+}
+
+model AccountBalanceFreezeControl {
+  id                       Int      @id @default(autoincrement())
+  userId                   Int      @unique @map("user_id")
+  freezeIncomingAll        Boolean  @default(false) @map("freeze_incoming_all")
+  freezeOutgoingAll        Boolean  @default(false) @map("freeze_outgoing_all")
+  accountIncomingFreezeUsd Decimal  @default(0.00) @map("account_incoming_freeze_usd") @db.Decimal(12, 2)
+  accountOutgoingFreezeUsd Decimal  @default(0.00) @map("account_outgoing_freeze_usd") @db.Decimal(12, 2)
+  btcIncomingFreezeUsd     Decimal  @default(0.00) @map("btc_incoming_freeze_usd") @db.Decimal(12, 2)
+  btcOutgoingFreezeUsd     Decimal  @default(0.00) @map("btc_outgoing_freeze_usd") @db.Decimal(12, 2)
+  ethIncomingFreezeUsd     Decimal  @default(0.00) @map("eth_incoming_freeze_usd") @db.Decimal(12, 2)
+  ethOutgoingFreezeUsd     Decimal  @default(0.00) @map("eth_outgoing_freeze_usd") @db.Decimal(12, 2)
+  usdtIncomingFreezeUsd    Decimal  @default(0.00) @map("usdt_incoming_freeze_usd") @db.Decimal(12, 2)
+  usdtOutgoingFreezeUsd    Decimal  @default(0.00) @map("usdt_outgoing_freeze_usd") @db.Decimal(12, 2)
+  solIncomingFreezeUsd     Decimal  @default(0.00) @map("sol_incoming_freeze_usd") @db.Decimal(12, 2)
+  solOutgoingFreezeUsd     Decimal  @default(0.00) @map("sol_outgoing_freeze_usd") @db.Decimal(12, 2)
+  note                     String?  @db.Text
+  updatedByAdminId         Int?     @map("updated_by_admin_id")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  user                     User     @relation("AccountFreezeOwner", fields: [userId], references: [id], onDelete: Cascade)
+  updatedByAdmin           User?    @relation("AccountFreezeUpdatedByAdmin", fields: [updatedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([updatedByAdminId], map: "account_balance_freeze_controls_updated_by_admin_id_fkey")
+  @@map("account_balance_freeze_controls")
 }

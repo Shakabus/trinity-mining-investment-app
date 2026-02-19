@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import {
+  AccountFreezeError,
+  assertIncomingAllowed,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
+import {
   createAccountBalanceEntry,
   parseAccountBalanceEntryDetail,
 } from '@/lib/account-balance'
@@ -159,6 +165,19 @@ export async function PATCH(req: Request) {
     const prices = await getTrackedCryptoPricesUsd()
     const amountCrypto = convertUsdToCoin(pendingEntry.amountUsd, coinType, prices)
 
+    if (decision === 'approve') {
+      const freezeQuery = await getAccountFreezeSettings(pendingEntry.userId)
+      if (freezeQuery.tableMissing) {
+        logAccountFreezeTableMissing('api/admin/account-balance/funding-requests:PATCH')
+      } else {
+        assertIncomingAllowed({
+          settings: freezeQuery.settings,
+          coinType,
+          context: 'funding approval',
+        })
+      }
+    }
+
     await createAccountBalanceEntry({
       userId: pendingEntry.userId,
       direction: 'credit',
@@ -192,6 +211,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof AccountFreezeError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
