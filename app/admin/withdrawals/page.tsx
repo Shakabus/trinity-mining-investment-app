@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import WithdrawalApproval from '@/components/admin/WithdrawalApproval'
 import TradingWithdrawalApproval from '@/components/admin/TradingWithdrawalApproval'
 import RealEstateWithdrawalApproval from '@/components/admin/RealEstateWithdrawalApproval'
@@ -38,21 +39,42 @@ export default async function AdminWithdrawalsPage() {
     transactionId: item.transactionId,
   }))
 
-  const tradingWithdrawals = await prisma.tradingWithdrawal.findMany({
-    include: {
-      user: true,
-    },
-    orderBy: { requestedAt: 'desc' },
-  })
+  const tradingWithdrawals = await prisma.$queryRaw<
+    Array<{
+      id: number
+      userName: string | null
+      userEmail: string
+      amountUsd: Prisma.Decimal | number
+      walletAddress: string
+      status: string
+      requestedAt: Date | string
+      transactionId: string | null
+    }>
+  >(
+    Prisma.sql`
+      SELECT
+        tw.id,
+        u.full_name AS userName,
+        u.email AS userEmail,
+        tw.amount_usd AS amountUsd,
+        tw.wallet_address AS walletAddress,
+        tw.status,
+        tw.requested_at AS requestedAt,
+        tw.transaction_id AS transactionId
+      FROM trading_withdrawals tw
+      INNER JOIN users u ON u.id = tw.user_id
+      ORDER BY tw.requested_at DESC
+    `
+  )
 
   const tradingData = tradingWithdrawals.map(item => ({
     id: item.id,
-    userName: item.user.fullName || '',
-    userEmail: item.user.email,
+    userName: item.userName || '',
+    userEmail: item.userEmail,
     amountUsd: Number(item.amountUsd),
     walletAddress: item.walletAddress,
     status: item.status,
-    requestedAt: item.requestedAt.toISOString(),
+    requestedAt: new Date(item.requestedAt).toISOString(),
     transactionId: item.transactionId,
   }))
 
