@@ -12,6 +12,14 @@ function read(name: string) {
   return asNonEmpty(process.env[name])
 }
 
+function readAny(names: string[]) {
+  for (const name of names) {
+    const value = read(name)
+    if (value) return value
+  }
+  return null
+}
+
 export function getUpstashConfig() {
   const url = read('UPSTASH_REDIS_REST_URL')
   const token = read('UPSTASH_REDIS_REST_TOKEN')
@@ -36,8 +44,12 @@ export function getGoogleTranslateApiKey() {
 }
 
 export function getMoonPayConfig() {
-  const publishableKey = read('MOONPAY_PUBLISHABLE_KEY')
-  const secretKey = read('MOONPAY_SECRET_KEY')
+  const publishableKey = readAny([
+    'MOONPAY_PUBLISHABLE_KEY',
+    'MOONPAY_API_KEY',
+    'NEXT_PUBLIC_MOONPAY_PUBLISHABLE_KEY',
+  ])
+  const secretKey = readAny(['MOONPAY_SECRET_KEY', 'MOONPAY_API_SECRET'])
   const baseUrl = read('MOONPAY_BASE_URL') || ('https://buy.moonpay.com' as NonEmptyString)
 
   return {

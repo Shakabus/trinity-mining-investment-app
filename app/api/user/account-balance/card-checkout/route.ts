@@ -71,7 +71,10 @@ export async function POST(request: Request) {
       const moonpay = getMoonPayConfig()
       if (!moonpay.publishableKey) {
         return NextResponse.json(
-          { error: 'MoonPay is not configured yet. Contact support.' },
+          {
+            error:
+              'MoonPay is not configured yet. Set MOONPAY_PUBLISHABLE_KEY (or MOONPAY_API_KEY) in environment variables and redeploy.',
+          },
           { status: 503 },
         )
       }
