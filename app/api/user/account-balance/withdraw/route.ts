@@ -3,6 +3,14 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import {
+  AccountFreezeError,
+  applyOutgoingCoinFreezesToAvailability,
+  assertMetricAllowed,
+  assertOutgoingAllowed,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
+import {
   createAccountBalanceEntry,
   getAccountBalanceCoinAvailability,
   getAccountBalanceEntries,
@@ -248,6 +256,28 @@ export async function POST(req: Request) {
       await lockUserBalanceForUpdate(user.id, tx)
 
       const summary = await getAccountBalanceSummary(user.id, tx)
+      const freezeQuery = await getAccountFreezeSettings(user.id, tx)
+      if (freezeQuery.tableMissing) {
+        logAccountFreezeTableMissing('api/user/account-balance/withdraw:POST')
+      } else {
+        assertMetricAllowed({
+          settings: freezeQuery.settings,
+          metric: 'withdrawable',
+          context: 'account withdrawal',
+        })
+        assertMetricAllowed({
+          settings: freezeQuery.settings,
+          metric: 'wallets',
+          context: 'account withdrawal',
+        })
+        assertOutgoingAllowed({
+          settings: freezeQuery.settings,
+          amountUsd,
+          availableUsd: summary.withdrawableEarningsUsd,
+          context: 'account withdrawal',
+        })
+      }
+
       if (amountUsd > summary.withdrawableEarningsUsd) {
         throw new HttpError(
           400,
@@ -255,7 +285,10 @@ export async function POST(req: Request) {
         )
       }
 
-      const coinAvailability = await getAccountBalanceCoinAvailability(user.id, prices, tx)
+      const rawCoinAvailability = await getAccountBalanceCoinAvailability(user.id, prices, tx)
+      const coinAvailability = freezeQuery.tableMissing
+        ? rawCoinAvailability
+        : applyOutgoingCoinFreezesToAvailability(rawCoinAvailability, freezeQuery.settings, prices)
       const contributions = resolveCoinContributions({
         amountUsd,
         availability: coinAvailability,
@@ -308,6 +341,9 @@ export async function POST(req: Request) {
       message: 'Withdrawal request submitted. Awaiting review.',
     })
   } catch (error) {
+    if (error instanceof AccountFreezeError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (error instanceof HttpError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

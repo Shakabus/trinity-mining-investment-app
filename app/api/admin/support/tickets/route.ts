@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
+import {
+  AccountFreezeError,
+  assertIncomingAllowed,
+  assertMetricAllowed,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
 import { logUserActivity } from '@/lib/user-activity'
 import { createAccountBalanceEntry, getAccountBalanceEntries } from '@/lib/account-balance'
 import { convertUsdToCoin, getTrackedCryptoPricesUsd, isTrackedAssetCoin } from '@/lib/crypto-prices'
@@ -183,6 +190,22 @@ export async function PATCH(req: Request) {
 
       if (requestedAmountUsd > 0 && status !== existingTicket.status) {
         if (status === 'closed' && latestRelatedEntry?.status !== 'settled') {
+          const freezeQuery = await getAccountFreezeSettings(ticket.userId)
+          if (freezeQuery.tableMissing) {
+            logAccountFreezeTableMissing('api/admin/support/tickets:PATCH')
+          } else {
+            assertMetricAllowed({
+              settings: freezeQuery.settings,
+              metric: 'earnings',
+              context: 'real-estate withdrawal settlement',
+            })
+            assertIncomingAllowed({
+              settings: freezeQuery.settings,
+              coinType,
+              context: 'real-estate withdrawal settlement',
+            })
+          }
+
           await createAccountBalanceEntry({
             userId: ticket.userId,
             direction: 'credit',
@@ -298,6 +321,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true, status })
   } catch (error) {
+    if (error instanceof AccountFreezeError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

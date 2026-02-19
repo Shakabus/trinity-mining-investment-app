@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import {
+  AccountFreezeError,
+  applyOutgoingCoinFreezesToAvailability,
+  assertMetricAllowed,
+  assertOutgoingAllowed,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
+import {
   createAccountBalanceEntry,
   getAccountBalanceCoinAvailability,
   getAccountBalanceEntries,
@@ -154,7 +162,32 @@ export async function POST(req: Request) {
         )
       }
 
-      const coinAvailability = await getAccountBalanceCoinAvailability(user.id, cryptoPrices, tx)
+      const freezeQuery = await getAccountFreezeSettings(user.id, tx)
+      if (freezeQuery.tableMissing) {
+        logAccountFreezeTableMissing('api/user/account-balance/pay-mining-plan:POST')
+      } else {
+        assertMetricAllowed({
+          settings: freezeQuery.settings,
+          metric: 'spendable',
+          context: 'mining plan payment',
+        })
+        assertMetricAllowed({
+          settings: freezeQuery.settings,
+          metric: 'wallets',
+          context: 'mining plan payment',
+        })
+        assertOutgoingAllowed({
+          settings: freezeQuery.settings,
+          amountUsd: finalPriceUsd,
+          availableUsd: currentBalance.availableToSpendUsd,
+          context: 'mining plan payment',
+        })
+      }
+
+      const rawCoinAvailability = await getAccountBalanceCoinAvailability(user.id, cryptoPrices, tx)
+      const coinAvailability = freezeQuery.tableMissing
+        ? rawCoinAvailability
+        : applyOutgoingCoinFreezesToAvailability(rawCoinAvailability, freezeQuery.settings, cryptoPrices)
       const contributions = resolveCoinContributions({
         amountUsd: finalPriceUsd,
         requestedCoin,
@@ -271,6 +304,9 @@ export async function POST(req: Request) {
       message: 'Account-balance payment submitted. Awaiting review.',
     })
   } catch (error) {
+    if (error instanceof AccountFreezeError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (error instanceof HttpError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

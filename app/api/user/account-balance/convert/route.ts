@@ -2,11 +2,21 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import {
+  AccountFreezeError,
+  applyOutgoingCoinFreezesToAvailability,
+  assertIncomingAllowed,
+  assertMetricAllowed,
+  assertOutgoingAllowed,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
+import {
   createAccountBalanceEntry,
   getAccountBalanceCoinAvailability,
   lockUserBalanceForUpdate,
 } from '@/lib/account-balance'
 import {
+  TRACKED_ASSET_COINS,
   convertUsdToCoin,
   getTrackedCryptoPricesUsd,
   type TrackedAssetCoin,
@@ -80,7 +90,40 @@ export async function POST(req: Request) {
 
     await prisma.$transaction(async (tx: any) => {
       await lockUserBalanceForUpdate(user.id, tx)
-      const availability = await getAccountBalanceCoinAvailability(user.id, prices, tx)
+      const freezeQuery = await getAccountFreezeSettings(user.id, tx)
+      if (freezeQuery.tableMissing) {
+        logAccountFreezeTableMissing('api/user/account-balance/convert:POST')
+      } else {
+        assertMetricAllowed({
+          settings: freezeQuery.settings,
+          metric: 'wallets',
+          context: 'wallet conversion',
+        })
+        assertIncomingAllowed({
+          settings: freezeQuery.settings,
+          coinType: toCoin,
+          context: 'wallet conversion target',
+        })
+      }
+
+      const rawAvailability = await getAccountBalanceCoinAvailability(user.id, prices, tx)
+      const availability = freezeQuery.tableMissing
+        ? rawAvailability
+        : applyOutgoingCoinFreezesToAvailability(rawAvailability, freezeQuery.settings, prices)
+
+      const totalAvailableUsd = TRACKED_ASSET_COINS.reduce(
+        (sum, coinType) => sum + (availability.byCoin[coinType]?.availableUsd ?? 0),
+        0
+      )
+      if (!freezeQuery.tableMissing) {
+        assertOutgoingAllowed({
+          settings: freezeQuery.settings,
+          amountUsd,
+          availableUsd: totalAvailableUsd,
+          context: 'wallet conversion',
+        })
+      }
+
       const availableFromCrypto = availability.byCoin[fromCoin]?.availableCrypto ?? 0
       const availableFromUsd = availability.byCoin[fromCoin]?.availableUsd ?? 0
 
@@ -154,6 +197,9 @@ export async function POST(req: Request) {
       toAmountCrypto,
     })
   } catch (error) {
+    if (error instanceof AccountFreezeError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (error instanceof HttpError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }

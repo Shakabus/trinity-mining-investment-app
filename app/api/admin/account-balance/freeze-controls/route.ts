@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import {
   getAccountFreezeSettings,
+  summarizeActiveMetricLocks,
   upsertAccountFreezeSettings,
 } from '@/lib/account-freeze'
 import { logUserActivity } from '@/lib/user-activity'
@@ -28,6 +29,10 @@ const FREEZE_CONTROL_FIELDS = [
   'usdtOutgoingFreezeUsd',
   'solIncomingFreezeUsd',
   'solOutgoingFreezeUsd',
+  'spendableFundsLocked',
+  'withdrawableFundsLocked',
+  'earningsLocked',
+  'walletFundsLocked',
   'note',
   'notifyUser',
 ] as const
@@ -149,6 +154,10 @@ export async function PATCH(request: Request) {
       min: 0,
       max: 100000000,
     })!
+    const spendableFundsLocked = readBooleanField(body, 'spendableFundsLocked') ?? false
+    const withdrawableFundsLocked = readBooleanField(body, 'withdrawableFundsLocked') ?? false
+    const earningsLocked = readBooleanField(body, 'earningsLocked') ?? false
+    const walletFundsLocked = readBooleanField(body, 'walletFundsLocked') ?? false
     const note = readStringField(body, 'note', { maxLength: 400 }) || null
     const notifyUser = readBooleanField(body, 'notifyUser') ?? false
 
@@ -167,6 +176,12 @@ export async function PATCH(request: Request) {
       accountIncomingFreezeUsd,
       accountOutgoingFreezeUsd,
       note,
+      assetLocks: {
+        spendableFundsLocked,
+        withdrawableFundsLocked,
+        earningsLocked,
+        walletFundsLocked,
+      },
       updatedByAdminId: adminUser.id,
       coins: {
         BTC: { incomingFreezeUsd: btcIncomingFreezeUsd, outgoingFreezeUsd: btcOutgoingFreezeUsd },
@@ -193,6 +208,7 @@ export async function PATCH(request: Request) {
       `ETH in/out $${ethIncomingFreezeUsd.toFixed(2)}/$${ethOutgoingFreezeUsd.toFixed(2)}`,
       `USDT in/out $${usdtIncomingFreezeUsd.toFixed(2)}/$${usdtOutgoingFreezeUsd.toFixed(2)}`,
       `SOL in/out $${solIncomingFreezeUsd.toFixed(2)}/$${solOutgoingFreezeUsd.toFixed(2)}`,
+      `metric locks=${summarizeActiveMetricLocks(upsertResult.settings).join(', ') || 'none'}`,
     ].join(', ')
 
     await prisma.adminActivityLog.create({
@@ -208,7 +224,7 @@ export async function PATCH(request: Request) {
       await logUserActivity({
         userId,
         action: 'AccountFreezeControlsUpdated',
-        detail: 'Account movement controls were updated.',
+        detail: `Account movement controls were updated. Locked: ${summarizeActiveMetricLocks(upsertResult.settings).join(', ') || 'none'}.`,
       })
     }
 

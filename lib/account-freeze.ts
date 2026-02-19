@@ -14,6 +14,13 @@ type CoinFreezeSettings = {
   outgoingFreezeUsd: number
 }
 
+export type AccountFreezeAssetLocks = {
+  spendableFundsLocked: boolean
+  withdrawableFundsLocked: boolean
+  earningsLocked: boolean
+  walletFundsLocked: boolean
+}
+
 export type AccountFreezeSettings = {
   userId: number
   freezeIncomingAll: boolean
@@ -21,6 +28,7 @@ export type AccountFreezeSettings = {
   accountIncomingFreezeUsd: number
   accountOutgoingFreezeUsd: number
   note: string | null
+  assetLocks: AccountFreezeAssetLocks
   updatedByAdminId: number | null
   updatedAt: string | null
   coins: Record<TrackedAssetCoin, CoinFreezeSettings>
@@ -38,12 +46,87 @@ type AccountFreezeUpsertInput = {
   accountIncomingFreezeUsd: number
   accountOutgoingFreezeUsd: number
   note: string | null
+  assetLocks: AccountFreezeAssetLocks
   updatedByAdminId: number | null
   coins: Record<TrackedAssetCoin, CoinFreezeSettings>
 }
 
 const COINS: TrackedAssetCoin[] = ['BTC', 'ETH', 'USDT', 'SOL']
 const OUTGOING_EPSILON_USD = 0.009
+
+const defaultAssetLocks = (): AccountFreezeAssetLocks => ({
+  spendableFundsLocked: false,
+  withdrawableFundsLocked: false,
+  earningsLocked: false,
+  walletFundsLocked: false,
+})
+
+function readBoolean(value: unknown, fallback = false) {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') return value === 1
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === 'true' || normalized === '1') return true
+    if (normalized === 'false' || normalized === '0') return false
+  }
+  return fallback
+}
+
+function parseFreezeNote(rawValue: unknown): {
+  note: string | null
+  assetLocks: AccountFreezeAssetLocks
+} {
+  const fallback = {
+    note: typeof rawValue === 'string' && rawValue.trim().length > 0 ? rawValue.trim() : null,
+    assetLocks: defaultAssetLocks(),
+  }
+
+  if (typeof rawValue !== 'string') return fallback
+  const trimmed = rawValue.trim()
+  if (!trimmed.startsWith('{')) return fallback
+
+  try {
+    const parsed = JSON.parse(trimmed) as Record<string, unknown>
+    if (!parsed || typeof parsed !== 'object') return fallback
+    const parsedLocks =
+      parsed.assetLocks && typeof parsed.assetLocks === 'object'
+        ? (parsed.assetLocks as Record<string, unknown>)
+        : {}
+    const noteValue =
+      typeof parsed.note === 'string' && parsed.note.trim().length > 0 ? parsed.note.trim() : null
+    return {
+      note: noteValue,
+      assetLocks: {
+        spendableFundsLocked: readBoolean(parsedLocks.spendableFundsLocked),
+        withdrawableFundsLocked: readBoolean(parsedLocks.withdrawableFundsLocked),
+        earningsLocked: readBoolean(parsedLocks.earningsLocked),
+        walletFundsLocked: readBoolean(parsedLocks.walletFundsLocked),
+      },
+    }
+  } catch {
+    return fallback
+  }
+}
+
+function hasAnyAssetLock(lock: AccountFreezeAssetLocks) {
+  return (
+    lock.spendableFundsLocked ||
+    lock.withdrawableFundsLocked ||
+    lock.earningsLocked ||
+    lock.walletFundsLocked
+  )
+}
+
+function serializeFreezeNote(note: string | null, assetLocks: AccountFreezeAssetLocks) {
+  if (!hasAnyAssetLock(assetLocks)) {
+    return note && note.trim().length > 0 ? note.trim() : null
+  }
+  return JSON.stringify({
+    version: 1,
+    note: note && note.trim().length > 0 ? note.trim() : null,
+    assetLocks,
+  })
+}
 
 function toUsd(value: unknown) {
   const parsed = Number(value)
@@ -75,6 +158,7 @@ export function buildDefaultAccountFreezeSettings(userId: number): AccountFreeze
     accountIncomingFreezeUsd: 0,
     accountOutgoingFreezeUsd: 0,
     note: null,
+    assetLocks: defaultAssetLocks(),
     updatedByAdminId: null,
     updatedAt: null,
     coins: defaultCoinFreezes(),
@@ -89,13 +173,15 @@ function isMissingFreezeTableError(error: unknown) {
 }
 
 function mapSettingsRow(row: Record<string, unknown>, userIdFallback: number): AccountFreezeSettings {
+  const parsedNote = parseFreezeNote(row.note)
   return {
     userId: Number(row.userId ?? userIdFallback),
     freezeIncomingAll: toBool(row.freezeIncomingAll),
     freezeOutgoingAll: toBool(row.freezeOutgoingAll),
     accountIncomingFreezeUsd: toUsd(row.accountIncomingFreezeUsd),
     accountOutgoingFreezeUsd: toUsd(row.accountOutgoingFreezeUsd),
-    note: typeof row.note === 'string' && row.note.trim().length > 0 ? row.note : null,
+    note: parsedNote.note,
+    assetLocks: parsedNote.assetLocks,
     updatedByAdminId: Number.isFinite(Number(row.updatedByAdminId)) ? Number(row.updatedByAdminId) : null,
     updatedAt:
       row.updatedAt instanceof Date
@@ -239,6 +325,13 @@ export async function upsertAccountFreezeSettings(
 ): Promise<AccountFreezeQueryResult> {
   const userId = input.userId
   const note = input.note && input.note.trim().length > 0 ? input.note.trim() : null
+  const assetLocks: AccountFreezeAssetLocks = {
+    spendableFundsLocked: Boolean(input.assetLocks.spendableFundsLocked),
+    withdrawableFundsLocked: Boolean(input.assetLocks.withdrawableFundsLocked),
+    earningsLocked: Boolean(input.assetLocks.earningsLocked),
+    walletFundsLocked: Boolean(input.assetLocks.walletFundsLocked),
+  }
+  const serializedNote = serializeFreezeNote(note, assetLocks)
   const updatedByAdminId = Number.isFinite(Number(input.updatedByAdminId))
     ? Number(input.updatedByAdminId)
     : null
@@ -299,7 +392,7 @@ export async function upsertAccountFreezeSettings(
           ${coins.USDT.outgoingFreezeUsd},
           ${coins.SOL.incomingFreezeUsd},
           ${coins.SOL.outgoingFreezeUsd},
-          ${note},
+          ${serializedNote},
           ${updatedByAdminId},
           NOW(3),
           NOW(3)
@@ -375,6 +468,41 @@ export function assertIncomingAllowed(params: {
       `Incoming ${coinType} funds are frozen on this account ($${coinFrozenUsd.toFixed(2)} locked).`
     )
   }
+}
+
+export type AccountFreezeMetric = 'spendable' | 'withdrawable' | 'earnings' | 'wallets'
+
+const METRIC_LOCK_LABELS: Record<AccountFreezeMetric, string> = {
+  spendable: 'Spendable funds',
+  withdrawable: 'Withdrawable funds',
+  earnings: 'Earnings credits',
+  wallets: 'Wallet funds',
+}
+
+const isMetricLocked = (settings: AccountFreezeSettings, metric: AccountFreezeMetric) => {
+  if (metric === 'spendable') return settings.assetLocks.spendableFundsLocked
+  if (metric === 'withdrawable') return settings.assetLocks.withdrawableFundsLocked
+  if (metric === 'earnings') return settings.assetLocks.earningsLocked
+  return settings.assetLocks.walletFundsLocked
+}
+
+export function assertMetricAllowed(params: {
+  settings: AccountFreezeSettings
+  metric: AccountFreezeMetric
+  context: string
+}) {
+  const { settings, metric, context } = params
+  if (!isMetricLocked(settings, metric)) return
+  throw new AccountFreezeError(`${METRIC_LOCK_LABELS[metric]} are locked for this account (${context}).`)
+}
+
+export function summarizeActiveMetricLocks(settings: AccountFreezeSettings) {
+  const active: string[] = []
+  if (settings.assetLocks.spendableFundsLocked) active.push('Spendable funds')
+  if (settings.assetLocks.withdrawableFundsLocked) active.push('Withdrawable funds')
+  if (settings.assetLocks.earningsLocked) active.push('Earnings credits')
+  if (settings.assetLocks.walletFundsLocked) active.push('Wallet funds')
+  return active
 }
 
 export function getAccountOutgoingAvailableUsd(availableUsd: number, settings: AccountFreezeSettings) {

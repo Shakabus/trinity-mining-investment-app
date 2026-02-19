@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
+import {
+  AccountFreezeError,
+  assertIncomingAllowed,
+  assertMetricAllowed,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
 import { logUserActivity } from '@/lib/user-activity'
 import { createAccountBalanceEntry, hasSettledEntryForReference } from '@/lib/account-balance'
 import {
@@ -73,6 +80,27 @@ export async function PATCH(req: Request) {
     const withdrawalReference = `mining-withdrawal:${withdrawal.id}`
     const movesToSettled = ['approved', 'processed'].includes(status) && !['approved', 'processed'].includes(existing.status)
     if (movesToSettled) {
+      const rawCoinType = String(existing.coinType || '').toUpperCase()
+      const coinType: 'BTC' | 'ETH' | 'USDT' | 'SOL' =
+        rawCoinType === 'ETH' || rawCoinType === 'USDT' || rawCoinType === 'SOL'
+          ? rawCoinType
+          : 'BTC'
+      const freezeQuery = await getAccountFreezeSettings(withdrawal.userId)
+      if (freezeQuery.tableMissing) {
+        logAccountFreezeTableMissing('api/admin/withdrawals:PATCH')
+      } else {
+        assertMetricAllowed({
+          settings: freezeQuery.settings,
+          metric: 'earnings',
+          context: 'mining withdrawal settlement',
+        })
+        assertIncomingAllowed({
+          settings: freezeQuery.settings,
+          coinType,
+          context: 'mining withdrawal settlement',
+        })
+      }
+
       const hasCredit = await hasSettledEntryForReference(withdrawal.userId, withdrawalReference, 'credit')
       if (!hasCredit) {
         await createAccountBalanceEntry({
@@ -154,6 +182,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof AccountFreezeError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
