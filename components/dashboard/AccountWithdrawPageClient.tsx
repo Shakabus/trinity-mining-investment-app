@@ -390,10 +390,6 @@ export default function AccountWithdrawPageClient({
         </LoadingButton>
       </div>
 
-      <WalletConversionCard walletFlow={walletFlow} />
-
-      <LivePaymentsPageClient />
-
       <div
         className="p-6 rounded-3xl"
         style={{
@@ -438,6 +434,10 @@ export default function AccountWithdrawPageClient({
           </div>
         )}
       </div>
+
+      <WalletConversionCard walletFlow={walletFlow} />
+
+      <LivePaymentsPageClient />
     </div>
   )
 }
