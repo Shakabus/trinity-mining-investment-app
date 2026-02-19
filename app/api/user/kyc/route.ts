@@ -16,6 +16,7 @@ import {
   readFormFile,
   readFormString,
 } from '@/lib/requestValidation'
+import { isMissingKycTableError, logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
 
 export const runtime = 'nodejs'
 
@@ -44,6 +45,15 @@ const KYC_ALLOWED_FIELDS = [
   'proofOfAddressDocument',
 ] as const
 
+class HttpError extends Error {
+  status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
 function parseBooleanFlag(raw: string | undefined) {
   if (!raw) return false
   return raw.toLowerCase() === 'true' || raw === '1' || raw.toLowerCase() === 'on'
@@ -52,13 +62,13 @@ function parseBooleanFlag(raw: string | undefined) {
 function parseDateValue(raw: string | undefined, field: string, required = false) {
   if (!raw) {
     if (required) {
-      throw new Error(`${field} is required.`)
+      throw new HttpError(400, `${field} is required.`)
     }
     return null
   }
   const parsed = new Date(raw)
   if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`${field} is invalid.`)
+    throw new HttpError(400, `${field} is invalid.`)
   }
   return parsed
 }
@@ -88,37 +98,47 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
 
-    const kyc = await prisma.userKyc.findUnique({
-      where: { userId: user.id },
-      select: {
-        status: true,
-        firstName: true,
-        lastName: true,
-        dateOfBirth: true,
-        nationality: true,
-        residenceCountry: true,
-        addressLine1: true,
-        addressLine2: true,
-        city: true,
-        state: true,
-        postalCode: true,
-        idType: true,
-        idNumber: true,
-        idIssuingCountry: true,
-        idExpiryDate: true,
-        occupation: true,
-        sourceOfFunds: true,
-        pepDeclaration: true,
-        termsAccepted: true,
-        idDocumentFrontUrl: true,
-        idDocumentBackUrl: true,
-        selfieUrl: true,
-        proofOfAddressUrl: true,
-        reviewNote: true,
-        submittedAt: true,
-        reviewedAt: true,
-      },
-    })
+    const kycQuery = await runKycQuery(() =>
+      prisma.userKyc.findUnique({
+        where: { userId: user.id },
+        select: {
+          status: true,
+          firstName: true,
+          lastName: true,
+          dateOfBirth: true,
+          nationality: true,
+          residenceCountry: true,
+          addressLine1: true,
+          addressLine2: true,
+          city: true,
+          state: true,
+          postalCode: true,
+          idType: true,
+          idNumber: true,
+          idIssuingCountry: true,
+          idExpiryDate: true,
+          occupation: true,
+          sourceOfFunds: true,
+          pepDeclaration: true,
+          termsAccepted: true,
+          idDocumentFrontUrl: true,
+          idDocumentBackUrl: true,
+          selfieUrl: true,
+          proofOfAddressUrl: true,
+          reviewNote: true,
+          submittedAt: true,
+          reviewedAt: true,
+        },
+      })
+    )
+    if (kycQuery.tableMissing) {
+      logKycTableMissing('api/user/kyc:GET')
+      return NextResponse.json(
+        { error: 'KYC service is unavailable. Please retry after database sync.' },
+        { status: 503 }
+      )
+    }
+    const kyc = kycQuery.value
 
     return NextResponse.json({
       kyc: kyc
@@ -132,6 +152,13 @@ export async function GET() {
         : { status: 'not_submitted' },
     })
   } catch (error) {
+    if (isMissingKycTableError(error)) {
+      logKycTableMissing('api/user/kyc:GET')
+      return NextResponse.json(
+        { error: 'KYC service is unavailable. Please retry after database sync.' },
+        { status: 503 }
+      )
+    }
     console.error('Fetch user KYC error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -182,16 +209,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
 
-    const existing = await prisma.userKyc.findUnique({
-      where: { userId: user.id },
-      select: {
-        id: true,
-        idDocumentFrontUrl: true,
-        idDocumentBackUrl: true,
-        selfieUrl: true,
-        proofOfAddressUrl: true,
-      },
-    })
+    const existingQuery = await runKycQuery(() =>
+      prisma.userKyc.findUnique({
+        where: { userId: user.id },
+        select: {
+          id: true,
+          idDocumentFrontUrl: true,
+          idDocumentBackUrl: true,
+          selfieUrl: true,
+          proofOfAddressUrl: true,
+        },
+      })
+    )
+    if (existingQuery.tableMissing) {
+      logKycTableMissing('api/user/kyc:POST')
+      return NextResponse.json(
+        { error: 'KYC service is unavailable. Please retry after database sync.' },
+        { status: 503 }
+      )
+    }
+    const existing = existingQuery.value
 
     const idDocumentFront = readFormFile(formData, 'idDocumentFront', {
       required: !existing?.idDocumentFrontUrl,
@@ -235,68 +272,53 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid KYC state.' }, { status: 500 })
     }
 
-    await prisma.userKyc.upsert({
-      where: { userId: user.id },
-      create: {
-        userId: user.id,
-        status,
-        firstName,
-        lastName,
-        dateOfBirth,
-        nationality,
-        residenceCountry,
-        addressLine1,
-        addressLine2: addressLine2 || null,
-        city,
-        state,
-        postalCode,
-        idType,
-        idNumber,
-        idIssuingCountry,
-        idExpiryDate: idExpiryDate ?? null,
-        occupation: occupation || null,
-        sourceOfFunds: sourceOfFunds || null,
-        pepDeclaration,
-        termsAccepted,
-        idDocumentFrontUrl,
-        idDocumentBackUrl: idDocumentBackUrl || null,
-        selfieUrl,
-        proofOfAddressUrl: proofOfAddressUrl || null,
-        submittedAt: new Date(),
-        reviewedAt: null,
-        reviewedByAdminId: null,
-        reviewNote: null,
-      },
-      update: {
-        status,
-        firstName,
-        lastName,
-        dateOfBirth,
-        nationality,
-        residenceCountry,
-        addressLine1,
-        addressLine2: addressLine2 || null,
-        city,
-        state,
-        postalCode,
-        idType,
-        idNumber,
-        idIssuingCountry,
-        idExpiryDate: idExpiryDate ?? null,
-        occupation: occupation || null,
-        sourceOfFunds: sourceOfFunds || null,
-        pepDeclaration,
-        termsAccepted,
-        idDocumentFrontUrl,
-        idDocumentBackUrl: idDocumentBackUrl || null,
-        selfieUrl,
-        proofOfAddressUrl: proofOfAddressUrl || null,
-        submittedAt: new Date(),
-        reviewedAt: null,
-        reviewedByAdminId: null,
-        reviewNote: null,
-      },
-    })
+    const submittedAt = new Date()
+    const payload = {
+      status,
+      firstName,
+      lastName,
+      dateOfBirth,
+      nationality,
+      residenceCountry,
+      addressLine1,
+      addressLine2: addressLine2 || null,
+      city,
+      state,
+      postalCode,
+      idType,
+      idNumber,
+      idIssuingCountry,
+      idExpiryDate: idExpiryDate ?? null,
+      occupation: occupation || null,
+      sourceOfFunds: sourceOfFunds || null,
+      pepDeclaration,
+      termsAccepted,
+      idDocumentFrontUrl,
+      idDocumentBackUrl: idDocumentBackUrl || null,
+      selfieUrl,
+      proofOfAddressUrl: proofOfAddressUrl || null,
+      submittedAt,
+      reviewedAt: null,
+      reviewedByAdminId: null,
+      reviewNote: null,
+    }
+    const upsertResult = await runKycQuery(() =>
+      prisma.userKyc.upsert({
+        where: { userId: user.id },
+        create: {
+          userId: user.id,
+          ...payload,
+        },
+        update: payload,
+      })
+    )
+    if (upsertResult.tableMissing) {
+      logKycTableMissing('api/user/kyc:POST')
+      return NextResponse.json(
+        { error: 'KYC service is unavailable. Please retry after database sync.' },
+        { status: 503 }
+      )
+    }
 
     await logUserActivity({
       userId: user.id,
@@ -312,8 +334,15 @@ export async function POST(req: Request) {
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error instanceof HttpError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    if (isMissingKycTableError(error)) {
+      logKycTableMissing('api/user/kyc:POST')
+      return NextResponse.json(
+        { error: 'KYC service is unavailable. Please retry after database sync.' },
+        { status: 503 }
+      )
     }
     console.error('Submit KYC error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

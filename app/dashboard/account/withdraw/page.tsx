@@ -9,6 +9,7 @@ import {
 } from '@/lib/account-balance'
 import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
 import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
+import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,9 +26,6 @@ export default async function WithdrawAccountPage() {
       btcWalletAddress: true,
       ethWalletAddress: true,
       walletAddress: true,
-      kycProfile: {
-        select: { status: true },
-      },
     },
   })
 
@@ -106,6 +104,18 @@ export default async function WithdrawAccountPage() {
       address: string
     } => Boolean(option)
   )
+  const kycProfileQuery = await runKycQuery(() =>
+    prisma.userKyc.findUnique({
+      where: { userId: user.id },
+      select: { status: true },
+    })
+  )
+  if (kycProfileQuery.tableMissing) {
+    logKycTableMissing('dashboard/account/withdraw')
+  }
+  const kycStatus = kycProfileQuery.tableMissing
+    ? 'system_unavailable'
+    : (kycProfileQuery.value?.status ?? 'not_submitted')
 
   return (
     <AccountWithdrawPageClient
@@ -124,7 +134,7 @@ export default async function WithdrawAccountPage() {
       referralReadyUsd={Number(referralReady._sum.amountUsd ?? 0)}
       walletOptions={walletOptions}
       entries={withdrawalEntries}
-      kycStatus={user.kycProfile?.status ?? 'not_submitted'}
+      kycStatus={kycStatus}
     />
   )
 }

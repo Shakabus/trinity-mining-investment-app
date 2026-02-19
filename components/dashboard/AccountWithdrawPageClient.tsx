@@ -93,6 +93,7 @@ export default function AccountWithdrawPageClient({
   const { currency, rates, format } = useCurrency()
   const displayRate = rates[currency] > 0 ? rates[currency] : 1
   const isKycApproved = kycStatus === 'approved'
+  const isKycSystemUnavailable = kycStatus === 'system_unavailable'
 
   const pendingRequests = useMemo(
     () => entries.filter(entry => entry.status === 'pending').length,
@@ -117,7 +118,9 @@ export default function AccountWithdrawPageClient({
     if (!isKycApproved) {
       setStatus({
         type: 'error',
-        message: 'Complete KYC verification and wait for approval before requesting withdrawals.',
+        message: isKycSystemUnavailable
+          ? 'KYC service is temporarily unavailable. Please try again shortly.'
+          : 'Complete KYC verification and wait for approval before requesting withdrawals.',
       })
       return
     }
@@ -221,18 +224,24 @@ export default function AccountWithdrawPageClient({
           }}
         >
           <div className="text-amber-100 font-semibold">
-            {kycStatus === 'pending'
+            {isKycSystemUnavailable
+              ? 'KYC service temporarily unavailable'
+              : kycStatus === 'pending'
               ? 'KYC review in progress'
               : kycStatus === 'rejected'
                 ? 'KYC was rejected'
                 : 'KYC required before withdrawals'}
           </div>
           <p className="text-sm text-amber-100/85 mt-2">
-            Withdrawals are unlocked only after KYC is approved.
+            {isKycSystemUnavailable
+              ? 'We cannot verify KYC status right now. Try again after database sync finishes.'
+              : 'Withdrawals are unlocked only after KYC is approved.'}
           </p>
-          <Link href="/dashboard/kyc" className="inline-block mt-3 text-sm text-white underline underline-offset-4">
-            {kycStatus === 'pending' ? 'View KYC status' : 'Complete KYC now'} {'>'}
-          </Link>
+          {!isKycSystemUnavailable && (
+            <Link href="/dashboard/kyc" className="inline-block mt-3 text-sm text-white underline underline-offset-4">
+              {kycStatus === 'pending' ? 'View KYC status' : 'Complete KYC now'} {'>'}
+            </Link>
+          )}
         </div>
       )}
 

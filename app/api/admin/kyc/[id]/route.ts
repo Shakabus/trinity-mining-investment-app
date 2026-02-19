@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { isInputValidationError, readJsonObject, readStringField } from '@/lib/requestValidation'
+import { isMissingKycTableError, logKycTableMissing } from '@/lib/kyc-db'
 
 const KYC_REVIEW_FIELDS = ['decision', 'note'] as const
 
@@ -81,6 +82,13 @@ export async function PATCH(
   } catch (error) {
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+    if (isMissingKycTableError(error)) {
+      logKycTableMissing('api/admin/kyc/[id]:PATCH')
+      return NextResponse.json(
+        { error: 'KYC service is unavailable. Apply database migration and retry.' },
+        { status: 503 }
+      )
     }
     console.error('Review KYC error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

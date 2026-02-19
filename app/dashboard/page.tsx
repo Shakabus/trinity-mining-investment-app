@@ -35,15 +35,7 @@ import NewsTimeline from '@/components/dashboard/NewsTimeline'
 import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
-
-function isMissingUserKycTableError(error: unknown) {
-  const code =
-    typeof error === 'object' && error && 'code' in error
-      ? String((error as { code?: unknown }).code ?? '')
-      : ''
-  const message = error instanceof Error ? error.message : String(error ?? '')
-  return code === 'P2021' || (message.includes('`user_kyc`') && message.includes('does not exist'))
-}
+import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -143,22 +135,19 @@ export default async function DashboardPage() {
   })
 
   const kycProfile = user
-    ? await prisma.userKyc
-        .findUnique({
+    ? await runKycQuery(() =>
+        prisma.userKyc.findUnique({
           where: { userId: user.id },
           select: {
             status: true,
             reviewedAt: true,
           },
         })
-        .catch(error => {
-          if (isMissingUserKycTableError(error)) {
-            console.warn('[dashboard] user_kyc table missing; defaulting KYC state to not_submitted')
-            return null
-          }
-          throw error
-        })
+      )
     : null
+  if (kycProfile && kycProfile.tableMissing) {
+    logKycTableMissing('dashboard')
+  }
 
   const tradingEarnings = user ? await prisma.tradingEarning.findMany({
     where: { userId: user.id },
@@ -212,7 +201,7 @@ export default async function DashboardPage() {
     ? (user.preferredLanguage as LanguageCode)
     : languageFromCurrency(preferredCurrency)
   const t = (key: string) => translate(key, preferredLanguage)
-  const kycStatus = kycProfile?.status ?? 'not_submitted'
+  const kycStatus = kycProfile?.value?.status ?? 'not_submitted'
   const isKycApproved = kycStatus === 'approved'
 
   const updatedEarnings = user

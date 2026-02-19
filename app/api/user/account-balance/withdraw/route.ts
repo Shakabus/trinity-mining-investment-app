@@ -19,6 +19,7 @@ import {
   readStringField,
 } from '@/lib/requestValidation'
 import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
+import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
 
 const WITHDRAW_ALLOWED_FIELDS = [
   'amountUsd',
@@ -107,17 +108,28 @@ export async function GET() {
         btcWalletAddress: true,
         ethWalletAddress: true,
         walletAddress: true,
-        kycProfile: {
-          select: {
-            status: true,
-          },
-        },
       },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
-    if (!user.kycProfile || user.kycProfile.status !== 'approved') {
+    const kycQuery = await runKycQuery(() =>
+      prisma.userKyc.findUnique({
+        where: { userId: user.id },
+        select: { status: true },
+      })
+    )
+    if (kycQuery.tableMissing) {
+      logKycTableMissing('api/user/account-balance/withdraw:GET')
+      return NextResponse.json(
+        {
+          error: 'KYC service is unavailable. Please try again after database sync.',
+          code: 'KYC_SYSTEM_UNAVAILABLE',
+        },
+        { status: 503 }
+      )
+    }
+    if (!kycQuery.value || kycQuery.value.status !== 'approved') {
       return NextResponse.json(
         {
           error: 'KYC verification is required before withdrawals. Complete and get approved to continue.',
@@ -186,6 +198,31 @@ export async function POST(req: Request) {
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
+    }
+    const kycQuery = await runKycQuery(() =>
+      prisma.userKyc.findUnique({
+        where: { userId: user.id },
+        select: { status: true },
+      })
+    )
+    if (kycQuery.tableMissing) {
+      logKycTableMissing('api/user/account-balance/withdraw:POST')
+      return NextResponse.json(
+        {
+          error: 'KYC service is unavailable. Please try again after database sync.',
+          code: 'KYC_SYSTEM_UNAVAILABLE',
+        },
+        { status: 503 }
+      )
+    }
+    if (!kycQuery.value || kycQuery.value.status !== 'approved') {
+      return NextResponse.json(
+        {
+          error: 'KYC verification is required before withdrawals. Complete and get approved to continue.',
+          code: 'KYC_REQUIRED',
+        },
+        { status: 403 }
+      )
     }
 
     const presetWalletByCoin = {

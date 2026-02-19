@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import KycReviewPanel from '@/components/admin/KycReviewPanel'
+import { isMissingKycTableError, logKycTableMissing } from '@/lib/kyc-db'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,8 +39,9 @@ export default async function AdminKycPage() {
     userEmail: string | null
   }
 
-  const records = await prisma.$queryRaw<RawKycRow[]>(
-    Prisma.sql`
+  const { records, kycTableMissing } = await prisma
+    .$queryRaw<RawKycRow[]>(
+      Prisma.sql`
       SELECT
         uk.id,
         uk.user_id AS userId,
@@ -84,7 +86,15 @@ export default async function AdminKycPage() {
         uk.updated_at DESC
       LIMIT 1500
     `
-  )
+    )
+    .then(records => ({ records, kycTableMissing: false }))
+    .catch(error => {
+      if (isMissingKycTableError(error)) {
+        logKycTableMissing('admin/kyc')
+        return { records: [] as RawKycRow[], kycTableMissing: true }
+      }
+      throw error
+    })
 
   const toIso = (value: Date | string | null) => {
     if (!value) return null
@@ -141,6 +151,11 @@ export default async function AdminKycPage() {
           border: '1px solid rgba(255, 255, 255, 0.16)',
         }}
       >
+        {kycTableMissing && (
+          <div className="mb-4 rounded-xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            No KYC records available yet. If this is unexpected, run the KYC migration on the production database.
+          </div>
+        )}
         <KycReviewPanel rows={rows} />
       </div>
     </div>
