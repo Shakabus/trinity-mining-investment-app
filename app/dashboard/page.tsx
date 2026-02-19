@@ -257,10 +257,19 @@ export default async function DashboardPage() {
     : {
         balanceUsd: 0,
         availableToSpendUsd: 0,
+        withdrawableEarningsUsd: 0,
+        principalBalanceUsd: 0,
+        earningsBalanceUsd: 0,
         pendingCreditsUsd: 0,
         pendingDebitsUsd: 0,
+        pendingPurchaseDebitsUsd: 0,
+        pendingWithdrawalsUsd: 0,
         totalCreditsUsd: 0,
         totalDebitsUsd: 0,
+        totalDepositedUsd: 0,
+        totalInvestedUsd: 0,
+        totalWithdrawnUsd: 0,
+        earnedCreditsUsd: 0,
       }
   const accountBalanceEntries = user ? await getAccountBalanceEntries(user.id, { limit: 800 }) : []
   const accountAssetSummary = user
@@ -289,41 +298,9 @@ export default async function DashboardPage() {
 
   const latestAccountBalanceEntries = [...latestEntriesByReference.values()]
 
-  const totalDepositedUsd = latestAccountBalanceEntries
-    .filter(
-      entry =>
-        entry.direction === 'credit' &&
-        entry.status === 'settled' &&
-        [
-          'funding_deposit',
-          'external_payment',
-          'external_trading_payment',
-          'mining_withdrawal',
-          'trading_withdrawal',
-          'referral_withdrawal',
-          'real_estate_withdrawal',
-          'admin_manual_adjustment',
-        ].includes(entry.source)
-    )
-    .reduce((sum, entry) => sum + entry.amountUsd, 0)
-
-  const totalInvestedUsd = latestAccountBalanceEntries
-    .filter(
-      entry =>
-        entry.direction === 'debit' &&
-        entry.status === 'settled' &&
-        ['mining_plan_purchase', 'trading_plan_purchase', 'real_estate_buy_in'].includes(entry.source)
-    )
-    .reduce((sum, entry) => sum + entry.amountUsd, 0)
-
-  const totalWithdrawnUsd = latestAccountBalanceEntries
-    .filter(
-      entry =>
-        entry.direction === 'debit' &&
-        entry.status === 'settled' &&
-        ['account_balance_withdrawal', 'admin_manual_adjustment'].includes(entry.source)
-    )
-    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+  const totalDepositedUsd = accountBalanceSummary.totalDepositedUsd
+  const totalInvestedUsd = accountBalanceSummary.totalInvestedUsd
+  const totalWithdrawnUsd = accountBalanceSummary.totalWithdrawnUsd
 
   const recentBalanceTransactions = latestAccountBalanceEntries
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
@@ -477,16 +454,24 @@ export default async function DashboardPage() {
               {formatMoney(accountAssetSummary.combinedAssetUsd)}
             </div>
             <div className="text-xs text-white/70 mt-2">
-              Spendable balance: {formatMoney(accountBalanceSummary.availableToSpendUsd)}
+              Spendable for plans (deposits only): {formatMoney(accountBalanceSummary.availableToSpendUsd)}
+            </div>
+            <div className="text-xs text-white/70 mt-1">
+              Withdrawable earnings: {formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
             </div>
             {accountBalanceSummary.pendingCreditsUsd > 0 && (
               <div className="text-xs text-emerald-100/80 mt-2">
                 Pending credits: {formatMoney(accountBalanceSummary.pendingCreditsUsd)}
               </div>
             )}
-            {accountBalanceSummary.pendingDebitsUsd > 0 && (
+            {accountBalanceSummary.pendingPurchaseDebitsUsd > 0 && (
               <div className="text-xs text-amber-100/80 mt-1">
-                Pending debits: {formatMoney(accountBalanceSummary.pendingDebitsUsd)}
+                Pending purchase debits: {formatMoney(accountBalanceSummary.pendingPurchaseDebitsUsd)}
+              </div>
+            )}
+            {accountBalanceSummary.pendingWithdrawalsUsd > 0 && (
+              <div className="text-xs text-rose-100/80 mt-1">
+                Pending external withdrawals: {formatMoney(accountBalanceSummary.pendingWithdrawalsUsd)}
               </div>
             )}
           </div>
@@ -597,9 +582,69 @@ export default async function DashboardPage() {
                 border: '1px solid rgba(88, 45, 255, 0.35)',
               }}
             >
-              <div className="text-xs text-violet-100/80 mb-1">Total Invested</div>
-              <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(totalInvestedUsd)}>
+              <div className="text-xs text-violet-100/80 mb-1">Total Earned Credited</div>
+              <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.earnedCreditsUsd)}>
+                {formatMoney(accountBalanceSummary.earnedCreditsUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0.05))',
+                border: '1px solid rgba(59, 130, 246, 0.35)',
+              }}
+            >
+              <div className="text-xs text-blue-100/80 mb-1">Total Invested</div>
+              <div className="text-base md:text-xl font-semibold text-blue-200" title={formatMoney(totalInvestedUsd)}>
                 {formatMoney(totalInvestedUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(168, 85, 247, 0.05))',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+              }}
+            >
+              <div className="text-xs text-violet-100/80 mb-1">Withdrawable Earnings</div>
+              <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}>
+                {formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(14, 116, 144, 0.16), rgba(14, 116, 144, 0.05))',
+                border: '1px solid rgba(14, 116, 144, 0.35)',
+              }}
+            >
+              <div className="text-xs text-cyan-100/80 mb-1">Spendable for Plans</div>
+              <div className="text-base md:text-xl font-semibold text-cyan-200" title={formatMoney(accountBalanceSummary.availableToSpendUsd)}>
+                {formatMoney(accountBalanceSummary.availableToSpendUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
+                border: '1px solid rgba(88, 45, 255, 0.35)',
+              }}
+            >
+              <div className="text-xs text-violet-100/80 mb-1">Principal Balance</div>
+              <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.principalBalanceUsd)}>
+                {formatMoney(accountBalanceSummary.principalBalanceUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(120, 113, 108, 0.16), rgba(120, 113, 108, 0.05))',
+                border: '1px solid rgba(120, 113, 108, 0.35)',
+              }}
+            >
+              <div className="text-xs text-stone-100/80 mb-1">Earnings Balance</div>
+              <div className="text-base md:text-xl font-semibold text-stone-200" title={formatMoney(accountBalanceSummary.earningsBalanceUsd)}>
+                {formatMoney(accountBalanceSummary.earningsBalanceUsd)}
               </div>
             </div>
             <div

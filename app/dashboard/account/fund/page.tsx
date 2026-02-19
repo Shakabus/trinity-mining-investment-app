@@ -35,9 +35,15 @@ export default async function FundAccountPage() {
 
   return (
     <AccountFundPageClient
-      balanceUsd={summary.availableToSpendUsd}
+      spendableBalanceUsd={summary.availableToSpendUsd}
+      withdrawableEarningsUsd={summary.withdrawableEarningsUsd}
       pendingCreditsUsd={summary.pendingCreditsUsd}
       pendingDebitsUsd={summary.pendingDebitsUsd}
+      pendingWithdrawalsUsd={summary.pendingWithdrawalsUsd}
+      totalDepositedUsd={summary.totalDepositedUsd}
+      totalInvestedUsd={summary.totalInvestedUsd}
+      totalWithdrawnUsd={summary.totalWithdrawnUsd}
+      totalEarnedUsd={summary.earnedCreditsUsd}
       walletFlow={TRACKED_ASSET_COINS.map(coinType => assetSummary.byCoin[coinType])}
       entries={entries.map(entry => ({
         ...entry,

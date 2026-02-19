@@ -106,11 +106,16 @@ export default async function WithdrawAccountPage() {
 
   return (
     <AccountWithdrawPageClient
-      balanceUsd={summary.availableToSpendUsd}
+      spendableBalanceUsd={summary.availableToSpendUsd}
+      withdrawableEarningsUsd={summary.withdrawableEarningsUsd}
       pendingCreditsUsd={summary.pendingCreditsUsd}
       pendingDebitsUsd={summary.pendingDebitsUsd}
+      pendingWithdrawalsUsd={summary.pendingWithdrawalsUsd}
       walletFlow={TRACKED_ASSET_COINS.map(coinType => assetSummary.byCoin[coinType])}
       totalWithdrawnUsd={totalWithdrawnUsd}
+      totalDepositedUsd={summary.totalDepositedUsd}
+      totalInvestedUsd={summary.totalInvestedUsd}
+      totalEarnedUsd={summary.earnedCreditsUsd}
       miningReadyUsd={Number(miningReady._sum.totalEarnedUsd ?? 0)}
       tradingReadyUsd={Number(tradingReady._sum.totalEarnedUsd ?? 0)}
       referralReadyUsd={Number(referralReady._sum.amountUsd ?? 0)}

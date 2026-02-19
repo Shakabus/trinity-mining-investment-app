@@ -143,10 +143,10 @@ export async function POST(req: Request) {
       await lockUserBalanceForUpdate(user.id, tx)
 
       const summary = await getAccountBalanceSummary(user.id, tx)
-      if (amountUsd > summary.availableToSpendUsd) {
+      if (amountUsd > summary.withdrawableEarningsUsd) {
         throw new HttpError(
           400,
-          `Insufficient account balance. Available: $${summary.availableToSpendUsd.toFixed(2)}.`
+          `Insufficient withdrawable earnings. Available: $${summary.withdrawableEarningsUsd.toFixed(2)}.`
         )
       }
 

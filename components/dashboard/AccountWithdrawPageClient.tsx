@@ -19,9 +19,11 @@ type WithdrawalEntry = {
 }
 
 type Props = {
-  balanceUsd: number
+  spendableBalanceUsd: number
+  withdrawableEarningsUsd: number
   pendingCreditsUsd: number
   pendingDebitsUsd: number
+  pendingWithdrawalsUsd: number
   walletFlow: {
     coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
     totalInCrypto: number
@@ -32,6 +34,9 @@ type Props = {
     netUsd: number
   }[]
   totalWithdrawnUsd: number
+  totalDepositedUsd: number
+  totalInvestedUsd: number
+  totalEarnedUsd: number
   miningReadyUsd: number
   tradingReadyUsd: number
   referralReadyUsd: number
@@ -51,11 +56,16 @@ const NETWORK_MAP: Record<(typeof COINS)[number], string> = {
 }
 
 export default function AccountWithdrawPageClient({
-  balanceUsd,
+  spendableBalanceUsd,
+  withdrawableEarningsUsd,
   pendingCreditsUsd,
   pendingDebitsUsd,
+  pendingWithdrawalsUsd,
   walletFlow,
   totalWithdrawnUsd,
+  totalDepositedUsd,
+  totalInvestedUsd,
+  totalEarnedUsd,
   miningReadyUsd,
   tradingReadyUsd,
   referralReadyUsd,
@@ -107,6 +117,13 @@ export default function AccountWithdrawPageClient({
       setStatus({
         type: 'error',
         message: `Enter a valid amount (minimum ${format(10)}).`,
+      })
+      return
+    }
+    if (amountUsdValue > withdrawableEarningsUsd) {
+      setStatus({
+        type: 'error',
+        message: `Amount exceeds withdrawable earnings (${format(withdrawableEarningsUsd)}).`,
       })
       return
     }
@@ -241,7 +258,7 @@ export default function AccountWithdrawPageClient({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div
           className="p-5 rounded-2xl"
           style={{
@@ -249,10 +266,11 @@ export default function AccountWithdrawPageClient({
             border: '1px solid rgba(16, 185, 129, 0.35)',
           }}
         >
-          <div className="text-sm text-emerald-100/80">Available balance</div>
+          <div className="text-sm text-emerald-100/80">Withdrawable earnings</div>
           <div className="text-3xl font-bold text-emerald-200 mt-1">
-            {format(balanceUsd)}
+            {format(withdrawableEarningsUsd)}
           </div>
+          <div className="text-xs text-emerald-100/75 mt-2">Only earnings can be withdrawn</div>
         </div>
         <div
           className="p-5 rounded-2xl"
@@ -261,11 +279,11 @@ export default function AccountWithdrawPageClient({
             border: '1px solid rgba(59, 130, 246, 0.35)',
           }}
         >
-          <div className="text-sm text-blue-100/80">Pending withdrawals</div>
+          <div className="text-sm text-blue-100/80">Spendable for plans</div>
           <div className="text-3xl font-bold text-blue-200 mt-1">
-            {format(pendingDebitsUsd)}
+            {format(spendableBalanceUsd)}
           </div>
-          <div className="text-xs text-blue-100/80 mt-2">{pendingRequests} request(s) awaiting review</div>
+          <div className="text-xs text-blue-100/80 mt-2">Deposits and principal only</div>
         </div>
         <div
           className="p-5 rounded-2xl"
@@ -274,16 +292,47 @@ export default function AccountWithdrawPageClient({
             border: '1px solid rgba(255, 255, 255, 0.22)',
           }}
         >
-          <div className="text-sm text-white/75">Total withdrawn</div>
+          <div className="text-sm text-white/75">Total earned credited</div>
+          <div className="text-3xl font-bold text-white mt-1">{format(totalEarnedUsd)}</div>
+          <div className="text-xs text-white/70 mt-2">From mining, trading, referral, and real estate</div>
+        </div>
+        <div
+          className="p-5 rounded-2xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(244, 63, 94, 0.16), rgba(244, 63, 94, 0.04))',
+            border: '1px solid rgba(244, 63, 94, 0.35)',
+          }}
+        >
+          <div className="text-sm text-rose-100/80">Total withdrawn</div>
           <div className="text-3xl font-bold text-white mt-1">
             {format(totalWithdrawnUsd)}
           </div>
-          {pendingCreditsUsd > 0 && (
-            <div className="text-xs text-emerald-100/75 mt-2">
-              Pending credits: {format(pendingCreditsUsd)}
-            </div>
-          )}
+          <div className="text-xs text-rose-100/75 mt-2">{pendingRequests} request(s) awaiting review</div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="text-xs text-white/70 rounded-xl border border-white/10 px-3 py-2">
+          Total deposited: <span className="text-white font-semibold">{format(totalDepositedUsd)}</span>
+        </div>
+        <div className="text-xs text-white/70 rounded-xl border border-white/10 px-3 py-2">
+          Total invested: <span className="text-white font-semibold">{format(totalInvestedUsd)}</span>
+        </div>
+        {pendingCreditsUsd > 0 && (
+          <div className="text-xs text-emerald-100/80 rounded-xl border border-emerald-400/20 px-3 py-2">
+            Pending credits: {format(pendingCreditsUsd)}
+          </div>
+        )}
+        {pendingDebitsUsd > 0 && (
+          <div className="text-xs text-amber-100/80 rounded-xl border border-amber-400/20 px-3 py-2">
+            Pending purchase debits: {format(Math.max(0, pendingDebitsUsd - pendingWithdrawalsUsd))}
+          </div>
+        )}
+        {pendingWithdrawalsUsd > 0 && (
+          <div className="text-xs text-rose-100/80 rounded-xl border border-rose-400/20 px-3 py-2">
+            Pending external withdrawals: {format(pendingWithdrawalsUsd)}
+          </div>
+        )}
       </div>
 
       <div

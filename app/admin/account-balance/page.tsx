@@ -631,10 +631,6 @@ export default async function AdminAccountBalancePage() {
         <MetricCard label="Real-estate pending" value={sourceCounts.real_estate_buy_in} />
       </div>
 
-      <div id="manual-adjustments">
-        <AccountBalanceManualAdjustments users={manualUsers} adjustments={manualAdjustments} />
-      </div>
-
       <div
         className="p-5 rounded-2xl space-y-4"
         style={{
@@ -650,29 +646,42 @@ export default async function AdminAccountBalancePage() {
         </div>
 
         <AccountBalanceLedgerPanel summaries={userBalanceSummaries} />
-      </div>
 
-      {operations.length === 0 ? (
-        <div
-          className="p-12 rounded-3xl text-center"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-          }}
-        >
-          <div className="text-2xl text-white/75">No pending account-balance operations.</div>
+        <div className="pt-2 border-t border-white/10 space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Ledger Controls</h3>
+            <p className="text-sm text-white/65 mt-1">
+              Manual adjustments and pending operation approvals for the selected user balances.
+            </p>
+          </div>
+
+          <div id="manual-adjustments">
+            <AccountBalanceManualAdjustments users={manualUsers} adjustments={manualAdjustments} />
+          </div>
+
+          {operations.length === 0 ? (
+            <div
+              className="p-8 rounded-2xl text-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.02))',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.14)',
+              }}
+            >
+              <div className="text-lg text-white/75">No pending account-balance operations.</div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {operations.map(operation => (
+                <AccountBalanceOperationApproval
+                  key={`${operation.source}:${operation.referenceId}`}
+                  operation={operation}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="space-y-4">
-          {operations.map(operation => (
-            <AccountBalanceOperationApproval
-              key={`${operation.source}:${operation.referenceId}`}
-              operation={operation}
-            />
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   )
 }

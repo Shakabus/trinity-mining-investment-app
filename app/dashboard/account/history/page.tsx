@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import {
   formatAccountBalanceSource,
   getAccountBalanceEntries,
+  getAccountBalanceSummary,
 } from '@/lib/account-balance'
 import {
   convertUsd,
@@ -15,24 +16,6 @@ import {
 } from '@/lib/forex'
 
 export const dynamic = 'force-dynamic'
-
-const DEPOSIT_SOURCES = new Set([
-  'funding_deposit',
-  'external_payment',
-  'external_trading_payment',
-  'mining_withdrawal',
-  'trading_withdrawal',
-  'referral_withdrawal',
-  'real_estate_withdrawal',
-])
-
-const PURCHASE_SOURCES = new Set([
-  'mining_plan_purchase',
-  'trading_plan_purchase',
-  'real_estate_buy_in',
-])
-
-const WITHDRAWAL_SOURCES = new Set(['account_balance_withdrawal'])
 
 function formatStatus(status: 'pending' | 'settled' | 'rejected') {
   if (status === 'settled') return 'Settled'
@@ -57,7 +40,10 @@ export default async function AccountHistoryPage() {
     redirect('/sign-in')
   }
 
-  const entries = await getAccountBalanceEntries(user.id, { limit: 3000 })
+  const [entries, balanceSummary] = await Promise.all([
+    getAccountBalanceEntries(user.id, { limit: 3000 }),
+    getAccountBalanceSummary(user.id),
+  ])
   const rates = await getFxRates()
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user.preferredCurrency || '')
     ? (user.preferredCurrency as CurrencyCode)
@@ -77,42 +63,7 @@ export default async function AccountHistoryPage() {
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
   )
 
-  const summary = historyRows.reduce(
-    (acc, row) => {
-      if (row.status === 'pending') {
-        acc.pendingCount += 1
-      }
-      if (row.status !== 'settled') {
-        return acc
-      }
-
-      if (DEPOSIT_SOURCES.has(row.source) && row.direction === 'credit') {
-        acc.depositsUsd += row.amountUsd
-      }
-      if (PURCHASE_SOURCES.has(row.source) && row.direction === 'debit') {
-        acc.purchasesUsd += row.amountUsd
-      }
-      if (WITHDRAWAL_SOURCES.has(row.source) && row.direction === 'debit') {
-        acc.withdrawalsUsd += row.amountUsd
-      }
-      if (row.direction === 'credit') {
-        acc.totalCreditsUsd += row.amountUsd
-      } else {
-        acc.totalDebitsUsd += row.amountUsd
-      }
-      return acc
-    },
-    {
-      depositsUsd: 0,
-      purchasesUsd: 0,
-      withdrawalsUsd: 0,
-      totalCreditsUsd: 0,
-      totalDebitsUsd: 0,
-      pendingCount: 0,
-    }
-  )
-
-  const availableUsd = Math.max(0, summary.totalCreditsUsd - summary.totalDebitsUsd)
+  const pendingCount = historyRows.filter(row => row.status === 'pending').length
 
   return (
     <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-6 space-y-6">
@@ -145,13 +96,15 @@ export default async function AccountHistoryPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
         {[
-          { label: 'Total Deposits', value: summary.depositsUsd, tone: 'text-emerald-200' },
-          { label: 'Total Purchases', value: summary.purchasesUsd, tone: 'text-amber-200' },
-          { label: 'Total Withdrawals', value: summary.withdrawalsUsd, tone: 'text-rose-200' },
-          { label: 'Available Balance', value: availableUsd, tone: 'text-white' },
-          { label: 'Pending Items', value: summary.pendingCount, tone: 'text-blue-200', integer: true },
+          { label: 'Total Deposits', value: balanceSummary.totalDepositedUsd, tone: 'text-emerald-200' },
+          { label: 'Total Earned', value: balanceSummary.earnedCreditsUsd, tone: 'text-violet-200' },
+          { label: 'Total Purchases', value: balanceSummary.totalInvestedUsd, tone: 'text-amber-200' },
+          { label: 'Spendable for Plans', value: balanceSummary.availableToSpendUsd, tone: 'text-cyan-200' },
+          { label: 'Withdrawable Earnings', value: balanceSummary.withdrawableEarningsUsd, tone: 'text-blue-200' },
+          { label: 'Total Withdrawals', value: balanceSummary.totalWithdrawnUsd, tone: 'text-rose-200' },
+          { label: 'Pending Items', value: pendingCount, tone: 'text-white', integer: true },
         ].map(card => (
           <div
             key={card.label}

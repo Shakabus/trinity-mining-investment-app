@@ -911,10 +911,10 @@ export async function POST(req: Request) {
     const direction: AccountBalanceDirection = adjustmentTypeRaw === 'deposit' ? 'credit' : 'debit'
     if (direction === 'debit') {
       const balance = await getAccountBalanceSummary(targetUserId)
-      if (balance.availableToSpendUsd < amountUsd) {
+      if (balance.withdrawableEarningsUsd < amountUsd) {
         return NextResponse.json(
           {
-            error: `Insufficient balance for manual withdrawal. Available: $${balance.availableToSpendUsd.toFixed(2)}.`,
+            error: `Insufficient withdrawable earnings for manual withdrawal. Available: $${balance.withdrawableEarningsUsd.toFixed(2)}.`,
           },
           { status: 400 }
         )

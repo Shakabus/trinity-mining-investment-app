@@ -80,6 +80,33 @@ type CreateEntryInput = {
   metadata?: Record<string, unknown>
 }
 
+const PURCHASE_DEBIT_SOURCES: AccountBalanceSource[] = [
+  'mining_plan_purchase',
+  'trading_plan_purchase',
+  'real_estate_buy_in',
+]
+
+const PRINCIPAL_CREDIT_SOURCES: AccountBalanceSource[] = [
+  'funding_deposit',
+  'admin_manual_adjustment',
+  'external_payment',
+  'external_trading_payment',
+]
+
+const PRINCIPAL_DEBIT_SOURCES: AccountBalanceSource[] = [
+  ...PURCHASE_DEBIT_SOURCES,
+  'admin_manual_adjustment',
+]
+
+const EARNING_CREDIT_SOURCES: AccountBalanceSource[] = [
+  'mining_withdrawal',
+  'trading_withdrawal',
+  'referral_withdrawal',
+  'real_estate_withdrawal',
+]
+
+const WITHDRAWABLE_DEBIT_SOURCES: AccountBalanceSource[] = ['account_balance_withdrawal']
+
 const isDirection = (value: unknown): value is AccountBalanceDirection =>
   value === 'credit' || value === 'debit'
 
@@ -429,8 +456,67 @@ export async function getAccountBalanceSummary(userId: number, db: DbClient = pr
     .filter(entry => entry.status === 'pending' && entry.direction === 'debit')
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
-  const balanceUsd = Number(Math.max(0, totalCreditsUsd - totalDebitsUsd).toFixed(2))
-  const availableToSpendUsd = Number(Math.max(0, balanceUsd - pendingDebitsUsd).toFixed(2))
+  const principalCreditsUsd = settledEntries
+    .filter(
+      entry =>
+        entry.direction === 'credit' &&
+        (PRINCIPAL_CREDIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const principalDebitsUsd = settledEntries
+    .filter(
+      entry =>
+        entry.direction === 'debit' &&
+        (PRINCIPAL_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const pendingPurchaseDebitsUsd = latestEntries
+    .filter(
+      entry =>
+        entry.status === 'pending' &&
+        entry.direction === 'debit' &&
+        (PURCHASE_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const earnedCreditsUsd = settledEntries
+    .filter(
+      entry =>
+        entry.direction === 'credit' &&
+        ((EARNING_CREDIT_SOURCES as AccountBalanceSource[]).includes(entry.source) ||
+          entry.source === 'withdrawal_reversal')
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const earnedDebitsUsd = settledEntries
+    .filter(
+      entry =>
+        entry.direction === 'debit' &&
+        ((WITHDRAWABLE_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source) ||
+          entry.source === 'withdrawal_reversal')
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const pendingWithdrawalsUsd = latestEntries
+    .filter(
+      entry =>
+        entry.status === 'pending' &&
+        entry.direction === 'debit' &&
+        (WITHDRAWABLE_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const principalBalanceUsd = Number(Math.max(0, principalCreditsUsd - principalDebitsUsd).toFixed(2))
+  const availableToSpendUsd = Number(Math.max(0, principalBalanceUsd - pendingPurchaseDebitsUsd).toFixed(2))
+
+  const earningsBalanceUsd = Number(Math.max(0, earnedCreditsUsd - earnedDebitsUsd).toFixed(2))
+  const withdrawableEarningsUsd = Number(
+    Math.max(0, earningsBalanceUsd - pendingWithdrawalsUsd).toFixed(2)
+  )
+
+  const balanceUsd = Number(Math.max(0, principalBalanceUsd + earningsBalanceUsd).toFixed(2))
 
   return {
     totalCreditsUsd: Number(totalCreditsUsd.toFixed(2)),
@@ -439,6 +525,36 @@ export async function getAccountBalanceSummary(userId: number, db: DbClient = pr
     pendingDebitsUsd: Number(pendingDebitsUsd.toFixed(2)),
     balanceUsd,
     availableToSpendUsd,
+    principalCreditsUsd: Number(principalCreditsUsd.toFixed(2)),
+    principalDebitsUsd: Number(principalDebitsUsd.toFixed(2)),
+    principalBalanceUsd,
+    pendingPurchaseDebitsUsd: Number(pendingPurchaseDebitsUsd.toFixed(2)),
+    earnedCreditsUsd: Number(earnedCreditsUsd.toFixed(2)),
+    earnedDebitsUsd: Number(earnedDebitsUsd.toFixed(2)),
+    earningsBalanceUsd,
+    pendingWithdrawalsUsd: Number(pendingWithdrawalsUsd.toFixed(2)),
+    withdrawableEarningsUsd,
+    totalDepositedUsd: Number(principalCreditsUsd.toFixed(2)),
+    totalInvestedUsd: Number(
+      settledEntries
+        .filter(
+          entry =>
+            entry.direction === 'debit' &&
+            (PURCHASE_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
+        )
+        .reduce((sum, entry) => sum + entry.amountUsd, 0)
+        .toFixed(2)
+    ),
+    totalWithdrawnUsd: Number(
+      settledEntries
+        .filter(
+          entry =>
+            entry.direction === 'debit' &&
+            (WITHDRAWABLE_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
+        )
+        .reduce((sum, entry) => sum + entry.amountUsd, 0)
+        .toFixed(2)
+    ),
   }
 }
 
