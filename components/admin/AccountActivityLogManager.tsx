@@ -41,7 +41,7 @@ export default function AccountActivityLogManager({ logs }: Props) {
 
   const askNotifyChoice = () =>
     window.confirm(
-      'Forward this admin correction to the user activity record?\n\nClick OK = Forward\nClick Cancel = Keep internal only'
+      'Forward this correction to the user activity record?\n\nClick OK = Forward\nClick Cancel = Keep internal only'
     )
 
   const removeLog = async (log: ActivityLogRow, deleteMode: 'log_only' | 'log_and_action') => {

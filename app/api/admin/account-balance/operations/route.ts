@@ -7,6 +7,12 @@ import { scalePlanHashrateDecimal } from '@/lib/mining-hashrate'
 import { getCryptoPricesUsd } from '@/lib/earnings'
 import { computeTargetDailyCryptoEstimate } from '@/lib/mining-engine'
 import {
+  AccountFreezeError,
+  assertIncomingAllowed,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
+import {
   ACCOUNT_BALANCE_ENTRY_ACTION,
   createAccountBalanceEntry,
   getAccountBalanceSummary,
@@ -152,6 +158,19 @@ async function applyFundingReview(params: {
     params.decision === 'approve' && prices
       ? convertUsdToCoin(params.amountUsd, coinType, prices)
       : undefined
+
+  if (params.decision === 'approve') {
+    const freezeQuery = await getAccountFreezeSettings(params.userId)
+    if (freezeQuery.tableMissing) {
+      logAccountFreezeTableMissing('api/admin/account-balance/operations:applyFundingReview')
+    } else {
+      assertIncomingAllowed({
+        settings: freezeQuery.settings,
+        coinType,
+        context: 'funding approval',
+      })
+    }
+  }
 
   await createAccountBalanceEntry({
     userId: params.userId,
@@ -916,6 +935,9 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof AccountFreezeError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
     if (error instanceof HttpError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
@@ -1089,8 +1111,8 @@ export async function DELETE(req: Request) {
 
     let adminLogAction = 'accountBalanceActivityLogRemoved'
     let adminLogDetail = `Removed user activity log #${log.id}. Reason: ${reason}`
-    let userAction = 'AccountActivityLogRemovedByAdmin'
-    let userDetail = 'An account activity log entry was removed during an admin correction.'
+    let userAction = 'AccountActivityLogRemoved'
+    let userDetail = 'An account activity log entry was removed during a correction.'
     const parsedBalanceEntry = parseAccountBalanceEntryDetail(log.detail)
     const isBalanceEntryAction = log.action === ACCOUNT_BALANCE_ENTRY_ACTION && Boolean(parsedBalanceEntry)
     const hasFinancialImpact = isBalanceEntryAction && parsedBalanceEntry?.status === 'settled'
@@ -1140,8 +1162,8 @@ export async function DELETE(req: Request) {
         }
         adminLogAction = 'accountBalanceActivityAndEffectRemoved'
         adminLogDetail = `Removed activity log #${log.id} and deleted linked financial effect. Reason: ${reason}`
-        userAction = 'AccountActivityAndEffectRemovedByAdmin'
-        userDetail = 'An account activity entry and its linked financial effect were removed during an admin correction.'
+        userAction = 'AccountActivityAndEffectRemoved'
+        userDetail = 'An account activity entry and its linked financial effect were removed during a correction.'
       }
     }
 

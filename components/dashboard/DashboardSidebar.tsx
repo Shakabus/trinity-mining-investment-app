@@ -61,7 +61,6 @@ const menuItems = [
   { name: 'Withdraw Funds', href: '/dashboard/account/withdraw', icon: Wallet },
   { name: 'KYC Verification', href: '/dashboard/kyc', icon: ShieldCheck },
   { name: 'Account History', href: '/dashboard/account/history', icon: History },
-  { name: 'Activity', labelKey: 'activity', href: '/dashboard/activity', icon: History },
   { name: 'Support', labelKey: 'support', href: '/dashboard/support', icon: LifeBuoy },
   { name: 'Settings', labelKey: 'settings', href: '/dashboard/settings', icon: Settings },
 ]

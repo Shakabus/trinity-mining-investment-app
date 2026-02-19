@@ -2,9 +2,8 @@
 
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Bell, Menu } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Menu } from 'lucide-react'
+import { useState } from 'react'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import LanguageToggle from '@/components/dashboard/LanguageToggle'
@@ -18,75 +17,10 @@ interface DashboardNavProps {
   onMenuClick?: () => void
 }
 
-const ACTIVITY_SEEN_KEY_PREFIX = 'dashboard_activity_seen_id:'
-
-function getSeenActivityId(storageKey: string) {
-  if (typeof window === 'undefined') return 0
-  const rawValue = window.localStorage.getItem(storageKey)
-  const numericValue = Number(rawValue)
-  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : 0
-}
-
-function markActivityAsSeen(storageKey: string, latestActivityId: number) {
-  if (typeof window === 'undefined' || latestActivityId <= 0) return
-  window.localStorage.setItem(storageKey, String(latestActivityId))
-}
-
 export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
   const [isMounted] = useState(true)
-  const [latestActivityId, setLatestActivityId] = useState(0)
   const { t } = useLanguage()
-  const pathname = usePathname()
   const statusKey = user?.accountStatus === 'active' ? 'active' : user?.accountStatus === 'pending' ? 'pending' : 'inactive'
-  const activityStorageKey = user?.email
-    ? `${ACTIVITY_SEEN_KEY_PREFIX}${user.email.toLowerCase()}`
-    : null
-
-  useEffect(() => {
-    if (!user?.email) return
-
-    let cancelled = false
-
-    const loadActivityMeta = async () => {
-      try {
-        const response = await fetch('/api/user/activity/meta', { cache: 'no-store' })
-        if (!response.ok) return
-
-        const data = (await response.json()) as { latestActivityId?: number | null }
-        const parsedActivityId = Number(data.latestActivityId ?? 0)
-
-        if (!cancelled && Number.isFinite(parsedActivityId)) {
-          setLatestActivityId(parsedActivityId > 0 ? parsedActivityId : 0)
-        }
-      } catch {
-        // Silent failure keeps the nav usable when polling fails.
-      }
-    }
-
-    void loadActivityMeta()
-    const intervalId = window.setInterval(loadActivityMeta, 30000)
-
-    return () => {
-      cancelled = true
-      window.clearInterval(intervalId)
-    }
-  }, [user?.email])
-
-  useEffect(() => {
-    if (!activityStorageKey) return
-    if (!pathname.startsWith('/dashboard/activity')) return
-    if (latestActivityId <= 0) return
-
-    markActivityAsSeen(activityStorageKey, latestActivityId)
-  }, [activityStorageKey, latestActivityId, pathname])
-
-  const hasUnreadActivity = useMemo(() => {
-    if (!activityStorageKey) return false
-    if (pathname.startsWith('/dashboard/activity')) return false
-    if (latestActivityId <= 0) return false
-
-    return latestActivityId > getSeenActivityId(activityStorageKey)
-  }, [activityStorageKey, latestActivityId, pathname])
 
   return (
     <nav
@@ -152,26 +86,6 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
               {user?.email}
             </div>
           </div>
-
-          <Link
-            href="/dashboard/activity"
-            onClick={() => {
-              if (activityStorageKey && latestActivityId > 0) {
-                markActivityAsSeen(activityStorageKey, latestActivityId)
-              }
-            }}
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 md:h-10 md:w-10"
-            aria-label={t('openActivity')}
-            title={t('openActivity')}
-          >
-            <Bell size={18} />
-            {hasUnreadActivity ? (
-              <span className="absolute right-1.5 top-1.5 flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" />
-              </span>
-            ) : null}
-          </Link>
 
           <LanguageToggle variant="icon" />
           <ThemeToggle compact />

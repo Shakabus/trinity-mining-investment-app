@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { Bell, BellOff } from 'lucide-react'
 import styles from './LiveNotificationTicker.module.css'
 import type { NotificationTickerItem, NotificationTickerTone } from '@/lib/notification-ticker'
 
@@ -175,7 +176,7 @@ export default function LiveNotificationTicker({
                 <>
                   <span className={`${styles.toneDot} ${toneClassName(item.tone)}`} />
                   <span>{item.text}</span>
-                  <span className={styles.divider}>•</span>
+                  <span className={styles.divider}>|</span>
                 </>
               )
 
@@ -203,7 +204,7 @@ export default function LiveNotificationTicker({
         aria-label={soundEnabled ? 'Mute notification sound' : 'Enable notification sound'}
         title={soundEnabled ? 'Sound on' : 'Sound off'}
       >
-        {soundEnabled ? '🔔' : '🔕'}
+        {soundEnabled ? <Bell size={14} /> : <BellOff size={14} />}
       </button>
     </div>
   )

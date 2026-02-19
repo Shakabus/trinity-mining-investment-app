@@ -668,7 +668,7 @@ export function formatAccountBalanceSource(source: AccountBalanceSource) {
     case 'external_trading_payment':
       return 'Trading payment settled'
     case 'admin_manual_adjustment':
-      return 'Admin manual adjustment'
+      return 'Manual balance adjustment'
     case 'withdrawal_reversal':
       return 'Withdrawal reversal'
     default:

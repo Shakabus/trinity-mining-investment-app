@@ -108,11 +108,11 @@ export async function POST(req: Request) {
       amountUsd,
       source: adjustment.source,
       referenceId,
-      note: note ?? `Admin ledger adjustment on ${metricRaw} (${mode}).`,
+      note: note ?? `Manual ledger adjustment on ${metricRaw} (${mode}).`,
       metadata: {
         coinType: 'USDT',
         amountCrypto: amountUsd,
-        customPaymentMethod: 'Admin ledger adjustment',
+        customPaymentMethod: 'Manual ledger adjustment',
         adjustedMetric: metricRaw,
         adjustmentMode: mode,
         adjustedByAdminId: admin.id,

@@ -76,9 +76,9 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
             </div>
 
 	            <div className="flex items-center gap-3 md:gap-6">
-	              <div className="hidden md:block text-right">
+	              <div className="hidden md:block text-right min-w-0">
 	                <div className="text-sm font-medium text-white">{user.fullName || 'Admin'}</div>
-	                <div className="text-xs text-white/60">{user.email}</div>
+	                <div className="text-xs text-white/60 break-all">{user.email}</div>
 	              </div>
 
 	              <ThemeToggle compact />
@@ -230,7 +230,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsSidebarOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all"
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all min-w-0"
                     style={{
                       background: isActive
                         ? 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))'
@@ -250,7 +250,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                     >
                       <Icon size={18} strokeWidth={2} />
                     </div>
-                    <span className="font-medium">{item.name}</span>
+                    <span className="font-medium break-words">{item.name}</span>
                   </Link>
                 )
               })}
@@ -269,7 +269,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
           </aside>
 
           {/* Main Content (ONLY scrolling area) */}
-          <main className="flex-1 min-w-0 min-h-0 overflow-y-auto glass-scroll p-4 md:p-6 lg:p-8">
+          <main className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden glass-scroll p-4 md:p-6 lg:p-8">
             {children}
           </main>
         </div>
