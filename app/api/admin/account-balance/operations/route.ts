@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { randomUUID } from 'crypto'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { scalePlanHashrateDecimal } from '@/lib/mining-hashrate'
 import { getCryptoPricesUsd } from '@/lib/earnings'
@@ -519,10 +520,35 @@ async function applyTradingPlanReview(params: {
     convertUsdToCoin(params.amountUsd, coinType, prices)
 
   await prisma.$transaction(async tx => {
-    const tradingPlan = await tx.tradingUserPlan.findUnique({
-      where: { id: tradingUserPlanId },
-      include: { plan: true },
-    })
+    const tradingPlanRows = await tx.$queryRaw<
+      Array<{
+        id: number
+        userId: number
+        status: string
+        paymentStatus: string
+        durationHours: number
+        expectedReturnUsd: Prisma.Decimal | number
+        investmentUsd: Prisma.Decimal | number
+        planName: string | null
+      }>
+    >(
+      Prisma.sql`
+        SELECT
+          tup.id,
+          tup.user_id AS userId,
+          tup.status,
+          tup.payment_status AS paymentStatus,
+          tup.duration_hours AS durationHours,
+          tup.expected_return_usd AS expectedReturnUsd,
+          tup.investment_usd AS investmentUsd,
+          tp.name AS planName
+        FROM trading_user_plans tup
+        LEFT JOIN trading_plans tp ON tp.id = tup.plan_id
+        WHERE tup.id = ${tradingUserPlanId}
+        LIMIT 1
+      `
+    )
+    const tradingPlan = tradingPlanRows[0]
 
     if (!tradingPlan || tradingPlan.userId !== params.userId) {
       throw new HttpError(404, 'Trading plan request not found.')
@@ -542,8 +568,8 @@ async function applyTradingPlanReview(params: {
         referenceId: params.referenceId,
         note:
           params.decision === 'approve'
-            ? `Trading plan payment approved (${tradingPlan.plan.name}).`
-            : `Trading plan payment rejected (${tradingPlan.plan.name}).`,
+            ? `Trading plan payment approved (${tradingPlan.planName ?? 'Trading plan'}).`
+            : `Trading plan payment rejected (${tradingPlan.planName ?? 'Trading plan'}).`,
         metadata: {
           ...(params.metadata ?? {}),
           coinType,
@@ -558,116 +584,131 @@ async function applyTradingPlanReview(params: {
     )
 
     if (params.decision === 'reject') {
-      await tx.tradingUserPlan.update({
-        where: { id: tradingPlan.id },
-        data: {
-          status: 'rejected',
-          paymentStatus: 'rejected',
-          startDate: null,
-          endDate: null,
-        },
-      })
+      await tx.$executeRaw(
+        Prisma.sql`
+          UPDATE trading_user_plans
+          SET
+            status = 'rejected',
+            payment_status = 'rejected',
+            start_date = NULL,
+            end_date = NULL,
+            updated_at = NOW(3)
+          WHERE id = ${tradingPlan.id}
+        `
+      )
 
-      await tx.tradingPayment.updateMany({
-        where: {
-          tradingUserPlanId: tradingPlan.id,
-          status: 'pending',
-        },
-        data: {
-          status: 'rejected',
-            transactionId: 'Account Balance - Rejected',
-          confirmations: 0,
-          confirmedAt: null,
-          confirmedByAdminId: null,
-        },
-      })
+      await tx.$executeRaw(
+        Prisma.sql`
+          UPDATE trading_payments
+          SET
+            status = 'rejected',
+            transaction_id = 'Account Balance - Rejected',
+            confirmations = 0,
+            confirmed_at = NULL,
+            confirmed_by_admin_id = NULL
+          WHERE trading_user_plan_id = ${tradingPlan.id}
+            AND status = 'pending'
+        `
+      )
       return
     }
 
     const startDate = new Date()
     const endDate = new Date(startDate.getTime() + tradingPlan.durationHours * 60 * 60 * 1000)
 
-    await tx.tradingUserPlan.update({
-      where: { id: tradingPlan.id },
-      data: {
-        status: 'active',
-        paymentStatus: 'confirmed',
-        startDate,
-        endDate,
-      },
-    })
+    await tx.$executeRaw(
+      Prisma.sql`
+        UPDATE trading_user_plans
+        SET
+          status = 'active',
+          payment_status = 'confirmed',
+          start_date = ${startDate},
+          end_date = ${endDate},
+          updated_at = NOW(3)
+        WHERE id = ${tradingPlan.id}
+      `
+    )
 
     await tx.user.update({
       where: { id: tradingPlan.userId },
       data: { accountStatus: 'active' },
     })
 
-    const existingStats = await tx.tradingStat.findFirst({
-      where: { tradingUserPlanId: tradingPlan.id },
-    })
-    if (!existingStats) {
-      await tx.tradingStat.create({
-        data: {
-          userId: tradingPlan.userId,
-          tradingUserPlanId: tradingPlan.id,
-          isActive: true,
-          botSpeed: 1.0,
-          strategy: 'Portfolio Balance',
-          riskLevel: 'balanced',
-        },
-      })
+    const existingStats = await tx.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`
+        SELECT id
+        FROM trading_stats
+        WHERE trading_user_plan_id = ${tradingPlan.id}
+        LIMIT 1
+      `
+    )
+    if (existingStats.length === 0) {
+      await tx.$executeRaw(
+        Prisma.sql`
+          INSERT INTO trading_stats
+            (user_id, trading_user_plan_id, is_active, bot_speed, strategy, risk_level, updated_at)
+          VALUES
+            (${tradingPlan.userId}, ${tradingPlan.id}, ${true}, ${1.0}, ${'Portfolio Balance'}, ${'balanced'}, NOW(3))
+        `
+      )
     }
 
-    const existingEarnings = await tx.tradingEarning.findFirst({
-      where: { tradingUserPlanId: tradingPlan.id },
-    })
-    if (!existingEarnings) {
+    const existingEarnings = await tx.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`
+        SELECT id
+        FROM trading_earnings
+        WHERE trading_user_plan_id = ${tradingPlan.id}
+        LIMIT 1
+      `
+    )
+    if (existingEarnings.length === 0) {
       const durationDays = Math.max(1, tradingPlan.durationHours / 24)
-      await tx.tradingEarning.create({
-        data: {
-          userId: tradingPlan.userId,
-          tradingUserPlanId: tradingPlan.id,
-          totalEarnedUsd: 0,
-          dailyEstimateUsd: Number(tradingPlan.expectedReturnUsd) / durationDays,
-          isActive: true,
-        },
-      })
+      await tx.$executeRaw(
+        Prisma.sql`
+          INSERT INTO trading_earnings
+            (user_id, trading_user_plan_id, total_earned_usd, daily_estimate_usd, is_active, updated_at)
+          VALUES
+            (${tradingPlan.userId}, ${tradingPlan.id}, ${0}, ${Number(tradingPlan.expectedReturnUsd) / durationDays}, ${true}, NOW(3))
+        `
+      )
     }
 
-    const pendingPayment = await tx.tradingPayment.findFirst({
-      where: { tradingUserPlanId: tradingPlan.id, status: 'pending' },
-      orderBy: { createdAt: 'desc' },
-    })
+    const pendingPayment = await tx.$queryRaw<Array<{ id: number }>>(
+      Prisma.sql`
+        SELECT id
+        FROM trading_payments
+        WHERE trading_user_plan_id = ${tradingPlan.id}
+          AND status = 'pending'
+        ORDER BY created_at DESC
+        LIMIT 1
+      `
+    )
 
-    if (pendingPayment) {
-      await tx.tradingPayment.update({
-        where: { id: pendingPayment.id },
-        data: {
-          amountUsd: tradingPlan.investmentUsd,
-          cryptoType: coinType,
-          walletAddress: 'Account Balance',
-          transactionId: 'Account Balance - Approved',
-          status: 'confirmed',
-          confirmations: 999,
-          confirmedByAdminId: params.adminId,
-          confirmedAt: new Date(),
-        },
-      })
+    if (pendingPayment.length > 0) {
+      await tx.$executeRaw(
+        Prisma.sql`
+          UPDATE trading_payments
+          SET
+            amount_usd = ${Number(tradingPlan.investmentUsd)},
+            crypto_type = ${coinType},
+            wallet_address = ${'Account Balance'},
+            transaction_id = ${'Account Balance - Approved'},
+            status = ${'confirmed'},
+            confirmations = ${999},
+            confirmed_by_admin_id = ${params.adminId},
+            confirmed_at = ${new Date()}
+          WHERE id = ${pendingPayment[0].id}
+        `
+      )
     } else {
-      await tx.tradingPayment.create({
-        data: {
-          userId: tradingPlan.userId,
-          tradingUserPlanId: tradingPlan.id,
-          amountUsd: tradingPlan.investmentUsd,
-          cryptoType: coinType,
-          walletAddress: 'Account Balance',
-          transactionId: 'Account Balance - Approved',
-          status: 'confirmed',
-          confirmations: 999,
-          confirmedByAdminId: params.adminId,
-          confirmedAt: new Date(),
-        },
-      })
+      await tx.$executeRaw(
+        Prisma.sql`
+          INSERT INTO trading_payments
+            (user_id, trading_user_plan_id, amount_usd, crypto_type, wallet_address, transaction_id, status, confirmations, confirmed_by_admin_id, confirmed_at)
+          VALUES
+            (${tradingPlan.userId}, ${tradingPlan.id}, ${Number(tradingPlan.investmentUsd)}, ${coinType}, ${'Account Balance'}, ${'Account Balance - Approved'}, ${'confirmed'}, ${999}, ${params.adminId}, ${new Date()})
+        `
+      )
     }
   }, { maxWait: 5_000, timeout: 30_000 })
 
