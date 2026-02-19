@@ -934,7 +934,7 @@ export default async function DashboardPage() {
           )}
 
           {(activeMiningPlan || activeTradingPlan) && (
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
+            <div className="mt-4 grid grid-cols-2 gap-4 md:gap-6">
               <div>
                 <div className="text-xs md:text-sm text-white/60 mb-1">Active Plans</div>
                 <div className="text-base md:text-lg font-semibold text-white">
