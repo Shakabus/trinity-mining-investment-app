@@ -10,6 +10,7 @@ interface LiveNotificationTickerProps {
   label?: string
   emptyText?: string
   pollIntervalMs?: number
+  tickerDurationSec?: number
 }
 
 const SOUND_STORAGE_KEY = 'live_notification_sound_enabled'
@@ -27,6 +28,7 @@ export default function LiveNotificationTicker({
   label = 'Live updates',
   emptyText = 'No updates yet.',
   pollIntervalMs = 12000,
+  tickerDurationSec = 74,
 }: LiveNotificationTickerProps) {
   const [items, setItems] = useState<NotificationTickerItem[]>([])
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -156,7 +158,12 @@ export default function LiveNotificationTicker({
   }
 
   return (
-    <div className={styles.wrapper} role="status" aria-live="polite">
+    <div
+      className={styles.wrapper}
+      role="status"
+      aria-live="polite"
+      style={{ ['--ticker-duration' as string]: `${tickerDurationSec}s` }}
+    >
       <span className={styles.label}>{label}</span>
       <div className={styles.viewport}>
         {renderedItems.length === 0 ? (

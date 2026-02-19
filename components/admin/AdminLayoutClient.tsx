@@ -101,7 +101,11 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
             </div>
           </div>
         </nav>
-        <LiveNotificationTicker endpoint="/api/admin/notifications/ticker" label="Admin live updates" />
+        <LiveNotificationTicker
+          endpoint="/api/admin/notifications/ticker"
+          label="Admin live updates"
+          tickerDurationSec={260}
+        />
 
         <div className="flex flex-1 min-h-0">
           {/* Overlay */}

@@ -1,4 +1,5 @@
 .wrapper {
+  --ticker-duration: 74s;
   position: relative;
   display: flex;
   align-items: center;
@@ -51,7 +52,7 @@
   min-width: max-content;
   align-items: center;
   gap: 0.95rem;
-  animation: ticker-marquee 74s linear infinite;
+  animation: ticker-marquee var(--ticker-duration) linear infinite;
   will-change: transform;
 }
 
@@ -111,7 +112,7 @@
   }
 
   .track {
-    animation-duration: 90s;
+    animation-duration: var(--ticker-duration);
   }
 
   .item {
