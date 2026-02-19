@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ShieldAlert, X } from 'lucide-react'
 
 type FreezeStatusPayload = {
@@ -12,59 +12,90 @@ type FreezeStatusPayload = {
 }
 
 const REMINDER_COOLDOWN_MS = 60_000
+const POLL_INTERVAL_MS = 10_000
 
 export default function AccountFreezeAlertPopup() {
   const [payload, setPayload] = useState<FreezeStatusPayload | null>(null)
   const [visible, setVisible] = useState(false)
-  const [dismissedUntil, setDismissedUntil] = useState(0)
-  const [lastSignature, setLastSignature] = useState('')
+  const dismissedUntilRef = useRef(0)
+  const lastSignatureRef = useRef('')
+  const payloadRef = useRef<FreezeStatusPayload | null>(null)
+  const mountedRef = useRef(false)
+
+  const syncVisibility = useCallback((next: FreezeStatusPayload) => {
+    if (!next.active) {
+      setVisible(false)
+      dismissedUntilRef.current = 0
+      lastSignatureRef.current = ''
+      return
+    }
+
+    const now = Date.now()
+    const hasChanged = next.signature !== lastSignatureRef.current
+    if (hasChanged) {
+      lastSignatureRef.current = next.signature
+      dismissedUntilRef.current = 0
+      setVisible(true)
+      return
+    }
+
+    if (now >= dismissedUntilRef.current) {
+      setVisible(true)
+    }
+  }, [])
+
+  const load = useCallback(async () => {
+    try {
+      const response = await fetch('/api/user/account-balance/freeze-status', {
+        method: 'GET',
+        cache: 'no-store',
+      })
+      if (!response.ok) return
+
+      const next = (await response.json()) as FreezeStatusPayload
+      if (!mountedRef.current) return
+
+      payloadRef.current = next
+      setPayload(next)
+      syncVisibility(next)
+    } catch {
+      // Keep silent. Popup should not crash dashboard on transient errors.
+    } finally {
+      const current = payloadRef.current
+      if (current?.active && Date.now() >= dismissedUntilRef.current) {
+        setVisible(true)
+      }
+    }
+  }, [syncVisibility])
 
   useEffect(() => {
-    let isMounted = true
+    mountedRef.current = true
+    void load()
 
-    const load = async () => {
-      try {
-        const response = await fetch('/api/user/account-balance/freeze-status', {
-          method: 'GET',
-          cache: 'no-store',
-        })
-        if (!response.ok) return
+    const intervalId = window.setInterval(() => {
+      void load()
+    }, POLL_INTERVAL_MS)
 
-        const next = (await response.json()) as FreezeStatusPayload
-        if (!isMounted) return
-        setPayload(next)
+    const handleFocus = () => {
+      void load()
+    }
 
-        if (!next.active) {
-          setVisible(false)
-          setDismissedUntil(0)
-          setLastSignature('')
-          return
-        }
-
-        const now = Date.now()
-        const hasChanged = next.signature !== lastSignature
-        if (hasChanged) {
-          setLastSignature(next.signature)
-          setDismissedUntil(0)
-          setVisible(true)
-          return
-        }
-
-        if (now >= dismissedUntil) {
-          setVisible(true)
-        }
-      } catch {
-        // Keep silent. Popup should not crash dashboard on transient errors.
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        void load()
       }
     }
 
-    void load()
-    const intervalId = window.setInterval(load, 30_000)
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => {
-      isMounted = false
+      mountedRef.current = false
       window.clearInterval(intervalId)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [dismissedUntil, lastSignature])
+  }, [load])
 
   const freezeReasons = useMemo(() => payload?.reasons ?? [], [payload])
   if (!payload?.active || !visible) return null
@@ -104,7 +135,7 @@ export default function AccountFreezeAlertPopup() {
             type="button"
             onClick={() => {
               setVisible(false)
-              setDismissedUntil(Date.now() + REMINDER_COOLDOWN_MS)
+              dismissedUntilRef.current = Date.now() + REMINDER_COOLDOWN_MS
             }}
             className="rounded-lg p-1.5 hover:bg-white/10 transition-colors"
             aria-label="Dismiss freeze alert"
@@ -116,7 +147,7 @@ export default function AccountFreezeAlertPopup() {
         <div className="mt-3 space-y-1.5">
           {freezeReasons.slice(0, 6).map(reason => (
             <div key={reason} className="text-xs md:text-sm text-red-50/95">
-              • {reason}
+              - {reason}
             </div>
           ))}
         </div>
@@ -130,4 +161,3 @@ export default function AccountFreezeAlertPopup() {
     </div>
   )
 }
-
