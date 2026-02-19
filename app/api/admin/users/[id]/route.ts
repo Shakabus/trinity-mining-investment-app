@@ -358,26 +358,44 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     if (action === 'updateUser') {
-      const role = readStringField(body, 'role', { required: true, enumValues: ['user', 'admin'] })!
+      const role = readStringField(body, 'role', { enumValues: ['user', 'admin'] })
       const accountStatus = readStringField(body, 'accountStatus', {
-        required: true,
         enumValues: ['inactive', 'pending', 'active', 'suspended'],
-      })!
+      })
+
+      if (!role && !accountStatus) {
+        return NextResponse.json(
+          { error: 'Provide role or account status to update.' },
+          { status: 400 }
+        )
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true, accountStatus: true },
+      })
+
+      if (!existingUser) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
 
       await prisma.user.update({
         where: { id: userId },
         data: {
-          role,
-          accountStatus,
+          role: role ?? undefined,
+          accountStatus: accountStatus ?? undefined,
         },
       })
+
+      const nextRole = role ?? existingUser.role
+      const nextStatus = accountStatus ?? existingUser.accountStatus
 
       await prisma.adminActivityLog.create({
         data: {
           actorAdminId: adminUser.id,
           targetUserId: userId,
           action: 'updateUser',
-          detail: `Role: ${role}, Status: ${accountStatus}.`,
+          detail: `Role: ${nextRole}, Status: ${nextStatus}.`,
         },
       })
 
