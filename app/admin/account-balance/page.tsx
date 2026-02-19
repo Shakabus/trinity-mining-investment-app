@@ -10,6 +10,7 @@ import AccountBalanceOperationApproval, {
 } from '@/components/admin/AccountBalanceOperationApproval'
 import AccountBalanceManualAdjustments from '@/components/admin/AccountBalanceManualAdjustments'
 import AccountBalanceLedgerPanel from '@/components/admin/AccountBalanceLedgerPanel'
+import AccountActivityLogManager from '@/components/admin/AccountActivityLogManager'
 import {
   REAL_ESTATE_BUY_IN_TICKET_PREFIX,
   REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
@@ -82,6 +83,16 @@ type UserBalanceSummary = {
   topPropertyUsd: number
   latestAt: string | null
   history: UserBalanceHistoryRow[]
+}
+
+type AccountActivityLogRow = {
+  id: number
+  userId: number
+  userName: string
+  userEmail: string
+  action: string
+  detail: string | null
+  createdAt: string
 }
 
 const asNumber = (value: unknown) => {
@@ -334,6 +345,36 @@ export default async function AdminAccountBalancePage() {
     })
     .filter((entry): entry is ManualAdjustmentRow => Boolean(entry))
     .slice(0, 80)
+
+  const accountActivityRows: AccountActivityLogRow[] = (
+    await prisma.userActivityLog.findMany({
+      where: {
+        action: {
+          startsWith: 'Account',
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 260,
+      select: {
+        id: true,
+        userId: true,
+        action: true,
+        detail: true,
+        createdAt: true,
+      },
+    })
+  ).map(log => {
+    const user = userMap.get(log.userId)
+    return {
+      id: log.id,
+      userId: log.userId,
+      userName: user?.fullName || user?.email || `User #${log.userId}`,
+      userEmail: user?.email || '',
+      action: log.action,
+      detail: log.detail,
+      createdAt: log.createdAt.toISOString(),
+    }
+  })
 
   const manualUsers = users.map(user => ({
     id: user.id,
@@ -664,6 +705,8 @@ export default async function AdminAccountBalancePage() {
           <div id="manual-adjustments">
             <AccountBalanceManualAdjustments users={manualUsers} adjustments={manualAdjustments} />
           </div>
+
+          <AccountActivityLogManager logs={accountActivityRows} />
 
           {operations.length === 0 ? (
             <div

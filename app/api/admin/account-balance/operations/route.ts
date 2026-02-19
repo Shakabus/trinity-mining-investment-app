@@ -20,13 +20,14 @@ import {
 } from '@/lib/crypto-prices'
 import {
   isInputValidationError,
+  readBooleanField,
   readJsonObject,
   readNumberField,
   readStringField,
 } from '@/lib/requestValidation'
 import { logUserActivity } from '@/lib/user-activity'
 
-const ACCOUNT_BALANCE_OPERATION_FIELDS = ['source', 'referenceId', 'decision', 'note'] as const
+const ACCOUNT_BALANCE_OPERATION_FIELDS = ['source', 'referenceId', 'decision', 'note', 'notifyUser'] as const
 const ACCOUNT_BALANCE_MANUAL_CREATE_FIELDS = [
   'userId',
   'adjustmentType',
@@ -34,8 +35,9 @@ const ACCOUNT_BALANCE_MANUAL_CREATE_FIELDS = [
   'coinType',
   'paymentMethod',
   'note',
+  'notifyUser',
 ] as const
-const ACCOUNT_BALANCE_MANUAL_DELETE_FIELDS = ['entryId', 'reason'] as const
+const ACCOUNT_BALANCE_MANUAL_DELETE_FIELDS = ['entryId', 'reason', 'notifyUser', 'logType'] as const
 const REVIEWABLE_SOURCES = [
   'funding_deposit',
   'mining_plan_purchase',
@@ -132,6 +134,7 @@ async function applyFundingReview(params: {
   note?: string
   decision: 'approve' | 'reject'
   adminId: number
+  notifyUser: boolean
 }) {
   const rawCoin = readMetadataString(params.metadata, 'coinType')?.toUpperCase() ?? 'USDT'
   const coinType: TrackedAssetCoin = isTrackedAssetCoin(rawCoin) ? rawCoin : 'USDT'
@@ -163,14 +166,16 @@ async function applyFundingReview(params: {
     },
   })
 
-  await logUserActivity({
-    userId: params.userId,
-    action: params.decision === 'approve' ? 'AccountFundingApproved' : 'AccountFundingRejected',
-    detail:
-      params.decision === 'approve'
-        ? `Funding request approved for $${params.amountUsd.toFixed(2)}.`
-        : `Funding request rejected for $${params.amountUsd.toFixed(2)}.`,
-  })
+  if (params.notifyUser) {
+    await logUserActivity({
+      userId: params.userId,
+      action: params.decision === 'approve' ? 'AccountFundingApproved' : 'AccountFundingRejected',
+      detail:
+        params.decision === 'approve'
+          ? `Funding request approved for $${params.amountUsd.toFixed(2)}.`
+          : `Funding request rejected for $${params.amountUsd.toFixed(2)}.`,
+    })
+  }
 }
 
 async function applyMiningPlanReview(params: {
@@ -181,6 +186,7 @@ async function applyMiningPlanReview(params: {
   note?: string
   decision: 'approve' | 'reject'
   adminId: number
+  notifyUser: boolean
 }) {
   const userPlanId = readMetadataNumber(params.metadata, 'userPlanId')
   if (!userPlanId) {
@@ -475,17 +481,19 @@ async function applyMiningPlanReview(params: {
     }
   }, { maxWait: 5_000, timeout: 30_000 })
 
-  await logUserActivity({
-    userId: params.userId,
-    action:
-      params.decision === 'approve'
-        ? 'AccountBalancePlanPurchaseApproved'
-        : 'AccountBalancePlanPurchaseRejected',
-    detail:
-      params.decision === 'approve'
-        ? 'Mining plan payment from account balance approved.'
-        : 'Mining plan payment from account balance rejected.',
-  })
+  if (params.notifyUser) {
+    await logUserActivity({
+      userId: params.userId,
+      action:
+        params.decision === 'approve'
+          ? 'AccountBalancePlanPurchaseApproved'
+          : 'AccountBalancePlanPurchaseRejected',
+      detail:
+        params.decision === 'approve'
+          ? 'Mining plan payment from account balance approved.'
+          : 'Mining plan payment from account balance rejected.',
+    })
+  }
 }
 
 async function applyTradingPlanReview(params: {
@@ -496,6 +504,7 @@ async function applyTradingPlanReview(params: {
   note?: string
   decision: 'approve' | 'reject'
   adminId: number
+  notifyUser: boolean
 }) {
   const tradingUserPlanId = readMetadataNumber(params.metadata, 'tradingUserPlanId')
   if (!tradingUserPlanId) {
@@ -662,17 +671,19 @@ async function applyTradingPlanReview(params: {
     }
   }, { maxWait: 5_000, timeout: 30_000 })
 
-  await logUserActivity({
-    userId: params.userId,
-    action:
-      params.decision === 'approve'
-        ? 'AccountBalanceTradingPurchaseApproved'
-        : 'AccountBalanceTradingPurchaseRejected',
-    detail:
-      params.decision === 'approve'
-        ? 'Trading plan payment from account balance approved.'
-        : 'Trading plan payment from account balance rejected.',
-  })
+  if (params.notifyUser) {
+    await logUserActivity({
+      userId: params.userId,
+      action:
+        params.decision === 'approve'
+          ? 'AccountBalanceTradingPurchaseApproved'
+          : 'AccountBalanceTradingPurchaseRejected',
+      detail:
+        params.decision === 'approve'
+          ? 'Trading plan payment from account balance approved.'
+          : 'Trading plan payment from account balance rejected.',
+    })
+  }
 }
 
 async function applyRealEstateReview(params: {
@@ -683,6 +694,7 @@ async function applyRealEstateReview(params: {
   note?: string
   decision: 'approve' | 'reject'
   adminId: number
+  notifyUser: boolean
 }) {
   const ticketId =
     readMetadataNumber(params.metadata, 'ticketId') ??
@@ -733,17 +745,19 @@ async function applyRealEstateReview(params: {
     })
   })
 
-  await logUserActivity({
-    userId: params.userId,
-    action:
-      params.decision === 'approve'
-        ? 'RealEstateBuyInApproved'
-        : 'RealEstateBuyInRejected',
-    detail:
-      params.decision === 'approve'
-        ? 'Real estate buy-in approved.'
-        : 'Real estate buy-in rejected.',
-  })
+  if (params.notifyUser) {
+    await logUserActivity({
+      userId: params.userId,
+      action:
+        params.decision === 'approve'
+          ? 'RealEstateBuyInApproved'
+          : 'RealEstateBuyInRejected',
+      detail:
+        params.decision === 'approve'
+          ? 'Real estate buy-in approved.'
+          : 'Real estate buy-in rejected.',
+    })
+  }
 }
 
 async function applyAccountWithdrawalReview(params: {
@@ -754,6 +768,7 @@ async function applyAccountWithdrawalReview(params: {
   note?: string
   decision: 'approve' | 'reject'
   adminId: number
+  notifyUser: boolean
 }) {
   await createAccountBalanceEntry({
     userId: params.userId,
@@ -774,17 +789,19 @@ async function applyAccountWithdrawalReview(params: {
     },
   })
 
-  await logUserActivity({
-    userId: params.userId,
-    action:
-      params.decision === 'approve'
-        ? 'AccountBalanceWithdrawalApproved'
-        : 'AccountBalanceWithdrawalRejected',
-    detail:
-      params.decision === 'approve'
-        ? `Account withdrawal approved for $${params.amountUsd.toFixed(2)}.`
-        : `Account withdrawal rejected for $${params.amountUsd.toFixed(2)}.`,
-  })
+  if (params.notifyUser) {
+    await logUserActivity({
+      userId: params.userId,
+      action:
+        params.decision === 'approve'
+          ? 'AccountBalanceWithdrawalApproved'
+          : 'AccountBalanceWithdrawalRejected',
+      detail:
+        params.decision === 'approve'
+          ? `Account withdrawal approved for $${params.amountUsd.toFixed(2)}.`
+          : `Account withdrawal rejected for $${params.amountUsd.toFixed(2)}.`,
+    })
+  }
 }
 
 export async function PATCH(req: Request) {
@@ -806,6 +823,7 @@ export async function PATCH(req: Request) {
       enumValues: ['approve', 'reject'],
     }) as 'approve' | 'reject'
     const note = readStringField(body, 'note', { maxLength: 240 }) || undefined
+    const notifyUser = readBooleanField(body, 'notifyUser') ?? true
 
     const latestEntry = await getLatestOperationEntry(sourceRaw, referenceId)
     if (!latestEntry) {
@@ -823,6 +841,7 @@ export async function PATCH(req: Request) {
       note,
       decision,
       adminId: adminUser.id,
+      notifyUser,
     }
 
     if (sourceRaw === 'funding_deposit') {
@@ -895,6 +914,7 @@ export async function POST(req: Request) {
       maxLength: 120,
     })!
     const note = readStringField(body, 'note', { maxLength: 240 }) || undefined
+    const notifyUser = readBooleanField(body, 'notifyUser') ?? true
 
     if (!isTrackedAssetCoin(coinTypeRaw)) {
       return NextResponse.json({ error: 'Unsupported coin type.' }, { status: 400 })
@@ -956,11 +976,13 @@ export async function POST(req: Request) {
       },
     })
 
-    await logUserActivity({
-      userId: targetUserId,
-      action: 'AccountBalanceManualAdjustmentRecorded',
-      detail: `${adjustmentTypeRaw === 'deposit' ? 'Manual deposit' : 'Manual withdrawal'} recorded for $${amountUsd.toFixed(2)} via ${paymentMethod}.`,
-    })
+    if (notifyUser) {
+      await logUserActivity({
+        userId: targetUserId,
+        action: 'AccountBalanceManualAdjustmentRecorded',
+        detail: `${adjustmentTypeRaw === 'deposit' ? 'Manual deposit' : 'Manual withdrawal'} recorded for $${amountUsd.toFixed(2)} via ${paymentMethod}.`,
+      })
+    }
 
     return NextResponse.json({
       success: true,
@@ -1001,22 +1023,53 @@ export async function DELETE(req: Request) {
       min: 1,
     })!
     const reason = readStringField(body, 'reason', { maxLength: 240 }) || 'Manual correction.'
+    const notifyUser = readBooleanField(body, 'notifyUser') ?? true
+    const logType = readStringField(body, 'logType', { enumValues: ['manual_adjustment', 'activity'] }) || 'manual_adjustment'
 
     const log = await prisma.userActivityLog.findUnique({
       where: { id: entryId },
       select: { id: true, userId: true, action: true, detail: true },
     })
 
-    if (!log || log.action !== ACCOUNT_BALANCE_ENTRY_ACTION) {
+    if (!log) {
       return NextResponse.json({ error: 'Transaction record not found.' }, { status: 404 })
     }
 
-    const parsed = parseAccountBalanceEntryDetail(log.detail)
-    if (!parsed || parsed.source !== 'admin_manual_adjustment') {
-      return NextResponse.json(
-        { error: 'Only manual admin adjustments can be removed from this control.' },
-        { status: 400 }
-      )
+    let adminLogAction = 'accountBalanceActivityLogRemoved'
+    let adminLogDetail = `Removed user activity log #${log.id}. Reason: ${reason}`
+    let userAction = 'AccountActivityLogRemovedByAdmin'
+    let userDetail = 'An account activity log entry was removed during an admin correction.'
+
+    if (logType === 'manual_adjustment') {
+      if (log.action !== ACCOUNT_BALANCE_ENTRY_ACTION) {
+        return NextResponse.json(
+          { error: 'This record is not a manual account-balance adjustment entry.' },
+          { status: 400 }
+        )
+      }
+      const parsed = parseAccountBalanceEntryDetail(log.detail)
+      if (!parsed || parsed.source !== 'admin_manual_adjustment') {
+        return NextResponse.json(
+          { error: 'Only manual admin adjustments can be removed from this control.' },
+          { status: 400 }
+        )
+      }
+      adminLogAction = 'accountBalanceManualAdjustmentRemoved'
+      adminLogDetail = `Removed manual adjustment ${parsed.referenceId}. Reason: ${reason}`
+      userAction = 'AccountBalanceManualAdjustmentRemoved'
+      userDetail = 'Manual account-balance adjustment record was removed.'
+    } else {
+      const isAccountRelatedActivity =
+        log.action.startsWith('Account') ||
+        log.action === 'RealEstateBuyInApproved' ||
+        log.action === 'RealEstateBuyInRejected'
+
+      if (!isAccountRelatedActivity) {
+        return NextResponse.json(
+          { error: 'Only account-related activity logs can be removed from this control.' },
+          { status: 400 }
+        )
+      }
     }
 
     await prisma.userActivityLog.delete({
@@ -1027,16 +1080,18 @@ export async function DELETE(req: Request) {
       data: {
         actorAdminId: adminUser.id,
         targetUserId: log.userId,
-        action: 'accountBalanceManualAdjustmentRemoved',
-        detail: `Removed manual adjustment ${parsed.referenceId}. Reason: ${reason}`,
+        action: adminLogAction,
+        detail: adminLogDetail,
       },
     })
 
-    await logUserActivity({
-      userId: log.userId,
-      action: 'AccountBalanceManualAdjustmentRemoved',
-      detail: 'Manual account-balance adjustment record was removed.',
-    })
+    if (notifyUser) {
+      await logUserActivity({
+        userId: log.userId,
+        action: userAction,
+        detail: userDetail,
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -1046,7 +1101,7 @@ export async function DELETE(req: Request) {
     if (isInputValidationError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })
     }
-    console.error('Delete manual account-balance adjustment error:', error)
+    console.error('Delete account activity log error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

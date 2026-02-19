@@ -6,6 +6,7 @@ import {
   formatAccountBalanceSource,
   parseAccountBalanceEntryDetail,
 } from '@/lib/account-balance'
+import { getFinancialNewsTickerItems } from '@/lib/financial-news'
 import { REAL_ESTATE_BUY_IN_TICKET_PREFIX } from '@/lib/real-estate-dashboard'
 import {
   normalizeTickerText,
@@ -234,6 +235,15 @@ async function buildUserTickerState(userId: number): Promise<UserTickerCacheStat
       tone: isMatured ? 'success' : 'warning',
       createdAt: maturityDate.toISOString(),
       href: '/dashboard/real-estate/my-properties',
+    })
+  }
+
+  const financialNewsItems = await getFinancialNewsTickerItems(16)
+  for (const item of financialNewsItems) {
+    items.push({
+      ...item,
+      id: `user-${item.id}`,
+      href: '/dashboard/activity',
     })
   }
 

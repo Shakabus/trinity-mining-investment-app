@@ -43,6 +43,7 @@ export default function AccountBalanceOperationApproval({
   const { showToast } = useToast()
   const [isBusy, setIsBusy] = useState(false)
   const [note, setNote] = useState('')
+  const [notifyUser, setNotifyUser] = useState(true)
   const [status, setStatus] = useState<'idle' | 'approved' | 'rejected' | 'error'>('idle')
 
   const review = async (decision: 'approve' | 'reject') => {
@@ -56,6 +57,7 @@ export default function AccountBalanceOperationApproval({
           referenceId: operation.referenceId,
           decision,
           note,
+          notifyUser,
         }),
       })
 
@@ -147,6 +149,16 @@ export default function AccountBalanceOperationApproval({
         placeholder="Optional note"
         className="w-full min-h-20 rounded-lg bg-white/5 border border-white/15 px-3 py-2 text-sm text-white placeholder:text-white/35"
       />
+
+      <label className="flex items-center gap-2 text-xs text-white/75">
+        <input
+          type="checkbox"
+          checked={notifyUser}
+          onChange={event => setNotifyUser(event.target.checked)}
+          className="h-4 w-4 rounded border border-white/25 bg-white/10"
+        />
+        Send activity update to user after this review
+      </label>
 
       {status === 'error' && (
         <div className="text-sm text-rose-300">Request review failed. Check log and retry.</div>

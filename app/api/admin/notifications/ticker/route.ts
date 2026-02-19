@@ -2,6 +2,7 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { REAL_ESTATE_BUY_IN_TICKET_PREFIX } from '@/lib/real-estate-dashboard'
+import { getFinancialNewsTickerItems } from '@/lib/financial-news'
 import {
   normalizeTickerText,
   parseRealEstateDurationMonths,
@@ -270,6 +271,15 @@ async function buildAdminTickerState(): Promise<AdminTickerCacheState> {
       tone: isMatured ? 'success' : 'warning',
       createdAt: maturityDate.toISOString(),
       href: '/admin/settings',
+    })
+  }
+
+  const financialNewsItems = await getFinancialNewsTickerItems(16)
+  for (const item of financialNewsItems) {
+    items.push({
+      ...item,
+      id: `admin-${item.id}`,
+      href: '/admin',
     })
   }
 

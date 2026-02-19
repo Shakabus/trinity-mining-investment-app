@@ -90,6 +90,7 @@ export default function AccountBalanceLedgerPanel({ summaries }: Props) {
   const [editMode, setEditMode] = useState<'increase' | 'decrease'>('increase')
   const [editAmount, setEditAmount] = useState('')
   const [editNote, setEditNote] = useState('')
+  const [notifyUser, setNotifyUser] = useState(true)
   const [isSavingEdit, setIsSavingEdit] = useState(false)
 
   const filtered = useMemo(() => {
@@ -126,6 +127,7 @@ export default function AccountBalanceLedgerPanel({ summaries }: Props) {
           mode: editMode,
           amountUsd,
           note: editNote.trim() || undefined,
+          notifyUser,
         }),
       })
 
@@ -356,6 +358,15 @@ export default function AccountBalanceLedgerPanel({ summaries }: Props) {
                   </button>
                 </div>
               </div>
+              <label className="flex items-center gap-2 text-xs text-white/75">
+                <input
+                  type="checkbox"
+                  checked={notifyUser}
+                  onChange={event => setNotifyUser(event.target.checked)}
+                  className="h-4 w-4 rounded border border-white/25 bg-white/10"
+                />
+                Send activity update to user after this ledger change
+              </label>
             </div>
           ) : null}
 

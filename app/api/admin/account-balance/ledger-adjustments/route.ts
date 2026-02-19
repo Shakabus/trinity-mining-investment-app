@@ -3,9 +3,10 @@ import { auth } from '@clerk/nextjs/server'
 import { randomUUID } from 'crypto'
 import { prisma } from '@/lib/db'
 import { createAccountBalanceEntry, type AccountBalanceDirection, type AccountBalanceSource } from '@/lib/account-balance'
-import { isInputValidationError, readJsonObject, readNumberField, readStringField } from '@/lib/requestValidation'
+import { logUserActivity } from '@/lib/user-activity'
+import { isInputValidationError, readBooleanField, readJsonObject, readNumberField, readStringField } from '@/lib/requestValidation'
 
-const LEDGER_ADJUSTMENT_FIELDS = ['userId', 'metric', 'mode', 'amountUsd', 'note'] as const
+const LEDGER_ADJUSTMENT_FIELDS = ['userId', 'metric', 'mode', 'amountUsd', 'note', 'notifyUser'] as const
 
 const EDITABLE_METRICS = [
   'balanceUsd',
@@ -87,6 +88,7 @@ export async function POST(req: Request) {
     }) as 'increase' | 'decrease'
     const amountUsd = readNumberField(body, 'amountUsd', { required: true, min: 0.01, max: 100000000 })!
     const note = readStringField(body, 'note', { maxLength: 240 }) || undefined
+    const notifyUser = readBooleanField(body, 'notifyUser') ?? true
 
     const targetUser = await prisma.user.findUnique({
       where: { id: userId },
@@ -126,6 +128,14 @@ export async function POST(req: Request) {
         detail: `${metricRaw} ${mode} by $${amountUsd.toFixed(2)}.`,
       },
     })
+
+    if (notifyUser) {
+      await logUserActivity({
+        userId,
+        action: 'AccountBalanceLedgerAdjusted',
+        detail: `Account metric ${metricRaw} was ${mode}d by $${amountUsd.toFixed(2)}.`,
+      })
+    }
 
     return NextResponse.json({
       success: true,

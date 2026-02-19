@@ -45,6 +45,7 @@ export default function AccountBalanceManualAdjustments({ users, adjustments }: 
   const [coinType, setCoinType] = useState<(typeof COIN_OPTIONS)[number]>('USDT')
   const [paymentMethod, setPaymentMethod] = useState('')
   const [note, setNote] = useState('')
+  const [notifyUser, setNotifyUser] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [removingEntryId, setRemovingEntryId] = useState<number | null>(null)
 
@@ -76,6 +77,7 @@ export default function AccountBalanceManualAdjustments({ users, adjustments }: 
           coinType,
           paymentMethod: paymentMethod.trim(),
           note: note.trim() || undefined,
+          notifyUser,
         }),
       })
 
@@ -103,7 +105,7 @@ export default function AccountBalanceManualAdjustments({ users, adjustments }: 
       const response = await fetch('/api/admin/account-balance/operations', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entryId, reason }),
+        body: JSON.stringify({ entryId, reason, notifyUser, logType: 'manual_adjustment' }),
       })
       if (!response.ok) {
         const data = await response.json().catch(() => null)
@@ -255,6 +257,16 @@ export default function AccountBalanceManualAdjustments({ users, adjustments }: 
           >
             Save Custom Transaction
           </LoadingButton>
+
+          <label className="flex items-center gap-2 text-xs text-white/75">
+            <input
+              type="checkbox"
+              checked={notifyUser}
+              onChange={event => setNotifyUser(event.target.checked)}
+              className="h-4 w-4 rounded border border-white/25 bg-white/10"
+            />
+            Send activity update to user after create/remove
+          </label>
         </div>
       )}
 
