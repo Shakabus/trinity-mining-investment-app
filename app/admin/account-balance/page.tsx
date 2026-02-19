@@ -8,8 +8,11 @@ import AccountBalanceOperationApproval, {
   type AccountBalanceOperationRow,
 } from '@/components/admin/AccountBalanceOperationApproval'
 import AccountBalanceManualAdjustments from '@/components/admin/AccountBalanceManualAdjustments'
-import { REAL_ESTATE_BUY_IN_TICKET_PREFIX } from '@/lib/real-estate-dashboard'
-import Link from 'next/link'
+import AccountBalanceLedgerPanel from '@/components/admin/AccountBalanceLedgerPanel'
+import {
+  REAL_ESTATE_BUY_IN_TICKET_PREFIX,
+  REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX,
+} from '@/lib/real-estate-dashboard'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,6 +70,15 @@ type UserBalanceSummary = {
   totalInvestedUsd: number
   totalCreditsUsd: number
   totalDebitsUsd: number
+  totalProfitUsd: number
+  topReturnLabel: string | null
+  topReturnUsd: number
+  topMiningPlanLabel: string | null
+  topMiningPlanUsd: number
+  topTradingPlanLabel: string | null
+  topTradingPlanUsd: number
+  topPropertyLabel: string | null
+  topPropertyUsd: number
   latestAt: string | null
   history: UserBalanceHistoryRow[]
 }
@@ -78,6 +90,11 @@ const asNumber = (value: unknown) => {
 
 const asString = (value: unknown) =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+
+const asCurrencyNumber = (value: unknown) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Number(parsed.toFixed(2)) : 0
+}
 
 const WITHDRAWAL_SOURCES = new Set([
   'account_balance_withdrawal',
@@ -92,6 +109,26 @@ const INVESTMENT_SOURCES = new Set([
   'trading_plan_purchase',
   'real_estate_buy_in',
 ])
+
+const getTopLabelAndTotal = (items: Map<string, number>) => {
+  let label: string | null = null
+  let amount = 0
+  let total = 0
+
+  for (const [entryLabel, entryAmount] of items.entries()) {
+    total += entryAmount
+    if (entryAmount > amount) {
+      amount = entryAmount
+      label = entryLabel
+    }
+  }
+
+  return {
+    label,
+    amount: Number(amount.toFixed(2)),
+    total: Number(total.toFixed(2)),
+  }
+}
 
 export default async function AdminAccountBalancePage() {
   const logs = await prisma.userActivityLog.findMany({
@@ -140,7 +177,6 @@ export default async function AdminAccountBalancePage() {
   const users = await prisma.user.findMany({
     select: { id: true, fullName: true, email: true },
     orderBy: { createdAt: 'desc' },
-    take: 5000,
   })
   const userMap = new Map(users.map(user => [user.id, user]))
 
@@ -210,13 +246,13 @@ export default async function AdminAccountBalancePage() {
       const userPlanId = asNumber(row.metadata?.userPlanId)
       const plan = userPlanId ? miningPlanMap.get(userPlanId) : null
       subtitle = plan
-        ? `${plan.plan.name} • ${plan.selectedDurationDays} days`
+        ? `${plan.plan.name} - ${plan.selectedDurationDays} days`
         : 'Mining plan payment from account balance'
     } else if (row.source === 'trading_plan_purchase') {
       const tradingUserPlanId = asNumber(row.metadata?.tradingUserPlanId)
       const plan = tradingUserPlanId ? tradingPlanMap.get(tradingUserPlanId) : null
       subtitle = plan
-        ? `${plan.plan.name} • ${plan.durationHours} hours`
+        ? `${plan.plan.name} - ${plan.durationHours} hours`
         : 'Trading plan payment from account balance'
     } else if (row.source === 'real_estate_buy_in') {
       const ticketId =
@@ -336,7 +372,36 @@ export default async function AdminAccountBalancePage() {
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
   )
 
-  const userBalanceMap = new Map<number, UserBalanceSummary>()
+  const userBalanceMap = new Map<number, UserBalanceSummary>(
+    users.map(user => [
+      user.id,
+      {
+        userId: user.id,
+        userName: user.fullName || user.email || `User #${user.id}`,
+        userEmail: user.email || '',
+        balanceUsd: 0,
+        availableUsd: 0,
+        pendingCreditsUsd: 0,
+        pendingDebitsUsd: 0,
+        totalDepositsUsd: 0,
+        totalWithdrawalsUsd: 0,
+        totalInvestedUsd: 0,
+        totalCreditsUsd: 0,
+        totalDebitsUsd: 0,
+        totalProfitUsd: 0,
+        topReturnLabel: null,
+        topReturnUsd: 0,
+        topMiningPlanLabel: null,
+        topMiningPlanUsd: 0,
+        topTradingPlanLabel: null,
+        topTradingPlanUsd: 0,
+        topPropertyLabel: null,
+        topPropertyUsd: 0,
+        latestAt: null,
+        history: [],
+      } satisfies UserBalanceSummary,
+    ])
+  )
 
   for (const entry of latestLedgerEntries) {
     const user = userMap.get(entry.userId)
@@ -355,6 +420,15 @@ export default async function AdminAccountBalancePage() {
         totalInvestedUsd: 0,
         totalCreditsUsd: 0,
         totalDebitsUsd: 0,
+        totalProfitUsd: 0,
+        topReturnLabel: null,
+        topReturnUsd: 0,
+        topMiningPlanLabel: null,
+        topMiningPlanUsd: 0,
+        topTradingPlanLabel: null,
+        topTradingPlanUsd: 0,
+        topPropertyLabel: null,
+        topPropertyUsd: 0,
         latestAt: null,
         history: [],
       } satisfies UserBalanceSummary)
@@ -391,23 +465,129 @@ export default async function AdminAccountBalancePage() {
       }
     }
 
-    if (entry.status === 'settled' && entry.direction === 'credit' && entry.source === 'funding_deposit') {
-      current.totalDepositsUsd += entry.amountUsd
+    if (entry.status === 'settled' && entry.source === 'funding_deposit') {
+      current.totalDepositsUsd += entry.direction === 'credit' ? entry.amountUsd : -entry.amountUsd
     }
 
-    if (entry.status === 'settled' && entry.direction === 'debit' && WITHDRAWAL_SOURCES.has(entry.source)) {
-      current.totalWithdrawalsUsd += entry.amountUsd
+    if (entry.status === 'settled' && WITHDRAWAL_SOURCES.has(entry.source)) {
+      current.totalWithdrawalsUsd += entry.direction === 'debit' ? entry.amountUsd : -entry.amountUsd
     }
 
-    if (entry.status === 'settled' && entry.direction === 'debit' && INVESTMENT_SOURCES.has(entry.source)) {
-      current.totalInvestedUsd += entry.amountUsd
+    if (entry.status === 'settled' && INVESTMENT_SOURCES.has(entry.source)) {
+      current.totalInvestedUsd += entry.direction === 'debit' ? entry.amountUsd : -entry.amountUsd
     }
 
     userBalanceMap.set(entry.userId, current)
   }
 
+  const userIds = users.map(user => user.id)
+  const miningEarnings = userIds.length
+    ? await prisma.earnings.findMany({
+        where: { userId: { in: userIds } },
+        select: {
+          userId: true,
+          totalEarnedUsd: true,
+          userPlan: {
+            select: {
+              plan: {
+                select: { name: true },
+              },
+            },
+          },
+        },
+      })
+    : []
+
+  const tradingEarnings = userIds.length
+    ? await prisma.tradingEarning.findMany({
+        where: { userId: { in: userIds } },
+        select: {
+          userId: true,
+          totalEarnedUsd: true,
+          tradingUserPlan: {
+            select: {
+              plan: {
+                select: { name: true },
+              },
+            },
+          },
+        },
+      })
+    : []
+
+  const miningByUser = new Map<number, Map<string, number>>()
+  const tradingByUser = new Map<number, Map<string, number>>()
+  const propertyByUser = new Map<number, Map<string, number>>()
+
+  for (const row of miningEarnings) {
+    const label = row.userPlan.plan.name || 'Mining plan'
+    const amount = asCurrencyNumber(row.totalEarnedUsd)
+    if (amount <= 0) continue
+
+    const bucket = miningByUser.get(row.userId) ?? new Map<string, number>()
+    bucket.set(label, Number(((bucket.get(label) ?? 0) + amount).toFixed(2)))
+    miningByUser.set(row.userId, bucket)
+  }
+
+  for (const row of tradingEarnings) {
+    const label = row.tradingUserPlan.plan.name || 'Trading plan'
+    const amount = asCurrencyNumber(row.totalEarnedUsd)
+    if (amount <= 0) continue
+
+    const bucket = tradingByUser.get(row.userId) ?? new Map<string, number>()
+    bucket.set(label, Number(((bucket.get(label) ?? 0) + amount).toFixed(2)))
+    tradingByUser.set(row.userId, bucket)
+  }
+
+  const realEstateCreditRows = latestLedgerEntries.filter(
+    entry =>
+      entry.status === 'settled' &&
+      entry.direction === 'credit' &&
+      entry.source === 'real_estate_withdrawal'
+  )
+
+  const realEstateTicketIds = [
+    ...new Set(
+      realEstateCreditRows
+        .map(entry => asNumber(entry.referenceId.replace('real-estate-withdrawal:', '')))
+        .filter((value): value is number => value !== null)
+    ),
+  ]
+
+  const realEstateTickets = realEstateTicketIds.length
+    ? await prisma.supportTicket.findMany({
+        where: { id: { in: realEstateTicketIds } },
+        select: { id: true, subject: true },
+      })
+    : []
+  const realEstateTicketMap = new Map(realEstateTickets.map(ticket => [ticket.id, ticket.subject]))
+
+  for (const entry of realEstateCreditRows) {
+    const ticketId = asNumber(entry.referenceId.replace('real-estate-withdrawal:', ''))
+    const subject = ticketId ? realEstateTicketMap.get(ticketId) : null
+    const label =
+      subject?.replace(REAL_ESTATE_WITHDRAWAL_TICKET_PREFIX, '').trim() || 'Real estate withdrawal'
+    const bucket = propertyByUser.get(entry.userId) ?? new Map<string, number>()
+    bucket.set(label, Number(((bucket.get(label) ?? 0) + entry.amountUsd).toFixed(2)))
+    propertyByUser.set(entry.userId, bucket)
+  }
+
   const userBalanceSummaries = [...userBalanceMap.values()]
     .map(summary => {
+      const miningTop = getTopLabelAndTotal(miningByUser.get(summary.userId) ?? new Map())
+      const tradingTop = getTopLabelAndTotal(tradingByUser.get(summary.userId) ?? new Map())
+      const propertyTop = getTopLabelAndTotal(propertyByUser.get(summary.userId) ?? new Map())
+      const totalProfitUsd = Number((miningTop.total + tradingTop.total + propertyTop.total).toFixed(2))
+
+      const topCandidates = [
+        { label: miningTop.label, amount: miningTop.amount },
+        { label: tradingTop.label, amount: tradingTop.amount },
+        { label: propertyTop.label, amount: propertyTop.amount },
+      ].filter(item => item.label && item.amount > 0) as Array<{ label: string; amount: number }>
+
+      const topReturn =
+        topCandidates.sort((a, b) => b.amount - a.amount)[0] ?? null
+
       const balanceUsd = Math.max(0, summary.totalCreditsUsd - summary.totalDebitsUsd)
       const availableUsd = Math.max(0, balanceUsd - summary.pendingDebitsUsd)
       return {
@@ -416,11 +596,20 @@ export default async function AdminAccountBalancePage() {
         availableUsd: Number(availableUsd.toFixed(2)),
         pendingCreditsUsd: Number(summary.pendingCreditsUsd.toFixed(2)),
         pendingDebitsUsd: Number(summary.pendingDebitsUsd.toFixed(2)),
-        totalDepositsUsd: Number(summary.totalDepositsUsd.toFixed(2)),
-        totalWithdrawalsUsd: Number(summary.totalWithdrawalsUsd.toFixed(2)),
-        totalInvestedUsd: Number(summary.totalInvestedUsd.toFixed(2)),
+        totalDepositsUsd: Number(Math.max(0, summary.totalDepositsUsd).toFixed(2)),
+        totalWithdrawalsUsd: Number(Math.max(0, summary.totalWithdrawalsUsd).toFixed(2)),
+        totalInvestedUsd: Number(Math.max(0, summary.totalInvestedUsd).toFixed(2)),
         totalCreditsUsd: Number(summary.totalCreditsUsd.toFixed(2)),
         totalDebitsUsd: Number(summary.totalDebitsUsd.toFixed(2)),
+        totalProfitUsd,
+        topReturnLabel: topReturn?.label ?? null,
+        topReturnUsd: Number((topReturn?.amount ?? 0).toFixed(2)),
+        topMiningPlanLabel: miningTop.label,
+        topMiningPlanUsd: Number(miningTop.amount.toFixed(2)),
+        topTradingPlanLabel: tradingTop.label,
+        topTradingPlanUsd: Number(tradingTop.amount.toFixed(2)),
+        topPropertyLabel: propertyTop.label,
+        topPropertyUsd: Number(propertyTop.amount.toFixed(2)),
       }
     })
     .sort((a, b) => b.balanceUsd - a.balanceUsd)
@@ -460,106 +649,7 @@ export default async function AdminAccountBalancePage() {
           </p>
         </div>
 
-        {userBalanceSummaries.length === 0 ? (
-          <div className="text-sm text-white/60">No account-balance entries found.</div>
-        ) : (
-          <div className="space-y-3">
-            {userBalanceSummaries.map(summary => (
-              <div
-                key={summary.userId}
-                className="rounded-xl p-4"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                }}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="text-white font-semibold">{summary.userName}</div>
-                    <div className="text-xs text-white/60">{summary.userEmail || `User #${summary.userId}`}</div>
-                    <div className="text-[11px] text-white/45 mt-1">
-                      Last ledger update:{' '}
-                      {summary.latestAt ? new Date(summary.latestAt).toLocaleString() : 'N/A'}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/admin/users/${summary.userId}`}
-                      className="px-3 py-1.5 rounded-full text-xs font-semibold text-white"
-                      style={{
-                        background: 'rgba(59, 130, 246, 0.25)',
-                        border: '1px solid rgba(147, 197, 253, 0.45)',
-                      }}
-                    >
-                      Open User
-                    </Link>
-                    <a
-                      href="#manual-adjustments"
-                      className="px-3 py-1.5 rounded-full text-xs font-semibold text-white"
-                      style={{
-                        background: 'rgba(16, 185, 129, 0.2)',
-                        border: '1px solid rgba(110, 231, 183, 0.45)',
-                      }}
-                    >
-                      Adjust Balance
-                    </a>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mt-4 text-xs">
-                  <MiniStat label="Balance" value={summary.balanceUsd} positive />
-                  <MiniStat label="Available" value={summary.availableUsd} positive />
-                  <MiniStat label="Pending + " value={summary.pendingCreditsUsd} />
-                  <MiniStat label="Pending - " value={summary.pendingDebitsUsd} />
-                  <MiniStat label="Deposits" value={summary.totalDepositsUsd} positive />
-                  <MiniStat label="Withdrawn" value={summary.totalWithdrawalsUsd} />
-                  <MiniStat label="Invested" value={summary.totalInvestedUsd} />
-                  <MiniStat label="Net Debits" value={summary.totalDebitsUsd} />
-                </div>
-
-                <details className="mt-4">
-                  <summary className="cursor-pointer text-sm text-white/80 hover:text-white">
-                    View recent account-balance history ({summary.history.length})
-                  </summary>
-                  <div className="mt-3 space-y-2">
-                    {summary.history.map(item => (
-                      <div
-                        key={item.id}
-                        className="rounded-lg px-3 py-2 flex flex-wrap items-center justify-between gap-2"
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                        }}
-                      >
-                        <div className="min-w-0">
-                          <div className="text-xs text-white/85">
-                            {item.sourceLabel}
-                            {item.coinType ? ` (${item.coinType})` : ''}
-                          </div>
-                          <div className="text-[11px] text-white/55">
-                            {new Date(item.createdAt).toLocaleString()} - {item.status.toUpperCase()}
-                            {item.note ? ` - ${item.note}` : ''}
-                          </div>
-                        </div>
-                        <div
-                          className={`text-sm font-semibold ${
-                            item.direction === 'credit' ? 'text-emerald-300' : 'text-rose-300'
-                          }`}
-                        >
-                          {item.direction === 'credit' ? '+' : '-'}$
-                          {item.amountUsd.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              </div>
-            ))}
-          </div>
-        )}
+        <AccountBalanceLedgerPanel summaries={userBalanceSummaries} />
       </div>
 
       {operations.length === 0 ? (
@@ -598,23 +688,6 @@ function MetricCard({ label, value }: { label: string; value: number }) {
     >
       <div className="text-xs text-white/65 uppercase tracking-wide">{label}</div>
       <div className="text-2xl font-semibold text-white mt-2">{value.toLocaleString()}</div>
-    </div>
-  )
-}
-
-function MiniStat({ label, value, positive }: { label: string; value: number; positive?: boolean }) {
-  return (
-    <div
-      className="rounded-lg px-2 py-2"
-      style={{
-        background: 'rgba(255, 255, 255, 0.04)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-      }}
-    >
-      <div className="text-[10px] text-white/60 uppercase tracking-wide">{label}</div>
-      <div className={`text-sm font-semibold mt-1 ${positive ? 'text-emerald-300' : 'text-white'}`}>
-        ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-      </div>
     </div>
   )
 }
