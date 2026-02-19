@@ -113,6 +113,17 @@ export default function AccountFundPageClient({
       return
     }
 
+    const popup = window.open('', '_blank', 'noopener,noreferrer')
+    if (!popup) {
+      setStatus({
+        type: 'error',
+        message: 'Popup blocked by browser. Allow popups for this site and try again.',
+      })
+      return
+    }
+
+    popup.document.write('<p style="font-family: sans-serif; padding: 16px;">Opening secure checkout...</p>')
+
     try {
       setLaunchingProvider(providerId)
       const response = await fetch('/api/user/account-balance/card-checkout', {
@@ -130,12 +141,13 @@ export default function AccountFundPageClient({
         throw new Error(payload?.error || 'Unable to launch card checkout.')
       }
 
-      window.open(payload.checkoutUrl, '_blank', 'noopener,noreferrer')
+      popup.location.href = payload.checkoutUrl
       setStatus({
         type: 'success',
         message: 'Card checkout opened in a new tab. Complete payment, then return to submit proof if needed.',
       })
     } catch (error) {
+      popup.close()
       setStatus({
         type: 'error',
         message: error instanceof Error ? error.message : 'Unable to launch card checkout.',
@@ -319,6 +331,11 @@ export default function AccountFundPageClient({
               Card checkout is optional. You can use any provider below, then return and submit funding proof
               for review.
             </p>
+            {status.type !== 'idle' && (
+              <div className={`text-sm ${status.type === 'error' ? 'text-red-300' : 'text-emerald-300'}`}>
+                {status.message}
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {CARD_PROVIDERS.map(provider => (
                 <div key={provider.id} className="rounded-xl border border-white/10 p-3">
