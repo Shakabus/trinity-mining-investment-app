@@ -168,8 +168,21 @@ export function buildDefaultAccountFreezeSettings(userId: number): AccountFreeze
 function isMissingFreezeTableError(error: unknown) {
   if (typeof error !== 'object' || !error) return false
   const code = 'code' in error ? String((error as { code?: unknown }).code ?? '') : ''
+  const meta =
+    'meta' in error && typeof (error as { meta?: unknown }).meta === 'object'
+      ? ((error as { meta?: Record<string, unknown> }).meta ?? {})
+      : {}
+  const metaCode = String(meta.code ?? '')
+  const metaMessage = String(meta.message ?? '')
   const message = error instanceof Error ? error.message : String(error)
-  return code === 'P2021' || (message.includes('`account_balance_freeze_controls`') && message.includes('does not exist'))
+  return (
+    code === 'P2021' ||
+    (code === 'P2010' && metaCode === '1146') ||
+    (message.includes('account_balance_freeze_controls') &&
+      (message.includes('does not exist') || message.includes("doesn't exist"))) ||
+    (metaMessage.includes('account_balance_freeze_controls') &&
+      (metaMessage.includes('does not exist') || metaMessage.includes("doesn't exist")))
+  )
 }
 
 function mapSettingsRow(row: Record<string, unknown>, userIdFallback: number): AccountFreezeSettings {
