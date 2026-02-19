@@ -36,7 +36,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export const prisma =
+const prismaClientInstance =
   globalForPrisma.prisma ??
   new PrismaClient(
     tunedDatasourceUrl
@@ -46,4 +46,12 @@ export const prisma =
       : undefined
   )
 
-globalForPrisma.prisma = prisma
+type UnsafePrismaClient = PrismaClient & {
+  [key: string]: any
+}
+
+// Keep runtime behavior unchanged, but relax typing for dynamically accessed
+// delegates (e.g. trading_* models in schema-mismatch environments).
+export const prisma = prismaClientInstance as unknown as UnsafePrismaClient
+
+globalForPrisma.prisma = prismaClientInstance
