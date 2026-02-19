@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import {
   createAccountBalanceEntry,
@@ -25,6 +26,7 @@ import {
 const PAY_TRADING_PLAN_FIELDS = ['tradingUserPlanId', 'coinType'] as const
 const PAYABLE_COINS = ['BTC', 'ETH', 'SOL', 'USDT'] as const
 const COIN_EPSILON = 0.00000001
+type UnsafeTx = Prisma.TransactionClient & Record<string, any>
 
 class HttpError extends Error {
   status: number
@@ -143,7 +145,7 @@ export async function POST(req: Request) {
     const debitReference = `trading-plan:${tradingPlan.id}`
 
     await prisma.$transaction(
-      async tx => {
+      async (tx: UnsafeTx) => {
         await lockUserBalanceForUpdate(user.id, tx)
 
       const summary = await getAccountBalanceSummary(user.id, tx)
