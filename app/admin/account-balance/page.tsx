@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import {
   formatAccountBalanceSource,
   parseAccountBalanceEntryDetail,
@@ -203,10 +204,17 @@ export default async function AdminAccountBalancePage() {
     ),
   ]
   const tradingPlans = tradingPlanIds.length
-    ? await prisma.tradingUserPlan.findMany({
-        where: { id: { in: tradingPlanIds } },
-        include: { plan: true },
-      })
+    ? await prisma.$queryRaw<Array<{ id: number; durationHours: number; planName: string | null }>>(
+        Prisma.sql`
+          SELECT
+            tup.id,
+            tup.duration_hours AS durationHours,
+            tp.name AS planName
+          FROM trading_user_plans tup
+          LEFT JOIN trading_plans tp ON tp.id = tup.plan_id
+          WHERE tup.id IN (${Prisma.join(tradingPlanIds)})
+        `
+      )
     : []
   const tradingPlanMap = new Map(tradingPlans.map(plan => [plan.id, plan]))
 
@@ -252,7 +260,7 @@ export default async function AdminAccountBalancePage() {
       const tradingUserPlanId = asNumber(row.metadata?.tradingUserPlanId)
       const plan = tradingUserPlanId ? tradingPlanMap.get(tradingUserPlanId) : null
       subtitle = plan
-        ? `${plan.plan.name} - ${plan.durationHours} hours`
+        ? `${plan.planName ?? 'Trading plan'} - ${plan.durationHours} hours`
         : 'Trading plan payment from account balance'
     } else if (row.source === 'real_estate_buy_in') {
       const ticketId =
