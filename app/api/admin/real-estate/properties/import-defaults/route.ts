@@ -119,7 +119,7 @@ export async function POST() {
         await prisma.realEstateProperty.findMany({
           select: { slug: true },
         })
-      ).map(item => item.slug)
+      ).map((item: { slug: string }) => item.slug)
     )
 
     let createdCount = 0
@@ -180,7 +180,7 @@ export async function POST() {
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
     })
 
-    const serialized = properties.map(property => ({
+    const serialized = properties.map((property: any) => ({
       id: property.id,
       title: property.title,
       slug: property.slug,
@@ -200,7 +200,7 @@ export async function POST() {
       isFeatured: property.isFeatured,
       createdAt: property.createdAt.toISOString(),
       updatedAt: property.updatedAt.toISOString(),
-      tiers: property.tiers.map(tier => ({
+      tiers: property.tiers.map((tier: any) => ({
         id: tier.id,
         tierName: tier.tierName,
         minimumUsd: Number(tier.minimumUsd),
