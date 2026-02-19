@@ -263,6 +263,12 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
     })),
   ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
+  const userSessionMeta = user as typeof user & {
+    lastSeenAt?: Date | null
+    currentSessionStartedAt?: Date | null
+    totalSessionSeconds?: number | null
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
       <UserDetail
@@ -273,11 +279,11 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           role: user.role,
           accountStatus: user.accountStatus,
           createdAt: user.createdAt.toISOString(),
-          lastSeenAt: user.lastSeenAt ? user.lastSeenAt.toISOString() : null,
-          currentSessionStartedAt: user.currentSessionStartedAt
-            ? user.currentSessionStartedAt.toISOString()
+          lastSeenAt: userSessionMeta.lastSeenAt ? userSessionMeta.lastSeenAt.toISOString() : null,
+          currentSessionStartedAt: userSessionMeta.currentSessionStartedAt
+            ? userSessionMeta.currentSessionStartedAt.toISOString()
             : null,
-          totalSessionSeconds: user.totalSessionSeconds,
+          totalSessionSeconds: userSessionMeta.totalSessionSeconds ?? null,
           btcWalletAddress: user.btcWalletAddress,
           ethWalletAddress: user.ethWalletAddress,
           ltcWalletAddress: user.ltcWalletAddress,
