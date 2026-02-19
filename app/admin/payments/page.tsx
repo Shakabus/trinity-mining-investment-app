@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import PaymentApproval from '@/components/admin/PaymentApproval'
 import TradingPaymentApproval from '@/components/admin/TradingPaymentApproval'
 import RealEstatePaymentApproval from '@/components/admin/RealEstatePaymentApproval'
@@ -55,44 +56,85 @@ export default async function AdminPaymentsPage() {
       : null,
   }))
 
-  const pendingTradingPlans = await prisma.tradingUserPlan.findMany({
-    where: {
-      status: { in: ['awaiting_payment', 'selected'] },
-      paymentStatus: 'pending',
-      payments: {
-        some: { status: 'pending' },
-      },
-    },
-    include: {
-      user: true,
-      plan: true,
-      payments: {
-        where: { status: 'pending' },
-        orderBy: { createdAt: 'desc' },
-        take: 1,
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+  type TradingPaymentRow = {
+    id: number
+    userId: number
+    userName: string | null
+    userEmail: string | null
+    planName: string | null
+    investmentUsd: Prisma.Decimal | number
+    durationHours: number
+    createdAt: Date | string
+    paymentProofUrl: string | null
+    transactionId: string | null
+    cryptoType: string | null
+    proofCreatedAt: Date | string | null
+  }
 
-  const tradingPayments = pendingTradingPlans.map(plan => ({
-    id: plan.id,
-    userId: plan.userId,
-    userName: plan.user.fullName || plan.user.email,
-    userEmail: plan.user.email,
-    planName: plan.plan.name,
-    investmentUsd: Number(plan.investmentUsd),
-    durationHours: plan.durationHours,
-    createdAt: plan.createdAt,
-    proof: plan.payments[0]
-      ? {
-          paymentProofUrl: plan.payments[0].paymentProofUrl,
-          transactionId: plan.payments[0].transactionId,
-          cryptoType: plan.payments[0].cryptoType,
-          createdAt: plan.payments[0].createdAt,
-        }
-      : null,
-  }))
+  const pendingTradingPlans = await prisma.$queryRaw<TradingPaymentRow[]>(
+    Prisma.sql`
+      SELECT
+        tup.id,
+        tup.user_id AS userId,
+        u.full_name AS userName,
+        u.email AS userEmail,
+        tp.name AS planName,
+        tup.investment_usd AS investmentUsd,
+        tup.duration_hours AS durationHours,
+        tup.created_at AS createdAt,
+        p.payment_proof_url AS paymentProofUrl,
+        p.transaction_id AS transactionId,
+        p.crypto_type AS cryptoType,
+        p.created_at AS proofCreatedAt
+      FROM trading_user_plans tup
+      INNER JOIN users u ON u.id = tup.user_id
+      INNER JOIN trading_plans tp ON tp.id = tup.plan_id
+      INNER JOIN (
+        SELECT p1.*
+        FROM trading_payments p1
+        INNER JOIN (
+          SELECT trading_user_plan_id, MAX(created_at) AS latest_created_at
+          FROM trading_payments
+          WHERE status = 'pending'
+          GROUP BY trading_user_plan_id
+        ) latest
+          ON latest.trading_user_plan_id = p1.trading_user_plan_id
+         AND latest.latest_created_at = p1.created_at
+        WHERE p1.status = 'pending'
+      ) p ON p.trading_user_plan_id = tup.id
+      WHERE tup.status IN ('awaiting_payment', 'selected')
+        AND tup.payment_status = 'pending'
+      ORDER BY tup.created_at DESC
+    `
+  )
+
+  const tradingPayments = pendingTradingPlans.map(plan => {
+    const createdAt = plan.createdAt instanceof Date ? plan.createdAt : new Date(plan.createdAt)
+    const proofCreatedAt = plan.proofCreatedAt
+      ? plan.proofCreatedAt instanceof Date
+        ? plan.proofCreatedAt
+        : new Date(plan.proofCreatedAt)
+      : null
+
+    return {
+      id: plan.id,
+      userId: plan.userId,
+      userName: plan.userName || plan.userEmail || `User #${plan.userId}`,
+      userEmail: plan.userEmail || '',
+      planName: plan.planName || 'Trading plan',
+      investmentUsd: Number(plan.investmentUsd),
+      durationHours: plan.durationHours,
+      createdAt,
+      proof: plan.paymentProofUrl || plan.transactionId || plan.cryptoType
+        ? {
+            paymentProofUrl: plan.paymentProofUrl,
+            transactionId: plan.transactionId,
+            cryptoType: plan.cryptoType,
+            createdAt: proofCreatedAt ?? createdAt,
+          }
+        : null,
+    }
+  })
 
   const realEstateTickets = await prisma.supportTicket.findMany({
     where: {
