@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 import { scalePlanHashrate } from '@/lib/mining-hashrate'
 import { clerkClient } from '@clerk/nextjs/server'
+import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,19 +43,6 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
         },
         orderBy: { createdAt: 'desc' },
       },
-      tradingPlans: {
-        include: { plan: true, payments: true },
-        orderBy: { createdAt: 'desc' },
-      },
-      tradingStats: {
-        orderBy: { createdAt: 'desc' },
-      },
-      tradingEarnings: {
-        include: {
-          tradingUserPlan: { include: { plan: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      },
       payments: {
         orderBy: { createdAt: 'desc' },
       },
@@ -64,6 +52,124 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
   if (!user) {
     notFound()
   }
+
+  const [tradingPlans, tradingStats, tradingEarnings] = await Promise.all([
+    prisma.$queryRaw<
+      Array<{
+        id: number
+        status: string
+        investmentUsd: Prisma.Decimal | number
+        expectedReturnUsd: Prisma.Decimal | number
+        durationHours: number
+        startDate: Date | string | null
+        endDate: Date | string | null
+        updatedAt: Date | string
+        planName: string | null
+      }>
+    >(
+      Prisma.sql`
+        SELECT
+          tup.id,
+          tup.status,
+          tup.investment_usd AS investmentUsd,
+          tup.expected_return_usd AS expectedReturnUsd,
+          tup.duration_hours AS durationHours,
+          tup.start_date AS startDate,
+          tup.end_date AS endDate,
+          tup.updated_at AS updatedAt,
+          tp.name AS planName
+        FROM trading_user_plans tup
+        LEFT JOIN trading_plans tp ON tp.id = tup.plan_id
+        WHERE tup.user_id = ${userId}
+        ORDER BY tup.created_at DESC
+      `
+    ),
+    prisma.$queryRaw<
+      Array<{
+        id: number
+        botSpeed: Prisma.Decimal | number
+        strategy: string | null
+        riskLevel: string | null
+        isActive: boolean | number
+      }>
+    >(
+      Prisma.sql`
+        SELECT
+          ts.id,
+          ts.bot_speed AS botSpeed,
+          ts.strategy,
+          ts.risk_level AS riskLevel,
+          ts.is_active AS isActive
+        FROM trading_stats ts
+        WHERE ts.user_id = ${userId}
+        ORDER BY ts.created_at DESC
+      `
+    ),
+    prisma.$queryRaw<
+      Array<{
+        id: number
+        dailyEstimateUsd: Prisma.Decimal | number
+        totalEarnedUsd: Prisma.Decimal | number
+        isActive: boolean | number
+        isAdminOverride: boolean | number
+        updatedAt: Date | string
+        planName: string | null
+      }>
+    >(
+      Prisma.sql`
+        SELECT
+          te.id,
+          te.daily_estimate_usd AS dailyEstimateUsd,
+          te.total_earned_usd AS totalEarnedUsd,
+          te.is_active AS isActive,
+          te.is_admin_override AS isAdminOverride,
+          te.updated_at AS updatedAt,
+          tp.name AS planName
+        FROM trading_earnings te
+        LEFT JOIN trading_user_plans tup ON tup.id = te.trading_user_plan_id
+        LEFT JOIN trading_plans tp ON tp.id = tup.plan_id
+        WHERE te.user_id = ${userId}
+        ORDER BY te.created_at DESC
+      `
+    ),
+  ])
+
+  const toNumber = (value: Prisma.Decimal | number | null | undefined) => Number(value ?? 0)
+  const toBoolean = (value: boolean | number | null | undefined) => {
+    if (typeof value === 'boolean') return value
+    return Number(value ?? 0) !== 0
+  }
+  const toIsoOrNull = (value: Date | string | null | undefined) => (value ? new Date(value).toISOString() : null)
+
+  const normalizedTradingPlans = tradingPlans.map(plan => ({
+    id: plan.id,
+    name: plan.planName ?? 'Trading plan',
+    status: plan.status,
+    investmentUsd: toNumber(plan.investmentUsd),
+    expectedReturnUsd: toNumber(plan.expectedReturnUsd),
+    durationHours: Number(plan.durationHours),
+    startDate: toIsoOrNull(plan.startDate),
+    endDate: toIsoOrNull(plan.endDate),
+    updatedAt: new Date(plan.updatedAt).toISOString(),
+  }))
+
+  const normalizedTradingStats = tradingStats.map(stat => ({
+    id: stat.id,
+    botSpeed: toNumber(stat.botSpeed),
+    strategy: stat.strategy ?? 'Portfolio Balance',
+    riskLevel: stat.riskLevel ?? 'balanced',
+    isActive: toBoolean(stat.isActive),
+  }))
+
+  const normalizedTradingEarnings = tradingEarnings.map(record => ({
+    id: record.id,
+    dailyEstimateUsd: toNumber(record.dailyEstimateUsd),
+    totalEarnedUsd: toNumber(record.totalEarnedUsd),
+    isActive: toBoolean(record.isActive),
+    isAdminOverride: toBoolean(record.isAdminOverride),
+    planName: record.planName ?? 'Unknown Plan',
+    updatedAt: new Date(record.updatedAt).toISOString(),
+  }))
   let passwordEnabled: boolean | null = null
   try {
     const clerk = await clerkClient()
@@ -92,9 +198,10 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
   const currentPlan = user.userPlans.find(plan => plan.status === 'active') ?? user.userPlans[0]
   const activeMining = user.miningStats.find(stat => stat.isActive) ?? user.miningStats[0]
   const activeEarnings = user.earnings.filter(record => record.isActive)
-  const activeTradingPlan = user.tradingPlans.find(plan => plan.status === 'active') ?? user.tradingPlans[0]
-  const activeTradingStats = user.tradingStats.find(stat => stat.isActive) ?? user.tradingStats[0]
-  const activeTradingEarnings = user.tradingEarnings.filter(record => record.isActive)
+  const activeTradingPlan =
+    normalizedTradingPlans.find(plan => plan.status === 'active') ?? normalizedTradingPlans[0]
+  const activeTradingStats = normalizedTradingStats.find(stat => stat.isActive) ?? normalizedTradingStats[0]
+  const activeTradingEarnings = normalizedTradingEarnings.filter(record => record.isActive)
 
   const allocationMap = new Map<string, { hashrate: number; hashrateUnit: string; ratio: number | null }>()
   for (const plan of user.userPlans) {
@@ -136,17 +243,17 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
       detail: `${payment.cryptoType} ${payment.amountUsd.toString()} - ${payment.status}`,
       timestamp: payment.createdAt.toISOString(),
     })),
-    ...user.tradingPlans.map(plan => ({
+    ...normalizedTradingPlans.map(plan => ({
       id: `trading-plan-${plan.id}`,
       title: 'Trading Plan',
-      detail: `${plan.plan.name} - ${plan.status}`,
-      timestamp: plan.updatedAt.toISOString(),
+      detail: `${plan.name} - ${plan.status}`,
+      timestamp: plan.updatedAt,
     })),
-    ...user.tradingEarnings.map(record => ({
+    ...normalizedTradingEarnings.map(record => ({
       id: `trading-earning-${record.id}`,
       title: 'Trading Earnings',
-      detail: `Total earned $${Number(record.totalEarnedUsd).toFixed(2)}`,
-      timestamp: record.updatedAt.toISOString(),
+      detail: `Total earned $${record.totalEarnedUsd.toFixed(2)}`,
+      timestamp: record.updatedAt,
     })),
     ...adminLogs.map(log => ({
       id: `admin-${log.id}`,
@@ -242,13 +349,13 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           activeTradingPlan
             ? {
                 id: activeTradingPlan.id,
-                name: activeTradingPlan.plan.name,
+                name: activeTradingPlan.name,
                 status: activeTradingPlan.status,
-                investmentUsd: Number(activeTradingPlan.investmentUsd),
-                expectedReturnUsd: Number(activeTradingPlan.expectedReturnUsd),
+                investmentUsd: activeTradingPlan.investmentUsd,
+                expectedReturnUsd: activeTradingPlan.expectedReturnUsd,
                 durationHours: activeTradingPlan.durationHours,
-                startDate: activeTradingPlan.startDate ? activeTradingPlan.startDate.toISOString() : null,
-                endDate: activeTradingPlan.endDate ? activeTradingPlan.endDate.toISOString() : null,
+                startDate: activeTradingPlan.startDate,
+                endDate: activeTradingPlan.endDate,
               }
             : undefined
         }
@@ -256,7 +363,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           activeTradingStats
             ? {
                 id: activeTradingStats.id,
-                botSpeed: Number(activeTradingStats.botSpeed),
+                botSpeed: activeTradingStats.botSpeed,
                 strategy: activeTradingStats.strategy,
                 riskLevel: activeTradingStats.riskLevel,
                 isActive: activeTradingStats.isActive,
@@ -265,11 +372,11 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
         }
         tradingEarnings={activeTradingEarnings.map(record => ({
           id: record.id,
-          dailyEstimateUsd: Number(record.dailyEstimateUsd),
-          totalEarnedUsd: Number(record.totalEarnedUsd),
+          dailyEstimateUsd: record.dailyEstimateUsd,
+          totalEarnedUsd: record.totalEarnedUsd,
           isActive: record.isActive,
           isAdminOverride: record.isAdminOverride,
-          planName: record.tradingUserPlan?.plan?.name ?? 'Unknown Plan',
+          planName: record.planName,
         }))}
         realEstate={{
           summary: {
