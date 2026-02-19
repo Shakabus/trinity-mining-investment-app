@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
-import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, Building2, ChevronsLeft, ChevronsRight, Radio, Wallet } from 'lucide-react'
+import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, Building2, ChevronsLeft, ChevronsRight, Radio, Wallet, ShieldCheck } from 'lucide-react'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import LiveNotificationTicker from '@/components/notifications/LiveNotificationTicker'
 
@@ -13,6 +13,7 @@ const menuItems = [
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Payments', href: '/admin/payments', icon: CreditCard },
   { name: 'Account Balance', href: '/admin/account-balance', icon: Wallet },
+  { name: 'KYC', href: '/admin/kyc', icon: ShieldCheck },
   { name: 'Withdrawals', href: '/admin/withdrawals', icon: Banknote },
   { name: 'Properties', href: '/admin/real-estate', icon: Building2 },
   { name: 'Referrals', href: '/admin/referrals', icon: Link2 },

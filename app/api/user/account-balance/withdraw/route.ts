@@ -29,6 +29,14 @@ const WITHDRAW_ALLOWED_FIELDS = [
 ] as const
 const ALLOWED_COINS = ['BTC', 'ETH', 'USDT', 'SOL'] as const
 type WithdrawCoin = (typeof ALLOWED_COINS)[number]
+const COIN_EPSILON = 0.00000001
+
+type CoinContribution = {
+  coinType: WithdrawCoin
+  amountUsd: number
+  amountCrypto: number
+  usdPrice: number
+}
 
 class HttpError extends Error {
   status: number
@@ -37,6 +45,52 @@ class HttpError extends Error {
     super(message)
     this.status = status
   }
+}
+
+const resolveCoinContributions = ({
+  amountUsd,
+  availability,
+  prices,
+}: {
+  amountUsd: number
+  availability: Awaited<ReturnType<typeof getAccountBalanceCoinAvailability>>
+  prices: Awaited<ReturnType<typeof getTrackedCryptoPricesUsd>>
+}): CoinContribution[] => {
+  let remainingCents = Math.round(amountUsd * 100)
+  if (remainingCents <= 0) return []
+
+  const rankedCoins = [...ALLOWED_COINS].sort(
+    (a, b) => (availability.byCoin[b]?.availableUsd ?? 0) - (availability.byCoin[a]?.availableUsd ?? 0)
+  )
+  const contributions: CoinContribution[] = []
+
+  for (const coinType of rankedCoins) {
+    if (remainingCents <= 0) break
+
+    const availableUsd = Math.max(0, availability.byCoin[coinType]?.availableUsd ?? 0)
+    const availableCrypto = Math.max(0, availability.byCoin[coinType]?.availableCrypto ?? 0)
+    const usdPrice = prices[coinType]
+    if (availableUsd <= 0 || availableCrypto <= 0 || usdPrice <= 0) continue
+
+    let takeCents = Math.min(remainingCents, Math.floor(availableUsd * 100))
+    while (takeCents > 0) {
+      const amountUsdPart = Number((takeCents / 100).toFixed(2))
+      const amountCryptoPart = convertUsdToCoin(amountUsdPart, coinType, prices)
+      if (amountCryptoPart > 0 && amountCryptoPart <= availableCrypto + COIN_EPSILON) {
+        contributions.push({
+          coinType,
+          amountUsd: amountUsdPart,
+          amountCrypto: amountCryptoPart,
+          usdPrice,
+        })
+        remainingCents -= takeCents
+        break
+      }
+      takeCents -= 1
+    }
+  }
+
+  return remainingCents > 0 ? [] : contributions
 }
 
 export async function GET() {
@@ -53,10 +107,24 @@ export async function GET() {
         btcWalletAddress: true,
         ethWalletAddress: true,
         walletAddress: true,
+        kycProfile: {
+          select: {
+            status: true,
+          },
+        },
       },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
+    }
+    if (!user.kycProfile || user.kycProfile.status !== 'approved') {
+      return NextResponse.json(
+        {
+          error: 'KYC verification is required before withdrawals. Complete and get approved to continue.',
+          code: 'KYC_REQUIRED',
+        },
+        { status: 403 }
+      )
     }
 
     const [summary, entries] = await Promise.all([
@@ -151,11 +219,15 @@ export async function POST(req: Request) {
       }
 
       const coinAvailability = await getAccountBalanceCoinAvailability(user.id, prices, tx)
-      const availableCoinAmount = coinAvailability.byCoin[coinType]?.availableCrypto ?? 0
-      if (availableCoinAmount + 0.00000001 < amountCrypto) {
+      const contributions = resolveCoinContributions({
+        amountUsd,
+        availability: coinAvailability,
+        prices,
+      })
+      if (!contributions.length) {
         throw new HttpError(
           400,
-          `Insufficient ${coinType} wallet balance. Available: ${availableCoinAmount.toFixed(8)} ${coinType}.`
+          'Insufficient funds across your wallet balances. Add funds or reduce withdrawal amount.'
         )
       }
 
@@ -175,6 +247,12 @@ export async function POST(req: Request) {
             customMethod,
             customMethodNote: customMethodNote || null,
             usdPriceAtRequest: prices[coinType],
+            walletContributions: contributions.map(entry => ({
+              coinType: entry.coinType,
+              amountUsd: entry.amountUsd,
+              amountCrypto: entry.amountCrypto,
+              usdPriceAtRequest: entry.usdPrice,
+            })),
           },
         },
         tx

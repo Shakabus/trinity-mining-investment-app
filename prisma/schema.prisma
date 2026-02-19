@@ -51,6 +51,8 @@ model User {
   tradingPayments       TradingPayment[]
   tradingWithdrawals    TradingWithdrawal[] @relation("UserTradingWithdrawals")
   processedTradingWithdrawals TradingWithdrawal[] @relation("AdminProcessedTradingWithdrawals")
+  kycProfile           UserKyc?
+  reviewedKycProfiles  UserKyc[] @relation("KycReviewedByAdmin")
 
   @@index([lastSeenAt], map: "users_last_seen_at_idx")
   @@map("users")
@@ -532,4 +534,44 @@ model RealEstatePropertyTier {
 
   @@index([propertyId], map: "real_estate_property_tiers_property_id_fkey")
   @@map("real_estate_property_tiers")
+}
+
+model UserKyc {
+  id                    Int       @id @default(autoincrement())
+  userId                Int       @unique @map("user_id")
+  status                String    @default("not_submitted")
+  firstName             String    @map("first_name")
+  lastName              String    @map("last_name")
+  dateOfBirth           DateTime  @map("date_of_birth")
+  nationality           String
+  residenceCountry      String    @map("residence_country")
+  addressLine1          String    @map("address_line_1")
+  addressLine2          String?   @map("address_line_2")
+  city                  String
+  state                 String
+  postalCode            String    @map("postal_code")
+  idType                String    @map("id_type")
+  idNumber              String    @map("id_number")
+  idIssuingCountry      String    @map("id_issuing_country")
+  idExpiryDate          DateTime? @map("id_expiry_date")
+  occupation            String?
+  sourceOfFunds         String?   @map("source_of_funds")
+  pepDeclaration        Boolean   @default(false) @map("pep_declaration")
+  termsAccepted         Boolean   @default(false) @map("terms_accepted")
+  idDocumentFrontUrl    String    @map("id_document_front_url")
+  idDocumentBackUrl     String?   @map("id_document_back_url")
+  selfieUrl             String    @map("selfie_url")
+  proofOfAddressUrl     String?   @map("proof_of_address_url")
+  reviewNote            String?   @map("review_note") @db.Text
+  reviewedByAdminId     Int?      @map("reviewed_by_admin_id")
+  reviewedAt            DateTime? @map("reviewed_at")
+  submittedAt           DateTime? @map("submitted_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedByAdmin       User?     @relation("KycReviewedByAdmin", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([status], map: "user_kyc_status_idx")
+  @@index([reviewedByAdminId], map: "user_kyc_reviewed_by_admin_id_idx")
+  @@map("user_kyc")
 }

@@ -69,6 +69,12 @@ export type AccountBalanceCoinAvailability = {
   availableUsd: number
 }
 
+type CoinBreakdown = {
+  coinType: TrackedAssetCoin
+  amountCrypto: number
+  amountUsd: number
+}
+
 type CreateEntryInput = {
   userId: number
   direction: AccountBalanceDirection
@@ -290,6 +296,62 @@ function getEntryCryptoAmount(
   return convertUsdToCoin(entry.amountUsd, coinType, prices)
 }
 
+function getEntryCoinBreakdown(
+  entry: AccountBalanceEntry,
+  prices: CryptoPriceMap
+): CoinBreakdown[] {
+  const rawContributions = entry.metadata?.walletContributions
+
+  if (Array.isArray(rawContributions) && rawContributions.length > 0) {
+    const aggregated = new Map<TrackedAssetCoin, CoinBreakdown>()
+
+    for (const contribution of rawContributions) {
+      if (!contribution || typeof contribution !== 'object') continue
+
+      const coinRaw = (contribution as Record<string, unknown>).coinType
+      const cryptoRaw = Number((contribution as Record<string, unknown>).amountCrypto)
+      const usdRaw = Number((contribution as Record<string, unknown>).amountUsd)
+      const coinType =
+        typeof coinRaw === 'string' ? (coinRaw.toUpperCase() as TrackedAssetCoin) : null
+
+      if (!coinType || !isTrackedAssetCoin(coinType)) continue
+      if (!Number.isFinite(cryptoRaw) || cryptoRaw <= 0) continue
+
+      const amountCrypto = Number(cryptoRaw.toFixed(8))
+      const amountUsd = Number(
+        (Number.isFinite(usdRaw) && usdRaw > 0
+          ? usdRaw
+          : convertCoinToUsd(amountCrypto, coinType, prices)
+        ).toFixed(2)
+      )
+
+      const current = aggregated.get(coinType)
+      if (current) {
+        current.amountCrypto = Number((current.amountCrypto + amountCrypto).toFixed(8))
+        current.amountUsd = Number((current.amountUsd + amountUsd).toFixed(2))
+      } else {
+        aggregated.set(coinType, { coinType, amountCrypto, amountUsd })
+      }
+    }
+
+    if (aggregated.size > 0) {
+      return [...aggregated.values()]
+    }
+  }
+
+  const fallbackCoinType = getEntryCoinType(entry)
+  if (!fallbackCoinType) return []
+
+  const fallbackAmountCrypto = getEntryCryptoAmount(entry, fallbackCoinType, prices)
+  return [
+    {
+      coinType: fallbackCoinType,
+      amountCrypto: fallbackAmountCrypto,
+      amountUsd: Number(entry.amountUsd.toFixed(2)),
+    },
+  ]
+}
+
 export function summarizeAccountBalanceAssets(
   entries: AccountBalanceEntry[],
   prices: CryptoPriceMap
@@ -317,18 +379,16 @@ export function summarizeAccountBalanceAssets(
   )
 
   for (const entry of settledEntries) {
-    const coinType = getEntryCoinType(entry)
-    if (!coinType) continue
-
-    const cryptoAmount = getEntryCryptoAmount(entry, coinType, prices)
-    const bucket = byCoin[coinType]
-
-    if (entry.direction === 'credit') {
-      bucket.totalInCrypto = Number((bucket.totalInCrypto + cryptoAmount).toFixed(8))
-      bucket.totalInUsd = Number((bucket.totalInUsd + entry.amountUsd).toFixed(2))
-    } else {
-      bucket.totalOutCrypto = Number((bucket.totalOutCrypto + cryptoAmount).toFixed(8))
-      bucket.totalOutUsd = Number((bucket.totalOutUsd + entry.amountUsd).toFixed(2))
+    const breakdown = getEntryCoinBreakdown(entry, prices)
+    for (const coinEntry of breakdown) {
+      const bucket = byCoin[coinEntry.coinType]
+      if (entry.direction === 'credit') {
+        bucket.totalInCrypto = Number((bucket.totalInCrypto + coinEntry.amountCrypto).toFixed(8))
+        bucket.totalInUsd = Number((bucket.totalInUsd + coinEntry.amountUsd).toFixed(2))
+      } else {
+        bucket.totalOutCrypto = Number((bucket.totalOutCrypto + coinEntry.amountCrypto).toFixed(8))
+        bucket.totalOutUsd = Number((bucket.totalOutUsd + coinEntry.amountUsd).toFixed(2))
+      }
     }
   }
 
@@ -371,28 +431,33 @@ export function summarizeAccountBalanceCoinAvailability(
   )
 
   for (const entry of latestEntries) {
-    const coinType = getEntryCoinType(entry)
-    if (!coinType) continue
-
-    const bucket = byCoin[coinType]
-    const cryptoAmount = getEntryCryptoAmount(entry, coinType, prices)
+    const breakdown = getEntryCoinBreakdown(entry, prices)
+    if (!breakdown.length) continue
 
     if (entry.status === 'settled') {
-      if (entry.direction === 'credit') {
-        bucket.settledNetCrypto = Number((bucket.settledNetCrypto + cryptoAmount).toFixed(8))
-        bucket.settledNetUsd = Number((bucket.settledNetUsd + entry.amountUsd).toFixed(2))
-      } else {
-        bucket.settledNetCrypto = Number((bucket.settledNetCrypto - cryptoAmount).toFixed(8))
-        bucket.settledNetUsd = Number((bucket.settledNetUsd - entry.amountUsd).toFixed(2))
+      for (const coinEntry of breakdown) {
+        const bucket = byCoin[coinEntry.coinType]
+        if (entry.direction === 'credit') {
+          bucket.settledNetCrypto = Number((bucket.settledNetCrypto + coinEntry.amountCrypto).toFixed(8))
+          bucket.settledNetUsd = Number((bucket.settledNetUsd + coinEntry.amountUsd).toFixed(2))
+        } else {
+          bucket.settledNetCrypto = Number((bucket.settledNetCrypto - coinEntry.amountCrypto).toFixed(8))
+          bucket.settledNetUsd = Number((bucket.settledNetUsd - coinEntry.amountUsd).toFixed(2))
+        }
       }
       continue
     }
 
     if (entry.status === 'pending' && entry.direction === 'debit') {
-      bucket.reservedPendingDebitCrypto = Number(
-        (bucket.reservedPendingDebitCrypto + cryptoAmount).toFixed(8)
-      )
-      bucket.reservedPendingDebitUsd = Number((bucket.reservedPendingDebitUsd + entry.amountUsd).toFixed(2))
+      for (const coinEntry of breakdown) {
+        const bucket = byCoin[coinEntry.coinType]
+        bucket.reservedPendingDebitCrypto = Number(
+          (bucket.reservedPendingDebitCrypto + coinEntry.amountCrypto).toFixed(8)
+        )
+        bucket.reservedPendingDebitUsd = Number(
+          (bucket.reservedPendingDebitUsd + coinEntry.amountUsd).toFixed(2)
+        )
+      }
     }
   }
 

@@ -45,6 +45,7 @@ type Props = {
     address: string
   }[]
   entries: WithdrawalEntry[]
+  kycStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected' | string
 }
 
 const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
@@ -71,6 +72,7 @@ export default function AccountWithdrawPageClient({
   referralReadyUsd,
   walletOptions,
   entries,
+  kycStatus,
 }: Props) {
   const [amountUsd, setAmountUsd] = useState('')
   const defaultCoin = useMemo(
@@ -90,6 +92,7 @@ export default function AccountWithdrawPageClient({
   })
   const { currency, rates, format } = useCurrency()
   const displayRate = rates[currency] > 0 ? rates[currency] : 1
+  const isKycApproved = kycStatus === 'approved'
 
   const pendingRequests = useMemo(
     () => entries.filter(entry => entry.status === 'pending').length,
@@ -111,6 +114,13 @@ export default function AccountWithdrawPageClient({
   }
 
   const submit = async () => {
+    if (!isKycApproved) {
+      setStatus({
+        type: 'error',
+        message: 'Complete KYC verification and wait for approval before requesting withdrawals.',
+      })
+      return
+    }
     const amountDisplay = Number(amountUsd)
     const amountUsdValue = amountDisplay / displayRate
     if (!Number.isFinite(amountDisplay) || amountUsdValue < 10) {
@@ -198,6 +208,30 @@ export default function AccountWithdrawPageClient({
           </p>
           <Link href="/dashboard/settings/wallet" className="inline-block mt-3 text-sm text-white underline underline-offset-4">
             Open Wallet Settings {'>'}
+          </Link>
+        </div>
+      )}
+
+      {!isKycApproved && (
+        <div
+          className="p-5 rounded-2xl"
+          style={{
+            background: 'rgba(245, 158, 11, 0.12)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+          }}
+        >
+          <div className="text-amber-100 font-semibold">
+            {kycStatus === 'pending'
+              ? 'KYC review in progress'
+              : kycStatus === 'rejected'
+                ? 'KYC was rejected'
+                : 'KYC required before withdrawals'}
+          </div>
+          <p className="text-sm text-amber-100/85 mt-2">
+            Withdrawals are unlocked only after KYC is approved.
+          </p>
+          <Link href="/dashboard/kyc" className="inline-block mt-3 text-sm text-white underline underline-offset-4">
+            {kycStatus === 'pending' ? 'View KYC status' : 'Complete KYC now'} {'>'}
           </Link>
         </div>
       )}
@@ -440,7 +474,7 @@ export default function AccountWithdrawPageClient({
             background: 'linear-gradient(135deg, #582dff, #3a137a)',
             color: '#ffffff',
           }}
-          disabled={!customMethod && walletOptions.length === 0}
+          disabled={!isKycApproved || (!customMethod && walletOptions.length === 0)}
         >
           Submit withdrawal request
         </LoadingButton>

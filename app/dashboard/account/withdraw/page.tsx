@@ -25,6 +25,9 @@ export default async function WithdrawAccountPage() {
       btcWalletAddress: true,
       ethWalletAddress: true,
       walletAddress: true,
+      kycProfile: {
+        select: { status: true },
+      },
     },
   })
 
@@ -121,6 +124,7 @@ export default async function WithdrawAccountPage() {
       referralReadyUsd={Number(referralReady._sum.amountUsd ?? 0)}
       walletOptions={walletOptions}
       entries={withdrawalEntries}
+      kycStatus={user.kycProfile?.status ?? 'not_submitted'}
     />
   )
 }
