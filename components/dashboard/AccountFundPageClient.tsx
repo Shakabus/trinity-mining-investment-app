@@ -252,46 +252,6 @@ export default function AccountFundPageClient({
       </div>
 
       <div
-        className="p-6 rounded-3xl"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          backdropFilter: 'blur(20px)',
-        }}
-      >
-        <h2 className="text-xl font-semibold text-white mb-4">Payment Wallet Balances</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {walletFlow.map(item => (
-            <div key={item.coinType} className="rounded-xl border border-white/10 p-4">
-              <div className="text-xs text-white/70">{item.coinType} wallet</div>
-              <div className="text-base font-semibold text-white mt-1">
-                {item.netCrypto.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 8,
-                })}{' '}
-                {item.coinType}
-              </div>
-              <div className="text-xs text-white/60 mt-1">
-                Value: $
-                {item.netUsd.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </div>
-              <div className="text-[11px] text-emerald-200/85 mt-2">
-                In: +{item.totalInCrypto.toFixed(8)} {item.coinType}
-              </div>
-              <div className="text-[11px] text-rose-200/85">
-                Out: -{item.totalOutCrypto.toFixed(8)} {item.coinType}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <WalletConversionCard walletFlow={walletFlow} />
-
-      <div
         className="p-6 rounded-3xl space-y-4"
         style={{
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
@@ -472,6 +432,46 @@ export default function AccountFundPageClient({
           Submit funding request
         </LoadingButton>
       </div>
+
+      <div
+        className="p-6 rounded-3xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
+        <h2 className="text-xl font-semibold text-white mb-4">Payment Wallet Balances</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {walletFlow.map(item => (
+            <div key={item.coinType} className="rounded-xl border border-white/10 p-4">
+              <div className="text-xs text-white/70">{item.coinType} wallet</div>
+              <div className="text-base font-semibold text-white mt-1">
+                {item.netCrypto.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 8,
+                })}{' '}
+                {item.coinType}
+              </div>
+              <div className="text-xs text-white/60 mt-1">
+                Value: $
+                {item.netUsd.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
+              <div className="text-[11px] text-emerald-200/85 mt-2">
+                In: +{item.totalInCrypto.toFixed(8)} {item.coinType}
+              </div>
+              <div className="text-[11px] text-rose-200/85">
+                Out: -{item.totalOutCrypto.toFixed(8)} {item.coinType}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <WalletConversionCard walletFlow={walletFlow} />
 
       <div
         className="p-6 rounded-3xl"
