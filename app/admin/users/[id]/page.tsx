@@ -283,7 +283,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           currentSessionStartedAt: userSessionMeta.currentSessionStartedAt
             ? userSessionMeta.currentSessionStartedAt.toISOString()
             : null,
-          totalSessionSeconds: userSessionMeta.totalSessionSeconds ?? null,
+          totalSessionSeconds: userSessionMeta.totalSessionSeconds ?? 0,
           btcWalletAddress: user.btcWalletAddress,
           ethWalletAddress: user.ethWalletAddress,
           ltcWalletAddress: user.ltcWalletAddress,
