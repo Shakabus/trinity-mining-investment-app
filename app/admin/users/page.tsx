@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,9 +46,6 @@ export default async function AdminUsersPage({
         email: true,
         accountStatus: true,
         role: true,
-        lastSeenAt: true,
-        currentSessionStartedAt: true,
-        totalSessionSeconds: true,
         userPlans: {
           where: {
             status: { in: ['active', 'awaiting_payment'] },
@@ -68,6 +66,39 @@ export default async function AdminUsersPage({
       take: size,
     }),
   ])
+
+  const userIds = users.map(user => user.id)
+  const sessionRows = userIds.length
+    ? await prisma.$queryRaw<
+        Array<{
+          id: number
+          lastSeenAt: Date | string | null
+          currentSessionStartedAt: Date | string | null
+          totalSessionSeconds: number | null
+        }>
+      >(
+        Prisma.sql`
+          SELECT
+            u.id,
+            u.last_seen_at AS lastSeenAt,
+            u.current_session_started_at AS currentSessionStartedAt,
+            COALESCE(u.total_session_seconds, 0) AS totalSessionSeconds
+          FROM users u
+          WHERE u.id IN (${Prisma.join(userIds)})
+        `
+      )
+    : []
+
+  const sessionByUserId = new Map(
+    sessionRows.map(row => [
+      row.id,
+      {
+        lastSeenAt: row.lastSeenAt ? new Date(row.lastSeenAt) : null,
+        currentSessionStartedAt: row.currentSessionStartedAt ? new Date(row.currentSessionStartedAt) : null,
+        totalSessionSeconds: Number(row.totalSessionSeconds ?? 0),
+      },
+    ])
+  )
 
   return (
     <div className="space-y-6">
@@ -103,10 +134,15 @@ export default async function AdminUsersPage({
             <tbody>
               {users.map(user => {
                 const currentPlan = user.userPlans[0]
-                const presenceState = getPresenceState(user.currentSessionStartedAt, user.lastSeenAt)
+                const session = sessionByUserId.get(user.id) ?? {
+                  lastSeenAt: null,
+                  currentSessionStartedAt: null,
+                  totalSessionSeconds: 0,
+                }
+                const presenceState = getPresenceState(session.currentSessionStartedAt, session.lastSeenAt)
                 const presenceLabel =
                   presenceState === 'online' ? 'Online' : presenceState === 'away' ? 'Away' : 'Offline'
-                const trackedSeconds = user.totalSessionSeconds
+                const trackedSeconds = session.totalSessionSeconds
 
                 return (
                   <tr
@@ -178,7 +214,7 @@ export default async function AdminUsersPage({
                         />
                         <span className="text-white">{presenceLabel}</span>
                       </div>
-                      <div className="text-xs text-white/50 mt-1">Last seen {formatSince(user.lastSeenAt)}</div>
+                      <div className="text-xs text-white/50 mt-1">Last seen {formatSince(session.lastSeenAt)}</div>
                     </td>
 
                     {/* Tracked Time */}
