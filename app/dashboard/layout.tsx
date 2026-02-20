@@ -6,7 +6,7 @@ import DashboardLayoutClient from '@/components/dashboard/DashboardLayoutClient'
 import { createUniqueReferralCode, normalizeReferralCode } from '@/lib/referral'
 import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import { isSupportedLanguage, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
-import { sendWelcomeEmail } from '@/lib/transactional-email'
+import { sendWelcomeEmailOnce } from '@/lib/welcome-email'
 
 export default async function DashboardLayout({
   children,
@@ -28,7 +28,6 @@ export default async function DashboardLayout({
   let user = await prisma.user.findUnique({
     where: { clerkUserId: userId },
   })
-  let createdNewUser = false
 
   // If user doesn't exist in our database, attach by email or create.
   // This avoids crashes when a prior account row already exists with the same email.
@@ -69,7 +68,6 @@ export default async function DashboardLayout({
             referredById: referrer ? referrer.id : null,
           },
         })
-        createdNewUser = true
       } catch {
         // Concurrent request may have created the user between checks.
         user =
@@ -79,10 +77,12 @@ export default async function DashboardLayout({
     }
   }
 
-  if (createdNewUser && user?.email) {
-    await sendWelcomeEmail({
-      to: user.email,
+  if (user?.email) {
+    await sendWelcomeEmailOnce({
+      userId: user.id,
+      email: user.email,
       fullName: user.fullName,
+      source: 'dashboard_layout',
     })
   }
 
