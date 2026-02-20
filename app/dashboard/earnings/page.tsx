@@ -93,7 +93,7 @@ export default async function EarningsPage() {
     .reduce((sum, record) => sum + record.totalEarnedUsd, 0)
 
   const reservedUsd = user.withdrawals
-    .filter(item => item.status !== 'rejected')
+    .filter(item => item.status === 'pending')
     .reduce((sum, item) => sum + Number(item.amountUsd), 0)
 
   const availableUsd = Math.max(0, withdrawableUsd - reservedUsd)

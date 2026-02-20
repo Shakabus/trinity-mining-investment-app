@@ -364,7 +364,7 @@ export async function getRealEstateDashboardData(clerkUserId: string): Promise<{
   }, 0)
 
   const lockedOrPaidWithdrawals = withdrawals
-    .filter(withdrawal => withdrawal.status !== 'rejected')
+    .filter(withdrawal => withdrawal.status === 'pending' || withdrawal.status === 'processing')
     .reduce((sum, withdrawal) => sum + withdrawal.amountUsd, 0)
 
   const availableWithdrawalUsd = Math.max(unlockedNetIncome - lockedOrPaidWithdrawals, 0)

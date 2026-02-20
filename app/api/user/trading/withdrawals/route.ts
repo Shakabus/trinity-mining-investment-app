@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     }
 
     const totalWithdrawn = user.tradingWithdrawals
-      .filter(withdrawal => withdrawal.tradingUserPlanId === activePlan.id && withdrawal.status !== 'rejected')
+      .filter(withdrawal => withdrawal.tradingUserPlanId === activePlan.id && withdrawal.status === 'pending')
       .reduce((sum, w) => sum + Number(w.amountUsd), 0)
     const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
     const baseMinWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))

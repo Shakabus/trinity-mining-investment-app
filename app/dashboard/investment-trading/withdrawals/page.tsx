@@ -88,7 +88,7 @@ export default async function TradingWithdrawalsPage() {
     })
   }
   const totalWithdrawn = user?.tradingWithdrawals
-    .filter(w => (activePlan ? w.tradingUserPlanId === activePlan.id : true) && w.status !== 'rejected')
+    .filter(w => (activePlan ? w.tradingUserPlanId === activePlan.id : true) && w.status === 'pending')
     .reduce((sum, w) => sum + Number(w.amountUsd), 0) ?? 0
   const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
   const baseMinWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))

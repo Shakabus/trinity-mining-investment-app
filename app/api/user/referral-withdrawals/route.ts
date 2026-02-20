@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       .reduce((sum, bonus) => sum + Number(bonus.amountUsd), 0)
 
     const reservedUsd = user.referralWithdrawals
-      .filter(item => item.status !== 'rejected')
+      .filter(item => item.status === 'pending')
       .reduce((sum, item) => sum + Number(item.amountUsd), 0)
 
     const availableUsd = Math.max(0, totalBonusUsd - reservedUsd)
