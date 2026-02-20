@@ -164,11 +164,30 @@ const compactLine = (value: string, maxLength = 220) =>
 
 const displayName = (fullName?: string | null) => fullName?.trim() || 'there'
 
+const resolveAppBaseUrl = () =>
+  (
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_BASE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    'https://www.trinityin1investments.com'
+  )
+    .trim()
+    .replace(/\/+$/, '')
+
 const renderDetailsHtml = (details: Array<{ label: string; value: string }>) =>
   details
     .map(
       detail =>
-        `<li><strong>${escapeHtml(detail.label)}:</strong> ${escapeHtml(detail.value)}</li>`
+        `
+          <tr>
+            <td style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.08);color:#9ca3af;font-size:13px;font-weight:600;vertical-align:top;width:34%">
+              ${escapeHtml(detail.label)}
+            </td>
+            <td style="padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.08);color:#f3f4f6;font-size:13px;font-weight:500;vertical-align:top">
+              ${escapeHtml(detail.value)}
+            </td>
+          </tr>
+        `
     )
     .join('')
 
@@ -185,17 +204,52 @@ const renderMessage = ({
   details?: Array<{ label: string; value: string }>
   footer: string
 }) => {
-  const detailList = details?.length
-    ? `<ul style="margin:0 0 10px 20px;padding:0">${renderDetailsHtml(details)}</ul>`
+  const appUrl = resolveAppBaseUrl()
+  const detailTable = details?.length
+    ? `
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;background:#0d0f14;margin:0 0 18px;overflow:hidden">
+        ${renderDetailsHtml(details)}
+      </table>
+    `
     : ''
   return `
-    <div style="font-family:Arial,sans-serif;line-height:1.55;color:#111">
-      <h2 style="margin:0 0 12px">${escapeHtml(heading)}</h2>
-      <p style="margin:0 0 10px">Hi ${escapeHtml(greeting)},</p>
-      <p style="margin:0 0 10px">${escapeHtml(intro)}</p>
-      ${detailList}
-      <p style="margin:0">${escapeHtml(footer)}</p>
-    </div>
+    <!doctype html>
+    <html>
+      <body style="margin:0;padding:0;background:#04060d;font-family:'Segoe UI',Arial,sans-serif;color:#e5e7eb">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#04060d;padding:24px 12px">
+          <tr>
+            <td align="center">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px">
+                <tr>
+                  <td style="padding:0 0 12px 2px">
+                    <span style="display:inline-block;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#c4b5fd;font-weight:700;border:1px solid rgba(91,44,255,0.45);background:rgba(91,44,255,0.12);padding:6px 10px;border-radius:999px">
+                      Trinity Investments
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid rgba(255,255,255,0.1);border-radius:18px;background:linear-gradient(150deg,#0a0b12 0%,#0e1222 100%);padding:28px 24px;box-shadow:0 24px 48px rgba(0,0,0,0.45)">
+                    <h1 style="margin:0 0 14px;font-size:27px;line-height:1.25;color:#ffffff;font-weight:800">${escapeHtml(heading)}</h1>
+                    <p style="margin:0 0 10px;color:#d1d5db;font-size:15px;line-height:1.6">Hi ${escapeHtml(greeting)},</p>
+                    <p style="margin:0 0 18px;color:#d1d5db;font-size:15px;line-height:1.6">${escapeHtml(intro)}</p>
+                    ${detailTable}
+                    <p style="margin:0 0 24px;color:#d1d5db;font-size:14px;line-height:1.6">${escapeHtml(footer)}</p>
+                    <a href="${escapeHtml(appUrl)}/dashboard" style="display:inline-block;background:linear-gradient(135deg,#7a47ff,#4f2ddb);color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 18px;border-radius:10px">
+                      Open Dashboard
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 8px 0;color:#7f8798;font-size:12px;line-height:1.5">
+                    This is an automated update from Trinity Investments. For support, reply to this email or contact our support desk.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
   `
 }
 
@@ -621,15 +675,42 @@ export async function sendSupportReplyEmail({
 export async function sendSupportInboxAlertEmail({ subject, body }: SupportInboxAlertEmailInput) {
   const inbox = supportInboxRecipient()
   if (!inbox) return false
+  const appUrl = resolveAppBaseUrl()
   return sendEmail({
     to: inbox,
     subject,
     text: body,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.55;color:#111">
-        <h2 style="margin:0 0 12px">${escapeHtml(subject)}</h2>
-        <pre style="white-space:pre-wrap;margin:0;font-family:inherit">${escapeHtml(body)}</pre>
-      </div>
+      <!doctype html>
+      <html>
+        <body style="margin:0;padding:0;background:#070912;font-family:'Segoe UI',Arial,sans-serif;color:#e5e7eb">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="padding:24px 12px">
+            <tr>
+              <td align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;border:1px solid rgba(255,255,255,0.12);border-radius:14px;background:#0d111b">
+                  <tr>
+                    <td style="padding:20px 22px;border-bottom:1px solid rgba(255,255,255,0.08)">
+                      <h2 style="margin:0;color:#f8fafc;font-size:22px;line-height:1.3">${escapeHtml(subject)}</h2>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:20px 22px">
+                      <pre style="margin:0;white-space:pre-wrap;word-break:break-word;color:#d1d5db;font-family:Consolas,'Courier New',monospace;font-size:13px;line-height:1.5">${escapeHtml(body)}</pre>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:0 22px 18px">
+                      <a href="${escapeHtml(appUrl)}/admin" style="display:inline-block;background:#5b2cff;color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 14px;border-radius:8px">
+                        Open Admin Dashboard
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
     `,
   })
 }
