@@ -24,6 +24,10 @@ import {
 import { REAL_ESTATE_BUY_IN_TICKET_PREFIX } from '@/lib/real-estate-dashboard'
 import { logUserActivity } from '@/lib/user-activity'
 import {
+  sendRealEstateBuyInSubmittedEmail,
+  sendSupportInboxAlertEmail,
+} from '@/lib/transactional-email'
+import {
   isInputValidationError,
   readJsonObject,
   readStringField,
@@ -80,7 +84,7 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
-      select: { id: true },
+      select: { id: true, email: true, fullName: true },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
@@ -233,6 +237,29 @@ export async function POST(req: Request) {
       userId: user.id,
       action: 'RealEstateBuyInSubmitted',
       detail: `Real-estate buy-in submitted from account balance for ${title} (${tier}).`,
+    })
+
+    if (user.email) {
+      await sendRealEstateBuyInSubmittedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        propertyTitle: title,
+        tierName: tier,
+        amountUsd: minimumUsd,
+        referenceId: `real-estate-buy-in:${ticket.id}`,
+      })
+    }
+
+    await sendSupportInboxAlertEmail({
+      subject: `Real-Estate Buy-In Request #${ticket.id}`,
+      body: [
+        `Ticket: #${ticket.id}`,
+        `User ID: ${user.id}`,
+        `User Email: ${user.email || 'no-email'}`,
+        `Property: ${title}`,
+        `Tier: ${tier}`,
+        `Amount (USD): ${minimumUsd.toFixed(2)}`,
+      ].join('\n'),
     })
 
     return NextResponse.json({

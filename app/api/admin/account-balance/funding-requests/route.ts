@@ -18,6 +18,7 @@ import {
   type TrackedAssetCoin,
 } from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
+import { sendAccountFundingReviewedEmail } from '@/lib/transactional-email'
 import {
   isInputValidationError,
   readJsonObject,
@@ -121,7 +122,7 @@ export async function PATCH(req: Request) {
     const decision = readStringField(body, 'decision', {
       required: true,
       enumValues: ['approve', 'reject'],
-    })!
+    })! as 'approve' | 'reject'
     const note = readStringField(body, 'note', { maxLength: 240 }) || undefined
 
     const logs = await prisma.userActivityLog.findMany({
@@ -208,6 +209,21 @@ export async function PATCH(req: Request) {
           ? `Funding request approved for $${pendingEntry.amountUsd.toFixed(2)}.`
           : `Funding request rejected for $${pendingEntry.amountUsd.toFixed(2)}.`,
     })
+
+    const user = await prisma.user.findUnique({
+      where: { id: pendingEntry.userId },
+      select: { email: true, fullName: true },
+    })
+    if (user?.email) {
+      await sendAccountFundingReviewedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        amountUsd: pendingEntry.amountUsd,
+        coinType,
+        referenceId: requestId,
+        decision,
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

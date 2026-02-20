@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { sendSupportReplyEmail } from '@/lib/transactional-email'
 import {
   isInputValidationError,
   readJsonObject,
@@ -70,6 +71,16 @@ export async function POST(req: Request) {
       action: 'SupportReplyReceived',
       detail: `New reply on: ${ticket.subject}.`,
     })
+
+    if (ticket.user.email) {
+      await sendSupportReplyEmail({
+        to: ticket.user.email,
+        fullName: ticket.user.fullName,
+        ticketId: ticket.id,
+        subject: ticket.subject,
+        messagePreview: message,
+      })
+    }
 
     return NextResponse.json({
       success: true,

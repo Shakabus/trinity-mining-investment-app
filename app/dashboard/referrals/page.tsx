@@ -56,11 +56,15 @@ export default async function ReferralsPage() {
     .filter(bonus => bonus.status !== 'revoked')
     .reduce((sum, bonus) => sum + Number(bonus.amountUsd), 0)
 
-  const reservedUsd = user.referralWithdrawals
+  const committedUsd = user.referralWithdrawals
+    .filter(item => item.status !== 'rejected')
+    .reduce((sum, item) => sum + Number(item.amountUsd), 0)
+
+  const pendingUsd = user.referralWithdrawals
     .filter(item => item.status === 'pending')
     .reduce((sum, item) => sum + Number(item.amountUsd), 0)
 
-  const availableUsd = Math.max(0, totalBonusUsd - reservedUsd)
+  const availableUsd = Math.max(0, totalBonusUsd - committedUsd)
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-6">
       <ReferralDashboard
@@ -68,7 +72,7 @@ export default async function ReferralsPage() {
         bonusPercent={bonusPercent}
         totalBonusUsd={totalBonusUsd}
         availableUsd={availableUsd}
-        pendingUsd={reservedUsd}
+        pendingUsd={pendingUsd}
         minWithdrawalUsd={minWithdrawalUsd}
         referrals={user.referrals.map(ref => ({
           id: ref.id,

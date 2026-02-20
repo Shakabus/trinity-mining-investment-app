@@ -21,6 +21,10 @@ import {
   readNumberField,
   readStringField,
 } from '@/lib/requestValidation'
+import {
+  sendRealEstateBuyInReviewedEmail,
+  sendRealEstateWithdrawalReviewedEmail,
+} from '@/lib/transactional-email'
 
 const ALLOWED_STATUSES = ['open', 'waiting', 'closed', 'rejected']
 const ADMIN_SUPPORT_TICKET_FIELDS = ['ticketId', 'status'] as const
@@ -34,6 +38,20 @@ const parseLabel = (body: string, label: string) => {
 const parseAmount = (value: string) => {
   const num = Number(value.replace(/[^0-9.]/g, ''))
   return Number.isFinite(num) ? num : 0
+}
+
+const parseBuyInSubject = (subject: string) => {
+  const withoutPrefix = subject.replace(REAL_ESTATE_BUY_IN_TICKET_PREFIX, '').trim()
+  const tierMatch = withoutPrefix.match(/\(([^)]+)\)\s*$/)
+  const tierName = tierMatch?.[1]?.trim() || 'Selected Tier'
+  const tierStartIndex = typeof tierMatch?.index === 'number' ? tierMatch.index : withoutPrefix.length
+  const propertyTitle = tierMatch
+    ? withoutPrefix.slice(0, Math.max(0, tierStartIndex)).trim()
+    : withoutPrefix
+  return {
+    propertyTitle: propertyTitle || 'Property',
+    tierName,
+  }
 }
 
 export async function PATCH(req: Request) {
@@ -65,6 +83,11 @@ export async function PATCH(req: Request) {
     if (!existingTicket) {
       return NextResponse.json({ error: 'Ticket not found.' }, { status: 404 })
     }
+
+    const ticketOwner = await prisma.user.findUnique({
+      where: { id: existingTicket.userId },
+      select: { email: true, fullName: true },
+    })
 
     const ticket = await prisma.supportTicket.update({
       where: { id: ticketId },
@@ -152,6 +175,24 @@ export async function PATCH(req: Request) {
           userId: ticket.userId,
           action: 'RealEstateBuyInReopened',
           detail: `Real estate buy-in reopened.`,
+        })
+      }
+
+      if (
+        ticketOwner?.email &&
+        status !== existingTicket.status &&
+        (status === 'closed' || status === 'rejected') &&
+        latestRelatedEntry
+      ) {
+        const { propertyTitle, tierName } = parseBuyInSubject(ticket.subject)
+        await sendRealEstateBuyInReviewedEmail({
+          to: ticketOwner.email,
+          fullName: ticketOwner.fullName,
+          propertyTitle,
+          tierName,
+          amountUsd: latestRelatedEntry.amountUsd,
+          referenceId,
+          decision: status === 'closed' ? 'approve' : 'reject',
         })
       }
     } else if (isRealEstateWithdrawal) {
@@ -297,6 +338,23 @@ export async function PATCH(req: Request) {
           userId: ticket.userId,
           action: 'RealEstateWithdrawalReopened',
           detail: `Real estate withdrawal reopened.`,
+        })
+      }
+
+      if (
+        ticketOwner?.email &&
+        requestedAmountUsd > 0 &&
+        status !== existingTicket.status &&
+        (status === 'closed' || status === 'rejected')
+      ) {
+        await sendRealEstateWithdrawalReviewedEmail({
+          to: ticketOwner.email,
+          fullName: ticketOwner.fullName,
+          subject: ticket.subject,
+          amountUsd: requestedAmountUsd,
+          coinType,
+          referenceId,
+          decision: status === 'closed' ? 'approve' : 'reject',
         })
       }
     } else if (status === 'closed') {

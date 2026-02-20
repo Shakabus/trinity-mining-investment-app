@@ -76,11 +76,11 @@ export async function POST(req: Request) {
       .filter(record => record.isWithdrawable)
       .reduce((sum, record) => sum + Number(record.totalEarnedUsd), 0)
 
-    const reservedUsd = user.withdrawals
-      .filter(item => item.status === 'pending')
+    const committedUsd = user.withdrawals
+      .filter(item => item.status !== 'rejected')
       .reduce((sum, item) => sum + Number(item.amountUsd), 0)
 
-    const availableUsd = Math.max(0, withdrawableUsd - reservedUsd)
+    const availableUsd = Math.max(0, withdrawableUsd - committedUsd)
 
     const activePlan = updatedEarnings.find(record => record.userPlan.status === 'active')?.userPlan
     const dailyActiveUsd = updatedEarnings

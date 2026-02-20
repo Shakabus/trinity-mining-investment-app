@@ -92,11 +92,15 @@ export default async function EarningsPage() {
     .filter(record => record.isWithdrawable)
     .reduce((sum, record) => sum + record.totalEarnedUsd, 0)
 
-  const reservedUsd = user.withdrawals
+  const committedUsd = user.withdrawals
+    .filter(item => item.status !== 'rejected')
+    .reduce((sum, item) => sum + Number(item.amountUsd), 0)
+
+  const pendingUsd = user.withdrawals
     .filter(item => item.status === 'pending')
     .reduce((sum, item) => sum + Number(item.amountUsd), 0)
 
-  const availableUsd = Math.max(0, withdrawableUsd - reservedUsd)
+  const availableUsd = Math.max(0, withdrawableUsd - committedUsd)
 
   const activePlan = user.earnings.find(record => record.userPlan?.status === 'active')?.userPlan
   const dailyActiveUsd = records
@@ -130,11 +134,11 @@ export default async function EarningsPage() {
           planDurationDays={planDurationDays}
           lastUpdatedAt={lastUpdatedAt}
           lastPayoutAt={null}
-          payouts={payouts}
-          withdrawableUsd={availableUsd}
-          pendingUsd={reservedUsd}
-          minWithdrawalUsd={minWithdrawalUsd}
-        />
+        payouts={payouts}
+        withdrawableUsd={availableUsd}
+        pendingUsd={pendingUsd}
+        minWithdrawalUsd={minWithdrawalUsd}
+      />
       </div>
     </div>
   )

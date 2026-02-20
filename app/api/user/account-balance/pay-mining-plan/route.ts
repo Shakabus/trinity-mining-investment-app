@@ -24,6 +24,10 @@ import {
 } from '@/lib/crypto-prices'
 import { logUserActivity } from '@/lib/user-activity'
 import {
+  sendPlanPaymentSubmittedEmail,
+  sendSupportInboxAlertEmail,
+} from '@/lib/transactional-email'
+import {
   isInputValidationError,
   readJsonObject,
   readNumberField,
@@ -125,7 +129,7 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
-      select: { id: true },
+      select: { id: true, email: true, fullName: true },
     })
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
@@ -297,6 +301,28 @@ export async function POST(req: Request) {
       userId: user.id,
       action: 'AccountBalancePlanPurchaseSubmitted',
       detail: `Submitted ${userPlan.plan.name} from account balance for review.`,
+    })
+
+    if (user.email) {
+      await sendPlanPaymentSubmittedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        planType: 'Mining',
+        planName: userPlan.plan.name,
+        amountUsd: finalPriceUsd,
+        referenceId: debitReference,
+      })
+    }
+
+    await sendSupportInboxAlertEmail({
+      subject: `Mining Plan Payment ${debitReference}`,
+      body: [
+        `Reference: ${debitReference}`,
+        `User ID: ${user.id}`,
+        `User Email: ${user.email || 'no-email'}`,
+        `Plan: ${userPlan.plan.name}`,
+        `Amount (USD): ${finalPriceUsd.toFixed(2)}`,
+      ].join('\n'),
     })
 
     return NextResponse.json({

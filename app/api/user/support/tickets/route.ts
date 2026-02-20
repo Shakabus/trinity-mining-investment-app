@@ -14,9 +14,25 @@ import {
   readFormFile,
   readFormString,
 } from '@/lib/requestValidation'
+import {
+  sendRealEstateWithdrawalRequestedEmail,
+  sendSupportInboxAlertEmail,
+  sendSupportTicketCreatedEmail,
+} from '@/lib/transactional-email'
 
 const SUPPORT_TICKET_FIELDS = ['subject', 'message', 'file'] as const
 export const runtime = 'nodejs'
+
+const parseLabel = (body: string, label: string) => {
+  const regex = new RegExp(`^${label}:\\s*(.+)$`, 'im')
+  const match = body.match(regex)
+  return match?.[1]?.trim() ?? ''
+}
+
+const parseAmount = (value: string) => {
+  const num = Number(value.replace(/[^0-9.]/g, ''))
+  return Number.isFinite(num) ? num : 0
+}
 
 export async function POST(req: Request) {
   try {
@@ -163,6 +179,50 @@ export async function POST(req: Request) {
         detail: `New support request created: ${subject}.`,
       })
     }
+
+    if (user.email) {
+      await sendSupportTicketCreatedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        ticketId: ticket.id,
+        subject,
+      })
+
+      if (isRealEstateWithdrawal) {
+        const requestedAmountUsd = parseAmount(
+          parseLabel(message, 'Requested Amount USD') || parseLabel(message, 'Amount')
+        )
+        const coinType =
+          (parseLabel(message, 'Coin') ||
+            parseLabel(message, 'Payout Coin') ||
+            parseLabel(message, 'Payment Coin') ||
+            'USDT').toUpperCase()
+        const destination =
+          parseLabel(message, 'Destination') || parseLabel(message, 'Wallet') || null
+
+        if (requestedAmountUsd > 0) {
+          await sendRealEstateWithdrawalRequestedEmail({
+            to: user.email,
+            fullName: user.fullName,
+            subject,
+            amountUsd: requestedAmountUsd,
+            coinType,
+            destination,
+            referenceId: `real-estate-withdrawal:${ticket.id}`,
+          })
+        }
+      }
+    }
+
+    await sendSupportInboxAlertEmail({
+      subject: `New Support Ticket #${ticket.id}`,
+      body: [
+        `Ticket: #${ticket.id}`,
+        `User: ${user.fullName || 'N/A'} (${user.email || 'no-email'})`,
+        `Subject: ${subject}`,
+        `Message: ${message}`,
+      ].join('\n'),
+    })
 
     return NextResponse.json({
       success: true,

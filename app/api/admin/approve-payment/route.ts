@@ -10,6 +10,7 @@ import {
 } from '@/lib/account-balance'
 import { getCryptoPricesUsd } from '@/lib/earnings'
 import { computeTargetDailyCryptoEstimate } from '@/lib/mining-engine'
+import { sendMiningPlanActivatedEmail } from '@/lib/transactional-email'
 import {
   convertUsdToCoin,
   getTrackedCryptoPricesUsd,
@@ -472,6 +473,16 @@ export async function POST(req: Request) {
       action: 'PaymentApproved',
       detail: `Payment approved for ${userPlan.plan.name} (${userPlan.selectedDurationDays} days).`,
     })
+
+    if (userPlan.user.email) {
+      await sendMiningPlanActivatedEmail({
+        to: userPlan.user.email,
+        fullName: userPlan.user.fullName,
+        planName: userPlan.plan.name,
+        durationDays: userPlan.selectedDurationDays,
+        amountUsd: Number(userPlan.finalPrice),
+      })
+    }
 
     return NextResponse.json({
       success: true,

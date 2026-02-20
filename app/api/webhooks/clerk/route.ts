@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { sendWelcomeEmail } from '@/lib/transactional-email'
 
 type ClerkWebhookBody = {
   type?: string
@@ -28,10 +29,11 @@ async function createOrAttachUser(clerkUserId: string, email: string, fullName: 
   })
 
   if (byClerkId) {
-    return prisma.user.update({
+    const user = await prisma.user.update({
       where: { id: byClerkId.id },
       data: { email, fullName },
     })
+    return { user, isNew: false as const }
   }
 
   const byEmail = await prisma.user.findUnique({
@@ -39,16 +41,17 @@ async function createOrAttachUser(clerkUserId: string, email: string, fullName: 
   })
 
   if (byEmail) {
-    return prisma.user.update({
+    const user = await prisma.user.update({
       where: { id: byEmail.id },
       data: {
         clerkUserId,
         fullName,
       },
     })
+    return { user, isNew: false as const }
   }
 
-  return prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       clerkUserId,
       email,
@@ -57,6 +60,7 @@ async function createOrAttachUser(clerkUserId: string, email: string, fullName: 
       accountStatus: 'inactive',
     },
   })
+  return { user, isNew: true as const }
 }
 
 export async function POST(req: Request) {
@@ -66,8 +70,14 @@ export async function POST(req: Request) {
 
     if (eventType === 'user.created') {
       const { id, email, fullName } = parseUser(body)
-      const user = await createOrAttachUser(id, email, fullName)
-      return NextResponse.json({ success: true, userId: user?.id ?? null })
+      const result = await createOrAttachUser(id, email, fullName)
+      if (result?.isNew && result.user.email) {
+        await sendWelcomeEmail({
+          to: result.user.email,
+          fullName: result.user.fullName,
+        })
+      }
+      return NextResponse.json({ success: true, userId: result?.user.id ?? null })
     }
 
     if (eventType === 'user.updated') {

@@ -14,6 +14,7 @@ import {
   isTrackedAssetCoin,
   type TrackedAssetCoin,
 } from '@/lib/crypto-prices'
+import { sendTradingPlanActivatedEmail } from '@/lib/transactional-email'
 import {
   isInputValidationError,
   readJsonObject,
@@ -330,6 +331,16 @@ export async function POST(req: Request) {
         detail: `Trading payment approved for ${tradingPlan.plan.name}.`,
       },
     })
+
+    if (tradingPlan.user.email) {
+      await sendTradingPlanActivatedEmail({
+        to: tradingPlan.user.email,
+        fullName: tradingPlan.user.fullName,
+        planName: tradingPlan.plan.name,
+        durationHours: tradingPlan.durationHours,
+        amountUsd: Number(tradingPlan.investmentUsd),
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

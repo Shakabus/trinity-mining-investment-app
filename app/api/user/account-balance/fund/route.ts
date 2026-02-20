@@ -16,6 +16,10 @@ import {
 } from '@/lib/account-balance'
 import { logUserActivity } from '@/lib/user-activity'
 import {
+  sendAccountFundingSubmittedEmail,
+  sendSupportInboxAlertEmail,
+} from '@/lib/transactional-email'
+import {
   isInputValidationError,
   readFormDataStrict,
   readFormFile,
@@ -40,7 +44,7 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
-      select: { id: true },
+      select: { id: true, email: true, fullName: true },
     })
 
     if (!user) {
@@ -92,7 +96,7 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
-      select: { id: true },
+      select: { id: true, email: true, fullName: true },
     })
 
     if (!user) {
@@ -153,6 +157,27 @@ export async function POST(req: Request) {
       userId: user.id,
       action: 'AccountFundingSubmitted',
       detail: `Funding request submitted for $${amountUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`,
+    })
+
+    if (user.email) {
+      await sendAccountFundingSubmittedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        amountUsd,
+        coinType,
+        referenceId: requestId,
+      })
+    }
+
+    await sendSupportInboxAlertEmail({
+      subject: `Funding Request ${requestId}`,
+      body: [
+        `Reference: ${requestId}`,
+        `User ID: ${user.id}`,
+        `User Email: ${user.email || 'no-email'}`,
+        `Amount (USD): ${amountUsd.toFixed(2)}`,
+        `Coin: ${coinType}`,
+      ].join('\n'),
     })
 
     return NextResponse.json({

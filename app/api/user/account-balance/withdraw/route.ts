@@ -28,6 +28,10 @@ import {
 } from '@/lib/requestValidation'
 import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
 import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
+import {
+  sendAccountWithdrawalRequestedEmail,
+  sendSupportInboxAlertEmail,
+} from '@/lib/transactional-email'
 
 const WITHDRAW_ALLOWED_FIELDS = [
   'amountUsd',
@@ -113,6 +117,8 @@ export async function GET() {
       where: { clerkUserId: userId },
       select: {
         id: true,
+        email: true,
+        fullName: true,
         btcWalletAddress: true,
         ethWalletAddress: true,
         walletAddress: true,
@@ -199,6 +205,8 @@ export async function POST(req: Request) {
       where: { clerkUserId: userId },
       select: {
         id: true,
+        email: true,
+        fullName: true,
         btcWalletAddress: true,
         ethWalletAddress: true,
         walletAddress: true,
@@ -333,6 +341,29 @@ export async function POST(req: Request) {
       userId: user.id,
       action: 'AccountBalanceWithdrawalRequested',
       detail: `Account withdrawal requested for $${amountUsd.toFixed(2)} to ${coinType}.`,
+    })
+
+    if (user.email) {
+      await sendAccountWithdrawalRequestedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        amountUsd,
+        coinType,
+        referenceId,
+        walletAddress: customMethod ? (walletAddress || null) : presetWallet,
+        customMethodNote: customMethod ? customMethodNote || null : null,
+      })
+    }
+
+    await sendSupportInboxAlertEmail({
+      subject: `Withdrawal Request ${referenceId}`,
+      body: [
+        `Reference: ${referenceId}`,
+        `User ID: ${user.id}`,
+        `User Email: ${user.email || 'no-email'}`,
+        `Amount (USD): ${amountUsd.toFixed(2)}`,
+        `Coin: ${coinType}`,
+      ].join('\n'),
     })
 
     return NextResponse.json({

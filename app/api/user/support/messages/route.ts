@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
+import { sendSupportInboxAlertEmail } from '@/lib/transactional-email'
 import {
   isInputValidationError,
   readFormDataStrict,
@@ -92,6 +93,16 @@ export async function POST(req: Request) {
       userId: user.id,
       action: 'SupportMessageSent',
       detail: `Message sent on: ${ticket.subject}.`,
+    })
+
+    await sendSupportInboxAlertEmail({
+      subject: `Support Ticket Update #${ticket.id}`,
+      body: [
+        `Ticket: #${ticket.id}`,
+        `User: ${user.fullName || 'N/A'} (${user.email || 'no-email'})`,
+        `Subject: ${ticket.subject}`,
+        `Message: ${message}`,
+      ].join('\n'),
     })
 
     return NextResponse.json({

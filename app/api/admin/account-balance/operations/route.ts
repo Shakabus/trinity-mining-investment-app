@@ -25,6 +25,15 @@ import {
   isTrackedAssetCoin,
   type TrackedAssetCoin,
 } from '@/lib/crypto-prices'
+import { REAL_ESTATE_BUY_IN_TICKET_PREFIX } from '@/lib/real-estate-dashboard'
+import {
+  sendAccountFundingReviewedEmail,
+  sendAccountWithdrawalReviewedEmail,
+  sendMiningPlanActivatedEmail,
+  sendPlanPaymentReviewedEmail,
+  sendRealEstateBuyInReviewedEmail,
+  sendTradingPlanActivatedEmail,
+} from '@/lib/transactional-email'
 import {
   isInputValidationError,
   readBooleanField,
@@ -141,6 +150,29 @@ function readMetadataString(metadata: Record<string, unknown> | undefined, key: 
   return typeof value === 'string' && value.trim().length > 0 ? value : null
 }
 
+async function getEmailRecipient(userId: number) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, fullName: true },
+  })
+  if (!user?.email) return null
+  return user
+}
+
+const parseBuyInSubject = (subject: string) => {
+  const withoutPrefix = subject.replace(REAL_ESTATE_BUY_IN_TICKET_PREFIX, '').trim()
+  const tierMatch = withoutPrefix.match(/\(([^)]+)\)\s*$/)
+  const tierName = tierMatch?.[1]?.trim() || 'Selected Tier'
+  const tierStartIndex = typeof tierMatch?.index === 'number' ? tierMatch.index : withoutPrefix.length
+  const propertyTitle = tierMatch
+    ? withoutPrefix.slice(0, Math.max(0, tierStartIndex)).trim()
+    : withoutPrefix
+  return {
+    propertyTitle: propertyTitle || 'Property',
+    tierName,
+  }
+}
+
 async function applyFundingReview(params: {
   userId: number
   referenceId: string
@@ -202,6 +234,18 @@ async function applyFundingReview(params: {
         params.decision === 'approve'
           ? `Funding request approved for $${params.amountUsd.toFixed(2)}.`
           : `Funding request rejected for $${params.amountUsd.toFixed(2)}.`,
+    })
+  }
+
+  const user = await getEmailRecipient(params.userId)
+  if (user) {
+    await sendAccountFundingReviewedEmail({
+      to: user.email,
+      fullName: user.fullName,
+      amountUsd: params.amountUsd,
+      coinType,
+      referenceId: params.referenceId,
+      decision: params.decision,
     })
   }
 }
@@ -522,6 +566,36 @@ async function applyMiningPlanReview(params: {
           : 'Mining plan payment from account balance rejected.',
     })
   }
+
+  const [user, plan] = await Promise.all([
+    getEmailRecipient(params.userId),
+    prisma.userPlan.findUnique({
+      where: { id: userPlanId },
+      include: { plan: true },
+    }),
+  ])
+
+  if (user?.email && plan) {
+    if (params.decision === 'approve') {
+      await sendMiningPlanActivatedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        planName: plan.plan.name,
+        durationDays: plan.selectedDurationDays,
+        amountUsd: Number(plan.finalPrice),
+      })
+    } else {
+      await sendPlanPaymentReviewedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        planType: 'Mining',
+        planName: plan.plan.name,
+        amountUsd: Number(plan.finalPrice),
+        referenceId: params.referenceId,
+        decision: 'reject',
+      })
+    }
+  }
 }
 
 async function applyTradingPlanReview(params: {
@@ -752,6 +826,36 @@ async function applyTradingPlanReview(params: {
           : 'Trading plan payment from account balance rejected.',
     })
   }
+
+  const [user, plan] = await Promise.all([
+    getEmailRecipient(params.userId),
+    prisma.tradingUserPlan.findUnique({
+      where: { id: tradingUserPlanId },
+      include: { plan: true },
+    }),
+  ])
+
+  if (user?.email && plan) {
+    if (params.decision === 'approve') {
+      await sendTradingPlanActivatedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        planName: plan.plan.name,
+        durationHours: plan.durationHours,
+        amountUsd: Number(plan.investmentUsd),
+      })
+    } else {
+      await sendPlanPaymentReviewedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        planType: 'Trading',
+        planName: plan.plan.name,
+        amountUsd: Number(plan.investmentUsd),
+        referenceId: params.referenceId,
+        decision: 'reject',
+      })
+    }
+  }
 }
 
 async function applyRealEstateReview(params: {
@@ -826,6 +930,26 @@ async function applyRealEstateReview(params: {
           : 'Real estate buy-in rejected.',
     })
   }
+
+  const [user, ticket] = await Promise.all([
+    getEmailRecipient(params.userId),
+    prisma.supportTicket.findUnique({
+      where: { id: ticketId },
+      select: { subject: true },
+    }),
+  ])
+  if (user && ticket?.subject) {
+    const { propertyTitle, tierName } = parseBuyInSubject(ticket.subject)
+    await sendRealEstateBuyInReviewedEmail({
+      to: user.email,
+      fullName: user.fullName,
+      propertyTitle,
+      tierName,
+      amountUsd: params.amountUsd,
+      referenceId: params.referenceId,
+      decision: params.decision,
+    })
+  }
 }
 
 async function applyAccountWithdrawalReview(params: {
@@ -868,6 +992,18 @@ async function applyAccountWithdrawalReview(params: {
         params.decision === 'approve'
           ? `Account withdrawal approved for $${params.amountUsd.toFixed(2)}.`
           : `Account withdrawal rejected for $${params.amountUsd.toFixed(2)}.`,
+    })
+  }
+
+  const user = await getEmailRecipient(params.userId)
+  if (user) {
+    await sendAccountWithdrawalReviewedEmail({
+      to: user.email,
+      fullName: user.fullName,
+      amountUsd: params.amountUsd,
+      coinType: readMetadataString(params.metadata, 'coinType') ?? 'USDT',
+      referenceId: params.referenceId,
+      decision: params.decision,
     })
   }
 }
