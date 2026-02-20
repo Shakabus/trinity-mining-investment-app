@@ -32,7 +32,9 @@ export default async function TradingWithdrawalsPage() {
     redirect('/sign-in')
   }
 
-  const activePlan = user?.tradingPlans.find(plan => ['active', 'completed'].includes(plan.status)) ?? null
+  const eligiblePlans = user?.tradingPlans.filter(plan => ['active', 'completed'].includes(plan.status)) ?? []
+  const eligiblePlanIds = new Set(eligiblePlans.map(plan => plan.id))
+  const activePlan = eligiblePlans[0] ?? null
   const activeEarning = activePlan
     ? (user?.tradingEarnings.find(
         earning => earning.tradingUserPlanId === activePlan.id && earning.isActive
@@ -42,7 +44,7 @@ export default async function TradingWithdrawalsPage() {
     : null
   const now = new Date()
   const liveSeed = activePlan ? (user?.id || 1) * 13 + activePlan.id * 7 : (user?.id || 1) * 13
-  let totalEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
+  let activePlanLiveEarned = activeEarning ? Number(activeEarning.totalEarnedUsd) : 0
   if (activePlan) {
     const startDate = activePlan.startDate ?? activePlan.createdAt ?? now
     const endDate = activePlan.endDate ?? new Date(startDate.getTime() + activePlan.durationHours * 60 * 60 * 1000)
@@ -77,7 +79,7 @@ export default async function TradingWithdrawalsPage() {
       now,
       seed: liveSeed,
     })
-    totalEarned = snapshot.earnedUsd
+    activePlanLiveEarned = snapshot.earnedUsd
     await prisma.tradingEarning.update({
       where: { id: activeEarning.id },
       data: {
@@ -87,8 +89,20 @@ export default async function TradingWithdrawalsPage() {
       },
     })
   }
+  const historicalEarned = user?.tradingEarnings
+    .filter(earning => eligiblePlanIds.has(earning.tradingUserPlanId))
+    .reduce((sum, earning) => sum + Number(earning.totalEarnedUsd), 0) ?? 0
+  const totalEarned =
+    activeEarning && !activeEarning.isAdminOverride
+      ? historicalEarned - Number(activeEarning.totalEarnedUsd) + activePlanLiveEarned
+      : historicalEarned
+
   const totalWithdrawn = user?.tradingWithdrawals
-    .filter(w => (activePlan ? w.tradingUserPlanId === activePlan.id : true) && w.status === 'pending')
+    .filter(
+      w =>
+        w.status !== 'rejected' &&
+        (w.tradingUserPlanId ? eligiblePlanIds.has(w.tradingUserPlanId) : true)
+    )
     .reduce((sum, w) => sum + Number(w.amountUsd), 0) ?? 0
   const availableUsd = Math.max(0, totalEarned - totalWithdrawn)
   const baseMinWithdrawalUsd = Math.min(100, Math.max(20, totalEarned * 0.05))
