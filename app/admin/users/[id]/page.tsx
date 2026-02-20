@@ -5,6 +5,7 @@ import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 import { scalePlanHashrate } from '@/lib/mining-hashrate'
 import { clerkClient } from '@clerk/nextjs/server'
 import { Prisma } from '@prisma/client'
+import { formatLocationLabel, parseLocationEventDetail } from '@/lib/location-tracking'
 
 export const dynamic = 'force-dynamic'
 
@@ -230,6 +231,41 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
       })
     : []
 
+  const locationLogs = await prisma.userActivityLog.findMany({
+    where: {
+      userId,
+      action: {
+        in: ['UserLoginLocation', 'UserSignupLocation'],
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+    select: {
+      action: true,
+      detail: true,
+      createdAt: true,
+    },
+  })
+
+  let lastLoginLocation: string | null = null
+  let lastLoginAt: string | null = null
+  let signupLocation: string | null = null
+  let signupLocationAt: string | null = null
+  for (const log of locationLogs) {
+    const parsed = parseLocationEventDetail(log.detail)
+    if (!parsed) continue
+
+    if (log.action === 'UserLoginLocation' && !lastLoginLocation) {
+      lastLoginLocation = formatLocationLabel(parsed)
+      lastLoginAt = log.createdAt.toISOString()
+    } else if (log.action === 'UserSignupLocation' && !signupLocation) {
+      signupLocation = formatLocationLabel(parsed)
+      signupLocationAt = log.createdAt.toISOString()
+    }
+
+    if (lastLoginLocation && signupLocation) break
+  }
+
   const activityLog = [
     ...user.userPlans.map(plan => ({
       id: `plan-${plan.id}`,
@@ -289,6 +325,10 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
           ltcWalletAddress: user.ltcWalletAddress,
           usdtWalletAddress: user.walletAddress,
           passwordEnabled,
+          lastLoginLocation,
+          lastLoginAt,
+          signupLocation,
+          signupLocationAt,
         }}
         currentPlan={
           currentPlan

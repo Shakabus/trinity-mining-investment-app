@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Prisma } from '@prisma/client'
+import { formatLocationLabel, parseLocationEventDetail } from '@/lib/location-tracking'
 
 export const dynamic = 'force-dynamic'
 
@@ -100,6 +101,55 @@ export default async function AdminUsersPage({
     ])
   )
 
+  const locationLogs = userIds.length
+    ? await prisma.userActivityLog.findMany({
+        where: {
+          userId: { in: userIds },
+          action: { in: ['UserLoginLocation', 'UserSignupLocation'] },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: Math.max(200, userIds.length * 8),
+        select: {
+          userId: true,
+          action: true,
+          detail: true,
+          createdAt: true,
+        },
+      })
+    : []
+
+  const locationByUserId = new Map<
+    number,
+    {
+      loginLabel: string | null
+      loginAt: Date | null
+      signupLabel: string | null
+      signupAt: Date | null
+    }
+  >()
+
+  for (const log of locationLogs) {
+    const existing = locationByUserId.get(log.userId) ?? {
+      loginLabel: null,
+      loginAt: null,
+      signupLabel: null,
+      signupAt: null,
+    }
+    const parsed = parseLocationEventDetail(log.detail)
+    if (!parsed) continue
+    const label = formatLocationLabel(parsed)
+
+    if (log.action === 'UserLoginLocation' && !existing.loginLabel) {
+      existing.loginLabel = label
+      existing.loginAt = log.createdAt
+    }
+    if (log.action === 'UserSignupLocation' && !existing.signupLabel) {
+      existing.signupLabel = label
+      existing.signupAt = log.createdAt
+    }
+    locationByUserId.set(log.userId, existing)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -127,6 +177,7 @@ export default async function AdminUsersPage({
                 <th className="text-left p-4 text-white/70 font-semibold text-sm hidden lg:table-cell">Plan</th>
                 <th className="text-left p-4 text-white/70 font-semibold text-sm hidden xl:table-cell">Presence</th>
                 <th className="text-left p-4 text-white/70 font-semibold text-sm hidden xl:table-cell">Tracked Time</th>
+                <th className="text-left p-4 text-white/70 font-semibold text-sm hidden 2xl:table-cell">Locations</th>
                 <th className="text-left p-4 text-white/70 font-semibold text-sm">Role</th>
                 <th className="text-left p-4 text-white/70 font-semibold text-sm">Actions</th>
               </tr>
@@ -143,6 +194,7 @@ export default async function AdminUsersPage({
                 const presenceLabel =
                   presenceState === 'online' ? 'Online' : presenceState === 'away' ? 'Away' : 'Offline'
                 const trackedSeconds = session.totalSessionSeconds
+                const location = locationByUserId.get(user.id)
 
                 return (
                   <tr
@@ -220,6 +272,19 @@ export default async function AdminUsersPage({
                     {/* Tracked Time */}
                     <td className="p-4 hidden xl:table-cell">
                       <div className="text-white text-sm">{formatDuration(trackedSeconds)}</div>
+                    </td>
+
+                    {/* Login/Signup location */}
+                    <td className="p-4 hidden 2xl:table-cell">
+                      <div className="text-white/80 text-xs">
+                        Login: {location?.loginLabel || 'Unavailable'}
+                      </div>
+                      <div className="text-white/45 text-[11px] mt-1">
+                        {location?.loginAt ? `Seen ${formatSince(location.loginAt)}` : 'No login capture yet'}
+                      </div>
+                      <div className="text-white/70 text-xs mt-2">
+                        Signup: {location?.signupLabel || 'Unavailable'}
+                      </div>
                     </td>
 
                     {/* Role */}

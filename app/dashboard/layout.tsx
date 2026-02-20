@@ -1,12 +1,18 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { prisma } from '@/lib/db'
 import DashboardLayoutClient from '@/components/dashboard/DashboardLayoutClient'
 import { createUniqueReferralCode, normalizeReferralCode } from '@/lib/referral'
 import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import { isSupportedLanguage, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { sendWelcomeEmailOnce } from '@/lib/welcome-email'
+import {
+  buildLocationEventDetail,
+  extractApproxLocation,
+  hasApproxLocationData,
+} from '@/lib/location-tracking'
+import { logUserActivity } from '@/lib/user-activity'
 
 export default async function DashboardLayout({
   children,
@@ -23,11 +29,13 @@ export default async function DashboardLayout({
   const clerkUser = await currentUser()
   
   const cookieStore = await cookies()
+  const requestHeaders = await headers()
   const referralCookie = normalizeReferralCode(cookieStore.get('referral_code')?.value)
 
   let user = await prisma.user.findUnique({
     where: { clerkUserId: userId },
   })
+  let createdNewUser = false
 
   // If user doesn't exist in our database, attach by email or create.
   // This avoids crashes when a prior account row already exists with the same email.
@@ -68,12 +76,28 @@ export default async function DashboardLayout({
             referredById: referrer ? referrer.id : null,
           },
         })
+        createdNewUser = true
       } catch {
         // Concurrent request may have created the user between checks.
         user =
           (await prisma.user.findUnique({ where: { clerkUserId: userId } })) ||
           (email ? await prisma.user.findUnique({ where: { email } }) : null)
       }
+    }
+  }
+
+  if (createdNewUser && user) {
+    const signupLocation = extractApproxLocation(requestHeaders)
+    if (hasApproxLocationData(signupLocation)) {
+      await logUserActivity({
+        userId: user.id,
+        action: 'UserSignupLocation',
+        detail: buildLocationEventDetail({
+          event: 'signup',
+          source: 'dashboard_layout',
+          location: signupLocation,
+        }),
+      })
     }
   }
 

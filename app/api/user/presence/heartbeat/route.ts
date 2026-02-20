@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/db'
+import {
+  buildLocationEventDetail,
+  extractApproxLocation,
+  hasApproxLocationData,
+  locationSignature,
+  parseLocationEventDetail,
+} from '@/lib/location-tracking'
+import { logUserActivity } from '@/lib/user-activity'
 
 const NEW_SESSION_GAP_MS = 2 * 60 * 1000
 const MAX_HEARTBEAT_SECONDS = 120
+const LOCATION_DEDUPE_WINDOW_MS = 30 * 60 * 1000
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const { userId } = await auth()
     if (!userId) {
@@ -28,6 +37,7 @@ export async function POST() {
 
     let sessionStartedAt = user.currentSessionStartedAt
     let incrementSeconds = 0
+    let startedNewSession = false
 
     if (
       user.lastSeenAt &&
@@ -38,6 +48,7 @@ export async function POST() {
       incrementSeconds = Math.max(0, Math.min(MAX_HEARTBEAT_SECONDS, diffSeconds))
     } else {
       sessionStartedAt = now
+      startedNewSession = true
     }
 
     const updated = await prisma.user.update({
@@ -55,6 +66,42 @@ export async function POST() {
         totalSessionSeconds: true,
       },
     })
+
+    if (startedNewSession) {
+      const snapshot = extractApproxLocation(req.headers)
+      if (hasApproxLocationData(snapshot)) {
+        const latestLocationLog = await prisma.userActivityLog.findFirst({
+          where: {
+            userId: user.id,
+            action: 'UserLoginLocation',
+          },
+          orderBy: { createdAt: 'desc' },
+          select: { createdAt: true, detail: true },
+        })
+        const latestParsed = parseLocationEventDetail(latestLocationLog?.detail)
+        const latestAgeMs = latestLocationLog
+          ? now.getTime() - new Date(latestLocationLog.createdAt).getTime()
+          : Number.POSITIVE_INFINITY
+        const isRecentDuplicate =
+          Boolean(latestLocationLog) &&
+          latestAgeMs <= LOCATION_DEDUPE_WINDOW_MS &&
+          latestParsed &&
+          locationSignature(latestParsed) === locationSignature(snapshot)
+
+        if (!isRecentDuplicate) {
+          await logUserActivity({
+            userId: user.id,
+            action: 'UserLoginLocation',
+            detail: buildLocationEventDetail({
+              event: 'login',
+              source: 'presence_heartbeat',
+              location: snapshot,
+              capturedAt: now,
+            }),
+          })
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,

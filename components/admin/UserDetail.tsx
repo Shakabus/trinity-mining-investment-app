@@ -21,6 +21,10 @@ interface UserDetailProps {
     ltcWalletAddress?: string | null
     usdtWalletAddress?: string | null
     passwordEnabled?: boolean | null
+    lastLoginLocation?: string | null
+    lastLoginAt?: string | null
+    signupLocation?: string | null
+    signupLocationAt?: string | null
   }
   currentPlan?: {
     id: number
@@ -537,6 +541,18 @@ export default function UserDetail({
             </div>
             <div className="text-white/50 text-xs mt-1">Last Seen: {formatDate(user.lastSeenAt)}</div>
             <div className="text-white/50 text-xs">Tracked Session Time: {formatDuration(trackedSessionSeconds)}</div>
+            <div className="text-white/50 text-xs mt-1">
+              Login location: {user.lastLoginLocation || 'Unavailable'}
+            </div>
+            <div className="text-white/50 text-xs">
+              Login captured: {formatDate(user.lastLoginAt || null)}
+            </div>
+            <div className="text-white/50 text-xs mt-1">
+              Signup location: {user.signupLocation || 'Unavailable'}
+            </div>
+            <div className="text-white/50 text-xs">
+              Signup captured: {formatDate(user.signupLocationAt || null)}
+            </div>
             <div className="text-white/50 text-xs mt-3">BTC: {user.btcWalletAddress || 'Not set'}</div>
             <div className="text-white/50 text-xs">ETH: {user.ethWalletAddress || 'Not set'}</div>
             <div className="text-white/50 text-xs">LTC: {user.ltcWalletAddress || 'Not set'}</div>
