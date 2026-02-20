@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 import { normalizeTickerText, type NotificationTickerItem } from '@/lib/notification-ticker'
 
-type NewsProvider = 'newsapi' | 'fmp'
+type NewsProvider = 'newsapi' | 'fmp' | 'rss'
 
 type FinancialNewsItem = {
   id: string
@@ -139,6 +139,62 @@ async function fetchFmpItems(apiKey: string): Promise<FinancialNewsItem[]> {
   }
 }
 
+function decodeXmlEntities(input: string) {
+  return input
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+}
+
+async function fetchYahooRssItems(): Promise<FinancialNewsItem[]> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 4500)
+  try {
+    const url =
+      'https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EDJI,%5EIXIC&region=US&lang=en-US'
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: { Accept: 'application/rss+xml, application/xml, text/xml' },
+    })
+
+    if (!response.ok) return []
+    const xml = await response.text()
+    const itemBlocks = xml.match(/<item>[\s\S]*?<\/item>/g) ?? []
+
+    return itemBlocks
+      .map(block => {
+        const titleMatch = block.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>|<title>([\s\S]*?)<\/title>/i)
+        const dateMatch = block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)
+        const linkMatch = block.match(/<link>([\s\S]*?)<\/link>/i)
+
+        const rawTitle = titleMatch?.[1] || titleMatch?.[2] || ''
+        const title = decodeXmlEntities(rawTitle.trim())
+        if (!title) return null
+
+        const rawDate = (dateMatch?.[1] || '').trim()
+        const publishedAt = Number.isNaN(new Date(rawDate).getTime())
+          ? new Date().toISOString()
+          : new Date(rawDate).toISOString()
+        const link = decodeXmlEntities((linkMatch?.[1] || '').trim())
+
+        return {
+          id: stableNewsId(`${link || title}|${publishedAt}`),
+          title,
+          publishedAt,
+        } satisfies FinancialNewsItem
+      })
+      .filter((item): item is FinancialNewsItem => Boolean(item))
+      .slice(0, MAX_FETCH_ITEMS)
+  } catch {
+    return []
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 async function fetchFinancialNewsItems(): Promise<NotificationTickerItem[]> {
   const configuredProviderRaw = process.env.FINANCIAL_NEWS_PROVIDER?.trim().toLowerCase() || 'auto'
   const configuredProvider: NewsProvider | 'auto' =
@@ -157,13 +213,17 @@ async function fetchFinancialNewsItems(): Promise<NotificationTickerItem[]> {
         ]
       : [configuredProvider]
 
-  if (providers.length === 0) return []
+  if (!providers.includes('rss')) {
+    providers.push('rss')
+  }
 
   for (const provider of providers) {
     const rows =
       provider === 'newsapi'
         ? await fetchNewsApiItems(newsApiKey)
-        : await fetchFmpItems(fmpApiKey)
+        : provider === 'fmp'
+          ? await fetchFmpItems(fmpApiKey)
+          : await fetchYahooRssItems()
     if (!rows.length) continue
     return rows.map(buildNewsTickerItem)
   }
@@ -191,4 +251,3 @@ export async function getFinancialNewsTickerItems(limit: number): Promise<Notifi
   }
   return fresh.slice(0, limit)
 }
-
