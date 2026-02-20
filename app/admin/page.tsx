@@ -330,8 +330,9 @@ export default async function AdminPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Total Users */}
-        <div 
-          className="p-6 rounded-3xl"
+        <Link
+          href="/admin/users"
+          className="p-6 rounded-3xl block transition-transform hover:scale-[1.01]"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',
@@ -350,11 +351,13 @@ export default async function AdminPage() {
           </div>
           <div className="text-3xl font-bold text-white mb-1">{totalUsers}</div>
           <div className="text-sm text-white/60">Total Users</div>
-        </div>
+          <div className="text-xs text-white/45 mt-2">Open source data</div>
+        </Link>
 
         {/* Active Users */}
-        <div 
-          className="p-6 rounded-3xl"
+        <Link
+          href="/admin/users"
+          className="p-6 rounded-3xl block transition-transform hover:scale-[1.01]"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',
@@ -373,11 +376,13 @@ export default async function AdminPage() {
           </div>
           <div className="text-3xl font-bold text-white mb-1">{activeUsers}</div>
           <div className="text-sm text-white/60">Active Mining</div>
-        </div>
+          <div className="text-xs text-white/45 mt-2">Open source data</div>
+        </Link>
 
         {/* Pending Payments */}
-        <div 
-          className="p-6 rounded-3xl"
+        <Link
+          href="/admin/payments"
+          className="p-6 rounded-3xl block transition-transform hover:scale-[1.01]"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',
@@ -396,11 +401,13 @@ export default async function AdminPage() {
           </div>
           <div className="text-3xl font-bold text-white mb-1">{pendingPayments}</div>
           <div className="text-sm text-white/60">Pending Payments</div>
-        </div>
+          <div className="text-xs text-white/45 mt-2">Open source data</div>
+        </Link>
 
         {/* Total Revenue */}
-        <div 
-          className="p-6 rounded-3xl"
+        <Link
+          href="/admin/payments"
+          className="p-6 rounded-3xl block transition-transform hover:scale-[1.01]"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
             backdropFilter: 'blur(20px)',
@@ -421,7 +428,8 @@ export default async function AdminPage() {
             ${revenue.toLocaleString()}
           </div>
           <div className="text-sm text-white/60">Total Revenue</div>
-        </div>
+          <div className="text-xs text-white/45 mt-2">Open source data</div>
+        </Link>
       </div>
 
       <AdminAnalytics />
