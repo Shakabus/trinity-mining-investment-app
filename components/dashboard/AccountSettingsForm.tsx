@@ -4,11 +4,13 @@ import { useState } from 'react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { SUPPORTED_CURRENCIES, type CurrencyCode } from '@/lib/forex'
 import { SUPPORTED_LANGUAGES, LANGUAGE_LABELS, type LanguageCode } from '@/lib/i18n'
+import { COUNTRY_OPTIONS, isSupportedCountryName } from '@/lib/countries'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
 
 interface AccountSettingsFormProps {
   fullName: string
   phone: string
+  countryOfOrigin: string
   preferredCurrency: CurrencyCode
   preferredLanguage: LanguageCode
 }
@@ -16,20 +18,26 @@ interface AccountSettingsFormProps {
 export default function AccountSettingsForm({
   fullName,
   phone,
+  countryOfOrigin,
   preferredCurrency,
   preferredLanguage,
 }: AccountSettingsFormProps) {
   const { t } = useLanguage()
   const [nameValue, setNameValue] = useState(fullName)
   const [phoneValue, setPhoneValue] = useState(phone)
+  const [countryOfOriginValue, setCountryOfOriginValue] = useState(countryOfOrigin)
   const [currencyValue, setCurrencyValue] = useState<CurrencyCode>(preferredCurrency)
   const [languageValue, setLanguageValue] = useState<LanguageCode>(preferredLanguage)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const countryOptions = isSupportedCountryName(countryOfOrigin)
+    ? COUNTRY_OPTIONS
+    : ([countryOfOrigin, ...COUNTRY_OPTIONS].filter(Boolean) as readonly string[])
 
   const handleSubmit = async () => {
     const trimmedName = nameValue.trim()
     const trimmedPhone = phoneValue.trim()
+    const trimmedCountryOfOrigin = countryOfOriginValue.trim()
 
     if (!trimmedName) {
       setStatus({ type: 'error', message: t('fullNameRequiredError') })
@@ -54,6 +62,11 @@ export default function AccountSettingsForm({
       }
     }
 
+    if (trimmedCountryOfOrigin.length > 0 && !isSupportedCountryName(trimmedCountryOfOrigin)) {
+      setStatus({ type: 'error', message: 'Please select a valid country of origin.' })
+      return
+    }
+
     setIsSaving(true)
     setStatus(null)
 
@@ -64,6 +77,7 @@ export default function AccountSettingsForm({
         body: JSON.stringify({
           fullName: trimmedName,
           phone: trimmedPhone,
+          countryOfOrigin: trimmedCountryOfOrigin,
           preferredCurrency: currencyValue,
           preferredLanguage: languageValue,
         }),
@@ -109,6 +123,25 @@ export default function AccountSettingsForm({
           className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
           placeholder={t('phonePlaceholder')}
         />
+      </div>
+
+      {/* Preferred Currency */}
+      <div>
+        <label className="block text-sm font-medium text-white/80 mb-2">Country of origin</label>
+        <select
+          value={countryOfOriginValue}
+          onChange={event => setCountryOfOriginValue(event.target.value)}
+          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
+        >
+          <option value="" style={{ color: '#000000' }}>
+            Select country
+          </option>
+          {countryOptions.map(country => (
+            <option key={country} value={country} style={{ color: '#000000' }}>
+              {country}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Preferred Currency */}

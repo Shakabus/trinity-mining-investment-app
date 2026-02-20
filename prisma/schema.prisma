@@ -13,6 +13,7 @@ model User {
   email         String        @unique
   fullName      String?       @map("full_name")
   phone         String?
+  countryOfOrigin String?     @map("country_of_origin")
   walletAddress String?       @map("wallet_address")
   btcWalletAddress String?    @map("btc_wallet_address")
   ethWalletAddress String?    @map("eth_wallet_address")

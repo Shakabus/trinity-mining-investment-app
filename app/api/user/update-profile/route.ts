@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { logUserActivity } from '@/lib/user-activity'
 import { isSupportedCurrency } from '@/lib/forex'
 import { isSupportedLanguage } from '@/lib/i18n'
+import { isSupportedCountryName } from '@/lib/countries'
 import {
   isInputValidationError,
   readJsonObject,
@@ -13,6 +14,7 @@ import {
 const UPDATE_PROFILE_ALLOWED_FIELDS = [
   'fullName',
   'phone',
+  'countryOfOrigin',
   'preferredCurrency',
   'preferredLanguage',
 ] as const
@@ -32,6 +34,7 @@ export async function POST(req: Request) {
       maxLength: 80,
     })!
     const phone = readStringField(body, 'phone', { maxLength: 30 }) || ''
+    const countryOfOrigin = readStringField(body, 'countryOfOrigin', { maxLength: 80 }) || ''
     const preferredCurrency =
       readStringField(body, 'preferredCurrency', {
         toUpperCase: true,
@@ -61,6 +64,9 @@ export async function POST(req: Request) {
     if (!isSupportedCurrency(preferredCurrency)) {
       return NextResponse.json({ error: 'Unsupported currency selection.' }, { status: 400 })
     }
+    if (countryOfOrigin && !isSupportedCountryName(countryOfOrigin)) {
+      return NextResponse.json({ error: 'Unsupported country selection.' }, { status: 400 })
+    }
     if (preferredLanguage && !isSupportedLanguage(preferredLanguage)) {
       return NextResponse.json({ error: 'Unsupported language selection.' }, { status: 400 })
     }
@@ -74,6 +80,7 @@ export async function POST(req: Request) {
       data: {
         fullName: fullName,
         phone: phone.length > 0 ? phone : null,
+        countryOfOrigin: countryOfOrigin.length > 0 ? countryOfOrigin : null,
         preferredCurrency,
         preferredLanguage: preferredLanguage || undefined,
       },
@@ -86,6 +93,9 @@ export async function POST(req: Request) {
       }
       if ((currentUser.phone || '') !== (phone.length > 0 ? phone : '')) {
         changedFields.push('phone')
+      }
+      if ((currentUser.countryOfOrigin || '') !== (countryOfOrigin.length > 0 ? countryOfOrigin : '')) {
+        changedFields.push('country of origin')
       }
       if ((currentUser.preferredCurrency || 'USD') !== preferredCurrency) {
         changedFields.push('currency')

@@ -49,6 +49,7 @@ export default async function SettingsAccountPage() {
         <AccountSettingsForm
           fullName={user?.fullName || ''}
           phone={user?.phone || ''}
+          countryOfOrigin={user?.countryOfOrigin || ''}
           preferredCurrency={
             isSupportedCurrency(user?.preferredCurrency || '')
               ? (user?.preferredCurrency as CurrencyCode)
