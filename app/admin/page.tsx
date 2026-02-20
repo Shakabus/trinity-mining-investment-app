@@ -3,6 +3,8 @@ import { Prisma } from '@prisma/client'
 import Link from 'next/link'
 import { Users, CreditCard, TrendingUp, Activity, Banknote, Building2, BellRing, Clock3 } from 'lucide-react'
 import AdminAnalytics from '@/components/admin/AdminAnalytics'
+import { parseAccountBalanceEntryDetail } from '@/lib/account-balance'
+import { REAL_ESTATE_BUY_IN_TICKET_PREFIX } from '@/lib/real-estate-dashboard'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,26 +46,81 @@ export default async function AdminPage() {
   const activeUsers = await prisma.user.count({
     where: { accountStatus: 'active' }
   })
-  const pendingPayments = await prisma.userPlan.count({
+  const pendingMiningPayments = await prisma.userPlan.count({
     where: { 
       status: 'awaiting_payment',
-      paymentStatus: 'pending'
+      paymentStatus: 'pending',
+      payments: {
+        some: { status: 'pending' },
+      },
     }
   })
+  const pendingTradingPaymentRows = await prisma.$queryRaw<Array<{ total: bigint | number }>>(
+    Prisma.sql`
+      SELECT COUNT(*) AS total
+      FROM trading_user_plans tup
+      INNER JOIN (
+        SELECT trading_user_plan_id
+        FROM trading_payments
+        WHERE status = 'pending'
+        GROUP BY trading_user_plan_id
+      ) tp ON tp.trading_user_plan_id = tup.id
+      WHERE tup.status IN ('awaiting_payment', 'selected')
+        AND tup.payment_status = 'pending'
+    `
+  )
+  const pendingTradingPayments = Number(pendingTradingPaymentRows[0]?.total ?? 0)
+  const pendingRealEstatePayments = await prisma.supportTicket.count({
+    where: {
+      subject: { startsWith: REAL_ESTATE_BUY_IN_TICKET_PREFIX },
+      status: { in: ['open', 'waiting'] },
+    },
+  })
+  const pendingPayments = pendingMiningPayments + pendingTradingPayments + pendingRealEstatePayments
   const pendingWithdrawals = await prisma.withdrawal.count({
     where: { status: 'pending' },
   })
   const pendingReferralWithdrawals = await prisma.referralWithdrawal.count({
     where: { status: 'pending' },
   })
-  const confirmedPayments = await prisma.payment.aggregate({
-    where: { status: 'confirmed' },
-    _sum: { amountUsd: true },
+  const confirmedMiningRevenue = await prisma.userPlan.aggregate({
+    where: { paymentStatus: 'confirmed' },
+    _sum: { finalPrice: true },
   })
+  const confirmedTradingRevenueRows = await prisma.$queryRaw<Array<{ total: Prisma.Decimal | number | null }>>(
+    Prisma.sql`
+      SELECT COALESCE(SUM(investment_usd), 0) AS total
+      FROM trading_user_plans
+      WHERE payment_status = 'confirmed'
+    `
+  )
+  const realEstateRevenueLogs = await prisma.userActivityLog.findMany({
+    where: {
+      action: 'AccountBalanceEntry',
+      detail: { contains: '"source":"real_estate_buy_in"' },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 8000,
+    select: { detail: true, createdAt: true },
+  })
+  const latestRealEstateByReference = new Map<string, { amountUsd: number; status: string; direction: string }>()
+  for (const log of realEstateRevenueLogs) {
+    const parsed = parseAccountBalanceEntryDetail(log.detail)
+    if (!parsed || parsed.source !== 'real_estate_buy_in') continue
+    const key = `${parsed.source}:${parsed.direction}:${parsed.referenceId}`
+    if (!latestRealEstateByReference.has(key)) {
+      latestRealEstateByReference.set(key, parsed)
+    }
+  }
+  const confirmedRealEstateRevenue = [...latestRealEstateByReference.values()]
+    .filter(entry => entry.status === 'settled' && entry.direction === 'debit')
+    .reduce((sum, entry) => sum + Number(entry.amountUsd || 0), 0)
 
-  const revenue = confirmedPayments._sum.amountUsd
-    ? parseFloat(confirmedPayments._sum.amountUsd.toString())
+  const miningRevenue = confirmedMiningRevenue._sum.finalPrice
+    ? parseFloat(confirmedMiningRevenue._sum.finalPrice.toString())
     : 0
+  const tradingRevenue = Number(confirmedTradingRevenueRows[0]?.total ?? 0)
+  const revenue = miningRevenue + tradingRevenue + confirmedRealEstateRevenue
 
   const processedWithdrawals = await prisma.withdrawal.aggregate({
     where: { status: 'processed' },
@@ -495,7 +552,7 @@ export default async function AdminPage() {
           </div>
           <div className="text-3xl font-bold text-white mb-1">{pendingPayments}</div>
           <div className="text-sm text-white/60">Pending Payments</div>
-          <div className="text-xs text-white/45 mt-2">Open source data</div>
+          <div className="text-xs text-white/45 mt-2">Mining + trading + real estate</div>
         </Link>
 
         {/* Total Revenue */}
@@ -522,7 +579,7 @@ export default async function AdminPage() {
             ${revenue.toLocaleString()}
           </div>
           <div className="text-sm text-white/60">Total Revenue</div>
-          <div className="text-xs text-white/45 mt-2">Open source data</div>
+          <div className="text-xs text-white/45 mt-2">Settled purchases across all modules</div>
         </Link>
       </div>
 
