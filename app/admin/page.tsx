@@ -87,7 +87,7 @@ export default async function AdminPage() {
   const now = new Date()
   const rewardSoonCutoff = new Date(now.getTime() + REWARD_SOON_WINDOW_HOURS * 60 * 60 * 1000)
 
-  const [miningRewardCandidates, tradingRewardCandidates] = await Promise.all([
+  const [miningRewardCandidates, tradingRewardCandidates, miningCommittedRows, tradingCommittedRows] = await Promise.all([
     prisma.userPlan.findMany({
       where: {
         paymentStatus: 'confirmed',
@@ -145,10 +145,88 @@ export default async function AdminPage() {
         LIMIT 500
       `
     ),
+    prisma.withdrawal.groupBy({
+      by: ['userId'],
+      where: {
+        status: { not: 'rejected' },
+      },
+      _sum: { amountUsd: true },
+    }),
+    prisma.tradingWithdrawal.groupBy({
+      by: ['tradingUserPlanId'],
+      where: {
+        status: { not: 'rejected' },
+      },
+      _sum: { amountUsd: true },
+    }),
+  ])
+
+  const miningUserIds = [...new Set(miningRewardCandidates.map(plan => plan.user.id))]
+  const tradingPlanIds = [...new Set(tradingRewardCandidates.map(plan => plan.id))]
+
+  const [miningSettledWithdrawals, tradingSettledWithdrawals] = await Promise.all([
+    miningUserIds.length
+      ? prisma.withdrawal.findMany({
+          where: {
+            userId: { in: miningUserIds },
+            status: { in: ['approved', 'processed'] },
+          },
+          select: {
+            userId: true,
+            requestedAt: true,
+          },
+        })
+      : Promise.resolve([]),
+    tradingPlanIds.length
+      ? prisma.tradingWithdrawal.findMany({
+          where: {
+            tradingUserPlanId: { in: tradingPlanIds },
+            status: { in: ['approved', 'processed'] },
+          },
+          select: {
+            tradingUserPlanId: true,
+            requestedAt: true,
+          },
+        })
+      : Promise.resolve([]),
   ])
 
   const rewardAlertsDueNow: RewardAlert[] = []
   const rewardAlertsSoon: RewardAlert[] = []
+
+  const miningCommittedByUser = new Map<number, number>(
+    miningCommittedRows.map(row => [row.userId, Number(row._sum.amountUsd || 0)])
+  )
+  const tradingCommittedByPlan = new Map<number, number>(
+    tradingCommittedRows.map(row => [row.tradingUserPlanId, Number(row._sum.amountUsd || 0)])
+  )
+  const miningSettledTimesByUser = new Map<number, Date[]>()
+  for (const withdrawal of miningSettledWithdrawals) {
+    const list = miningSettledTimesByUser.get(withdrawal.userId) ?? []
+    list.push(withdrawal.requestedAt)
+    miningSettledTimesByUser.set(withdrawal.userId, list)
+  }
+
+  const tradingSettledTimesByPlan = new Map<number, Date[]>()
+  for (const withdrawal of tradingSettledWithdrawals) {
+    const list = tradingSettledTimesByPlan.get(withdrawal.tradingUserPlanId) ?? []
+    list.push(withdrawal.requestedAt)
+    tradingSettledTimesByPlan.set(withdrawal.tradingUserPlanId, list)
+  }
+
+  const miningEarnedByUser = new Map<number, number>()
+  for (const plan of miningRewardCandidates) {
+    const earnedUsd = plan.earnings
+      .filter(entry => !entry.isHistorical)
+      .reduce((sum, entry) => sum + Number(entry.totalEarnedUsd || 0), 0)
+    miningEarnedByUser.set(plan.user.id, (miningEarnedByUser.get(plan.user.id) ?? 0) + Math.max(0, earnedUsd))
+  }
+
+  const miningRemainingByUser = new Map<number, number>()
+  for (const [userId, totalEarned] of miningEarnedByUser.entries()) {
+    const committed = miningCommittedByUser.get(userId) ?? 0
+    miningRemainingByUser.set(userId, Math.max(0, totalEarned - committed))
+  }
 
   for (const plan of miningRewardCandidates) {
     const referenceStart = plan.startDate ?? plan.createdAt
@@ -156,10 +234,18 @@ export default async function AdminPage() {
     const isDueNow = plan.status === 'completed' || unlockAt.getTime() <= now.getTime()
     const isDueSoon = !isDueNow && unlockAt.getTime() <= rewardSoonCutoff.getTime()
     if (!isDueNow && !isDueSoon) continue
+    const settledAfterUnlock = (miningSettledTimesByUser.get(plan.user.id) ?? []).some(
+      requestedAt => requestedAt.getTime() >= unlockAt.getTime()
+    )
+    if (settledAfterUnlock) continue
 
     const earnedUsd = plan.earnings
       .filter(entry => !entry.isHistorical)
       .reduce((sum, entry) => sum + Number(entry.totalEarnedUsd || 0), 0)
+    const userRemaining = miningRemainingByUser.get(plan.user.id) ?? 0
+    const pendingRewardUsd = Math.min(Math.max(0, earnedUsd), userRemaining)
+    if (pendingRewardUsd <= 0) continue
+    miningRemainingByUser.set(plan.user.id, Math.max(0, userRemaining - pendingRewardUsd))
 
     const alert: RewardAlert = {
       id: `mining-${plan.id}`,
@@ -168,7 +254,7 @@ export default async function AdminPage() {
       planType: 'mining',
       planName: plan.plan.name,
       dueAt: unlockAt,
-      amountUsd: Math.max(0, earnedUsd),
+      amountUsd: pendingRewardUsd,
     }
 
     if (isDueNow) rewardAlertsDueNow.push(alert)
@@ -182,9 +268,17 @@ export default async function AdminPage() {
     const isDueNow = plan.status === 'completed' || dueAt.getTime() <= now.getTime()
     const isDueSoon = !isDueNow && dueAt.getTime() <= rewardSoonCutoff.getTime()
     if (!isDueNow && !isDueSoon) continue
+    const settledAfterDue = (tradingSettledTimesByPlan.get(plan.id) ?? []).some(
+      requestedAt => requestedAt.getTime() >= dueAt.getTime()
+    )
+    if (settledAfterDue) continue
 
     const earnedUsd = Number(plan.totalEarnedUsd || 0)
     const fallbackExpectedUsd = Number(plan.expectedReturnUsd || 0)
+    const rewardBaseUsd = Math.max(0, earnedUsd || fallbackExpectedUsd)
+    const committedUsd = tradingCommittedByPlan.get(plan.id) ?? 0
+    const pendingRewardUsd = Math.max(0, rewardBaseUsd - committedUsd)
+    if (pendingRewardUsd <= 0) continue
 
     const alert: RewardAlert = {
       id: `trading-${plan.id}`,
@@ -193,7 +287,7 @@ export default async function AdminPage() {
       planType: 'trading',
       planName: plan.planName || 'Trading plan',
       dueAt,
-      amountUsd: Math.max(0, earnedUsd || fallbackExpectedUsd),
+      amountUsd: pendingRewardUsd,
     }
 
     if (isDueNow) rewardAlertsDueNow.push(alert)
