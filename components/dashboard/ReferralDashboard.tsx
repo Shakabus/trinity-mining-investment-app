@@ -32,6 +32,7 @@ interface ReferralWithdrawalEntry {
 interface ReferralDashboardProps {
   referralCode: string
   bonusPercent: number
+  minQualifyingDepositUsd: number
   totalBonusUsd: number
   availableUsd: number
   pendingUsd: number
@@ -48,6 +49,7 @@ function formatDate(value: string) {
 export default function ReferralDashboard({
   referralCode,
   bonusPercent,
+  minQualifyingDepositUsd,
   totalBonusUsd,
   availableUsd,
   pendingUsd,
@@ -132,6 +134,9 @@ export default function ReferralDashboard({
       <div>
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('referralsTitle')}</h1>
         <p className="text-white/70">{t('referralSubtitle').replace('{percent}', bonusPercent.toString())}</p>
+        <p className="text-xs text-white/45 mt-2">
+          Referral credit posts automatically after your invited user&apos;s first approved deposit.
+        </p>
       </div>
 
       <div
@@ -174,11 +179,12 @@ export default function ReferralDashboard({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: t('totalReferralEarnings'), value: format(totalBonusUsd) },
           { label: t('availableForWithdrawal'), value: format(availableUsd) },
           { label: t('pendingRequests'), value: format(pendingUsd) },
+          { label: 'Qualifying first deposit', value: format(minQualifyingDepositUsd) },
         ].map(item => (
           <div
             key={item.label}
@@ -195,6 +201,27 @@ export default function ReferralDashboard({
             </div>
           </div>
         ))}
+      </div>
+
+      <div
+        className="p-6 rounded-3xl"
+        style={{
+          background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(23, 23, 23, 0.08))',
+          border: '1px solid rgba(129, 140, 248, 0.35)',
+        }}
+      >
+        <div className="text-sm text-white/80 font-semibold mb-2">Referral credit flow</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-white/75">
+            1. Invite user with your referral link.
+          </div>
+          <div className="px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-white/75">
+            2. User submits first funding deposit ({format(minQualifyingDepositUsd)} minimum).
+          </div>
+          <div className="px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-white/75">
+            3. On approval, {bonusPercent}% is auto-credited to your referral balance.
+          </div>
+        </div>
       </div>
 
       <div

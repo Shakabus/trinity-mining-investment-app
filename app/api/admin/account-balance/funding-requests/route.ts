@@ -27,6 +27,11 @@ import {
 
 const FUNDING_REQUEST_PATCH_FIELDS = ['requestId', 'decision', 'note'] as const
 const MAX_LOOKBACK = 4000
+const DEFAULT_REFERRAL_SETTINGS = {
+  isEnabled: true,
+  bonusPercent: 5,
+  minPaymentUsd: 100,
+}
 
 type FundingRequestRow = {
   requestId: string
@@ -200,6 +205,75 @@ export async function PATCH(req: Request) {
         adminNote: note,
       },
     })
+
+    if (decision === 'approve') {
+      const referee = await prisma.user.findUnique({
+        where: { id: pendingEntry.userId },
+        select: { id: true, referredById: true },
+      })
+
+      if (referee?.referredById) {
+        const hasExistingBonus = await prisma.referralBonus.findFirst({
+          where: { refereeId: referee.id },
+          select: { id: true },
+        })
+
+        if (!hasExistingBonus) {
+          const activityLogs = await prisma.userActivityLog.findMany({
+            where: {
+              userId: referee.id,
+              action: 'AccountBalanceEntry',
+            },
+            orderBy: { createdAt: 'desc' },
+            take: MAX_LOOKBACK,
+          })
+
+          let hasOlderSettledFunding = false
+          for (const log of activityLogs) {
+            const parsed = parseAccountBalanceEntryDetail(log.detail)
+            if (!parsed || parsed.source !== 'funding_deposit' || parsed.status !== 'settled') continue
+            if (parsed.referenceId !== requestId) {
+              hasOlderSettledFunding = true
+              break
+            }
+          }
+
+          if (!hasOlderSettledFunding) {
+            const settingsRow = await prisma.referralSettings.findFirst()
+            const settings = settingsRow
+              ? {
+                  isEnabled: settingsRow.isEnabled,
+                  bonusPercent: Number(settingsRow.bonusPercent),
+                  minPaymentUsd: Number(settingsRow.minPaymentUsd),
+                }
+              : DEFAULT_REFERRAL_SETTINGS
+
+            if (settings.isEnabled && pendingEntry.amountUsd >= settings.minPaymentUsd) {
+              const bonusAmount = Number(
+                ((pendingEntry.amountUsd * settings.bonusPercent) / 100).toFixed(2)
+              )
+
+              if (bonusAmount > 0) {
+                await prisma.referralBonus.create({
+                  data: {
+                    referrerId: referee.referredById,
+                    refereeId: referee.id,
+                    amountUsd: bonusAmount,
+                    status: 'available',
+                  },
+                })
+
+                await logUserActivity({
+                  userId: referee.referredById,
+                  action: 'ReferralBonusCredited',
+                  detail: `Referral credit $${bonusAmount.toFixed(2)} added from first deposit.`,
+                })
+              }
+            }
+          }
+        }
+      }
+    }
 
     await logUserActivity({
       userId: pendingEntry.userId,

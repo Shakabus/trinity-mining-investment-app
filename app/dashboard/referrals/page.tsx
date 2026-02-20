@@ -5,6 +5,7 @@ import ReferralDashboard from '@/components/dashboard/ReferralDashboard'
 
 const DEFAULT_REFERRAL_SETTINGS = {
   bonusPercent: 5,
+  minPaymentUsd: 100,
   minWithdrawalUsd: 50,
 }
 
@@ -48,6 +49,9 @@ export default async function ReferralsPage() {
 
   const settings = await prisma.referralSettings.findFirst()
   const bonusPercent = settings ? Number(settings.bonusPercent) : DEFAULT_REFERRAL_SETTINGS.bonusPercent
+  const minQualifyingDepositUsd = settings
+    ? Number(settings.minPaymentUsd)
+    : DEFAULT_REFERRAL_SETTINGS.minPaymentUsd
   const minWithdrawalUsd = settings
     ? Number(settings.minWithdrawalUsd)
     : DEFAULT_REFERRAL_SETTINGS.minWithdrawalUsd
@@ -70,6 +74,7 @@ export default async function ReferralsPage() {
       <ReferralDashboard
         referralCode={user.referralCode || ''}
         bonusPercent={bonusPercent}
+        minQualifyingDepositUsd={minQualifyingDepositUsd}
         totalBonusUsd={totalBonusUsd}
         availableUsd={availableUsd}
         pendingUsd={pendingUsd}
