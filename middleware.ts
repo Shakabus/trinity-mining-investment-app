@@ -56,6 +56,12 @@ const CONTACT_LIMIT: RateLimitProfile = {
   userLimit: 16,
 }
 
+const PUBLIC_TRANSLATE_LIMIT: RateLimitProfile = {
+  windowSec: 60,
+  ipLimit: 600,
+  userLimit: 1200,
+}
+
 const SUPPORT_LIMIT: RateLimitProfile = {
   windowSec: 60,
   ipLimit: 20,
@@ -75,6 +81,7 @@ const getRateLimitProfile = (pathname: string, method: string): RateLimitProfile
   if (pathname === '/api/user/presence/heartbeat') return HEARTBEAT_LIMIT
   if (pathname === '/api/contact/messages') return CONTACT_LIMIT
   if (pathname.startsWith('/api/user/support')) return SUPPORT_LIMIT
+  if (pathname === '/api/public/translate') return PUBLIC_TRANSLATE_LIMIT
 
   if (pathname.startsWith('/api/admin')) {
     return isWriteMethod(method) ? ADMIN_WRITE_LIMIT : ADMIN_READ_LIMIT

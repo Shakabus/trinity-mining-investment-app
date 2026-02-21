@@ -16,7 +16,6 @@ const BLOCKED_TAG_NAMES = new Set([
 
 const STORAGE_PREFIX = 'dashboard_auto_i18n_cache_v1:'
 const REMOTE_BATCH_SIZE = 24
-const REMOTE_CONCURRENCY = 6
 const REMOTE_FLUSH_INTERVAL_MS = 450
 const REMOTE_FLUSH_BUDGET_MS = 1200
 
@@ -52,22 +51,56 @@ function canRequestRemoteTranslation(text: string) {
   return true
 }
 
-async function fetchGoogleTranslate(text: string, language: LanguageCode) {
+async function fetchGoogleTranslateBatch(texts: string[], language: LanguageCode): Promise<TranslateBatchResult> {
   const response = await fetch('/api/public/translate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      text,
+      texts,
       language,
     }),
   })
-  if (!response.ok) return null
+  if (response.status === 429) {
+    const retryAfterFromHeader = Number(response.headers.get('Retry-After') || '')
+    const payload = (await response.json().catch(() => null)) as { retryAfterSec?: unknown } | null
+    const retryAfterSecFromBody =
+      typeof payload?.retryAfterSec === 'number' && Number.isFinite(payload.retryAfterSec)
+        ? payload.retryAfterSec
+        : 0
+    const retryAfterSec = Math.max(retryAfterFromHeader || 0, retryAfterSecFromBody || 0, 2)
+    return {
+      map: new Map<string, string>(),
+      retryAfterMs: retryAfterSec * 1000,
+    }
+  }
 
-  const payload = (await response.json().catch(() => null)) as { translated?: string | null } | null
-  const translated = typeof payload?.translated === 'string' ? payload.translated.trim() : ''
-  return translated || null
+  if (!response.ok) return { map: new Map<string, string>() }
+
+  const payload = (await response.json().catch(() => null)) as
+    | {
+        translations?: Array<string | null>
+      }
+    | null
+
+  const translatedList = Array.isArray(payload?.translations) ? payload.translations : []
+  const map = new Map<string, string>()
+  translatedList.forEach((translated, index) => {
+    if (typeof translated !== 'string') return
+    const nextValue = translated.trim()
+    if (!nextValue) return
+    const sourceText = texts[index]
+    if (!sourceText || nextValue === sourceText) return
+    map.set(sourceText, nextValue)
+  })
+
+  return { map }
+}
+
+type TranslateBatchResult = {
+  map: Map<string, string>
+  retryAfterMs?: number
 }
 
 function safeReadStorage(storageKey: string) {
@@ -95,6 +128,7 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
   const remoteCacheRef = useRef(new Map<string, string>())
   const pendingRef = useRef(new Set<string>())
   const processingRef = useRef(false)
+  const cooldownUntilRef = useRef(0)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -104,6 +138,7 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
     remoteCacheRef.current = new Map(Object.entries(parsed))
     pendingRef.current.clear()
     processingRef.current = false
+    cooldownUntilRef.current = 0
   }, [language])
 
   useEffect(() => {
@@ -177,6 +212,7 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
 
     const flushRemoteQueue = async () => {
       if (processingRef.current || language === 'en' || pendingRef.current.size === 0) return
+      if (Date.now() < cooldownUntilRef.current) return
 
       processingRef.current = true
       try {
@@ -186,28 +222,36 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
         while (pendingRef.current.size > 0 && Date.now() - startTime < REMOTE_FLUSH_BUDGET_MS) {
           const batch = Array.from(pendingRef.current).slice(0, REMOTE_BATCH_SIZE)
           batch.forEach(value => pendingRef.current.delete(value))
+          const unresolvedTexts = batch.filter(sourceText => !remoteCacheRef.current.has(cacheKey(language, sourceText)))
 
-          let index = 0
-          const workers = Array.from({
-            length: Math.min(REMOTE_CONCURRENCY, batch.length),
-          }).map(async () => {
-            while (index < batch.length) {
-              const sourceText = batch[index]
-              index += 1
+          if (!unresolvedTexts.length) {
+            continue
+          }
 
-              const key = cacheKey(language, sourceText)
-              if (remoteCacheRef.current.has(key)) continue
+          const result: TranslateBatchResult = await fetchGoogleTranslateBatch(unresolvedTexts, language).catch(
+            () => ({
+              map: new Map<string, string>(),
+            }),
+          )
 
-              const translated = await fetchGoogleTranslate(sourceText, language).catch(() => null)
-              if (translated && translated !== sourceText) {
-                remoteCacheRef.current.set(key, translated)
-                cacheUpdated = true
-              }
+          if (result.retryAfterMs) {
+            cooldownUntilRef.current = Date.now() + result.retryAfterMs
+            unresolvedTexts.forEach(text => pendingRef.current.add(text))
+            break
+          }
+
+          unresolvedTexts.forEach(sourceText => {
+            const translated = result.map.get(sourceText)
+            if (translated && translated !== sourceText) {
+              remoteCacheRef.current.set(cacheKey(language, sourceText), translated)
+              cacheUpdated = true
             }
           })
 
-          if (workers.length) {
-            await Promise.all(workers)
+          const missingTexts = unresolvedTexts.filter(sourceText => !result.map.has(sourceText))
+          if (missingTexts.length > 0) {
+            missingTexts.forEach(sourceText => pendingRef.current.add(sourceText))
+            break
           }
         }
 
