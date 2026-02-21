@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { type ComponentType, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
@@ -8,16 +8,33 @@ import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2,
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import LiveNotificationTicker from '@/components/notifications/LiveNotificationTicker'
 
-const menuItems = [
+type AdminDotKey =
+  | 'users'
+  | 'payments'
+  | 'accountBalance'
+  | 'kyc'
+  | 'withdrawals'
+  | 'properties'
+  | 'referrals'
+  | 'support'
+
+type AdminDotMap = Partial<Record<AdminDotKey, number>>
+
+const menuItems: Array<{
+  name: string
+  href: string
+  icon: ComponentType<{ size?: number; strokeWidth?: number }>
+  dotKey?: AdminDotKey
+}> = [
   { name: 'Overview', href: '/admin', icon: LayoutDashboard },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Payments', href: '/admin/payments', icon: CreditCard },
-  { name: 'Account Balance', href: '/admin/account-balance', icon: Wallet },
-  { name: 'KYC', href: '/admin/kyc', icon: ShieldCheck },
-  { name: 'Withdrawals', href: '/admin/withdrawals', icon: Banknote },
-  { name: 'Properties', href: '/admin/real-estate', icon: Building2 },
-  { name: 'Referrals', href: '/admin/referrals', icon: Link2 },
-  { name: 'Support', href: '/admin/settings', icon: LifeBuoy },
+  { name: 'Users', href: '/admin/users', icon: Users, dotKey: 'users' },
+  { name: 'Payments', href: '/admin/payments', icon: CreditCard, dotKey: 'payments' },
+  { name: 'Account Balance', href: '/admin/account-balance', icon: Wallet, dotKey: 'accountBalance' },
+  { name: 'KYC', href: '/admin/kyc', icon: ShieldCheck, dotKey: 'kyc' },
+  { name: 'Withdrawals', href: '/admin/withdrawals', icon: Banknote, dotKey: 'withdrawals' },
+  { name: 'Properties', href: '/admin/real-estate', icon: Building2, dotKey: 'properties' },
+  { name: 'Referrals', href: '/admin/referrals', icon: Link2, dotKey: 'referrals' },
+  { name: 'Support', href: '/admin/settings', icon: LifeBuoy, dotKey: 'support' },
 ]
 
 interface AdminLayoutClientProps {
@@ -31,10 +48,40 @@ interface AdminLayoutClientProps {
 export default function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
   const pathname = usePathname()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [dots, setDots] = useState<AdminDotMap>({})
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.localStorage.getItem('admin_sidebar_collapsed') === 'true'
   })
+
+  useEffect(() => {
+    let isMounted = true
+    let timer: number | null = null
+
+    const fetchDots = async () => {
+      try {
+        const response = await fetch('/api/admin/notifications/dots', {
+          method: 'GET',
+          cache: 'no-store',
+        })
+        if (!response.ok) return
+        const data = (await response.json()) as { dots?: AdminDotMap }
+        if (isMounted && data?.dots) {
+          setDots(data.dots)
+        }
+      } catch (error) {
+        console.error('Admin notification dots fetch error:', error)
+      }
+    }
+
+    void fetchDots()
+    timer = window.setInterval(fetchDots, 20000)
+
+    return () => {
+      isMounted = false
+      if (timer) window.clearInterval(timer)
+    }
+  }, [])
 
   const toggleCollapsed = () => {
     setIsCollapsed(prev => {
@@ -44,6 +91,44 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
       }
       return next
     })
+  }
+
+  const getDotCount = (dotKey?: AdminDotKey) => {
+    if (!dotKey) return 0
+    const value = dots[dotKey]
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0
+    return Math.max(0, Math.floor(value))
+  }
+
+  const renderDot = (count: number, compact = false) => {
+    if (count <= 0) return null
+    const label = count > 99 ? '99+' : String(count)
+    if (compact) {
+      return (
+        <span
+          className="absolute -right-1 -top-1 min-w-4 h-4 px-1 rounded-full text-[10px] leading-4 text-center font-bold text-white"
+          style={{
+            background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+            border: '1px solid rgba(0, 0, 0, 0.45)',
+            boxShadow: '0 4px 10px rgba(239, 68, 68, 0.35)',
+          }}
+        >
+          {label}
+        </span>
+      )
+    }
+    return (
+      <span
+        className="ml-auto min-w-5 h-5 px-1.5 rounded-full text-[11px] leading-5 text-center font-bold text-white"
+        style={{
+          background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+          border: '1px solid rgba(0, 0, 0, 0.35)',
+          boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+        }}
+      >
+        {label}
+      </span>
+    )
   }
 
   return (
@@ -147,6 +232,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               {menuItems.map((item) => {
                 const isActive = pathname === item.href
                 const Icon = item.icon
+                const dotCount = getDotCount(item.dotKey)
 
                 return (
                   <Link
@@ -163,7 +249,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                     title={isCollapsed ? item.name : undefined}
                   >
                     <div
-                      className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
+                      className="relative p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
                       style={{
                         background: isActive
                           ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
@@ -173,8 +259,10 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                       }}
                     >
                       <Icon size={18} strokeWidth={2} />
+                      {isCollapsed && renderDot(dotCount, true)}
                     </div>
                     {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                    {!isCollapsed && renderDot(dotCount)}
                   </Link>
                 )
               })}
@@ -224,6 +312,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
               {menuItems.map((item) => {
                 const isActive = pathname === item.href
                 const Icon = item.icon
+                const dotCount = getDotCount(item.dotKey)
 
                 return (
                   <Link
@@ -240,7 +329,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                     }}
                   >
                     <div
-                      className="p-1.5 rounded-lg"
+                      className="relative p-1.5 rounded-lg"
                       style={{
                         background: isActive
                           ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
@@ -251,6 +340,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
                       <Icon size={18} strokeWidth={2} />
                     </div>
                     <span className="font-medium break-words">{item.name}</span>
+                    {renderDot(dotCount)}
                   </Link>
                 )
               })}

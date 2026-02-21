@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { type ComponentType, useEffect, useState } from 'react'
 import { useLanguage } from '@/components/i18n/LanguageProvider'
 import {
   LayoutDashboard,
@@ -28,9 +28,33 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 
-const menuItems = [
+type DotKey =
+  | 'miningPayments'
+  | 'tradingPayments'
+  | 'realEstate'
+  | 'referrals'
+  | 'funding'
+  | 'withdrawals'
+  | 'kyc'
+  | 'support'
+
+type DotMap = Partial<Record<DotKey, number>>
+
+type DashboardMenuChild = {
+  name: string
+  labelKey?: string
+  href: string
+  icon: ComponentType<{ size?: number; strokeWidth?: number }>
+  dotKey?: DotKey
+}
+
+type DashboardMenuItem = DashboardMenuChild & {
+  children?: DashboardMenuChild[]
+}
+
+const menuItems: DashboardMenuItem[] = [
   { name: 'Overview', labelKey: 'overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Cloud Mining Plans', href: '/dashboard/plans', icon: Gem },
+  { name: 'Cloud Mining Plans', href: '/dashboard/plans', icon: Gem, dotKey: 'miningPayments' },
   { name: 'My Plan', labelKey: 'myPlan', href: '/dashboard/my-plan', icon: Package },
   { name: 'Mining', labelKey: 'mining', href: '/dashboard/mining', icon: Pickaxe },
   { name: 'Earnings', labelKey: 'earnings', href: '/dashboard/earnings', icon: DollarSign },
@@ -38,11 +62,24 @@ const menuItems = [
     name: 'Promotional Trading Plans',
     href: '/dashboard/investment-trading',
     icon: Layers,
+    dotKey: 'tradingPayments',
     children: [
-      { name: 'Plans', labelKey: 'plans', href: '/dashboard/investment-trading#plans', icon: Package },
+      {
+        name: 'Plans',
+        labelKey: 'plans',
+        href: '/dashboard/investment-trading#plans',
+        icon: Package,
+        dotKey: 'tradingPayments',
+      },
       { name: 'Portfolio Activity', labelKey: 'portfolioActivity', href: '/dashboard/investment-trading/bot', icon: LineChart },
       { name: 'Earnings', labelKey: 'earnings', href: '/dashboard/investment-trading/earnings', icon: LineChart },
-      { name: 'Withdrawals', labelKey: 'withdrawals', href: '/dashboard/investment-trading/withdrawals', icon: Wallet },
+      {
+        name: 'Withdrawals',
+        labelKey: 'withdrawals',
+        href: '/dashboard/investment-trading/withdrawals',
+        icon: Wallet,
+        dotKey: 'withdrawals',
+      },
     ],
   },
   {
@@ -50,18 +87,25 @@ const menuItems = [
     labelKey: 'realEstatePortfolio',
     href: '/dashboard/real-estate',
     icon: Building2,
+    dotKey: 'realEstate',
     children: [
       { name: 'My Properties', labelKey: 'myProperties', href: '/dashboard/real-estate/my-properties', icon: Home },
       { name: 'Property Earnings', labelKey: 'propertyEarnings', href: '/dashboard/real-estate/property-earnings', icon: LineChart },
-      { name: 'Withdrawals', labelKey: 'withdrawals', href: '/dashboard/real-estate/withdrawals', icon: Wallet },
+      {
+        name: 'Withdrawals',
+        labelKey: 'withdrawals',
+        href: '/dashboard/real-estate/withdrawals',
+        icon: Wallet,
+        dotKey: 'realEstate',
+      },
     ],
   },
-  { name: 'Referrals', labelKey: 'referrals', href: '/dashboard/referrals', icon: Link2 },
-  { name: 'Fund Account', href: '/dashboard/account/fund', icon: Wallet },
-  { name: 'Withdraw Funds', href: '/dashboard/account/withdraw', icon: Wallet },
-  { name: 'KYC Verification', href: '/dashboard/kyc', icon: ShieldCheck },
+  { name: 'Referrals', labelKey: 'referrals', href: '/dashboard/referrals', icon: Link2, dotKey: 'referrals' },
+  { name: 'Fund Account', href: '/dashboard/account/fund', icon: Wallet, dotKey: 'funding' },
+  { name: 'Withdraw Funds', href: '/dashboard/account/withdraw', icon: Wallet, dotKey: 'withdrawals' },
+  { name: 'KYC Verification', href: '/dashboard/kyc', icon: ShieldCheck, dotKey: 'kyc' },
   { name: 'Account History', href: '/dashboard/account/history', icon: History },
-  { name: 'Support', labelKey: 'support', href: '/dashboard/support', icon: LifeBuoy },
+  { name: 'Support', labelKey: 'support', href: '/dashboard/support', icon: LifeBuoy, dotKey: 'support' },
   { name: 'Settings', labelKey: 'settings', href: '/dashboard/settings', icon: Settings },
 ]
 
@@ -80,6 +124,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
   })
   const [isTradingOpen, setIsTradingOpen] = useState(true)
   const [isRealEstateOpen, setIsRealEstateOpen] = useState(true)
+  const [dots, setDots] = useState<DotMap>({})
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -88,6 +133,35 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
     window.addEventListener('hashchange', updateHash)
     return () => window.removeEventListener('hashchange', updateHash)
   }, [pathname])
+
+  useEffect(() => {
+    let isMounted = true
+    let timer: number | null = null
+
+    const fetchDots = async () => {
+      try {
+        const response = await fetch('/api/user/notifications/dots', {
+          method: 'GET',
+          cache: 'no-store',
+        })
+        if (!response.ok) return
+        const data = (await response.json()) as { dots?: DotMap }
+        if (isMounted && data?.dots) {
+          setDots(data.dots)
+        }
+      } catch (error) {
+        console.error('Dashboard notification dots fetch error:', error)
+      }
+    }
+
+    void fetchDots()
+    timer = window.setInterval(fetchDots, 20000)
+
+    return () => {
+      isMounted = false
+      if (timer) window.clearInterval(timer)
+    }
+  }, [])
 
   const isTradingRoute = pathname?.startsWith('/dashboard/investment-trading')
   const isRealEstateRoute = pathname?.startsWith('/dashboard/real-estate')
@@ -116,6 +190,44 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
       }
       return next
     })
+  }
+
+  const getDotCount = (dotKey?: DotKey) => {
+    if (!dotKey) return 0
+    const value = dots[dotKey]
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0
+    return Math.max(0, Math.floor(value))
+  }
+
+  const renderDot = (count: number, compact = false) => {
+    if (count <= 0) return null
+    const label = count > 99 ? '99+' : String(count)
+    if (compact) {
+      return (
+        <span
+          className="absolute -right-1 -top-1 min-w-4 h-4 px-1 rounded-full text-[10px] leading-4 text-center font-bold text-white"
+          style={{
+            background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+            border: '1px solid rgba(0, 0, 0, 0.45)',
+            boxShadow: '0 4px 10px rgba(239, 68, 68, 0.35)',
+          }}
+        >
+          {label}
+        </span>
+      )
+    }
+    return (
+      <span
+        className="ml-auto min-w-5 h-5 px-1.5 rounded-full text-[11px] leading-5 text-center font-bold text-white"
+        style={{
+          background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
+          border: '1px solid rgba(0, 0, 0, 0.35)',
+          boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+        }}
+      >
+        {label}
+      </span>
+    )
   }
 
   return (
@@ -159,6 +271,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
               (item.href !== '/dashboard' && pathname?.startsWith(item.href))
 
             const Icon = item.icon
+            const dotCount = getDotCount(item.dotKey)
 
             if ('children' in item) {
               const parentOpen = isParentOpen(item.href)
@@ -180,7 +293,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} flex-1`}
                     >
                       <div
-                        className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
+                        className="relative p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
                         style={{
                           background: isActive
                             ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
@@ -190,12 +303,14 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                         }}
                       >
                         <Icon size={18} strokeWidth={2} />
+                        {isCollapsed && renderDot(dotCount, true)}
                       </div>
                     {!isCollapsed && (
                       <span className="font-medium">
                         {item.labelKey ? t(item.labelKey) : item.name}
                       </span>
                     )}
+                    {!isCollapsed && renderDot(dotCount)}
                     </Link>
                     {!isCollapsed && (
                       <button
@@ -218,6 +333,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                             pathname === '/dashboard/investment-trading' &&
                             hash === '#plans')
                         const ChildIcon = child.icon
+                        const childDotCount = getDotCount(child.dotKey)
                         return (
                           <Link
                             key={child.href}
@@ -232,7 +348,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                             }}
                           >
                             <div
-                              className="p-1.5 rounded-lg"
+                              className="relative p-1.5 rounded-lg"
                               style={{
                                 background: childActive
                                   ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
@@ -246,6 +362,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                             <span className="font-medium">
                               {child.labelKey ? t(child.labelKey) : child.name}
                             </span>
+                            {renderDot(childDotCount)}
                           </Link>
                         )
                       })}
@@ -270,7 +387,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                 title={isCollapsed ? item.name : undefined}
               >
                 <div
-                  className="p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
+                  className="relative p-1.5 rounded-lg transition-all transform group-hover:-translate-y-0.5"
                   style={{
                     background: isActive
                       ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
@@ -280,12 +397,14 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                   }}
                 >
                   <Icon size={18} strokeWidth={2} />
+                  {isCollapsed && renderDot(dotCount, true)}
                 </div>
                 {!isCollapsed && (
                   <span className="font-medium">
                     {item.labelKey ? t(item.labelKey) : item.name}
                   </span>
                 )}
+                {!isCollapsed && renderDot(dotCount)}
               </Link>
             )
           })}
@@ -369,6 +488,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
               (item.href !== '/dashboard' && pathname?.startsWith(item.href))
 
             const Icon = item.icon
+            const dotCount = getDotCount(item.dotKey)
 
             if ('children' in item) {
               const parentOpen = isParentOpen(item.href)
@@ -390,7 +510,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                       className="flex items-center gap-3 flex-1"
                     >
                       <div
-                        className="p-1.5 rounded-lg transition-all"
+                        className="relative p-1.5 rounded-lg transition-all"
                         style={{
                           background: isActive
                             ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
@@ -402,6 +522,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                         <Icon size={18} strokeWidth={2} />
                       </div>
                       <span className="font-medium">{item.labelKey ? t(item.labelKey) : item.name}</span>
+                      {renderDot(dotCount)}
                     </Link>
                     <button
                       type="button"
@@ -422,6 +543,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                             pathname === '/dashboard/investment-trading' &&
                             hash === '#plans')
                       const ChildIcon = child.icon
+                      const childDotCount = getDotCount(child.dotKey)
                       return (
                         <Link
                           key={child.href}
@@ -437,7 +559,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                           }}
                         >
                           <div
-                            className="p-1.5 rounded-lg"
+                            className="relative p-1.5 rounded-lg"
                             style={{
                               background: childActive
                                 ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
@@ -449,6 +571,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                             <ChildIcon size={16} strokeWidth={2} />
                           </div>
                           <span className="font-medium">{child.labelKey ? t(child.labelKey) : child.name}</span>
+                          {renderDot(childDotCount)}
                         </Link>
                       )
                     })}
@@ -473,7 +596,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                 }}
               >
                 <div
-                  className="p-1.5 rounded-lg transition-all"
+                  className="relative p-1.5 rounded-lg transition-all"
                   style={{
                     background: isActive
                       ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.3), rgba(58, 19, 122, 0.2))'
@@ -485,6 +608,7 @@ export default function DashboardSidebar({ isOpen, onClose }: DashboardSidebarPr
                   <Icon size={18} strokeWidth={2} />
                 </div>
                 <span className="font-medium">{item.labelKey ? t(item.labelKey) : item.name}</span>
+                {renderDot(dotCount)}
               </Link>
             )
           })}
