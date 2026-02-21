@@ -2,82 +2,57 @@
 
 import { useEffect, useRef } from 'react'
 
-type AdminPushEvent = {
-  id: string
-  title: string
-  body: string
-  href: string
-  attentionRequired: boolean
-  createdAt: string
+type PushConfigResponse = {
+  enabled?: boolean
+  publicKey?: string | null
 }
 
-type PushPayload = {
-  events?: AdminPushEvent[]
-  generatedAt?: string
-}
-
-const POLL_INTERVAL_MS = 10000
-const CURSOR_STORAGE_KEY = 'admin_push_cursor_v1'
-const SEEN_STORAGE_KEY = 'admin_push_seen_ids_v1'
-const PROMPTED_STORAGE_KEY = 'admin_push_permission_prompted_v1'
-const MAX_SEEN_IDS = 500
-
-const readCursor = () => {
-  if (typeof window === 'undefined') return null
-  const raw = window.localStorage.getItem(CURSOR_STORAGE_KEY)
-  return raw && raw.trim().length > 0 ? raw : null
-}
-
-const writeCursor = (value: string) => {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(CURSOR_STORAGE_KEY, value)
-}
-
-const readSeenIds = () => {
-  if (typeof window === 'undefined') return [] as string[]
-  try {
-    const raw = window.localStorage.getItem(SEEN_STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as string[]
-    return Array.isArray(parsed) ? parsed.filter(item => typeof item === 'string') : []
-  } catch {
-    return []
+type PushSubscriptionPayload = {
+  endpoint: string
+  keys?: {
+    p256dh?: string
+    auth?: string
   }
 }
 
-const writeSeenIds = (ids: string[]) => {
-  if (typeof window === 'undefined') return
-  window.localStorage.setItem(SEEN_STORAGE_KEY, JSON.stringify(ids.slice(-MAX_SEEN_IDS)))
-}
+const SW_PATH = '/admin-push-sw.js'
+const SYNC_INTERVAL_MS = 10 * 60 * 1000
 
-function maybeRequestPermission() {
-  if (typeof window === 'undefined' || !('Notification' in window)) return
-  if (Notification.permission !== 'default') return
-  if (window.localStorage.getItem(PROMPTED_STORAGE_KEY) === '1') return
-
-  window.localStorage.setItem(PROMPTED_STORAGE_KEY, '1')
-  void Notification.requestPermission().catch(() => {
-    // Ignore permission errors; polling still runs.
-  })
-}
-
-function sendBrowserNotification(event: AdminPushEvent) {
-  if (typeof window === 'undefined' || !('Notification' in window)) return
-  if (Notification.permission !== 'granted') return
-
-  const title = event.attentionRequired ? `[Action Required] ${event.title}` : event.title
-  const notification = new Notification(title, {
-    body: event.body,
-    tag: `admin-${event.id}`,
-    requireInteraction: event.attentionRequired,
-  })
-
-  notification.onclick = () => {
-    window.focus()
-    if (event.href) {
-      window.location.href = event.href
-    }
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let index = 0; index < rawData.length; index += 1) {
+    outputArray[index] = rawData.charCodeAt(index)
   }
+  return outputArray
+}
+
+function isValidSubscriptionPayload(input: unknown): input is PushSubscriptionPayload {
+  if (!input || typeof input !== 'object') return false
+  const value = input as Record<string, unknown>
+  if (typeof value.endpoint !== 'string' || value.endpoint.trim().length === 0) return false
+  const keys = value.keys
+  if (!keys || typeof keys !== 'object') return false
+  const keyValues = keys as Record<string, unknown>
+  return (
+    typeof keyValues.p256dh === 'string' &&
+    keyValues.p256dh.trim().length > 0 &&
+    typeof keyValues.auth === 'string' &&
+    keyValues.auth.trim().length > 0
+  )
+}
+
+async function fetchPushConfig() {
+  const response = await fetch('/api/admin/notifications/push-subscriptions', {
+    method: 'GET',
+    cache: 'no-store',
+  })
+  if (!response.ok) return null
+  const payload = (await response.json()) as PushConfigResponse
+  if (!payload.enabled || !payload.publicKey) return null
+  return payload.publicKey
 }
 
 export default function AdminPushNotifications() {
@@ -85,68 +60,80 @@ export default function AdminPushNotifications() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    maybeRequestPermission()
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      return
+    }
 
-    const pull = async () => {
-      if (inFlightRef.current) return
+    let isMounted = true
+
+    const syncSubscription = async () => {
+      if (inFlightRef.current || !isMounted) return
       inFlightRef.current = true
 
       try {
-        const existingSeen = readSeenIds()
-        const seenSet = new Set(existingSeen)
-        const cursor = readCursor()
-        const response = await fetch(
-          `/api/admin/notifications/push?limit=60${cursor ? `&since=${encodeURIComponent(cursor)}` : ''}`,
-          { method: 'GET', cache: 'no-store' }
-        )
-        if (!response.ok) return
+        const publicKey = await fetchPushConfig()
+        if (!publicKey) return
 
-        const payload = (await response.json()) as PushPayload
-        const events = Array.isArray(payload.events) ? payload.events : []
-        const sortedAsc = [...events].sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        )
+        const registration = await navigator.serviceWorker.register(SW_PATH, { scope: '/' })
+        const permission =
+          Notification.permission === 'granted'
+            ? 'granted'
+            : await Notification.requestPermission()
 
-        const isBootstrap = !cursor
-        if (!isBootstrap) {
-          for (const event of sortedAsc) {
-            if (seenSet.has(event.id)) continue
-            sendBrowserNotification(event)
+        if (permission !== 'granted') {
+          const existing = await registration.pushManager.getSubscription()
+          if (existing) {
+            const data = existing.toJSON()
+            if (data.endpoint) {
+              await fetch('/api/admin/notifications/push-subscriptions', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint: data.endpoint }),
+              }).catch(() => null)
+            }
           }
+          return
         }
 
-        for (const event of sortedAsc) {
-          seenSet.add(event.id)
+        let subscription = await registration.pushManager.getSubscription()
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          })
         }
 
-        const nextSeen = [...seenSet]
-        writeSeenIds(nextSeen)
+        const payload = subscription.toJSON()
+        if (!isValidSubscriptionPayload(payload)) return
 
-        const newestEventTime = events[0]?.createdAt
-        const nextCursor = newestEventTime || payload.generatedAt
-        if (nextCursor) {
-          writeCursor(nextCursor)
-        }
-      } catch {
-        // Keep silent; this should never block the admin UI.
+        await fetch('/api/admin/notifications/push-subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: payload }),
+        })
+      } catch (error) {
+        console.error('Admin push subscription sync error:', error)
       } finally {
         inFlightRef.current = false
       }
     }
 
-    void pull()
-    const intervalId = window.setInterval(() => {
-      void pull()
-    }, POLL_INTERVAL_MS)
+    void syncSubscription()
 
-    const onFocus = () => {
-      void pull()
+    const intervalId = window.setInterval(() => {
+      void syncSubscription()
+    }, SYNC_INTERVAL_MS)
+
+    const handleFocus = () => {
+      void syncSubscription()
     }
-    window.addEventListener('focus', onFocus)
+
+    window.addEventListener('focus', handleFocus)
 
     return () => {
+      isMounted = false
       window.clearInterval(intervalId)
-      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('focus', handleFocus)
     }
   }, [])
 
