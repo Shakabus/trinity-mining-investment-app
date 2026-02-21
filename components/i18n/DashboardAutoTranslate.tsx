@@ -15,6 +15,10 @@ const BLOCKED_TAG_NAMES = new Set([
 ])
 
 const STORAGE_PREFIX = 'dashboard_auto_i18n_cache_v1:'
+const REMOTE_BATCH_SIZE = 24
+const REMOTE_CONCURRENCY = 6
+const REMOTE_FLUSH_INTERVAL_MS = 450
+const REMOTE_FLUSH_BUDGET_MS = 1200
 
 function normalizePhrase(value: string) {
   return value.replace(/\s+/g, ' ').trim().toLowerCase()
@@ -98,6 +102,8 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
     const storageKey = `${STORAGE_PREFIX}${language}`
     const parsed = safeReadStorage(storageKey)
     remoteCacheRef.current = new Map(Object.entries(parsed))
+    pendingRef.current.clear()
+    processingRef.current = false
   }, [language])
 
   useEffect(() => {
@@ -174,29 +180,48 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
 
       processingRef.current = true
       try {
-        const batch = Array.from(pendingRef.current).slice(0, 6)
+        const startTime = Date.now()
+        let cacheUpdated = false
 
-        for (const sourceText of batch) {
-          pendingRef.current.delete(sourceText)
-          const key = cacheKey(language, sourceText)
-          if (remoteCacheRef.current.has(key)) continue
+        while (pendingRef.current.size > 0 && Date.now() - startTime < REMOTE_FLUSH_BUDGET_MS) {
+          const batch = Array.from(pendingRef.current).slice(0, REMOTE_BATCH_SIZE)
+          batch.forEach(value => pendingRef.current.delete(value))
 
-          const translated = await fetchGoogleTranslate(sourceText, language).catch(() => null)
-          if (translated && translated !== sourceText) {
-            remoteCacheRef.current.set(key, translated)
+          let index = 0
+          const workers = Array.from({
+            length: Math.min(REMOTE_CONCURRENCY, batch.length),
+          }).map(async () => {
+            while (index < batch.length) {
+              const sourceText = batch[index]
+              index += 1
+
+              const key = cacheKey(language, sourceText)
+              if (remoteCacheRef.current.has(key)) continue
+
+              const translated = await fetchGoogleTranslate(sourceText, language).catch(() => null)
+              if (translated && translated !== sourceText) {
+                remoteCacheRef.current.set(key, translated)
+                cacheUpdated = true
+              }
+            }
+          })
+
+          if (workers.length) {
+            await Promise.all(workers)
           }
-
-          await new Promise(resolve => window.setTimeout(resolve, 120))
         }
 
-        safeWriteStorage(`${STORAGE_PREFIX}${language}`, Object.fromEntries(remoteCacheRef.current.entries()))
-        scheduleApply()
+        if (cacheUpdated) {
+          safeWriteStorage(`${STORAGE_PREFIX}${language}`, Object.fromEntries(remoteCacheRef.current.entries()))
+          scheduleApply()
+        }
       } finally {
         processingRef.current = false
       }
     }
 
     applyLanguageToTree(document.body)
+    void flushRemoteQueue()
 
     const observer = new MutationObserver(mutations => {
       for (const mutation of mutations) {
@@ -224,7 +249,7 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
 
     const intervalId = window.setInterval(() => {
       void flushRemoteQueue()
-    }, 2000)
+    }, REMOTE_FLUSH_INTERVAL_MS)
 
     return () => {
       observer.disconnect()
