@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { auth, clerkClient, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { cookies, headers } from 'next/headers'
 import { prisma } from '@/lib/db'
@@ -14,12 +14,15 @@ import {
 } from '@/lib/location-tracking'
 import { logUserActivity } from '@/lib/user-activity'
 
+const SESSION_INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { userId } = await auth()
+  const { userId, sessionId } = await auth()
+  const requestTime = new Date()
   
   if (!userId) {
     redirect('/sign-in')
@@ -111,6 +114,33 @@ export default async function DashboardLayout({
   }
 
   if (user) {
+    if (user.lastSeenAt) {
+      const inactiveForMs = requestTime.getTime() - user.lastSeenAt.getTime()
+      if (inactiveForMs > SESSION_INACTIVITY_LIMIT_MS) {
+        if (sessionId) {
+          try {
+            const clerk = await clerkClient()
+            await clerk.sessions.revokeSession(sessionId)
+          } catch (error) {
+            console.error('[dashboard] failed to revoke stale session', {
+              userId,
+              sessionId,
+              error: error instanceof Error ? error.message : String(error),
+            })
+          }
+        }
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            currentSessionStartedAt: null,
+          },
+        })
+
+        redirect('/sign-in?reason=session-timeout')
+      }
+    }
+
     if (!user.referralCode) {
       const referralCode = await createUniqueReferralCode()
       await prisma.user.update({

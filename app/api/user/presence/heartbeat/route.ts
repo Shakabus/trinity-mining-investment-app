@@ -4,11 +4,13 @@ import { prisma } from '@/lib/db'
 import {
   buildLocationEventDetail,
   extractApproxLocation,
+  formatLocationLabel,
   hasApproxLocationData,
   locationSignature,
   parseLocationEventDetail,
 } from '@/lib/location-tracking'
 import { logUserActivity } from '@/lib/user-activity'
+import { sendLoginAlertEmailOnce } from '@/lib/login-alert-email'
 
 const NEW_SESSION_GAP_MS = 2 * 60 * 1000
 const MAX_HEARTBEAT_SECONDS = 120
@@ -16,7 +18,7 @@ const LOCATION_DEDUPE_WINDOW_MS = 30 * 60 * 1000
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth()
+    const { userId, sessionId } = await auth()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -26,6 +28,8 @@ export async function POST(req: Request) {
       where: { clerkUserId: userId },
       select: {
         id: true,
+        email: true,
+        fullName: true,
         lastSeenAt: true,
         currentSessionStartedAt: true,
       },
@@ -100,6 +104,20 @@ export async function POST(req: Request) {
             }),
           })
         }
+      }
+
+      if (sessionId) {
+        await sendLoginAlertEmailOnce({
+          userId: user.id,
+          sessionId,
+          email: user.email,
+          fullName: user.fullName,
+          signedInAt: sessionStartedAt ?? now,
+          source: 'presence_heartbeat',
+          location: hasApproxLocationData(snapshot) ? formatLocationLabel(snapshot) : null,
+          ipMasked: snapshot.ipMasked,
+          device: snapshot.userAgent,
+        })
       }
     }
 

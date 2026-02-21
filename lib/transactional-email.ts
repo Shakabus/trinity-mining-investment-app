@@ -12,6 +12,15 @@ type WelcomeEmailInput = {
   fullName?: string | null
 }
 
+type LoginAlertEmailInput = {
+  to: string
+  fullName?: string | null
+  signedInAt: Date
+  location?: string | null
+  ipMasked?: string | null
+  device?: string | null
+}
+
 type MiningPlanEmailInput = {
   to: string
   fullName?: string | null
@@ -163,6 +172,8 @@ const compactLine = (value: string, maxLength = 220) =>
   value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
 
 const displayName = (fullName?: string | null) => fullName?.trim() || 'there'
+
+const formatUtcTimestamp = (value: Date) => value.toISOString().replace('T', ' ').replace('Z', ' UTC')
 
 const resolveAppBaseUrl = () =>
   (
@@ -335,6 +346,38 @@ export async function sendWelcomeEmail({ to, fullName }: WelcomeEmailInput) {
       greeting: name,
       intro: 'Your account has been created successfully. You can now sign in, fund your account, and activate plans.',
       footer: 'Thank you for choosing Trinity Investments.',
+    }),
+  })
+}
+
+export async function sendLoginAlertEmail({
+  to,
+  fullName,
+  signedInAt,
+  location,
+  ipMasked,
+  device,
+}: LoginAlertEmailInput) {
+  const name = displayName(fullName)
+  const trimmedLocation = location?.trim() || 'Unknown location'
+  const trimmedIp = ipMasked?.trim() || 'Unknown'
+  const trimmedDevice = device?.trim() || 'Unknown device'
+  return sendEmail({
+    to,
+    subject: 'New Sign-In to Your Trinity Account',
+    text: `Hi ${name}, a new sign-in was detected on your account at ${formatUtcTimestamp(signedInAt)}. Location: ${trimmedLocation}. IP: ${trimmedIp}. Device: ${trimmedDevice}.`,
+    html: renderMessage({
+      heading: 'New Sign-In Detected',
+      greeting: name,
+      intro: 'We detected a new sign-in to your Trinity account.',
+      details: [
+        { label: 'Time (UTC)', value: formatUtcTimestamp(signedInAt) },
+        { label: 'Location', value: trimmedLocation },
+        { label: 'IP', value: trimmedIp },
+        { label: 'Device', value: trimmedDevice },
+      ],
+      footer:
+        'If this sign-in was not you, change your password immediately and contact support.',
     }),
   })
 }
