@@ -10,6 +10,7 @@ import {
 import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
 import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
 import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
+import { getUserTransferReadySummary } from '@/lib/transfer-ready'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,33 +35,13 @@ export default async function WithdrawAccountPage() {
   }
 
   const prices = await getTrackedCryptoPricesUsd()
-  const [summary, entries, assetSummary, miningReady, tradingReady, referralReady] = await Promise.all([
+  const [summary, entries, assetSummary, transferReady] = await Promise.all([
     getAccountBalanceSummary(user.id),
     getAccountBalanceEntries(user.id, { limit: 800 }),
     getAccountBalanceAssetSummary(user.id, prices),
-    prisma.earnings.aggregate({
-      where: {
-        userId: user.id,
-        isActive: true,
-        isWithdrawable: true,
-        userPlan: { status: 'completed' },
-      },
-      _sum: { totalEarnedUsd: true },
-    }),
-    prisma.tradingEarning.aggregate({
-      where: {
-        userId: user.id,
-        isActive: true,
-        tradingUserPlan: { status: 'completed' },
-      },
-      _sum: { totalEarnedUsd: true },
-    }),
-    prisma.referralBonus.aggregate({
-      where: {
-        referrerId: user.id,
-        status: 'available',
-      },
-      _sum: { amountUsd: true },
+    getUserTransferReadySummary({
+      userId: user.id,
+      clerkUserId: userId,
     }),
   ])
   const solAddress = await getLatestSolWalletAddress(user.id)
@@ -129,9 +110,10 @@ export default async function WithdrawAccountPage() {
       totalDepositedUsd={summary.totalDepositedUsd}
       totalInvestedUsd={summary.totalInvestedUsd}
       totalEarnedUsd={summary.earnedCreditsUsd}
-      miningReadyUsd={Number(miningReady._sum.totalEarnedUsd ?? 0)}
-      tradingReadyUsd={Number(tradingReady._sum.totalEarnedUsd ?? 0)}
-      referralReadyUsd={Number(referralReady._sum.amountUsd ?? 0)}
+      miningReadyUsd={transferReady.miningReadyUsd}
+      tradingReadyUsd={transferReady.tradingReadyUsd}
+      referralReadyUsd={transferReady.referralReadyUsd}
+      realEstateReadyUsd={transferReady.realEstateReadyUsd}
       walletOptions={walletOptions}
       entries={withdrawalEntries}
       kycStatus={kycStatus}

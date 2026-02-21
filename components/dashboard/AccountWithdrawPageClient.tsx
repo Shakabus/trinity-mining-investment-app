@@ -40,6 +40,7 @@ type Props = {
   miningReadyUsd: number
   tradingReadyUsd: number
   referralReadyUsd: number
+  realEstateReadyUsd: number
   walletOptions: {
     coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
     address: string
@@ -70,6 +71,7 @@ export default function AccountWithdrawPageClient({
   miningReadyUsd,
   tradingReadyUsd,
   referralReadyUsd,
+  realEstateReadyUsd,
   walletOptions,
   entries,
   kycStatus,
@@ -245,7 +247,7 @@ export default function AccountWithdrawPageClient({
         </div>
       )}
 
-      {(miningReadyUsd > 0 || tradingReadyUsd > 0 || referralReadyUsd > 0) && (
+      {(miningReadyUsd > 0 || tradingReadyUsd > 0 || referralReadyUsd > 0 || realEstateReadyUsd > 0) && (
         <div
           className="p-5 rounded-2xl"
           style={{
@@ -295,6 +297,19 @@ export default function AccountWithdrawPageClient({
                 }}
               >
                 Referral payout ready ({format(referralReadyUsd)}) {'>'}
+              </Link>
+            )}
+            {realEstateReadyUsd > 0 && (
+              <Link
+                href="/dashboard/real-estate/withdrawals"
+                className="px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  color: '#d1fae5',
+                }}
+              >
+                Real-estate payout ready ({format(realEstateReadyUsd)}) {'>'}
               </Link>
             )}
           </div>
