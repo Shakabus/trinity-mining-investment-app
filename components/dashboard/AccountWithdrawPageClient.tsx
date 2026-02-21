@@ -258,36 +258,6 @@ export default function AccountWithdrawPageClient({
         </div>
       )}
 
-      {!isKycApproved && (
-        <div
-          className="p-5 rounded-2xl"
-          style={{
-            background: 'rgba(245, 158, 11, 0.12)',
-            border: '1px solid rgba(245, 158, 11, 0.35)',
-          }}
-        >
-          <div className="text-amber-100 font-semibold">
-            {isKycSystemUnavailable
-              ? 'KYC service temporarily unavailable'
-              : kycStatus === 'pending'
-              ? 'KYC review in progress'
-              : kycStatus === 'rejected'
-                ? 'KYC was rejected'
-                : 'KYC required before withdrawals'}
-          </div>
-          <p className="text-sm text-amber-100/85 mt-2">
-            {isKycSystemUnavailable
-              ? 'We cannot verify KYC status right now. Try again after database sync finishes.'
-              : 'Withdrawals are unlocked only after KYC is approved.'}
-          </p>
-          {!isKycSystemUnavailable && (
-            <Link href="/dashboard/kyc" className="inline-block mt-3 text-sm text-white underline underline-offset-4">
-              {kycStatus === 'pending' ? 'View KYC status' : 'Complete KYC now'} {'>'}
-            </Link>
-          )}
-        </div>
-      )}
-
       {(miningReadyUsd > 0 || tradingReadyUsd > 0 || referralReadyUsd > 0 || realEstateReadyUsd > 0) && (
         <div
           className="p-5 rounded-2xl relative"

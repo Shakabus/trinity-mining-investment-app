@@ -35,7 +35,6 @@ import NewsTimeline from '@/components/dashboard/NewsTimeline'
 import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
-import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -134,21 +133,6 @@ export default async function DashboardPage() {
     },
   })
 
-  const kycProfile = user
-    ? await runKycQuery(() =>
-        prisma.userKyc.findUnique({
-          where: { userId: user.id },
-          select: {
-            status: true,
-            reviewedAt: true,
-          },
-        })
-      )
-    : null
-  if (kycProfile && kycProfile.tableMissing) {
-    logKycTableMissing('dashboard')
-  }
-
   const tradingEarnings = user ? await prisma.tradingEarning.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
@@ -201,8 +185,6 @@ export default async function DashboardPage() {
     ? (user.preferredLanguage as LanguageCode)
     : languageFromCurrency(preferredCurrency)
   const t = (key: string) => translate(key, preferredLanguage)
-  const kycStatus = kycProfile?.value?.status ?? 'not_submitted'
-  const isKycApproved = kycStatus === 'approved'
 
   const updatedEarnings = user
     ? await autoUpdateEarnings({
@@ -461,38 +443,6 @@ export default async function DashboardPage() {
             </p>
           </div>
         </div>
-
-        {!isKycApproved && (
-          <div
-            className="p-4 md:p-5 rounded-2xl flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
-            style={{
-              background: 'rgba(245, 158, 11, 0.12)',
-              border: '1px solid rgba(245, 158, 11, 0.35)',
-            }}
-          >
-            <div>
-              <div className="text-sm md:text-base font-semibold text-amber-100">
-                {kycStatus === 'pending'
-                  ? 'KYC submitted and pending review'
-                  : kycStatus === 'rejected'
-                    ? 'KYC needs correction before withdrawals'
-                    : 'Complete KYC to unlock withdrawals'}
-              </div>
-              <div className="text-xs md:text-sm text-amber-100/85 mt-1">
-                Withdrawals from account balance require approved KYC verification.
-              </div>
-            </div>
-            <Link
-              href="/dashboard/kyc"
-              className="inline-block px-4 py-2 rounded-full text-sm font-semibold text-white"
-              style={{
-                background: 'linear-gradient(135deg, #582dff, #3a137a)',
-              }}
-            >
-              {kycStatus === 'pending' ? 'View KYC status' : 'Complete KYC'} {'>'}
-            </Link>
-          </div>
-        )}
 
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
