@@ -7,10 +7,15 @@ const TRANSLATE_ALLOWED_FIELDS = ['text', 'texts', 'language'] as const
 const MAX_TEXT_LENGTH = 420
 const MAX_BATCH_TEXTS = 24
 const REQUEST_TIMEOUT_MS = 7000
+const BATCH_ITEM_DELAY_MS = 80
 
 export const dynamic = 'force-dynamic'
 
 const memoryCache = new Map<string, string>()
+
+function wait(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 function decodeHtmlEntities(value: string) {
   return value
@@ -202,10 +207,26 @@ export async function POST(req: Request) {
     }
 
     const googleApiKey = getGoogleTranslateApiKey()
-    const translations = await Promise.all(texts.map(text => translateOne(text, language, googleApiKey)))
-
     if (texts.length === 1 && readStringField(body, 'text', { required: false })) {
-      return NextResponse.json({ translated: translations[0] })
+      const translated = await translateOne(texts[0], language, googleApiKey)
+      return NextResponse.json({ translated })
+    }
+
+    const perRequestCache = new Map<string, string | null>()
+    const translations: Array<string | null> = []
+
+    for (const text of texts) {
+      if (perRequestCache.has(text)) {
+        translations.push(perRequestCache.get(text) ?? null)
+        continue
+      }
+
+      const translated = await translateOne(text, language, googleApiKey)
+      perRequestCache.set(text, translated)
+      translations.push(translated)
+
+      // Keep upstream translator requests steady to reduce provider throttling.
+      await wait(BATCH_ITEM_DELAY_MS)
     }
 
     return NextResponse.json({ translations })
