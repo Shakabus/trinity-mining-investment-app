@@ -46,7 +46,7 @@ export function LanguageProvider({
 
   return (
     <LanguageContext.Provider value={value}>
-      <DashboardAutoTranslate language={language} remoteEnabled={false} />
+      <DashboardAutoTranslate language={language} remoteEnabled />
       {children}
     </LanguageContext.Provider>
   )

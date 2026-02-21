@@ -18,6 +18,7 @@ const STORAGE_PREFIX = 'dashboard_auto_i18n_cache_v1:'
 const REMOTE_BATCH_SIZE = 24
 const REMOTE_FLUSH_INTERVAL_MS = 450
 const REMOTE_FLUSH_BUDGET_MS = 1200
+const REMOTE_RETRY_DELAY_MS = 5000
 
 function normalizePhrase(value: string) {
   return value.replace(/\s+/g, ' ').trim().toLowerCase()
@@ -258,6 +259,7 @@ export default function DashboardAutoTranslate({
           const missingTexts = unresolvedTexts.filter(sourceText => !result.map.has(sourceText))
           if (missingTexts.length > 0) {
             missingTexts.forEach(sourceText => pendingRef.current.add(sourceText))
+            cooldownUntilRef.current = Date.now() + REMOTE_RETRY_DELAY_MS
             break
           }
         }
