@@ -7,6 +7,7 @@ import { UserButton } from '@clerk/nextjs'
 import { Users, CreditCard, LifeBuoy, Menu, X, LayoutDashboard, Banknote, Link2, Building2, ChevronsLeft, ChevronsRight, Radio, Wallet, ShieldCheck } from 'lucide-react'
 import ThemeToggle from '@/components/ui/ThemeToggle'
 import LiveNotificationTicker from '@/components/notifications/LiveNotificationTicker'
+import AdminPushNotifications from '@/components/admin/AdminPushNotifications'
 
 type AdminDotKey =
   | 'users'
@@ -214,6 +215,7 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
       className="h-screen overflow-hidden"
       style={{ background: '#000000' }}
     >
+      <AdminPushNotifications />
       <div className="h-full flex flex-col">
         {/* Top Navigation (sticky, not scrolling) */}
         <nav
