@@ -122,7 +122,13 @@ function safeWriteStorage(storageKey: string, value: Record<string, string>) {
   }
 }
 
-export default function DashboardAutoTranslate({ language }: { language: LanguageCode }) {
+export default function DashboardAutoTranslate({
+  language,
+  remoteEnabled = true,
+}: {
+  language: LanguageCode
+  remoteEnabled?: boolean
+}) {
   const originalsRef = useRef(new WeakMap<Text, string>())
   const lastAppliedRef = useRef(new WeakMap<Text, string>())
   const remoteCacheRef = useRef(new Map<string, string>())
@@ -177,7 +183,7 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
         const cached = remoteCacheRef.current.get(cacheKey(language, originalValue))
         if (cached) {
           nextValue = withOriginalSpacing(originalValue, cached)
-        } else if (canRequestRemoteTranslation(originalValue.trim())) {
+        } else if (remoteEnabled && canRequestRemoteTranslation(originalValue.trim())) {
           pendingRef.current.add(originalValue.trim())
         }
       }
@@ -211,6 +217,7 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
     }
 
     const flushRemoteQueue = async () => {
+      if (!remoteEnabled) return
       if (processingRef.current || language === 'en' || pendingRef.current.size === 0) return
       if (Date.now() < cooldownUntilRef.current) return
 
@@ -265,7 +272,9 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
     }
 
     applyLanguageToTree(document.body)
-    void flushRemoteQueue()
+    if (remoteEnabled) {
+      void flushRemoteQueue()
+    }
 
     const observer = new MutationObserver(mutations => {
       for (const mutation of mutations) {
@@ -282,7 +291,9 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
       }
 
       scheduleApply()
-      void flushRemoteQueue()
+      if (remoteEnabled) {
+        void flushRemoteQueue()
+      }
     })
 
     observer.observe(document.body, {
@@ -291,16 +302,18 @@ export default function DashboardAutoTranslate({ language }: { language: Languag
       characterData: true,
     })
 
-    const intervalId = window.setInterval(() => {
-      void flushRemoteQueue()
-    }, REMOTE_FLUSH_INTERVAL_MS)
+    const intervalId = remoteEnabled
+      ? window.setInterval(() => {
+          void flushRemoteQueue()
+        }, REMOTE_FLUSH_INTERVAL_MS)
+      : 0
 
     return () => {
       observer.disconnect()
-      window.clearInterval(intervalId)
+      if (intervalId) window.clearInterval(intervalId)
       if (rafId) window.cancelAnimationFrame(rafId)
     }
-  }, [language])
+  }, [language, remoteEnabled])
 
   return null
 }

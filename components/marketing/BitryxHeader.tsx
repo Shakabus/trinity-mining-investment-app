@@ -8,6 +8,11 @@ import MarketingLiveTape from '@/components/marketing/MarketingLiveTape'
 import MarketingWithdrawalAlert from '@/components/marketing/MarketingWithdrawalAlert'
 import DashboardAutoTranslate from '@/components/i18n/DashboardAutoTranslate'
 import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES, type LanguageCode, isSupportedLanguage } from '@/lib/i18n'
+import {
+  readPreferredLanguage,
+  subscribePreferredLanguage,
+  syncPreferredLanguage,
+} from '@/lib/language-preference'
 
 const NAV_ITEMS = [
   { label: 'Features', href: '/features' },
@@ -16,23 +21,25 @@ const NAV_ITEMS = [
   { label: 'How It Works', href: '/how-it-works' },
 ]
 
-const MARKETING_LANGUAGE_STORAGE_KEY = 'marketing_language_preference'
-
 export default function BitryxHeader() {
   const [open, setOpen] = useState(false)
   const [language, setLanguage] = useState<LanguageCode>(() => {
-    if (typeof window === 'undefined') return 'en'
-    const stored = window.localStorage.getItem(MARKETING_LANGUAGE_STORAGE_KEY)
-    return stored && isSupportedLanguage(stored) ? stored : 'en'
+    return readPreferredLanguage('en')
   })
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false)
   const languageMenuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(MARKETING_LANGUAGE_STORAGE_KEY, language)
-    document.documentElement.lang = language
+    syncPreferredLanguage(language)
   }, [language])
+
+  useEffect(() => {
+    return subscribePreferredLanguage(nextLanguage => {
+      if (isSupportedLanguage(nextLanguage)) {
+        setLanguage(previous => (previous === nextLanguage ? previous : nextLanguage))
+      }
+    })
+  }, [])
 
   useEffect(() => {
     if (!languageMenuOpen) return
@@ -49,7 +56,7 @@ export default function BitryxHeader() {
 
   return (
     <>
-      <DashboardAutoTranslate language={language} />
+      <DashboardAutoTranslate language={language} remoteEnabled />
       <MarketingLiveTape />
       <MarketingWithdrawalAlert
         minIntervalMs={2000}

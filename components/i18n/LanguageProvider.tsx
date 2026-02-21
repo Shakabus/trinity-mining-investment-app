@@ -1,8 +1,13 @@
 'use client'
 
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { type LanguageCode, translate } from '@/lib/i18n'
 import DashboardAutoTranslate from '@/components/i18n/DashboardAutoTranslate'
+import {
+  readPreferredLanguage,
+  subscribePreferredLanguage,
+  syncPreferredLanguage,
+} from '@/lib/language-preference'
 
 interface LanguageContextValue {
   language: LanguageCode
@@ -19,7 +24,17 @@ export function LanguageProvider({
   language: LanguageCode
   children: React.ReactNode
 }) {
-  const [language, setLanguage] = useState<LanguageCode>(initialLanguage)
+  const [language, setLanguage] = useState<LanguageCode>(() => readPreferredLanguage(initialLanguage))
+
+  useEffect(() => {
+    syncPreferredLanguage(language)
+  }, [language])
+
+  useEffect(() => {
+    return subscribePreferredLanguage(nextLanguage => {
+      setLanguage(previous => (previous === nextLanguage ? previous : nextLanguage))
+    })
+  }, [])
 
   const value = useMemo<LanguageContextValue>(() => {
     return {
@@ -31,7 +46,7 @@ export function LanguageProvider({
 
   return (
     <LanguageContext.Provider value={value}>
-      <DashboardAutoTranslate language={language} />
+      <DashboardAutoTranslate language={language} remoteEnabled={false} />
       {children}
     </LanguageContext.Provider>
   )
