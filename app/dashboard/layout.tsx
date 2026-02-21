@@ -13,6 +13,10 @@ import {
   hasApproxLocationData,
 } from '@/lib/location-tracking'
 import { logUserActivity } from '@/lib/user-activity'
+import {
+  resolveCountryNameFromCountry,
+  resolveLocaleDefaultsFromCountry,
+} from '@/lib/geo-defaults'
 
 const SESSION_INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000
 
@@ -33,6 +37,9 @@ export default async function DashboardLayout({
   
   const cookieStore = await cookies()
   const requestHeaders = await headers()
+  const loginLocation = extractApproxLocation(requestHeaders)
+  const geoCountryName = resolveCountryNameFromCountry(loginLocation.country)
+  const geoDefaults = resolveLocaleDefaultsFromCountry(loginLocation.country)
   const referralCookie = normalizeReferralCode(cookieStore.get('referral_code')?.value)
 
   let user = await prisma.user.findUnique({
@@ -75,6 +82,9 @@ export default async function DashboardLayout({
             fullName,
             role: 'user',
             accountStatus: 'inactive',
+            countryOfOrigin: geoCountryName ?? undefined,
+            preferredCurrency: geoDefaults?.preferredCurrency,
+            preferredLanguage: geoDefaults?.preferredLanguage,
             referralCode,
             referredById: referrer ? referrer.id : null,
           },
@@ -90,15 +100,14 @@ export default async function DashboardLayout({
   }
 
   if (createdNewUser && user) {
-    const signupLocation = extractApproxLocation(requestHeaders)
-    if (hasApproxLocationData(signupLocation)) {
+    if (hasApproxLocationData(loginLocation)) {
       await logUserActivity({
         userId: user.id,
         action: 'UserSignupLocation',
         detail: buildLocationEventDetail({
           event: 'signup',
           source: 'dashboard_layout',
-          location: signupLocation,
+          location: loginLocation,
         }),
       })
     }
@@ -139,6 +148,26 @@ export default async function DashboardLayout({
 
         redirect('/sign-in?reason=session-timeout')
       }
+    }
+
+    if (!user.countryOfOrigin && geoCountryName) {
+      const shouldAutoAssignLocaleDefaults =
+        user.preferredCurrency === 'USD' &&
+        user.preferredLanguage === 'en' &&
+        Boolean(geoDefaults)
+
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          countryOfOrigin: geoCountryName,
+          ...(shouldAutoAssignLocaleDefaults
+            ? {
+                preferredCurrency: geoDefaults!.preferredCurrency,
+                preferredLanguage: geoDefaults!.preferredLanguage,
+              }
+            : {}),
+        },
+      })
     }
 
     if (!user.referralCode) {
