@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useReverification, useUser } from '@clerk/nextjs'
+import { isReverificationCancelledError } from '@clerk/nextjs/errors'
 import LoadingButton from '@/components/ui/LoadingButton'
 
 type ClerkApiError = {
@@ -13,6 +14,14 @@ type ClerkApiError = {
 
 export default function ChangePasswordForm() {
   const { isLoaded, user } = useUser()
+  const updatePasswordWithReverification = useReverification(
+    async (params: { newPassword: string; currentPassword?: string; signOutOfOtherSessions?: boolean }) => {
+      if (!user) {
+        throw new Error('Authentication is still loading. Try again in a moment.')
+      }
+      return user.updatePassword(params)
+    },
+  )
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -26,7 +35,9 @@ export default function ChangePasswordForm() {
       return
     }
 
-    if (!currentPassword.trim()) {
+    const requiresCurrentPassword = Boolean(user.passwordEnabled)
+
+    if (requiresCurrentPassword && !currentPassword.trim()) {
       setStatus({ type: 'error', message: 'Current password is required.' })
       return
     }
@@ -50,8 +61,8 @@ export default function ChangePasswordForm() {
     setStatus(null)
 
     try {
-      await user.updatePassword({
-        currentPassword,
+      await updatePasswordWithReverification({
+        currentPassword: requiresCurrentPassword ? currentPassword : undefined,
         newPassword,
         signOutOfOtherSessions: signOutOtherSessions,
       })
@@ -61,6 +72,11 @@ export default function ChangePasswordForm() {
       setConfirmPassword('')
       setStatus({ type: 'success', message: 'Password updated successfully.' })
     } catch (error) {
+      if (isReverificationCancelledError(error)) {
+        setStatus({ type: 'error', message: 'Password update was cancelled before verification completed.' })
+        return
+      }
+
       const clerkError = error as ClerkApiError
       const message =
         clerkError?.errors?.[0]?.longMessage ||
@@ -78,19 +94,26 @@ export default function ChangePasswordForm() {
       <p className="text-xs text-white/60 mb-4">
         This updates your Clerk authentication password immediately.
       </p>
+      {user && !user.passwordEnabled && (
+        <p className="text-xs text-amber-200 mb-4">
+          No password is currently set on this account. Set a new password below to enable email/password sign in.
+        </p>
+      )}
 
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-white/80 mb-2">Current password</label>
-          <input
-            type="password"
-            value={currentPassword}
-            onChange={event => setCurrentPassword(event.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
-            placeholder="Enter current password"
-            autoComplete="current-password"
-          />
-        </div>
+        {user?.passwordEnabled && (
+          <div>
+            <label className="block text-sm font-medium text-white/80 mb-2">Current password</label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={event => setCurrentPassword(event.target.value)}
+              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:border-purple-500 focus:outline-none text-sm md:text-base"
+              placeholder="Enter current password"
+              autoComplete="current-password"
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-white/80 mb-2">New password</label>
