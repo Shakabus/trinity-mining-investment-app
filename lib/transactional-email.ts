@@ -191,6 +191,24 @@ const renderDetailsHtml = (details: Array<{ label: string; value: string }>) =>
     )
     .join('')
 
+const renderEmailLogo = (appUrl: string) => `
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px">
+    <tr>
+      <td
+        align="center"
+        style="padding:18px;border-radius:14px;background:linear-gradient(135deg,rgba(122,71,255,0.3),rgba(45,212,191,0.2) 52%,rgba(245,158,11,0.2));border:1px solid rgba(255,255,255,0.16)"
+      >
+        <img
+          src="${escapeHtml(appUrl)}/email/logo.png"
+          alt="Trinity Investments"
+          width="220"
+          style="display:block;width:100%;max-width:220px;height:auto;filter:drop-shadow(0 8px 14px rgba(0,0,0,0.35))"
+        />
+      </td>
+    </tr>
+  </table>
+`
+
 const renderMessage = ({
   heading,
   greeting,
@@ -229,6 +247,7 @@ const renderMessage = ({
                 </tr>
                 <tr>
                   <td style="border:1px solid rgba(255,255,255,0.1);border-radius:18px;background:linear-gradient(150deg,#0a0b12 0%,#0e1222 100%);padding:28px 24px;box-shadow:0 24px 48px rgba(0,0,0,0.45)">
+                    ${renderEmailLogo(appUrl)}
                     <h1 style="margin:0 0 14px;font-size:27px;line-height:1.25;color:#ffffff;font-weight:800">${escapeHtml(heading)}</h1>
                     <p style="margin:0 0 10px;color:#d1d5db;font-size:15px;line-height:1.6">Hi ${escapeHtml(greeting)},</p>
                     <p style="margin:0 0 18px;color:#d1d5db;font-size:15px;line-height:1.6">${escapeHtml(intro)}</p>
@@ -690,6 +709,7 @@ export async function sendSupportInboxAlertEmail({ subject, body }: SupportInbox
                 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px;border:1px solid rgba(255,255,255,0.12);border-radius:14px;background:#0d111b">
                   <tr>
                     <td style="padding:20px 22px;border-bottom:1px solid rgba(255,255,255,0.08)">
+                      ${renderEmailLogo(appUrl)}
                       <h2 style="margin:0;color:#f8fafc;font-size:22px;line-height:1.3">${escapeHtml(subject)}</h2>
                     </td>
                   </tr>
