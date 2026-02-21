@@ -37,6 +37,8 @@ type Props = {
   totalDepositedUsd: number
   totalInvestedUsd: number
   totalEarnedUsd: number
+  showProceedsAlert: boolean
+  proceedsAlertMarker: string | null
   miningReadyUsd: number
   tradingReadyUsd: number
   referralReadyUsd: number
@@ -100,6 +102,8 @@ export default function AccountWithdrawPageClient({
   totalDepositedUsd,
   totalInvestedUsd,
   totalEarnedUsd,
+  showProceedsAlert,
+  proceedsAlertMarker,
   miningReadyUsd,
   tradingReadyUsd,
   referralReadyUsd,
@@ -130,6 +134,10 @@ export default function AccountWithdrawPageClient({
   const isKycApproved = kycStatus === 'approved'
   const isKycSystemUnavailable = kycStatus === 'system_unavailable'
   const withdrawActionLocked = freezeState.withdrawableLocked || freezeState.walletsLocked
+  const dismissProceedsAlertHref = (nextPath: string) => {
+    if (!proceedsAlertMarker) return nextPath
+    return `/api/user/plan-proceeds-alert/dismiss?next=${encodeURIComponent(nextPath)}&marker=${encodeURIComponent(proceedsAlertMarker)}`
+  }
 
   const pendingRequests = useMemo(
     () => entries.filter(entry => entry.status === 'pending').length,
@@ -258,7 +266,8 @@ export default function AccountWithdrawPageClient({
         </div>
       )}
 
-      {(miningReadyUsd > 0 || tradingReadyUsd > 0 || referralReadyUsd > 0 || realEstateReadyUsd > 0) && (
+      {showProceedsAlert &&
+        (miningReadyUsd > 0 || tradingReadyUsd > 0 || referralReadyUsd > 0 || realEstateReadyUsd > 0) && (
         <div
           className="p-5 rounded-2xl relative"
           style={applyFrozenStyle({
@@ -274,7 +283,7 @@ export default function AccountWithdrawPageClient({
           <div className="flex flex-wrap gap-2 mt-3">
             {miningReadyUsd > 0 && (
               <Link
-                href="/dashboard/earnings"
+                href={dismissProceedsAlertHref('/dashboard/earnings')}
                 className="px-3 py-1.5 rounded-full text-xs font-semibold"
                 style={{
                   background: 'rgba(16, 185, 129, 0.2)',
@@ -287,7 +296,7 @@ export default function AccountWithdrawPageClient({
             )}
             {tradingReadyUsd > 0 && (
               <Link
-                href="/dashboard/investment-trading/withdrawals"
+                href={dismissProceedsAlertHref('/dashboard/investment-trading/withdrawals')}
                 className="px-3 py-1.5 rounded-full text-xs font-semibold"
                 style={{
                   background: 'rgba(16, 185, 129, 0.2)',
@@ -300,7 +309,7 @@ export default function AccountWithdrawPageClient({
             )}
             {referralReadyUsd > 0 && (
               <Link
-                href="/dashboard/referrals"
+                href={dismissProceedsAlertHref('/dashboard/referrals')}
                 className="px-3 py-1.5 rounded-full text-xs font-semibold"
                 style={{
                   background: 'rgba(16, 185, 129, 0.2)',
@@ -313,7 +322,7 @@ export default function AccountWithdrawPageClient({
             )}
             {realEstateReadyUsd > 0 && (
               <Link
-                href="/dashboard/real-estate/withdrawals"
+                href={dismissProceedsAlertHref('/dashboard/real-estate/withdrawals')}
                 className="px-3 py-1.5 rounded-full text-xs font-semibold"
                 style={{
                   background: 'rgba(16, 185, 129, 0.2)',

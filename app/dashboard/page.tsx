@@ -35,6 +35,8 @@ import NewsTimeline from '@/components/dashboard/NewsTimeline'
 import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
 import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
+import { getUserTransferReadySummary } from '@/lib/transfer-ready'
+import { getPlanProceedsAlertState } from '@/lib/plan-proceeds-alert'
 
 export default async function DashboardPage() {
   const { userId } = await auth()
@@ -285,6 +287,22 @@ export default async function DashboardPage() {
         combinedAssetUsd: 0,
       }
 
+  const transferReady = user
+    ? await getUserTransferReadySummary({
+        userId: user.id,
+        clerkUserId: userId,
+      })
+    : {
+        miningReadyUsd: 0,
+        tradingReadyUsd: 0,
+        referralReadyUsd: 0,
+        realEstateReadyUsd: 0,
+        totalReadyUsd: 0,
+      }
+  const planProceedsAlert = user
+    ? await getPlanProceedsAlertState(user.id)
+    : { marker: null, visible: false as const }
+
   const latestEntriesByReference = accountBalanceEntries.reduce<Map<string, (typeof accountBalanceEntries)[number]>>(
     (map, entry) => {
       const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
@@ -316,11 +334,14 @@ export default async function DashboardPage() {
   const realEstateTotalAllocationUsd = realEstateData.summary.portfolioAllocationUsd
   const realEstateApprovedCount = realEstateData.summary.approvedCount
   const realEstatePendingCount = realEstateData.summary.pendingCount
-  const completedMiningAvailable = updatedEarnings.some(
-    record => record.isWithdrawable && record.userPlan?.status === 'completed'
-  )
-  const completedTradingPlan = user?.tradingPlans?.find(plan => plan.status === 'completed') ?? null
-  const completedTradingAvailable = Boolean(completedTradingPlan && tradingEarnings.length > 0)
+  const completedMiningAvailable = transferReady.miningReadyUsd > 0
+  const completedTradingAvailable = transferReady.tradingReadyUsd > 0
+  const showPlanProceedsAlert =
+    planProceedsAlert.visible && (completedMiningAvailable || completedTradingAvailable)
+  const dismissProceedsAlertHref = (nextPath: string) => {
+    if (!planProceedsAlert.marker) return nextPath
+    return `/api/user/plan-proceeds-alert/dismiss?next=${encodeURIComponent(nextPath)}&marker=${encodeURIComponent(planProceedsAlert.marker)}`
+  }
   const hasActivePlans = Boolean(activeMiningPlan || activeTradingPlan)
   const effectiveAccountStatus = hasActivePlans ? 'active' : (user?.accountStatus ?? 'inactive')
   const daysActiveDates = [
@@ -510,7 +531,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {(completedMiningAvailable || completedTradingAvailable) && (
+        {showPlanProceedsAlert && (
           <div
             className="p-4 rounded-2xl"
             style={{
@@ -524,7 +545,7 @@ export default async function DashboardPage() {
             <div className="flex flex-wrap gap-3 mt-3">
               {completedMiningAvailable && (
                 <Link
-                  href="/dashboard/earnings"
+                  href={dismissProceedsAlertHref('/dashboard/earnings')}
                   className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
                   style={{
                     background: 'rgba(16, 185, 129, 0.2)',
@@ -537,7 +558,7 @@ export default async function DashboardPage() {
               )}
               {completedTradingAvailable && (
                 <Link
-                  href="/dashboard/investment-trading/withdrawals"
+                  href={dismissProceedsAlertHref('/dashboard/investment-trading/withdrawals')}
                   className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
                   style={{
                     background: 'rgba(16, 185, 129, 0.2)',
@@ -549,7 +570,7 @@ export default async function DashboardPage() {
                 </Link>
               )}
               <Link
-                href="/dashboard/account/withdraw"
+                href={dismissProceedsAlertHref('/dashboard/account/withdraw')}
                 className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
                 style={{
                   background: 'rgba(239, 68, 68, 0.2)',

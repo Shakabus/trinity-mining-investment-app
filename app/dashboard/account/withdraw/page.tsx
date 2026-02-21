@@ -16,6 +16,7 @@ import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-pri
 import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
 import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
 import { getUserTransferReadySummary } from '@/lib/transfer-ready'
+import { getPlanProceedsAlertState } from '@/lib/plan-proceeds-alert'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +41,7 @@ export default async function WithdrawAccountPage() {
   }
 
   const prices = await getTrackedCryptoPricesUsd()
-  const [summary, entries, assetSummary, transferReady, freezeQuery] = await Promise.all([
+  const [summary, entries, assetSummary, transferReady, freezeQuery, proceedsAlert] = await Promise.all([
     getAccountBalanceSummary(user.id),
     getAccountBalanceEntries(user.id, { limit: 800 }),
     getAccountBalanceAssetSummary(user.id, prices),
@@ -49,6 +50,7 @@ export default async function WithdrawAccountPage() {
       clerkUserId: userId,
     }),
     getAccountFreezeSettings(user.id),
+    getPlanProceedsAlertState(user.id),
   ])
   if (freezeQuery.tableMissing) {
     logAccountFreezeTableMissing('dashboard/account/withdraw')
@@ -120,6 +122,8 @@ export default async function WithdrawAccountPage() {
       totalInvestedUsd={summary.totalInvestedUsd}
       totalEarnedUsd={summary.earnedCreditsUsd}
       freezeState={buildAccountFreezeVisualState(freezeQuery.settings)}
+      showProceedsAlert={proceedsAlert.visible}
+      proceedsAlertMarker={proceedsAlert.marker}
       miningReadyUsd={transferReady.miningReadyUsd}
       tradingReadyUsd={transferReady.tradingReadyUsd}
       referralReadyUsd={transferReady.referralReadyUsd}
