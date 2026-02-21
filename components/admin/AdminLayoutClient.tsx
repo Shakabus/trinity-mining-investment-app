@@ -19,6 +19,36 @@ type AdminDotKey =
   | 'support'
 
 type AdminDotMap = Partial<Record<AdminDotKey, number>>
+const ADMIN_DOT_ACK_STORAGE_KEY = 'admin_notification_dot_ack_v1'
+
+const getAdminActiveAckKeys = (pathname: string) => {
+  const keys = new Set<AdminDotKey>()
+  if (pathname.startsWith('/admin/users')) {
+    keys.add('users')
+  }
+  if (pathname.startsWith('/admin/payments')) {
+    keys.add('payments')
+  }
+  if (pathname.startsWith('/admin/account-balance')) {
+    keys.add('accountBalance')
+  }
+  if (pathname.startsWith('/admin/kyc')) {
+    keys.add('kyc')
+  }
+  if (pathname.startsWith('/admin/withdrawals')) {
+    keys.add('withdrawals')
+  }
+  if (pathname.startsWith('/admin/real-estate')) {
+    keys.add('properties')
+  }
+  if (pathname.startsWith('/admin/referrals')) {
+    keys.add('referrals')
+  }
+  if (pathname.startsWith('/admin/settings')) {
+    keys.add('support')
+  }
+  return keys
+}
 
 const menuItems: Array<{
   name: string
@@ -49,6 +79,17 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   const pathname = usePathname()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [dots, setDots] = useState<AdminDotMap>({})
+  const [acknowledgedDots, setAcknowledgedDots] = useState<AdminDotMap>(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      const raw = window.localStorage.getItem(ADMIN_DOT_ACK_STORAGE_KEY)
+      if (!raw) return {}
+      const parsed = JSON.parse(raw) as AdminDotMap
+      return parsed && typeof parsed === 'object' ? parsed : {}
+    } catch {
+      return {}
+    }
+  })
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.localStorage.getItem('admin_sidebar_collapsed') === 'true'
@@ -67,7 +108,35 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
         if (!response.ok) return
         const data = (await response.json()) as { dots?: AdminDotMap }
         if (isMounted && data?.dots) {
-          setDots(data.dots)
+          const nextDots = data.dots
+          const activeAckKeys = getAdminActiveAckKeys(pathname)
+
+          setDots(nextDots)
+          setAcknowledgedDots(previous => {
+            const next: AdminDotMap = { ...previous }
+            let changed = false
+
+            for (const key of Object.keys(nextDots) as AdminDotKey[]) {
+              const current = nextDots[key] ?? 0
+              const acknowledged = next[key] ?? 0
+              if (current < acknowledged) {
+                next[key] = current
+                changed = true
+              }
+            }
+
+            for (const key of activeAckKeys) {
+              const current = nextDots[key] ?? 0
+              if ((next[key] ?? 0) !== current) {
+                next[key] = current
+                changed = true
+              }
+            }
+
+            if (!changed) return previous
+            window.localStorage.setItem(ADMIN_DOT_ACK_STORAGE_KEY, JSON.stringify(next))
+            return next
+          })
         }
       } catch (error) {
         console.error('Admin notification dots fetch error:', error)
@@ -81,7 +150,9 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
       isMounted = false
       if (timer) window.clearInterval(timer)
     }
-  }, [])
+  }, [pathname])
+
+  const activeAckKeys = getAdminActiveAckKeys(pathname)
 
   const toggleCollapsed = () => {
     setIsCollapsed(prev => {
@@ -95,9 +166,16 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 
   const getDotCount = (dotKey?: AdminDotKey) => {
     if (!dotKey) return 0
-    const value = dots[dotKey]
-    if (typeof value !== 'number' || !Number.isFinite(value)) return 0
-    return Math.max(0, Math.floor(value))
+    const current = dots[dotKey]
+    const storedAcknowledged = acknowledgedDots[dotKey]
+    if (typeof current !== 'number' || !Number.isFinite(current)) return 0
+    let acknowledged =
+      typeof storedAcknowledged === 'number' && Number.isFinite(storedAcknowledged)
+        ? storedAcknowledged
+        : 0
+    if (current < acknowledged) acknowledged = current
+    if (activeAckKeys.has(dotKey)) acknowledged = current
+    return Math.max(0, Math.floor(current - acknowledged))
   }
 
   const renderDot = (count: number, compact = false) => {
