@@ -7,6 +7,11 @@ import {
   getAccountBalanceEntries,
   getAccountBalanceSummary,
 } from '@/lib/account-balance'
+import {
+  buildAccountFreezeVisualState,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
 import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
 
 export const dynamic = 'force-dynamic'
@@ -27,11 +32,15 @@ export default async function FundAccountPage() {
   }
 
   const prices = await getTrackedCryptoPricesUsd()
-  const [summary, entries, assetSummary] = await Promise.all([
+  const [summary, entries, assetSummary, freezeQuery] = await Promise.all([
     getAccountBalanceSummary(user.id),
     getAccountBalanceEntries(user.id, { limit: 120 }),
     getAccountBalanceAssetSummary(user.id, prices),
+    getAccountFreezeSettings(user.id),
   ])
+  if (freezeQuery.tableMissing) {
+    logAccountFreezeTableMissing('dashboard/account/fund')
+  }
 
   return (
     <AccountFundPageClient
@@ -44,6 +53,7 @@ export default async function FundAccountPage() {
       totalInvestedUsd={summary.totalInvestedUsd}
       totalWithdrawnUsd={summary.totalWithdrawnUsd}
       totalEarnedUsd={summary.earnedCreditsUsd}
+      freezeState={buildAccountFreezeVisualState(freezeQuery.settings)}
       walletFlow={TRACKED_ASSET_COINS.map(coinType => assetSummary.byCoin[coinType])}
       entries={entries.map(entry => ({
         ...entry,

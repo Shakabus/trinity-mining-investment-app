@@ -34,6 +34,15 @@ export type AccountFreezeSettings = {
   coins: Record<TrackedAssetCoin, CoinFreezeSettings>
 }
 
+export type AccountFreezeVisualState = {
+  incomingLocked: boolean
+  outgoingLocked: boolean
+  spendableLocked: boolean
+  withdrawableLocked: boolean
+  earningsLocked: boolean
+  walletsLocked: boolean
+}
+
 export type AccountFreezeQueryResult = {
   settings: AccountFreezeSettings
   tableMissing: boolean
@@ -516,6 +525,29 @@ export function summarizeActiveMetricLocks(settings: AccountFreezeSettings) {
   if (settings.assetLocks.earningsLocked) active.push('Earnings credits')
   if (settings.assetLocks.walletFundsLocked) active.push('Wallet funds')
   return active
+}
+
+export function buildAccountFreezeVisualState(
+  settings: AccountFreezeSettings
+): AccountFreezeVisualState {
+  const incomingLocked =
+    settings.freezeIncomingAll ||
+    settings.accountIncomingFreezeUsd > 0 ||
+    COINS.some(coin => getCoinIncomingFreezeUsd(settings, coin) > 0)
+
+  const outgoingLocked =
+    settings.freezeOutgoingAll ||
+    settings.accountOutgoingFreezeUsd > 0 ||
+    COINS.some(coin => getCoinOutgoingFreezeUsd(settings, coin) > 0)
+
+  return {
+    incomingLocked,
+    outgoingLocked,
+    spendableLocked: settings.assetLocks.spendableFundsLocked || outgoingLocked,
+    withdrawableLocked: settings.assetLocks.withdrawableFundsLocked || outgoingLocked,
+    earningsLocked: settings.assetLocks.earningsLocked || incomingLocked,
+    walletsLocked: settings.assetLocks.walletFundsLocked || incomingLocked || outgoingLocked,
+  }
 }
 
 export function getAccountOutgoingAvailableUsd(availableUsd: number, settings: AccountFreezeSettings) {

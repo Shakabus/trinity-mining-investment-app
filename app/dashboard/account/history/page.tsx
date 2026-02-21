@@ -8,6 +8,11 @@ import {
   getAccountBalanceSummary,
 } from '@/lib/account-balance'
 import {
+  buildAccountFreezeVisualState,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
+import {
   convertUsd,
   formatCurrency,
   getFxRates,
@@ -40,10 +45,15 @@ export default async function AccountHistoryPage() {
     redirect('/sign-in')
   }
 
-  const [entries, balanceSummary] = await Promise.all([
+  const [entries, balanceSummary, freezeQuery] = await Promise.all([
     getAccountBalanceEntries(user.id, { limit: 3000 }),
     getAccountBalanceSummary(user.id),
+    getAccountFreezeSettings(user.id),
   ])
+  if (freezeQuery.tableMissing) {
+    logAccountFreezeTableMissing('dashboard/account/history')
+  }
+  const freezeState = buildAccountFreezeVisualState(freezeQuery.settings)
   const rates = await getFxRates()
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user.preferredCurrency || '')
     ? (user.preferredCurrency as CurrencyCode)
@@ -98,23 +108,67 @@ export default async function AccountHistoryPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
         {[
-          { label: 'Total Deposits', value: balanceSummary.totalDepositedUsd, tone: 'text-emerald-200' },
-          { label: 'Total Earned', value: balanceSummary.earnedCreditsUsd, tone: 'text-violet-200' },
-          { label: 'Total Purchases', value: balanceSummary.totalInvestedUsd, tone: 'text-amber-200' },
-          { label: 'Spendable for Plans', value: balanceSummary.availableToSpendUsd, tone: 'text-cyan-200' },
-          { label: 'Withdrawable Earnings', value: balanceSummary.withdrawableEarningsUsd, tone: 'text-blue-200' },
-          { label: 'Total Withdrawals', value: balanceSummary.totalWithdrawnUsd, tone: 'text-rose-200' },
-          { label: 'Pending Items', value: pendingCount, tone: 'text-white', integer: true },
+          {
+            label: 'Total Deposits',
+            value: balanceSummary.totalDepositedUsd,
+            tone: 'text-emerald-200',
+            locked: freezeState.incomingLocked,
+          },
+          {
+            label: 'Total Earned',
+            value: balanceSummary.earnedCreditsUsd,
+            tone: 'text-violet-200',
+            locked: freezeState.earningsLocked,
+          },
+          {
+            label: 'Total Purchases',
+            value: balanceSummary.totalInvestedUsd,
+            tone: 'text-amber-200',
+            locked: freezeState.spendableLocked,
+          },
+          {
+            label: 'Spendable for Plans',
+            value: balanceSummary.availableToSpendUsd,
+            tone: 'text-cyan-200',
+            locked: freezeState.spendableLocked,
+          },
+          {
+            label: 'Withdrawable Earnings',
+            value: balanceSummary.withdrawableEarningsUsd,
+            tone: 'text-blue-200',
+            locked: freezeState.withdrawableLocked,
+          },
+          {
+            label: 'Total Withdrawals',
+            value: balanceSummary.totalWithdrawnUsd,
+            tone: 'text-rose-200',
+            locked: freezeState.withdrawableLocked,
+          },
+          { label: 'Pending Items', value: pendingCount, tone: 'text-white', integer: true, locked: false },
         ].map(card => (
           <div
             key={card.label}
-            className="p-5 rounded-2xl"
+            className="p-5 rounded-2xl relative"
             style={{
               background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
               border: '1px solid rgba(255, 255, 255, 0.18)',
               backdropFilter: 'blur(20px)',
+              filter: card.locked ? 'grayscale(1)' : undefined,
+              opacity: card.locked ? 0.58 : undefined,
             }}
           >
+            {card.locked ? (
+              <span
+                className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase"
+                style={{
+                  background: 'rgba(156, 163, 175, 0.24)',
+                  border: '1px solid rgba(156, 163, 175, 0.45)',
+                  color: '#e5e7eb',
+                }}
+              >
+                Frozen
+              </span>
+            ) : null}
             <div className="text-sm text-white/70">{card.label}</div>
             <div className={`text-2xl font-bold mt-1 ${card.tone}`}>
               {card.integer

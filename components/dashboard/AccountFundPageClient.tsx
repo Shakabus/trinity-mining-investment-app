@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { type CSSProperties, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Check, Copy } from 'lucide-react'
 import LoadingButton from '@/components/ui/LoadingButton'
@@ -40,6 +40,14 @@ type Props = {
     netUsd: number
   }[]
   entries: BalanceEntry[]
+  freezeState: {
+    incomingLocked: boolean
+    outgoingLocked: boolean
+    spendableLocked: boolean
+    withdrawableLocked: boolean
+    earningsLocked: boolean
+    walletsLocked: boolean
+  }
 }
 
 type FundingMethod = 'crypto_transfer' | 'card_provider'
@@ -81,6 +89,30 @@ const sourceLabel: Record<string, string> = {
   account_balance_withdrawal: 'Account withdrawal',
 }
 
+const applyFrozenStyle = (base: CSSProperties, frozen: boolean): CSSProperties => {
+  if (!frozen) return base
+  return {
+    ...base,
+    filter: 'grayscale(1)',
+    opacity: 0.58,
+  }
+}
+
+function FrozenTag() {
+  return (
+    <span
+      className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase"
+      style={{
+        background: 'rgba(156, 163, 175, 0.24)',
+        border: '1px solid rgba(156, 163, 175, 0.45)',
+        color: '#e5e7eb',
+      }}
+    >
+      Frozen
+    </span>
+  )
+}
+
 export default function AccountFundPageClient({
   spendableBalanceUsd,
   withdrawableEarningsUsd,
@@ -93,6 +125,7 @@ export default function AccountFundPageClient({
   totalEarnedUsd,
   walletFlow,
   entries,
+  freezeState,
 }: Props) {
   const [amountUsd, setAmountUsd] = useState('')
   const [fundingMethod, setFundingMethod] = useState<FundingMethod>('crypto_transfer')
@@ -113,6 +146,8 @@ export default function AccountFundPageClient({
     () => entries.filter(entry => entry.source === 'funding_deposit' && entry.status === 'pending'),
     [entries]
   )
+  const fundingLocked = freezeState.incomingLocked
+  const walletFundsLocked = freezeState.walletsLocked
   const walletAddress = SYSTEM_FUNDING_WALLETS[coinType]
 
   const copyAddress = async () => {
@@ -122,6 +157,10 @@ export default function AccountFundPageClient({
   }
 
   const launchCardCheckout = async (providerId: (typeof CARD_PROVIDERS)[number]['id']) => {
+    if (fundingLocked) {
+      setStatus({ type: 'error', message: 'Funding is frozen for this account.' })
+      return
+    }
     const amountDisplay = Number(amountUsd)
     const amountUsdValue = amountDisplay / displayRate
     if (!Number.isFinite(amountDisplay) || amountUsdValue < 20) {
@@ -177,6 +216,10 @@ export default function AccountFundPageClient({
   }
 
   const submit = async () => {
+    if (fundingLocked) {
+      setStatus({ type: 'error', message: 'Funding is frozen for this account.' })
+      return
+    }
     const amountDisplay = Number(amountUsd)
     const amountUsdValue = amountDisplay / displayRate
     if (!Number.isFinite(amountDisplay) || amountUsdValue < 10) {
@@ -244,12 +287,13 @@ export default function AccountFundPageClient({
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div
-          className="p-5 rounded-2xl"
-          style={{
+          className="p-5 rounded-2xl relative"
+          style={applyFrozenStyle({
             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.04))',
             border: '1px solid rgba(16, 185, 129, 0.35)',
-          }}
+          }, freezeState.spendableLocked)}
         >
+          {freezeState.spendableLocked ? <FrozenTag /> : null}
           <div className="text-sm text-emerald-100/80">Spendable for plans</div>
           <div className="text-3xl font-bold text-emerald-200 mt-1">
             {format(spendableBalanceUsd)}
@@ -257,12 +301,13 @@ export default function AccountFundPageClient({
           <div className="text-xs text-emerald-100/75 mt-2">Deposits only</div>
         </div>
         <div
-          className="p-5 rounded-2xl"
-          style={{
+          className="p-5 rounded-2xl relative"
+          style={applyFrozenStyle({
             background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(168, 85, 247, 0.04))',
             border: '1px solid rgba(168, 85, 247, 0.35)',
-          }}
+          }, freezeState.withdrawableLocked)}
         >
+          {freezeState.withdrawableLocked ? <FrozenTag /> : null}
           <div className="text-sm text-violet-100/80">Withdrawable earnings</div>
           <div className="text-3xl font-bold text-violet-200 mt-1">
             {format(withdrawableEarningsUsd)}
@@ -270,23 +315,25 @@ export default function AccountFundPageClient({
           <div className="text-xs text-violet-100/75 mt-2">External withdrawals only</div>
         </div>
         <div
-          className="p-5 rounded-2xl"
-          style={{
+          className="p-5 rounded-2xl relative"
+          style={applyFrozenStyle({
             background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0.04))',
             border: '1px solid rgba(59, 130, 246, 0.35)',
-          }}
+          }, fundingLocked)}
         >
+          {fundingLocked ? <FrozenTag /> : null}
           <div className="text-sm text-blue-100/80">Total deposited</div>
           <div className="text-3xl font-bold text-blue-200 mt-1">{format(totalDepositedUsd)}</div>
           <div className="text-xs text-blue-100/75 mt-2">Approved account funding</div>
         </div>
         <div
-          className="p-5 rounded-2xl"
-          style={{
+          className="p-5 rounded-2xl relative"
+          style={applyFrozenStyle({
             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0.04))',
             border: '1px solid rgba(245, 158, 11, 0.35)',
-          }}
+          }, freezeState.spendableLocked)}
         >
+          {freezeState.spendableLocked ? <FrozenTag /> : null}
           <div className="text-sm text-amber-100/80">Total invested</div>
           <div className="text-3xl font-bold text-amber-200 mt-1">{format(totalInvestedUsd)}</div>
           <div className="text-xs text-amber-100/75 mt-2">Plan and property purchases</div>
@@ -318,14 +365,18 @@ export default function AccountFundPageClient({
       </div>
 
       <div
-        className="p-6 rounded-3xl space-y-4"
-        style={{
+        className="p-6 rounded-3xl space-y-4 relative"
+        style={applyFrozenStyle({
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           border: '1px solid rgba(255, 255, 255, 0.18)',
           backdropFilter: 'blur(20px)',
-        }}
+        }, fundingLocked)}
       >
+        {fundingLocked ? <FrozenTag /> : null}
         <h2 className="text-xl font-semibold text-white">Funding options</h2>
+        {fundingLocked ? (
+          <p className="text-xs text-white/70">Funding actions are currently frozen.</p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -335,6 +386,7 @@ export default function AccountFundPageClient({
                 ? 'bg-white text-black'
                 : 'bg-white/10 text-white hover:bg-white/15'
             }`}
+            disabled={fundingLocked}
           >
             Crypto transfer (default)
           </button>
@@ -346,6 +398,7 @@ export default function AccountFundPageClient({
                 ? 'bg-white text-black'
                 : 'bg-white/10 text-white hover:bg-white/15'
             }`}
+            disabled={fundingLocked}
           >
             Card providers (optional)
           </button>
@@ -371,6 +424,7 @@ export default function AccountFundPageClient({
                     onClick={() => launchCardCheckout(provider.id)}
                     isLoading={launchingProvider === provider.id}
                     loadingText="Opening..."
+                    disabled={fundingLocked}
                     className="mt-3 px-3 py-2 rounded-lg text-xs font-semibold"
                     style={{
                       background: 'linear-gradient(135deg, #582dff, #3a137a)',
@@ -390,14 +444,18 @@ export default function AccountFundPageClient({
       </div>
 
       <div
-        className="p-6 md:p-8 rounded-3xl space-y-4"
-        style={{
+        className="p-6 md:p-8 rounded-3xl space-y-4 relative"
+        style={applyFrozenStyle({
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           border: '1px solid rgba(255, 255, 255, 0.18)',
           backdropFilter: 'blur(20px)',
-        }}
+        }, fundingLocked)}
       >
+        {fundingLocked ? <FrozenTag /> : null}
         <h2 className="text-xl font-semibold text-white">Submit account funding proof</h2>
+        {fundingLocked ? (
+          <p className="text-xs text-white/70">Incoming funds are frozen for this account.</p>
+        ) : null}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
@@ -410,6 +468,7 @@ export default function AccountFundPageClient({
               onChange={event => setAmountUsd(event.target.value)}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
               placeholder="e.g. 500"
+              disabled={fundingLocked}
             />
           </div>
           <div>
@@ -418,6 +477,7 @@ export default function AccountFundPageClient({
               value={coinType}
               onChange={event => setCoinType(event.target.value as FundingCoin)}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
+              disabled={fundingLocked}
             >
               {COINS.map(coin => (
                 <option key={coin} value={coin} className="bg-zinc-900">
@@ -434,6 +494,7 @@ export default function AccountFundPageClient({
               onChange={event => setTxid(event.target.value)}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
               placeholder="Enter TXID"
+              disabled={fundingLocked}
             />
           </div>
         </div>
@@ -453,6 +514,7 @@ export default function AccountFundPageClient({
               onClick={copyAddress}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/15 transition-colors flex-shrink-0"
               aria-label="Copy wallet address"
+              disabled={fundingLocked}
             >
               {copiedAddress ? <Check size={16} className="text-emerald-300" /> : <Copy size={16} className="text-white/75" />}
             </button>
@@ -476,6 +538,7 @@ export default function AccountFundPageClient({
             accept="image/*,application/pdf"
             onChange={event => setProofFile(event.target.files?.[0] || null)}
             className="w-full text-sm text-white/70"
+            disabled={fundingLocked}
           />
         </div>
 
@@ -489,6 +552,7 @@ export default function AccountFundPageClient({
           onClick={submit}
           isLoading={isSubmitting}
           loadingText="Submitting..."
+          disabled={fundingLocked}
           className="px-6 py-3 rounded-full font-semibold"
           style={{
             background: 'linear-gradient(135deg, #582dff, #3a137a)',
@@ -500,13 +564,14 @@ export default function AccountFundPageClient({
       </div>
 
       <div
-        className="p-6 rounded-3xl"
-        style={{
+        className="p-6 rounded-3xl relative"
+        style={applyFrozenStyle({
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           border: '1px solid rgba(255, 255, 255, 0.18)',
           backdropFilter: 'blur(20px)',
-        }}
+        }, walletFundsLocked)}
       >
+        {walletFundsLocked ? <FrozenTag /> : null}
         <h2 className="text-xl font-semibold text-white mb-4">Payment Wallet Balances</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {walletFlow.map(item => (
@@ -533,7 +598,7 @@ export default function AccountFundPageClient({
         </div>
       </div>
 
-      <WalletConversionCard walletFlow={walletFlow} />
+      <WalletConversionCard walletFlow={walletFlow} isFrozen={walletFundsLocked} />
 
       <div
         className="p-6 rounded-3xl"

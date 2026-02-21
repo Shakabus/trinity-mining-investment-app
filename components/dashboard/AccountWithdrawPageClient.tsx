@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { type CSSProperties, useMemo, useState } from 'react'
 import Link from 'next/link'
 import LoadingButton from '@/components/ui/LoadingButton'
 import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
@@ -47,6 +47,14 @@ type Props = {
   }[]
   entries: WithdrawalEntry[]
   kycStatus: 'not_submitted' | 'pending' | 'approved' | 'rejected' | string
+  freezeState: {
+    incomingLocked: boolean
+    outgoingLocked: boolean
+    spendableLocked: boolean
+    withdrawableLocked: boolean
+    earningsLocked: boolean
+    walletsLocked: boolean
+  }
 }
 
 const COINS = ['USDT', 'BTC', 'ETH', 'SOL'] as const
@@ -55,6 +63,30 @@ const NETWORK_MAP: Record<(typeof COINS)[number], string> = {
   ETH: 'Ethereum',
   USDT: 'USDT (ERC-20)',
   SOL: 'Solana',
+}
+
+const applyFrozenStyle = (base: CSSProperties, frozen: boolean): CSSProperties => {
+  if (!frozen) return base
+  return {
+    ...base,
+    filter: 'grayscale(1)',
+    opacity: 0.58,
+  }
+}
+
+function FrozenTag() {
+  return (
+    <span
+      className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase"
+      style={{
+        background: 'rgba(156, 163, 175, 0.24)',
+        border: '1px solid rgba(156, 163, 175, 0.45)',
+        color: '#e5e7eb',
+      }}
+    >
+      Frozen
+    </span>
+  )
 }
 
 export default function AccountWithdrawPageClient({
@@ -75,6 +107,7 @@ export default function AccountWithdrawPageClient({
   walletOptions,
   entries,
   kycStatus,
+  freezeState,
 }: Props) {
   const [amountUsd, setAmountUsd] = useState('')
   const defaultCoin = useMemo(
@@ -96,6 +129,7 @@ export default function AccountWithdrawPageClient({
   const displayRate = rates[currency] > 0 ? rates[currency] : 1
   const isKycApproved = kycStatus === 'approved'
   const isKycSystemUnavailable = kycStatus === 'system_unavailable'
+  const withdrawActionLocked = freezeState.withdrawableLocked || freezeState.walletsLocked
 
   const pendingRequests = useMemo(
     () => entries.filter(entry => entry.status === 'pending').length,
@@ -117,6 +151,13 @@ export default function AccountWithdrawPageClient({
   }
 
   const submit = async () => {
+    if (withdrawActionLocked) {
+      setStatus({
+        type: 'error',
+        message: 'Withdrawals are frozen for this account.',
+      })
+      return
+    }
     if (!isKycApproved) {
       setStatus({
         type: 'error',
@@ -249,12 +290,13 @@ export default function AccountWithdrawPageClient({
 
       {(miningReadyUsd > 0 || tradingReadyUsd > 0 || referralReadyUsd > 0 || realEstateReadyUsd > 0) && (
         <div
-          className="p-5 rounded-2xl"
-          style={{
+          className="p-5 rounded-2xl relative"
+          style={applyFrozenStyle({
             background: 'rgba(16, 185, 129, 0.12)',
             border: '1px solid rgba(16, 185, 129, 0.35)',
-          }}
+          }, freezeState.earningsLocked)}
         >
+          {freezeState.earningsLocked ? <FrozenTag /> : null}
           <div className="text-emerald-100 font-semibold mb-2">Plan proceeds available for transfer</div>
           <p className="text-sm text-emerald-50/85">
             Move matured plan proceeds into account balance first. Once credited, request external withdrawals here.
@@ -318,12 +360,13 @@ export default function AccountWithdrawPageClient({
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div
-          className="p-5 rounded-2xl"
-          style={{
+          className="p-5 rounded-2xl relative"
+          style={applyFrozenStyle({
             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.04))',
             border: '1px solid rgba(16, 185, 129, 0.35)',
-          }}
+          }, freezeState.withdrawableLocked)}
         >
+          {freezeState.withdrawableLocked ? <FrozenTag /> : null}
           <div className="text-sm text-emerald-100/80">Withdrawable earnings</div>
           <div className="text-3xl font-bold text-emerald-200 mt-1">
             {format(withdrawableEarningsUsd)}
@@ -331,12 +374,13 @@ export default function AccountWithdrawPageClient({
           <div className="text-xs text-emerald-100/75 mt-2">Only earnings can be withdrawn</div>
         </div>
         <div
-          className="p-5 rounded-2xl"
-          style={{
+          className="p-5 rounded-2xl relative"
+          style={applyFrozenStyle({
             background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0.04))',
             border: '1px solid rgba(59, 130, 246, 0.35)',
-          }}
+          }, freezeState.spendableLocked)}
         >
+          {freezeState.spendableLocked ? <FrozenTag /> : null}
           <div className="text-sm text-blue-100/80">Spendable for plans</div>
           <div className="text-3xl font-bold text-blue-200 mt-1">
             {format(spendableBalanceUsd)}
@@ -344,12 +388,13 @@ export default function AccountWithdrawPageClient({
           <div className="text-xs text-blue-100/80 mt-2">Deposits and principal only</div>
         </div>
         <div
-          className="p-5 rounded-2xl"
-          style={{
+          className="p-5 rounded-2xl relative"
+          style={applyFrozenStyle({
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
             border: '1px solid rgba(255, 255, 255, 0.22)',
-          }}
+          }, freezeState.earningsLocked)}
         >
+          {freezeState.earningsLocked ? <FrozenTag /> : null}
           <div className="text-sm text-white/75">Total earned credited</div>
           <div className="text-3xl font-bold text-white mt-1">{format(totalEarnedUsd)}</div>
           <div className="text-xs text-white/70 mt-2">From mining, trading, referral, and real estate</div>
@@ -394,14 +439,18 @@ export default function AccountWithdrawPageClient({
       </div>
 
       <div
-        className="p-6 md:p-8 rounded-3xl space-y-5"
-        style={{
+        className="p-6 md:p-8 rounded-3xl space-y-5 relative"
+        style={applyFrozenStyle({
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
           border: '1px solid rgba(255, 255, 255, 0.18)',
           backdropFilter: 'blur(20px)',
-        }}
+        }, withdrawActionLocked)}
       >
+        {withdrawActionLocked ? <FrozenTag /> : null}
         <h2 className="text-xl font-semibold text-white">Request external withdrawal</h2>
+        {withdrawActionLocked ? (
+          <p className="text-xs text-white/70">Withdrawals are currently frozen.</p>
+        ) : null}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
@@ -414,6 +463,7 @@ export default function AccountWithdrawPageClient({
               onChange={event => setAmountUsd(event.target.value)}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
               placeholder="e.g. 250"
+              disabled={withdrawActionLocked}
             />
           </div>
           <div>
@@ -422,6 +472,7 @@ export default function AccountWithdrawPageClient({
               value={coinType}
               onChange={event => updateCoin(event.target.value as (typeof COINS)[number])}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
+              disabled={withdrawActionLocked}
             >
               {COINS.map(coin => (
                 <option key={coin} value={coin} className="bg-zinc-900">
@@ -437,7 +488,12 @@ export default function AccountWithdrawPageClient({
               value={effectiveWalletAddress}
               onChange={event => setSelectedWalletAddress(event.target.value)}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
-              disabled={customMethod || walletOptions.length === 0 || walletsForSelectedCoin.length === 0}
+              disabled={
+                withdrawActionLocked ||
+                customMethod ||
+                walletOptions.length === 0 ||
+                walletsForSelectedCoin.length === 0
+              }
             >
               {walletsForSelectedCoin.length === 0 ? (
                 <option value="" className="bg-zinc-900">No wallet configured for this coin</option>
@@ -465,6 +521,7 @@ export default function AccountWithdrawPageClient({
               checked={customMethod}
               onChange={event => setCustomMethod(event.target.checked)}
               className="h-4 w-4 rounded border-white/30 bg-white/10"
+              disabled={withdrawActionLocked}
             />
             Request custom payout method through customer service
           </label>
@@ -475,6 +532,7 @@ export default function AccountWithdrawPageClient({
                 onChange={event => setCustomMethodNote(event.target.value)}
                 placeholder="Describe your preferred settlement method and required details."
                 className="w-full min-h-24 rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/35"
+                disabled={withdrawActionLocked}
               />
               <Link href="/dashboard/support" className="inline-block text-sm text-white underline underline-offset-4">
                 Open Support Center {'>'}
@@ -498,7 +556,11 @@ export default function AccountWithdrawPageClient({
             background: 'linear-gradient(135deg, #582dff, #3a137a)',
             color: '#ffffff',
           }}
-          disabled={!isKycApproved || (!customMethod && walletOptions.length === 0)}
+          disabled={
+            withdrawActionLocked ||
+            !isKycApproved ||
+            (!customMethod && walletOptions.length === 0)
+          }
         >
           Submit withdrawal request
         </LoadingButton>
@@ -545,7 +607,7 @@ export default function AccountWithdrawPageClient({
         )}
       </div>
 
-      <WalletConversionCard walletFlow={walletFlow} />
+      <WalletConversionCard walletFlow={walletFlow} isFrozen={freezeState.walletsLocked} />
 
       <LivePaymentsPageClient />
     </div>

@@ -7,6 +7,11 @@ import {
   getAccountBalanceEntries,
   getAccountBalanceSummary,
 } from '@/lib/account-balance'
+import {
+  buildAccountFreezeVisualState,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
 import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
 import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
 import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
@@ -35,7 +40,7 @@ export default async function WithdrawAccountPage() {
   }
 
   const prices = await getTrackedCryptoPricesUsd()
-  const [summary, entries, assetSummary, transferReady] = await Promise.all([
+  const [summary, entries, assetSummary, transferReady, freezeQuery] = await Promise.all([
     getAccountBalanceSummary(user.id),
     getAccountBalanceEntries(user.id, { limit: 800 }),
     getAccountBalanceAssetSummary(user.id, prices),
@@ -43,7 +48,11 @@ export default async function WithdrawAccountPage() {
       userId: user.id,
       clerkUserId: userId,
     }),
+    getAccountFreezeSettings(user.id),
   ])
+  if (freezeQuery.tableMissing) {
+    logAccountFreezeTableMissing('dashboard/account/withdraw')
+  }
   const solAddress = await getLatestSolWalletAddress(user.id)
 
   const latestEntriesByReference = entries.reduce<Map<string, (typeof entries)[number]>>((map, entry) => {
@@ -110,6 +119,7 @@ export default async function WithdrawAccountPage() {
       totalDepositedUsd={summary.totalDepositedUsd}
       totalInvestedUsd={summary.totalInvestedUsd}
       totalEarnedUsd={summary.earnedCreditsUsd}
+      freezeState={buildAccountFreezeVisualState(freezeQuery.settings)}
       miningReadyUsd={transferReady.miningReadyUsd}
       tradingReadyUsd={transferReady.tradingReadyUsd}
       referralReadyUsd={transferReady.referralReadyUsd}

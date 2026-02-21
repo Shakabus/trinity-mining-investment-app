@@ -5,7 +5,6 @@ import DashboardNav from './DashboardNav'
 import DashboardSidebar from './DashboardSidebar'
 import UserPresenceTracker from './UserPresenceTracker'
 import MarketingWithdrawalAlert from '@/components/marketing/MarketingWithdrawalAlert'
-import AccountFreezeAlertPopup from '@/components/dashboard/AccountFreezeAlertPopup'
 import { CurrencyProvider } from '@/components/currency/CurrencyProvider'
 import { LanguageProvider } from '@/components/i18n/LanguageProvider'
 import LiveNotificationTicker from '@/components/notifications/LiveNotificationTicker'
@@ -45,7 +44,6 @@ export default function DashboardLayoutClient({
         className="h-screen overflow-hidden"
         style={{ background: '#000000' }}
       >
-        <AccountFreezeAlertPopup />
         <UserPresenceTracker />
         <MarketingWithdrawalAlert
           title="Live activity"

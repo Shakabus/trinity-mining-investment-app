@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { type CSSProperties, useMemo, useState } from 'react'
 import LoadingButton from '@/components/ui/LoadingButton'
 import { useCurrency } from '@/components/currency/CurrencyProvider'
 
@@ -12,11 +12,18 @@ type WalletFlowItem = {
 
 type Props = {
   walletFlow: WalletFlowItem[]
+  isFrozen?: boolean
 }
 
 const COINS: WalletFlowItem['coinType'][] = ['BTC', 'ETH', 'SOL', 'USDT']
 
-export default function WalletConversionCard({ walletFlow }: Props) {
+const baseCardStyle: CSSProperties = {
+  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+  border: '1px solid rgba(255, 255, 255, 0.18)',
+  backdropFilter: 'blur(20px)',
+}
+
+export default function WalletConversionCard({ walletFlow, isFrozen = false }: Props) {
   const [fromCoin, setFromCoin] = useState<WalletFlowItem['coinType']>('BTC')
   const [toCoin, setToCoin] = useState<WalletFlowItem['coinType']>('ETH')
   const [amountUsd, setAmountUsd] = useState('')
@@ -38,10 +45,15 @@ export default function WalletConversionCard({ walletFlow }: Props) {
   const availableFromUsd = Math.max(0, walletMap[fromCoin]?.netUsd ?? 0)
 
   const setMax = () => {
+    if (isFrozen) return
     setAmountUsd(availableFromUsd > 0 ? convert(availableFromUsd).toFixed(2) : '')
   }
 
   const submit = async () => {
+    if (isFrozen) {
+      setStatus({ type: 'error', message: 'Wallet funds are frozen.' })
+      return
+    }
     const amountDisplay = Number(amountUsd)
     const amountUsdValue = amountDisplay / displayRate
     if (!Number.isFinite(amountDisplay) || amountUsdValue <= 0) {
@@ -93,13 +105,25 @@ export default function WalletConversionCard({ walletFlow }: Props) {
 
   return (
     <div
-      className="p-6 md:p-8 rounded-3xl space-y-4"
+      className="p-6 md:p-8 rounded-3xl space-y-4 relative"
       style={{
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
-        border: '1px solid rgba(255, 255, 255, 0.18)',
-        backdropFilter: 'blur(20px)',
+        ...baseCardStyle,
+        filter: isFrozen ? 'grayscale(1)' : undefined,
+        opacity: isFrozen ? 0.58 : undefined,
       }}
     >
+      {isFrozen ? (
+        <span
+          className="absolute top-4 right-4 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase"
+          style={{
+            background: 'rgba(156, 163, 175, 0.24)',
+            border: '1px solid rgba(156, 163, 175, 0.45)',
+            color: '#e5e7eb',
+          }}
+        >
+          Frozen
+        </span>
+      ) : null}
       <div>
         <h2 className="text-xl font-semibold text-white">Convert Wallet Assets</h2>
         <p className="text-sm text-white/70 mt-1">
@@ -114,6 +138,7 @@ export default function WalletConversionCard({ walletFlow }: Props) {
             value={fromCoin}
             onChange={event => setFromCoin(event.target.value as WalletFlowItem['coinType'])}
             className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
+            disabled={isFrozen}
           >
             {COINS.map(coin => (
               <option key={coin} value={coin} className="bg-zinc-900">
@@ -129,6 +154,7 @@ export default function WalletConversionCard({ walletFlow }: Props) {
             value={toCoin}
             onChange={event => setToCoin(event.target.value as WalletFlowItem['coinType'])}
             className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
+            disabled={isFrozen}
           >
             {COINS.map(coin => (
               <option key={coin} value={coin} className="bg-zinc-900">
@@ -148,11 +174,13 @@ export default function WalletConversionCard({ walletFlow }: Props) {
               onChange={event => setAmountUsd(event.target.value)}
               className="w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-white"
               placeholder="e.g. 500"
+              disabled={isFrozen}
             />
             <button
               type="button"
               onClick={setMax}
               className="px-3 rounded-lg border border-white/20 text-white/85 hover:bg-white/10 transition-colors"
+              disabled={isFrozen}
             >
               Max
             </button>
@@ -170,6 +198,7 @@ export default function WalletConversionCard({ walletFlow }: Props) {
         onClick={submit}
         isLoading={isSubmitting}
         loadingText="Converting..."
+        disabled={isFrozen}
         className="px-6 py-3 rounded-full font-semibold"
         style={{
           background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
