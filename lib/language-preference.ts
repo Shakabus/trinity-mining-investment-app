@@ -4,6 +4,8 @@ const GLOBAL_LANGUAGE_STORAGE_KEY = 'trinity_language_preference'
 const LEGACY_MARKETING_LANGUAGE_STORAGE_KEY = 'marketing_language_preference'
 const LEGACY_DASHBOARD_LANGUAGE_STORAGE_KEY = 'dashboard_language_preference'
 const LANGUAGE_CHANGE_EVENT = 'trinity:language-changed'
+export const LANGUAGE_COOKIE_KEY = 'trinity_language_preference'
+const LANGUAGE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365
 
 const STORAGE_KEYS = [
   GLOBAL_LANGUAGE_STORAGE_KEY,
@@ -29,12 +31,36 @@ function safeWriteStorage(key: string, value: string) {
   }
 }
 
+function safeReadCookie(key: string) {
+  if (typeof document === 'undefined') return null
+  try {
+    const matches = document.cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`))
+    if (!matches?.[1]) return null
+    return decodeURIComponent(matches[1])
+  } catch {
+    return null
+  }
+}
+
+function safeWriteCookie(key: string, value: string) {
+  if (typeof document === 'undefined') return
+  try {
+    document.cookie = `${key}=${encodeURIComponent(value)}; Path=/; Max-Age=${LANGUAGE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`
+  } catch {
+    // ignore cookie write errors
+  }
+}
+
 export function readPreferredLanguage(fallback: LanguageCode = 'en'): LanguageCode {
   for (const key of STORAGE_KEYS) {
     const value = safeReadStorage(key)
     if (value && isSupportedLanguage(value)) {
       return value
     }
+  }
+  const cookieLanguage = safeReadCookie(LANGUAGE_COOKIE_KEY)
+  if (cookieLanguage && isSupportedLanguage(cookieLanguage)) {
+    return cookieLanguage
   }
   return fallback
 }
@@ -43,6 +69,7 @@ export function syncPreferredLanguage(language: LanguageCode) {
   if (typeof window === 'undefined') return
 
   STORAGE_KEYS.forEach(key => safeWriteStorage(key, language))
+  safeWriteCookie(LANGUAGE_COOKIE_KEY, language)
   document.documentElement.lang = language
   window.dispatchEvent(
     new CustomEvent<{ language: LanguageCode }>(LANGUAGE_CHANGE_EVENT, {

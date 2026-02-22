@@ -5,17 +5,13 @@ import { getGoogleTranslateApiKey } from '@/lib/security-env'
 
 const TRANSLATE_ALLOWED_FIELDS = ['text', 'texts', 'language'] as const
 const MAX_TEXT_LENGTH = 420
-const MAX_BATCH_TEXTS = 24
+const MAX_BATCH_TEXTS = 120
 const REQUEST_TIMEOUT_MS = 7000
-const BATCH_ITEM_DELAY_MS = 80
+const FALLBACK_CONCURRENCY = 6
 
 export const dynamic = 'force-dynamic'
 
 const memoryCache = new Map<string, string>()
-
-function wait(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
 
 function decodeHtmlEntities(value: string) {
   return value
@@ -45,6 +41,15 @@ function extractTranslatedTextV2(payload: unknown) {
   const first = data?.translations?.[0]
   if (!first || typeof first.translatedText !== 'string') return null
   return first.translatedText.trim() || null
+}
+
+function extractTranslatedTextsV2(payload: unknown) {
+  if (!payload || typeof payload !== 'object') return []
+  const data = (payload as { data?: { translations?: Array<{ translatedText?: unknown }> } }).data
+  if (!Array.isArray(data?.translations)) return []
+  return data.translations.map(item =>
+    typeof item?.translatedText === 'string' ? item.translatedText.trim() || null : null,
+  )
 }
 
 function extractTranslatedTextMyMemory(payload: unknown) {
@@ -191,6 +196,73 @@ async function translateOne(text: string, language: string, googleApiKey: string
   return translated
 }
 
+async function translateBatchWithGoogleV2(
+  texts: string[],
+  language: string,
+  googleApiKey: string | null,
+) {
+  if (!googleApiKey || texts.length === 0) return new Map<string, string>()
+
+  try {
+    const params = new URLSearchParams({ key: googleApiKey })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    const upstream = await fetch(
+      `https://translation.googleapis.com/language/translate/v2?${params.toString()}`,
+      {
+        method: 'POST',
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: texts,
+          target: language,
+          format: 'text',
+        }),
+      },
+    )
+    clearTimeout(timeout)
+
+    if (!upstream.ok) return new Map<string, string>()
+    const payload = await upstream.json().catch(() => null)
+    const translatedList = extractTranslatedTextsV2(payload)
+    const map = new Map<string, string>()
+    texts.forEach((sourceText, index) => {
+      const translated = translatedList[index]
+      if (!translated || translated === sourceText) return
+      map.set(sourceText, translated)
+      memoryCache.set(cacheKey(language, sourceText), translated)
+    })
+    return map
+  } catch {
+    return new Map<string, string>()
+  }
+}
+
+async function runWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<R>,
+) {
+  if (items.length === 0) return [] as R[]
+  const output = new Array<R>(items.length)
+  let index = 0
+
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const nextIndex = index
+      index += 1
+      if (nextIndex >= items.length) return
+      output[nextIndex] = await worker(items[nextIndex])
+    }
+  })
+
+  await Promise.all(runners)
+  return output
+}
+
 export async function POST(req: Request) {
   try {
     const body = await readJsonObject(req, { allowedKeys: TRANSLATE_ALLOWED_FIELDS })
@@ -213,6 +285,37 @@ export async function POST(req: Request) {
     }
 
     const perRequestCache = new Map<string, string | null>()
+    const unresolvedTexts = [...new Set(texts)].filter(
+      text => !memoryCache.has(cacheKey(language, text)),
+    )
+
+    const googleBatchMap = await translateBatchWithGoogleV2(
+      unresolvedTexts,
+      language,
+      googleApiKey,
+    )
+    googleBatchMap.forEach((translated, sourceText) => {
+      perRequestCache.set(sourceText, translated)
+    })
+
+    const stillUnresolved = unresolvedTexts.filter(text => !googleBatchMap.has(text))
+    if (stillUnresolved.length > 0) {
+      const fallbackResults = await runWithConcurrency(
+        stillUnresolved,
+        FALLBACK_CONCURRENCY,
+        async text => translateOne(text, language, null),
+      )
+      stillUnresolved.forEach((text, index) => {
+        const translated = fallbackResults[index]
+        if (translated && translated !== text) {
+          perRequestCache.set(text, translated)
+          memoryCache.set(cacheKey(language, text), translated)
+        } else {
+          perRequestCache.set(text, null)
+        }
+      })
+    }
+
     const translations: Array<string | null> = []
 
     for (const text of texts) {
@@ -220,13 +323,8 @@ export async function POST(req: Request) {
         translations.push(perRequestCache.get(text) ?? null)
         continue
       }
-
-      const translated = await translateOne(text, language, googleApiKey)
-      perRequestCache.set(text, translated)
-      translations.push(translated)
-
-      // Keep upstream translator requests steady to reduce provider throttling.
-      await wait(BATCH_ITEM_DELAY_MS)
+      const cached = memoryCache.get(cacheKey(language, text)) ?? null
+      translations.push(cached)
     }
 
     return NextResponse.json({ translations })

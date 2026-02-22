@@ -9,15 +9,17 @@ const BLOCKED_TAG_NAMES = new Set([
   'NOSCRIPT',
   'TEXTAREA',
   'INPUT',
-  'OPTION',
   'CODE',
   'PRE',
 ])
+const TRANSLATABLE_ATTRIBUTES = ['placeholder', 'title', 'aria-label', 'alt'] as const
+const INPUT_VALUE_TRANSLATABLE_TYPES = new Set(['button', 'submit', 'reset'])
 
 const STORAGE_PREFIX = 'dashboard_auto_i18n_cache_v1:'
-const REMOTE_BATCH_SIZE = 24
-const REMOTE_FLUSH_INTERVAL_MS = 450
-const REMOTE_FLUSH_BUDGET_MS = 1200
+const REMOTE_BATCH_SIZE = 120
+const REMOTE_FLUSH_INTERVAL_MS = 150
+const REMOTE_FLUSH_BUDGET_MS = 8000
+const REMOTE_MISS_COOLDOWN_MS = 5 * 60 * 1000
 
 function normalizePhrase(value: string) {
   return value.replace(/\s+/g, ' ').trim().toLowerCase()
@@ -40,6 +42,14 @@ function shouldTranslateNode(node: Text) {
   if (parent.closest('[data-no-auto-translate="true"]')) return false
   if (parent.closest('iframe')) return false
   if (parent.closest('.tradingview-widget-container')) return false
+  return true
+}
+
+function shouldTranslateElement(element: Element) {
+  if (BLOCKED_TAG_NAMES.has(element.tagName)) return false
+  if (element.closest('[data-no-auto-translate="true"]')) return false
+  if (element.closest('iframe')) return false
+  if (element.closest('.tradingview-widget-container')) return false
   return true
 }
 
@@ -122,6 +132,17 @@ function safeWriteStorage(storageKey: string, value: Record<string, string>) {
   }
 }
 
+function getOrCreateAttributeMap(
+  store: WeakMap<Element, Map<string, string>>,
+  element: Element,
+) {
+  const existing = store.get(element)
+  if (existing) return existing
+  const created = new Map<string, string>()
+  store.set(element, created)
+  return created
+}
+
 export default function DashboardAutoTranslate({
   language,
   remoteEnabled = true,
@@ -131,7 +152,10 @@ export default function DashboardAutoTranslate({
 }) {
   const originalsRef = useRef(new WeakMap<Text, string>())
   const lastAppliedRef = useRef(new WeakMap<Text, string>())
+  const originalAttributesRef = useRef(new WeakMap<Element, Map<string, string>>())
+  const lastAppliedAttributesRef = useRef(new WeakMap<Element, Map<string, string>>())
   const remoteCacheRef = useRef(new Map<string, string>())
+  const missCacheRef = useRef(new Map<string, number>())
   const pendingRef = useRef(new Set<string>())
   const processingRef = useRef(false)
   const cooldownUntilRef = useRef(0)
@@ -142,6 +166,7 @@ export default function DashboardAutoTranslate({
     const storageKey = `${STORAGE_PREFIX}${language}`
     const parsed = safeReadStorage(storageKey)
     remoteCacheRef.current = new Map(Object.entries(parsed))
+    missCacheRef.current.clear()
     pendingRef.current.clear()
     processingRef.current = false
     cooldownUntilRef.current = 0
@@ -151,6 +176,33 @@ export default function DashboardAutoTranslate({
     if (typeof document === 'undefined') return
 
     let rafId = 0
+
+    const resolveValue = (originalValue: string) => {
+      if (!originalValue.trim()) return originalValue
+
+      if (language === 'en') {
+        return originalValue
+      }
+
+      let nextValue = translateText(originalValue, language)
+      const now = Date.now()
+
+      if (nextValue === originalValue) {
+        const cacheLookupKey = cacheKey(language, originalValue)
+        const cached = remoteCacheRef.current.get(cacheLookupKey)
+        if (cached) {
+          nextValue = withOriginalSpacing(originalValue, cached)
+        } else if (remoteEnabled && canRequestRemoteTranslation(originalValue.trim())) {
+          const trimmed = originalValue.trim()
+          const missUntil = missCacheRef.current.get(cacheKey(language, trimmed)) ?? 0
+          if (missUntil <= now) {
+            pendingRef.current.add(trimmed)
+          }
+        }
+      }
+
+      return nextValue
+    }
 
     const applyLanguageToNode = (node: Text) => {
       if (!shouldTranslateNode(node)) return
@@ -169,29 +221,66 @@ export default function DashboardAutoTranslate({
       const originalValue = originalsRef.current.get(node) ?? currentValue
       if (!originalValue.trim()) return
 
-      if (language === 'en') {
-        if (node.nodeValue !== originalValue) {
-          node.nodeValue = originalValue
-          lastAppliedRef.current.set(node, originalValue)
-        }
-        return
-      }
-
-      let nextValue = translateText(originalValue, language)
-
-      if (nextValue === originalValue) {
-        const cached = remoteCacheRef.current.get(cacheKey(language, originalValue))
-        if (cached) {
-          nextValue = withOriginalSpacing(originalValue, cached)
-        } else if (remoteEnabled && canRequestRemoteTranslation(originalValue.trim())) {
-          pendingRef.current.add(originalValue.trim())
-        }
-      }
+      const nextValue = resolveValue(originalValue)
 
       if (node.nodeValue !== nextValue) {
         node.nodeValue = nextValue
       }
       lastAppliedRef.current.set(node, nextValue)
+    }
+
+    const applyLanguageToElement = (element: Element) => {
+      if (!shouldTranslateElement(element)) return
+
+      const originalMap = getOrCreateAttributeMap(originalAttributesRef.current, element)
+      const lastAppliedMap = getOrCreateAttributeMap(lastAppliedAttributesRef.current, element)
+
+      for (const attributeName of TRANSLATABLE_ATTRIBUTES) {
+        const currentAttributeValue = element.getAttribute(attributeName)
+        if (currentAttributeValue == null) continue
+
+        const existingOriginal = originalMap.get(attributeName)
+        const lastApplied = lastAppliedMap.get(attributeName)
+
+        if (!existingOriginal) {
+          originalMap.set(attributeName, currentAttributeValue)
+        } else if (
+          lastApplied &&
+          currentAttributeValue !== lastApplied &&
+          currentAttributeValue !== existingOriginal
+        ) {
+          originalMap.set(attributeName, currentAttributeValue)
+        }
+
+        const originalValue = originalMap.get(attributeName) ?? currentAttributeValue
+        const nextValue = resolveValue(originalValue)
+        if (currentAttributeValue !== nextValue) {
+          element.setAttribute(attributeName, nextValue)
+        }
+        lastAppliedMap.set(attributeName, nextValue)
+      }
+
+      if (element instanceof HTMLInputElement) {
+        if (!INPUT_VALUE_TRANSLATABLE_TYPES.has(element.type)) return
+        if (!element.value.trim()) return
+
+        const valueKey = 'value'
+        const existingOriginal = originalMap.get(valueKey)
+        const lastApplied = lastAppliedMap.get(valueKey)
+
+        if (!existingOriginal) {
+          originalMap.set(valueKey, element.value)
+        } else if (lastApplied && element.value !== lastApplied && element.value !== existingOriginal) {
+          originalMap.set(valueKey, element.value)
+        }
+
+        const originalValue = originalMap.get(valueKey) ?? element.value
+        const nextValue = resolveValue(originalValue)
+        if (element.value !== nextValue) {
+          element.value = nextValue
+        }
+        lastAppliedMap.set(valueKey, nextValue)
+      }
     }
 
     const applyLanguageToTree = (root: Node) => {
@@ -200,11 +289,22 @@ export default function DashboardAutoTranslate({
         return
       }
 
+      if (root.nodeType === Node.ELEMENT_NODE) {
+        applyLanguageToElement(root as Element)
+      }
+
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
       let current = walker.nextNode()
       while (current) {
         applyLanguageToNode(current as Text)
         current = walker.nextNode()
+      }
+
+      const elementWalker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT)
+      let elementNode = elementWalker.nextNode()
+      while (elementNode) {
+        applyLanguageToElement(elementNode as Element)
+        elementNode = elementWalker.nextNode()
       }
     }
 
@@ -251,14 +351,15 @@ export default function DashboardAutoTranslate({
             const translated = result.map.get(sourceText)
             if (translated && translated !== sourceText) {
               remoteCacheRef.current.set(cacheKey(language, sourceText), translated)
+              missCacheRef.current.delete(cacheKey(language, sourceText))
               cacheUpdated = true
+            } else {
+              missCacheRef.current.set(
+                cacheKey(language, sourceText),
+                Date.now() + REMOTE_MISS_COOLDOWN_MS,
+              )
             }
           })
-
-          const missingTexts = unresolvedTexts.filter(sourceText => !result.map.has(sourceText))
-          if (missingTexts.length > 0) {
-            missingTexts.forEach(sourceText => pendingRef.current.add(sourceText))
-          }
         }
 
         if (cacheUpdated) {
@@ -272,6 +373,63 @@ export default function DashboardAutoTranslate({
 
     applyLanguageToTree(document.body)
     if (remoteEnabled) {
+      // Prime the queue with all visible texts once per language switch.
+      const bootstrapTexts = new Set<string>()
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+      let node = walker.nextNode()
+      while (node) {
+        const textNode = node as Text
+        if (shouldTranslateNode(textNode)) {
+          const value = (originalsRef.current.get(textNode) ?? textNode.nodeValue ?? '').trim()
+          if (
+            value &&
+            canRequestRemoteTranslation(value) &&
+            !remoteCacheRef.current.has(cacheKey(language, value))
+          ) {
+            const missUntil = missCacheRef.current.get(cacheKey(language, value)) ?? 0
+            if (missUntil <= Date.now()) {
+              bootstrapTexts.add(value)
+            }
+          }
+        }
+        node = walker.nextNode()
+      }
+
+      const elementWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT)
+      let elementNode = elementWalker.nextNode()
+      while (elementNode) {
+        const element = elementNode as Element
+        if (shouldTranslateElement(element)) {
+          for (const attributeName of TRANSLATABLE_ATTRIBUTES) {
+            const value = (element.getAttribute(attributeName) ?? '').trim()
+            if (
+              value &&
+              canRequestRemoteTranslation(value) &&
+              !remoteCacheRef.current.has(cacheKey(language, value))
+            ) {
+              const missUntil = missCacheRef.current.get(cacheKey(language, value)) ?? 0
+              if (missUntil <= Date.now()) {
+                bootstrapTexts.add(value)
+              }
+            }
+          }
+          if (
+            element instanceof HTMLInputElement &&
+            INPUT_VALUE_TRANSLATABLE_TYPES.has(element.type) &&
+            element.value.trim() &&
+            canRequestRemoteTranslation(element.value.trim()) &&
+            !remoteCacheRef.current.has(cacheKey(language, element.value.trim()))
+          ) {
+            const inputValue = element.value.trim()
+            const missUntil = missCacheRef.current.get(cacheKey(language, inputValue)) ?? 0
+            if (missUntil <= Date.now()) {
+              bootstrapTexts.add(inputValue)
+            }
+          }
+        }
+        elementNode = elementWalker.nextNode()
+      }
+      bootstrapTexts.forEach(text => pendingRef.current.add(text))
       void flushRemoteQueue()
     }
 
@@ -279,6 +437,11 @@ export default function DashboardAutoTranslate({
       for (const mutation of mutations) {
         if (mutation.type === 'characterData' && mutation.target.nodeType === Node.TEXT_NODE) {
           applyLanguageToNode(mutation.target as Text)
+          continue
+        }
+
+        if (mutation.type === 'attributes' && mutation.target.nodeType === Node.ELEMENT_NODE) {
+          applyLanguageToElement(mutation.target as Element)
           continue
         }
 
@@ -299,6 +462,8 @@ export default function DashboardAutoTranslate({
       childList: true,
       subtree: true,
       characterData: true,
+      attributes: true,
+      attributeFilter: [...TRANSLATABLE_ATTRIBUTES, 'value'],
     })
 
     const intervalId = remoteEnabled

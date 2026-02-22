@@ -1,9 +1,11 @@
 import { ClerkProvider } from '@clerk/nextjs'
+import { cookies } from 'next/headers'
 import './globals.css'
 import RouteProgress from '@/components/ui/RouteProgress'
 import NavigationOverlay from '@/components/ui/NavigationOverlay'
 import { ToastProvider } from '@/components/ui/ToastProvider'
 import { SiteThemeProvider } from '@/components/ui/SiteThemeProvider'
+import { LANGUAGE_COOKIE_KEY, readLanguageFromCookie } from '@/lib/language-cookie'
 
 export const metadata = {
   title: 'Trinity In One Cloud Mining & Investments',
@@ -15,11 +17,14 @@ export const metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const cookieStore = await cookies()
+  const initialLanguage = readLanguageFromCookie(cookieStore.get(LANGUAGE_COOKIE_KEY)?.value) || 'en'
+
   return (
     <ClerkProvider
       allowedRedirectOrigins={[
@@ -29,7 +34,7 @@ export default function RootLayout({
         'https://trinity-mining-investment-app-remyremified-gits-projects.vercel.app',
       ]}
     >
-      <html lang="en" suppressHydrationWarning>
+      <html lang={initialLanguage} suppressHydrationWarning>
         <body suppressHydrationWarning className="antialiased">
           <script
             dangerouslySetInnerHTML={{
@@ -40,6 +45,15 @@ export default function RootLayout({
                     var saved = localStorage.getItem(key);
                     var theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
                     document.documentElement.dataset.theme = theme;
+                    var langKey = 'trinity_language_preference';
+                    var cookieMatch = document.cookie.match(/(?:^|; )${LANGUAGE_COOKIE_KEY}=([^;]*)/);
+                    var cookieLang = cookieMatch && cookieMatch[1] ? decodeURIComponent(cookieMatch[1]) : '';
+                    var localLang = localStorage.getItem(langKey);
+                    var chosenLang = localLang || cookieLang || '${initialLanguage}';
+                    if (chosenLang) {
+                      document.documentElement.lang = chosenLang;
+                      localStorage.setItem(langKey, chosenLang);
+                    }
                   } catch (e) {
                     document.documentElement.dataset.theme = 'dark';
                   }
