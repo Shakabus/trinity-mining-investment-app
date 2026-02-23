@@ -89,6 +89,8 @@ const sourceLabel: Record<string, string> = {
   account_balance_withdrawal: 'Account withdrawal',
 }
 
+const CARD_CHECKOUT_TIMEOUT_MS = 15000
+
 const applyFrozenStyle = (base: CSSProperties, frozen: boolean): CSSProperties => {
   if (!frozen) return base
   return {
@@ -111,6 +113,20 @@ function FrozenTag() {
       Frozen
     </span>
   )
+}
+
+function isValidExternalCheckoutUrl(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  try {
+    const parsed = new URL(trimmed)
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false
+    if (!parsed.hostname) return false
+    if (parsed.href.toLowerCase() === 'about:blank') return false
+    return true
+  } catch {
+    return false
+  }
 }
 
 export default function AccountFundPageClient({
@@ -171,7 +187,7 @@ export default function AccountFundPageClient({
       return
     }
 
-    const popup = window.open('', '_blank', 'noopener,noreferrer')
+    const popup = window.open('about:blank', '_blank')
     if (!popup) {
       setStatus({
         type: 'error',
@@ -184,28 +200,42 @@ export default function AccountFundPageClient({
 
     try {
       setLaunchingProvider(providerId)
-      const response = await fetch('/api/user/account-balance/card-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider: providerId,
-          amountUsd: amountUsdValue,
-          coinType,
-        }),
-      })
+      const controller = new AbortController()
+      const timeoutId = window.setTimeout(() => controller.abort(), CARD_CHECKOUT_TIMEOUT_MS)
+      let response: Response
+      try {
+        response = await fetch('/api/user/account-balance/card-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            provider: providerId,
+            amountUsd: amountUsdValue,
+            coinType,
+          }),
+        })
+      } finally {
+        window.clearTimeout(timeoutId)
+      }
 
       const payload = await response.json().catch(() => null)
-      if (!response.ok || !payload?.checkoutUrl) {
+      const checkoutUrl =
+        payload && typeof payload.checkoutUrl === 'string' ? payload.checkoutUrl : ''
+      if (!response.ok || !isValidExternalCheckoutUrl(checkoutUrl)) {
         throw new Error(payload?.error || 'Unable to launch card checkout.')
       }
 
-      popup.location.href = payload.checkoutUrl
+      popup.location.replace(checkoutUrl)
       setStatus({
         type: 'success',
         message: 'Card checkout opened in a new tab. Complete payment, then return to submit proof if needed.',
       })
     } catch (error) {
-      popup.close()
+      popup.document.open()
+      popup.document.write(
+        '<div style="font-family:Arial,sans-serif;padding:16px;line-height:1.5"><h3 style="margin:0 0 8px">Unable to open checkout</h3><p style="margin:0">Please return to the funding page and try again.</p></div>',
+      )
+      popup.document.close()
       setStatus({
         type: 'error',
         message: error instanceof Error ? error.message : 'Unable to launch card checkout.',

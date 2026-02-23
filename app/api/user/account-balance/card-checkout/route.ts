@@ -19,6 +19,20 @@ function toTransakCurrencyCode(coinType: FundingCoin) {
   return coinType
 }
 
+function isValidCheckoutUrl(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  try {
+    const parsed = new URL(trimmed)
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false
+    if (!parsed.hostname) return false
+    if (parsed.href.toLowerCase() === 'about:blank') return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 function applyBanxaTemplate(template: string, values: Record<string, string>) {
   let output = template
   for (const [key, value] of Object.entries(values)) {
@@ -142,6 +156,15 @@ export async function POST(request: Request) {
         email: user.email || '',
         redirectUrl,
       })
+    }
+
+    if (!isValidCheckoutUrl(checkoutUrl)) {
+      return NextResponse.json(
+        {
+          error: `${provider} checkout is not configured correctly. Contact support.`,
+        },
+        { status: 503 },
+      )
     }
 
     return NextResponse.json({
