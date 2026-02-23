@@ -44,7 +44,7 @@ export default async function FundAccountPage() {
 
   return (
     <AccountFundPageClient
-      spendableBalanceUsd={summary.availableToSpendUsd}
+      availableForPurchasesUsd={summary.availableForPurchasesUsd}
       withdrawableEarningsUsd={summary.withdrawableEarningsUsd}
       pendingCreditsUsd={summary.pendingCreditsUsd}
       pendingDebitsUsd={summary.pendingDebitsUsd}

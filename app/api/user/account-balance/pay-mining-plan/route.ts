@@ -159,10 +159,10 @@ export async function POST(req: Request) {
         await lockUserBalanceForUpdate(user.id, tx)
 
       const currentBalance = await getAccountBalanceSummary(user.id, tx)
-      if (currentBalance.availableToSpendUsd < finalPriceUsd) {
+      if (currentBalance.availableForPurchasesUsd < finalPriceUsd) {
         throw new HttpError(
           400,
-          `Insufficient account balance. Available: $${currentBalance.availableToSpendUsd.toFixed(2)}.`
+          `Insufficient account balance. Available: $${currentBalance.availableForPurchasesUsd.toFixed(2)}.`
         )
       }
 
@@ -183,7 +183,7 @@ export async function POST(req: Request) {
         assertOutgoingAllowed({
           settings: freezeQuery.settings,
           amountUsd: finalPriceUsd,
-          availableUsd: currentBalance.availableToSpendUsd,
+          availableUsd: currentBalance.availableForPurchasesUsd,
           context: 'mining plan payment',
         })
       }

@@ -21,7 +21,7 @@ type BalanceEntry = {
 }
 
 type Props = {
-  spendableBalanceUsd: number
+  availableForPurchasesUsd: number
   withdrawableEarningsUsd: number
   pendingCreditsUsd: number
   pendingDebitsUsd: number
@@ -130,7 +130,7 @@ function isValidExternalCheckoutUrl(value: string) {
 }
 
 export default function AccountFundPageClient({
-  spendableBalanceUsd,
+  availableForPurchasesUsd,
   withdrawableEarningsUsd,
   pendingCreditsUsd,
   pendingDebitsUsd,
@@ -324,11 +324,11 @@ export default function AccountFundPageClient({
           }, freezeState.spendableLocked)}
         >
           {freezeState.spendableLocked ? <FrozenTag /> : null}
-          <div className="text-sm text-emerald-100/80">Spendable for plans</div>
+          <div className="text-sm text-emerald-100/80">Available for plans</div>
           <div className="text-3xl font-bold text-emerald-200 mt-1">
-            {format(spendableBalanceUsd)}
+            {format(availableForPurchasesUsd)}
           </div>
-          <div className="text-xs text-emerald-100/75 mt-2">Deposits only</div>
+          <div className="text-xs text-emerald-100/75 mt-2">Deposits + withdrawable earnings</div>
         </div>
         <div
           className="p-5 rounded-2xl relative"

@@ -257,9 +257,10 @@ export default async function DashboardPage() {
   const realEstateData = await getRealEstateDashboardData(userId)
   const accountBalanceSummary = user
     ? await getAccountBalanceSummary(user.id)
-    : {
+      : {
         balanceUsd: 0,
         availableToSpendUsd: 0,
+        availableForPurchasesUsd: 0,
         withdrawableEarningsUsd: 0,
         principalBalanceUsd: 0,
         earningsBalanceUsd: 0,
@@ -476,7 +477,7 @@ export default async function DashboardPage() {
               {formatMoney(accountAssetSummary.combinedAssetUsd)}
             </div>
             <div className="text-xs text-white/70 mt-2">
-              Spendable for plans (deposits only): {formatMoney(accountBalanceSummary.availableToSpendUsd)}
+              Available for plans (deposits + withdrawable earnings): {formatMoney(accountBalanceSummary.availableForPurchasesUsd)}
             </div>
             <div className="text-xs text-white/70 mt-1">
               Withdrawable earnings: {formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
@@ -685,9 +686,9 @@ export default async function DashboardPage() {
               border: '1px solid rgba(14, 116, 144, 0.35)',
             }}
           >
-            <div className="text-xs text-cyan-100/80 mb-1">Spendable for Plans</div>
-            <div className="text-base md:text-xl font-semibold text-cyan-200" title={formatMoney(accountBalanceSummary.availableToSpendUsd)}>
-              {formatMoney(accountBalanceSummary.availableToSpendUsd)}
+            <div className="text-xs text-cyan-100/80 mb-1">Available for Plans</div>
+            <div className="text-base md:text-xl font-semibold text-cyan-200" title={formatMoney(accountBalanceSummary.availableForPurchasesUsd)}>
+              {formatMoney(accountBalanceSummary.availableForPurchasesUsd)}
             </div>
           </div>
           <div

@@ -529,11 +529,20 @@ export async function getAccountBalanceSummary(userId: number, db: DbClient = pr
     )
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
-  const principalDebitsUsd = settledEntries
+  const settledPurchaseDebitsUsd = settledEntries
     .filter(
       entry =>
         entry.direction === 'debit' &&
-        (PRINCIPAL_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
+        (PURCHASE_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const nonPurchasePrincipalDebitsUsd = settledEntries
+    .filter(
+      entry =>
+        entry.direction === 'debit' &&
+        (PRINCIPAL_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source) &&
+        !(PURCHASE_DEBIT_SOURCES as AccountBalanceSource[]).includes(entry.source)
     )
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
@@ -573,13 +582,34 @@ export async function getAccountBalanceSummary(userId: number, db: DbClient = pr
     )
     .reduce((sum, entry) => sum + entry.amountUsd, 0)
 
-  const principalBalanceUsd = Number(Math.max(0, principalCreditsUsd - principalDebitsUsd).toFixed(2))
+  const principalPoolBeforePurchasesUsd = Number((principalCreditsUsd - nonPurchasePrincipalDebitsUsd).toFixed(2))
+  const settledPurchaseDebitsFromEarningsUsd = Number(
+    Math.max(0, settledPurchaseDebitsUsd - Math.max(0, principalPoolBeforePurchasesUsd)).toFixed(2)
+  )
+  const settledPurchaseDebitsFromPrincipalUsd = Number(
+    Math.max(0, settledPurchaseDebitsUsd - settledPurchaseDebitsFromEarningsUsd).toFixed(2)
+  )
+
+  const principalBalanceUsd = Number(
+    (
+      principalPoolBeforePurchasesUsd -
+      settledPurchaseDebitsUsd +
+      settledPurchaseDebitsFromEarningsUsd
+    ).toFixed(2)
+  )
+  const pendingPurchaseDebitsFromEarningsUsd = Number(
+    Math.max(0, pendingPurchaseDebitsUsd - Math.max(0, principalBalanceUsd)).toFixed(2)
+  )
   const availableToSpendUsd = Number(Math.max(0, principalBalanceUsd - pendingPurchaseDebitsUsd).toFixed(2))
 
-  const earningsBalanceUsd = Number(Math.max(0, earnedCreditsUsd - earnedDebitsUsd).toFixed(2))
-  const withdrawableEarningsUsd = Number(
-    Math.max(0, earningsBalanceUsd - pendingWithdrawalsUsd).toFixed(2)
+  const rawEarningsBalanceUsd = Number(Math.max(0, earnedCreditsUsd - earnedDebitsUsd).toFixed(2))
+  const earningsBalanceUsd = Number(
+    Math.max(0, rawEarningsBalanceUsd - settledPurchaseDebitsFromEarningsUsd).toFixed(2)
   )
+  const withdrawableEarningsUsd = Number(
+    Math.max(0, earningsBalanceUsd - pendingWithdrawalsUsd - pendingPurchaseDebitsFromEarningsUsd).toFixed(2)
+  )
+  const availableForPurchasesUsd = Number(Math.max(0, availableToSpendUsd + withdrawableEarningsUsd).toFixed(2))
 
   const balanceUsd = Number(Math.max(0, principalBalanceUsd + earningsBalanceUsd).toFixed(2))
 
@@ -590,10 +620,12 @@ export async function getAccountBalanceSummary(userId: number, db: DbClient = pr
     pendingDebitsUsd: Number(pendingDebitsUsd.toFixed(2)),
     balanceUsd,
     availableToSpendUsd,
+    availableForPurchasesUsd,
     principalCreditsUsd: Number(principalCreditsUsd.toFixed(2)),
-    principalDebitsUsd: Number(principalDebitsUsd.toFixed(2)),
+    principalDebitsUsd: Number((nonPurchasePrincipalDebitsUsd + settledPurchaseDebitsFromPrincipalUsd).toFixed(2)),
     principalBalanceUsd,
     pendingPurchaseDebitsUsd: Number(pendingPurchaseDebitsUsd.toFixed(2)),
+    pendingPurchaseDebitsFromEarningsUsd,
     earnedCreditsUsd: Number(earnedCreditsUsd.toFixed(2)),
     earnedDebitsUsd: Number(earnedDebitsUsd.toFixed(2)),
     earningsBalanceUsd,

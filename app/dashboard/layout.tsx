@@ -142,6 +142,7 @@ export default async function DashboardLayout({
         await prisma.user.update({
           where: { id: user.id },
           data: {
+            lastSeenAt: requestTime,
             currentSessionStartedAt: null,
           },
         })
