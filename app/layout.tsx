@@ -5,6 +5,7 @@ import RouteProgress from '@/components/ui/RouteProgress'
 import NavigationOverlay from '@/components/ui/NavigationOverlay'
 import { ToastProvider } from '@/components/ui/ToastProvider'
 import { SiteThemeProvider } from '@/components/ui/SiteThemeProvider'
+import SupportFab from '@/components/ui/SupportFab'
 import { LANGUAGE_COOKIE_KEY, readLanguageFromCookie } from '@/lib/language-cookie'
 
 export const metadata = {
@@ -66,6 +67,7 @@ export default async function RootLayout({
               <RouteProgress />
               <NavigationOverlay />
               {children}
+              <SupportFab />
             </ToastProvider>
           </SiteThemeProvider>
         </body>
