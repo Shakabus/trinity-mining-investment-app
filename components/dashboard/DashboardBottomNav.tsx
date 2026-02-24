@@ -41,12 +41,12 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
 
   return (
     <div
-      className={`fixed bottom-4 left-1/2 z-40 w-[min(94vw,560px)] -translate-x-1/2 transition-all duration-300 lg:hidden ${
+      className={`fixed bottom-4 left-1/2 z-40 w-[min(92vw,420px)] -translate-x-1/2 transition-all duration-300 lg:hidden ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
       }`}
     >
       <nav
-        className="overflow-x-auto rounded-full px-2 py-2 no-scrollbar"
+        className="rounded-full px-2.5 py-1.5"
         style={{
           background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.78), rgba(30, 41, 59, 0.62))',
           border: '1px solid rgba(148, 163, 184, 0.35)',
@@ -54,7 +54,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
           boxShadow: '0 14px 34px rgba(2, 6, 23, 0.5)',
         }}
       >
-        <ul className="mx-auto flex min-w-max items-end gap-2 px-1">
+        <ul className="grid grid-cols-5 items-center gap-1.5">
           {navItems.map(item => {
             const isActive = isItemActive(pathname, item.href)
             const Icon = item.icon
@@ -65,8 +65,8 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                 <li key={item.href} className="flex justify-center">
                   <Link
                     href={item.href}
-                    className={`flex h-16 w-16 items-center justify-center rounded-full text-white transition duration-200 active:scale-110 ${
-                      isActive ? '-translate-y-2 scale-105' : '-translate-y-1'
+                    className={`flex h-14 w-14 items-center justify-center rounded-full text-white transition duration-200 active:scale-110 ${
+                      isActive ? '-translate-y-1.5 scale-110' : 'scale-100'
                     }`}
                     style={{
                       background: isActive
@@ -78,7 +78,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                     aria-label={item.label}
                     title={item.label}
                   >
-                    <Icon size={20} />
+                    <Icon size={24} />
                   </Link>
                 </li>
               )
@@ -88,8 +88,8 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
               <li key={item.href} className="flex justify-center">
                 <Link
                   href={item.href}
-                  className={`flex h-12 w-12 items-center justify-center rounded-full text-white/85 transition duration-200 active:scale-110 ${
-                    isActive ? '-translate-y-1 scale-105 text-white' : 'scale-100'
+                  className={`flex h-[52px] w-[52px] items-center justify-center rounded-full text-white/85 transition duration-200 active:scale-110 ${
+                    isActive ? '-translate-y-0.5 scale-110 text-white' : 'scale-100'
                   }`}
                   style={{
                     background: isActive
@@ -102,7 +102,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                   aria-label={item.label}
                   title={item.label}
                 >
-                  <Icon size={19} />
+                  <Icon size={22} />
                 </Link>
               </li>
             )
