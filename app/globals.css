@@ -1090,3 +1090,12 @@ a[aria-disabled="true"],
     --footer-reveal-space: 760px;
   }
 }
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

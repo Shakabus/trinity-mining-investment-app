@@ -5,12 +5,10 @@ import { usePathname } from 'next/navigation'
 import type { ComponentType } from 'react'
 import {
   ArrowUpFromLine,
-  DollarSign,
   Gem,
   LayoutDashboard,
   LifeBuoy,
   Pickaxe,
-  Wallet,
 } from 'lucide-react'
 
 interface DashboardBottomNavProps {
@@ -27,10 +25,8 @@ interface DashboardBottomNavItem {
 const navItems: DashboardBottomNavItem[] = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/plans', label: 'Plans', icon: Gem },
-  { href: '/dashboard/account/fund', label: 'Fund', icon: Wallet },
   { href: '/dashboard/mining', label: 'Mining', icon: Pickaxe, primary: true },
   { href: '/dashboard/account/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
-  { href: '/dashboard/earnings', label: 'Earnings', icon: DollarSign },
   { href: '/dashboard/support', label: 'Support', icon: LifeBuoy },
 ]
 
@@ -45,12 +41,12 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
 
   return (
     <div
-      className={`fixed bottom-4 left-1/2 z-40 w-[min(94vw,720px)] -translate-x-1/2 transition-all duration-300 ${
+      className={`fixed bottom-4 left-1/2 z-40 w-[min(94vw,560px)] -translate-x-1/2 transition-all duration-300 lg:hidden ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
       }`}
     >
       <nav
-        className="rounded-full px-2 py-2"
+        className="overflow-x-auto rounded-full px-2 py-2 no-scrollbar"
         style={{
           background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.78), rgba(30, 41, 59, 0.62))',
           border: '1px solid rgba(148, 163, 184, 0.35)',
@@ -58,7 +54,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
           boxShadow: '0 14px 34px rgba(2, 6, 23, 0.5)',
         }}
       >
-        <ul className="grid grid-cols-7 items-end gap-1">
+        <ul className="mx-auto flex min-w-max items-end gap-2 px-1">
           {navItems.map(item => {
             const isActive = isItemActive(pathname, item.href)
             const Icon = item.icon
@@ -69,7 +65,9 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                 <li key={item.href} className="flex justify-center">
                   <Link
                     href={item.href}
-                    className="flex h-14 w-14 -translate-y-3 items-center justify-center rounded-full text-white transition hover:scale-105"
+                    className={`flex h-16 w-16 items-center justify-center rounded-full text-white transition duration-200 active:scale-110 ${
+                      isActive ? '-translate-y-2 scale-105' : '-translate-y-1'
+                    }`}
                     style={{
                       background: isActive
                         ? 'linear-gradient(135deg, #10b981, #047857)'
@@ -90,7 +88,9 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
               <li key={item.href} className="flex justify-center">
                 <Link
                   href={item.href}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition hover:scale-105 hover:text-white"
+                  className={`flex h-12 w-12 items-center justify-center rounded-full text-white/85 transition duration-200 active:scale-110 ${
+                    isActive ? '-translate-y-1 scale-105 text-white' : 'scale-100'
+                  }`}
                   style={{
                     background: isActive
                       ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.45), rgba(29, 78, 216, 0.35))'
@@ -102,7 +102,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                   aria-label={item.label}
                   title={item.label}
                 >
-                  <Icon size={17} />
+                  <Icon size={19} />
                 </Link>
               </li>
             )

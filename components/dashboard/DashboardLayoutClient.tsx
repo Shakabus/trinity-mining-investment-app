@@ -35,25 +35,79 @@ export default function DashboardLayoutClient({
   rates,
 }: DashboardLayoutClientProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
   const [isTopChromeHidden, setIsTopChromeHidden] = useState(false)
   const mainScrollRef = useRef<HTMLElement | null>(null)
   const lastScrollTopRef = useRef(0)
+  const scrollAnchorRef = useRef(0)
+  const lastToggleAtRef = useRef(0)
+  const isTopChromeHiddenRef = useRef(false)
   const displayUser = user
     ? { ...user, accountStatus: accountStatusOverride ?? user.accountStatus }
     : null
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1023px)')
+    const applyViewport = (event?: MediaQueryListEvent) => {
+      setIsMobileViewport(event ? event.matches : mediaQuery.matches)
+    }
+
+    applyViewport()
+    mediaQuery.addEventListener('change', applyViewport)
+    return () => mediaQuery.removeEventListener('change', applyViewport)
+  }, [])
+
+  useEffect(() => {
+    isTopChromeHiddenRef.current = isTopChromeHidden
+  }, [isTopChromeHidden])
+
+  useEffect(() => {
     const scrollNode = mainScrollRef.current
     if (!scrollNode) return
 
+    if (!isMobileViewport) {
+      return
+    }
+
+    lastScrollTopRef.current = scrollNode.scrollTop
+    scrollAnchorRef.current = scrollNode.scrollTop
+    lastToggleAtRef.current = 0
+
     const onScroll = () => {
       const currentScrollTop = scrollNode.scrollTop
-      const delta = currentScrollTop - lastScrollTopRef.current
+      const hidden = isTopChromeHiddenRef.current
 
-      if (currentScrollTop <= 40) {
+      if (currentScrollTop <= 32) {
+        if (hidden) {
+          setIsTopChromeHidden(false)
+          isTopChromeHiddenRef.current = false
+        }
+        scrollAnchorRef.current = currentScrollTop
+        lastScrollTopRef.current = currentScrollTop
+        return
+      }
+
+      const delta = currentScrollTop - lastScrollTopRef.current
+      if (Math.abs(delta) < 4) {
+        lastScrollTopRef.current = currentScrollTop
+        return
+      }
+
+      const distanceFromAnchor = currentScrollTop - scrollAnchorRef.current
+      const now = Date.now()
+      const minToggleIntervalMs = 180
+      const canToggle = now - lastToggleAtRef.current >= minToggleIntervalMs
+
+      if (!hidden && distanceFromAnchor >= 56 && canToggle) {
+        setIsTopChromeHidden(true)
+        isTopChromeHiddenRef.current = true
+        scrollAnchorRef.current = currentScrollTop
+        lastToggleAtRef.current = now
+      } else if (hidden && distanceFromAnchor <= -36 && canToggle) {
         setIsTopChromeHidden(false)
-      } else if (Math.abs(delta) >= 8) {
-        setIsTopChromeHidden(delta > 0)
+        isTopChromeHiddenRef.current = false
+        scrollAnchorRef.current = currentScrollTop
+        lastToggleAtRef.current = now
       }
 
       lastScrollTopRef.current = currentScrollTop
@@ -61,12 +115,14 @@ export default function DashboardLayoutClient({
 
     scrollNode.addEventListener('scroll', onScroll, { passive: true })
     return () => scrollNode.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [isMobileViewport])
+
+  const shouldHideTopChrome = isMobileViewport && isTopChromeHidden
 
   return (
     <CurrencyProvider currency={preferredCurrency} rates={rates}>
       <LanguageProvider language={preferredLanguage}>
-      <DashboardChromeProvider hidden={isTopChromeHidden}>
+      <DashboardChromeProvider hidden={shouldHideTopChrome}>
       <div
         className="h-screen overflow-hidden"
         style={{ background: '#000000' }}
@@ -87,7 +143,7 @@ export default function DashboardLayoutClient({
           <div className="flex-1 min-w-0 flex flex-col">
             <div
               className={`overflow-hidden transition-all duration-300 ${
-                isTopChromeHidden
+                shouldHideTopChrome
                   ? 'max-h-0 -translate-y-6 opacity-0 pointer-events-none'
                   : 'max-h-44 translate-y-0 opacity-100'
               }`}
@@ -102,12 +158,12 @@ export default function DashboardLayoutClient({
             </div>
 
             {/* Scroll Container: ONLY this scrolls (NO padding here) */}
-            <main ref={mainScrollRef} className="flex-1 min-h-0 overflow-y-auto glass-scroll pb-24">
+            <main ref={mainScrollRef} className="flex-1 min-h-0 overflow-y-auto glass-scroll pb-24 lg:pb-0">
               {children}
             </main>
           </div>
         </div>
-        <DashboardBottomNav visible={isTopChromeHidden} />
+        <DashboardBottomNav visible={shouldHideTopChrome} />
       </div>
       </DashboardChromeProvider>
       </LanguageProvider>
