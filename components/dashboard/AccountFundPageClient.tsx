@@ -118,6 +118,10 @@ const sourceLabel: Record<string, string> = {
 }
 
 const CARD_CHECKOUT_TIMEOUT_MS = 15000
+const CARD_PROVIDER_URLS: Record<CardProviderId, string> = {
+  transak: 'https://transak.com/buy',
+  ramp: 'https://rampnetwork.com/buy-crypto',
+}
 
 const applyFrozenStyle = (base: CSSProperties, frozen: boolean): CSSProperties => {
   if (!frozen) return base
@@ -141,20 +145,6 @@ function FrozenTag() {
       Frozen
     </span>
   )
-}
-
-function isValidExternalCheckoutUrl(value: string) {
-  const trimmed = value.trim()
-  if (!trimmed) return false
-  try {
-    const parsed = new URL(trimmed)
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false
-    if (!parsed.hostname) return false
-    if (parsed.href.toLowerCase() === 'about:blank') return false
-    return true
-  } catch {
-    return false
-  }
 }
 
 export default function AccountFundPageClient({
@@ -216,7 +206,8 @@ export default function AccountFundPageClient({
       return
     }
 
-    const popup = window.open('about:blank', '_blank')
+    const checkoutTargetUrl = CARD_PROVIDER_URLS[providerId]
+    const popup = window.open(checkoutTargetUrl, '_blank')
     if (!popup) {
       setStatus({
         type: 'error',
@@ -224,8 +215,6 @@ export default function AccountFundPageClient({
       })
       return
     }
-
-    popup.document.write('<p style="font-family: sans-serif; padding: 16px;">Opening secure checkout...</p>')
 
     try {
       setLaunchingProvider(providerId)
@@ -248,14 +237,11 @@ export default function AccountFundPageClient({
       }
 
       const payload = await response.json().catch(() => null)
-      const checkoutUrl =
-        payload && typeof payload.checkoutUrl === 'string' ? payload.checkoutUrl : ''
       const requestId = payload && typeof payload.requestId === 'string' ? payload.requestId : ''
-      if (!response.ok || !isValidExternalCheckoutUrl(checkoutUrl)) {
+      if (!response.ok) {
         throw new Error(payload?.error || 'Unable to launch card checkout.')
       }
 
-      popup.location.replace(checkoutUrl)
       setStatus({
         type: 'success',
         message: requestId
@@ -263,14 +249,12 @@ export default function AccountFundPageClient({
           : 'Card checkout opened in a new tab. Complete payment, then return to submit proof if needed.',
       })
     } catch (error) {
-      popup.document.open()
-      popup.document.write(
-        '<div style="font-family:Arial,sans-serif;padding:16px;line-height:1.5"><h3 style="margin:0 0 8px">Unable to open checkout</h3><p style="margin:0">Please return to the funding page and try again.</p></div>',
-      )
-      popup.document.close()
       setStatus({
         type: 'error',
-        message: error instanceof Error ? error.message : 'Unable to launch card checkout.',
+        message:
+          error instanceof Error
+            ? `Checkout opened, but request registration failed: ${error.message}`
+            : 'Checkout opened, but request registration failed. Please submit funding proof after payment.',
       })
     } finally {
       setLaunchingProvider(null)
