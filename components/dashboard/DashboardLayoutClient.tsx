@@ -147,10 +147,10 @@ export default function DashboardLayoutClient({
           {/* Main Column */}
           <div className="flex-1 min-w-0 flex flex-col">
             <div
-              className={`overflow-hidden transition-all duration-300 ${
+              className={`relative transition-all duration-300 ${shouldHideTopChrome ? 'overflow-hidden' : 'overflow-visible'} ${
                 shouldHideTopChrome
                   ? 'max-h-0 -translate-y-6 opacity-0 pointer-events-none'
-                  : 'max-h-44 translate-y-0 opacity-100'
+                  : 'max-h-44 translate-y-0 opacity-100 z-50'
               }`}
             >
               <DashboardNav user={displayUser} onMenuClick={() => setIsSidebarOpen(true)} />
