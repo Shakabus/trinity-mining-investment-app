@@ -163,12 +163,14 @@ export default function DashboardLayoutClient({
               }`}
             >
               <DashboardNav user={displayUser} onMenuClick={() => setIsSidebarOpen(true)} />
-              <LiveNotificationTicker
-                endpoint="/api/user/notifications/ticker"
-                label="Financial news"
-                emptyText="Financial news feed is unavailable."
-                pollIntervalMs={30000}
-              />
+              <div className="relative z-[80]">
+                <LiveNotificationTicker
+                  endpoint="/api/user/notifications/ticker"
+                  label="Financial news"
+                  emptyText="Financial news feed is unavailable."
+                  pollIntervalMs={30000}
+                />
+              </div>
             </div>
 
             {/* Scroll Container: ONLY this scrolls (NO padding here) */}

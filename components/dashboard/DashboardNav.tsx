@@ -24,7 +24,7 @@ export default function DashboardNav({ user, onMenuClick }: DashboardNavProps) {
 
   return (
     <nav
-      className="border-b z-30 w-full"
+      className="relative border-b z-[120] w-full overflow-visible"
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
         backdropFilter: 'blur(20px)',

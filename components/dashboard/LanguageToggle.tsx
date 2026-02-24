@@ -60,7 +60,7 @@ export default function LanguageToggle({ variant = 'panel' }: LanguageToggleProp
 
   if (variant === 'icon') {
     return (
-      <div ref={wrapperRef} className="relative">
+      <div ref={wrapperRef} className="relative z-[160]">
         <button
           type="button"
           onClick={() => setIsOpen(open => !open)}
@@ -74,7 +74,7 @@ export default function LanguageToggle({ variant = 'panel' }: LanguageToggleProp
 
         {isOpen && (
           <div
-            className="absolute right-0 z-[90] mt-2 w-52 rounded-2xl p-2"
+            className="absolute right-0 z-[220] mt-2 w-52 rounded-2xl p-2"
             style={{
               background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(31, 41, 55, 0.92))',
               border: '1px solid rgba(255, 255, 255, 0.2)',
