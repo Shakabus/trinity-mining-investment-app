@@ -262,10 +262,19 @@ export default async function AdminAccountBalancePage() {
     const amountCrypto = asNumber(row.metadata?.amountCrypto)
     const proofUrl = asString(row.metadata?.proofUrl)
     const txid = asString(row.metadata?.txid)
+    const cardProviderRaw = asString(row.metadata?.cardProvider)?.toLowerCase()
+    const cardProviderLabel =
+      cardProviderRaw === 'transak'
+        ? 'Transak'
+        : cardProviderRaw === 'ramp'
+        ? 'Ramp Network'
+        : null
 
     let subtitle = 'Pending account-balance operation.'
     if (row.source === 'funding_deposit') {
-      subtitle = `Funding request TXID: ${txid ?? 'N/A'}`
+      subtitle = cardProviderLabel
+        ? `Card funding initiated via ${cardProviderLabel}${txid ? ` • TXID: ${txid}` : ''}`
+        : `Funding request TXID: ${txid ?? 'N/A'}`
     } else if (row.source === 'mining_plan_purchase') {
       const userPlanId = asNumber(row.metadata?.userPlanId)
       const plan = userPlanId ? miningPlanMap.get(userPlanId) : null

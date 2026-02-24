@@ -1,23 +1,23 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { createHmac } from 'crypto'
+import { randomUUID } from 'crypto'
 import { prisma } from '@/lib/db'
-import { getBanxaConfig, getMoonPayConfig, getTransakConfig } from '@/lib/security-env'
-import { FUNDING_COINS, SYSTEM_FUNDING_WALLETS, toMoonPayCurrencyCode, type FundingCoin } from '@/lib/system-funding-wallets'
+import { createAccountBalanceEntry } from '@/lib/account-balance'
+import { FUNDING_COINS, SYSTEM_FUNDING_WALLETS, type FundingCoin } from '@/lib/system-funding-wallets'
 import { isInputValidationError, readJsonObject, readNumberField, readStringField } from '@/lib/requestValidation'
+import { logUserActivity } from '@/lib/user-activity'
+import {
+  sendAccountFundingSubmittedEmail,
+  sendSupportInboxAlertEmail,
+} from '@/lib/transactional-email'
 
 const CHECKOUT_ALLOWED_FIELDS = ['provider', 'amountUsd', 'coinType'] as const
-const SUPPORTED_PROVIDERS = ['moonpay', 'transak', 'banxa'] as const
+const SUPPORTED_PROVIDERS = ['transak', 'ramp'] as const
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 type CardProvider = (typeof SUPPORTED_PROVIDERS)[number]
-
-function toTransakCurrencyCode(coinType: FundingCoin) {
-  if (coinType === 'USDT') return 'USDT'
-  return coinType
-}
 
 function isValidCheckoutUrl(value: string) {
   const trimmed = value.trim()
@@ -31,14 +31,6 @@ function isValidCheckoutUrl(value: string) {
   } catch {
     return false
   }
-}
-
-function applyBanxaTemplate(template: string, values: Record<string, string>) {
-  let output = template
-  for (const [key, value] of Object.entries(values)) {
-    output = output.replaceAll(`{${key}}`, encodeURIComponent(value))
-  }
-  return output
 }
 
 export async function POST(request: Request) {
@@ -67,95 +59,22 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId },
-      select: { id: true, email: true },
+      select: { id: true, email: true, fullName: true },
     })
 
     if (!user) {
       return NextResponse.json({ error: 'User not found.' }, { status: 404 })
     }
 
-    const redirectBase = new URL(request.url).origin
-    const redirectUrl = `${redirectBase}/dashboard/account/fund?cardProvider=${provider}`
     const walletAddress = SYSTEM_FUNDING_WALLETS[coinType]
-    const amountLabel = amountUsd.toFixed(2)
+    const amountLabel = Number(amountUsd.toFixed(2))
 
     let checkoutUrl = ''
 
-    if (provider === 'moonpay') {
-      const moonpay = getMoonPayConfig()
-      if (!moonpay.publishableKey) {
-        return NextResponse.json(
-          {
-            error:
-              'MoonPay is not configured yet. Set MOONPAY_PUBLISHABLE_KEY (or MOONPAY_API_KEY) in environment variables and redeploy.',
-          },
-          { status: 503 },
-        )
-      }
-
-      const params = new URLSearchParams({
-        apiKey: moonpay.publishableKey,
-        baseCurrencyCode: 'usd',
-        baseCurrencyAmount: amountLabel,
-        currencyCode: toMoonPayCurrencyCode(coinType),
-        walletAddress,
-        externalCustomerId: String(user.id),
-        showWalletAddressForm: 'false',
-        redirectURL: redirectUrl,
-      })
-
-      if (user.email) {
-        params.set('email', user.email)
-      }
-
-      const unsignedUrl = `${moonpay.baseUrl}?${params.toString()}`
-      checkoutUrl = unsignedUrl
-
-      if (moonpay.secretKey) {
-        const signature = createHmac('sha256', moonpay.secretKey).update(unsignedUrl).digest('base64')
-        checkoutUrl = `${unsignedUrl}&signature=${encodeURIComponent(signature)}`
-      }
-    } else if (provider === 'transak') {
-      const transak = getTransakConfig()
-      if (!transak.apiKey) {
-        return NextResponse.json(
-          { error: 'Transak is not configured yet. Contact support.' },
-          { status: 503 },
-        )
-      }
-
-      const params = new URLSearchParams({
-        apiKey: transak.apiKey,
-        fiatCurrency: 'USD',
-        fiatAmount: amountLabel,
-        cryptoCurrencyCode: toTransakCurrencyCode(coinType),
-        walletAddress,
-        disableWalletAddressForm: 'true',
-        redirectURL: redirectUrl,
-      })
-
-      if (user.email) {
-        params.set('email', user.email)
-      }
-
-      checkoutUrl = `${transak.baseUrl}?${params.toString()}`
+    if (provider === 'transak') {
+      checkoutUrl = 'https://transak.com/buy'
     } else {
-      const banxa = getBanxaConfig()
-      if (!banxa.checkoutTemplate) {
-        return NextResponse.json(
-          { error: 'Banxa is not configured yet. Contact support.' },
-          { status: 503 },
-        )
-      }
-
-      checkoutUrl = applyBanxaTemplate(banxa.checkoutTemplate, {
-        amountUsd: amountLabel,
-        coinType,
-        walletAddress,
-        userId: String(user.id),
-        email: user.email || '',
-        redirectUrl,
-      })
+      checkoutUrl = 'https://rampnetwork.com/buy-crypto'
     }
 
     if (!isValidCheckoutUrl(checkoutUrl)) {
@@ -167,9 +86,60 @@ export async function POST(request: Request) {
       )
     }
 
+    const requestId = `fund-card-${randomUUID()}`
+    const providerLabel = provider === 'transak' ? 'Transak' : 'Ramp Network'
+
+    await createAccountBalanceEntry({
+      userId: user.id,
+      direction: 'credit',
+      status: 'pending',
+      amountUsd: amountLabel,
+      source: 'funding_deposit',
+      referenceId: requestId,
+      note: `${providerLabel} card checkout initiated. Awaiting admin review.`,
+      metadata: {
+        coinType,
+        walletAddress,
+        cardProvider: provider,
+        paymentChannel: 'card_provider',
+        checkoutUrl,
+        initiatedAt: new Date().toISOString(),
+      },
+    })
+
+    await logUserActivity({
+      userId: user.id,
+      action: 'AccountFundingSubmitted',
+      detail: `Card funding initiated via ${providerLabel} for $${amountLabel.toFixed(2)}.`,
+    })
+
+    if (user.email) {
+      await sendAccountFundingSubmittedEmail({
+        to: user.email,
+        fullName: user.fullName,
+        amountUsd: amountLabel,
+        coinType,
+        referenceId: requestId,
+      })
+    }
+
+    await sendSupportInboxAlertEmail({
+      subject: `Card Funding Initiated ${requestId}`,
+      body: [
+        `Reference: ${requestId}`,
+        `User ID: ${user.id}`,
+        `User Email: ${user.email || 'no-email'}`,
+        `Amount (USD): ${amountLabel.toFixed(2)}`,
+        `Coin: ${coinType}`,
+        `Provider: ${providerLabel}`,
+        `Checkout URL: ${checkoutUrl}`,
+      ].join('\n'),
+    })
+
     return NextResponse.json({
       provider,
       checkoutUrl,
+      requestId,
     })
   } catch (error) {
     if (isInputValidationError(error)) {

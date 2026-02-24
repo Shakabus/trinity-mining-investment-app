@@ -56,21 +56,47 @@ const COINS = FUNDING_COINS
 
 const CARD_PROVIDERS = [
   {
-    id: 'moonpay',
-    name: 'MoonPay',
-    description: 'Buy crypto with bank card and then fund your account wallet.',
-  },
-  {
     id: 'transak',
     name: 'Transak',
-    description: 'Alternative card on-ramp provider for crypto purchases.',
+    description: 'Buy crypto with card on Transak, then complete your funding review.',
   },
   {
-    id: 'banxa',
-    name: 'Banxa',
-    description: 'Additional card checkout option for supported regions.',
+    id: 'ramp',
+    name: 'Ramp Network',
+    description: 'Buy crypto with card on Ramp, then complete your funding review.',
   },
 ] as const
+type CardProviderId = (typeof CARD_PROVIDERS)[number]['id']
+
+const CARD_PROVIDER_GUIDES: Record<
+  CardProviderId,
+  { title: string; websiteLabel: string; websiteUrl: string; steps: string[] }
+> = {
+  transak: {
+    title: 'How to buy with Transak',
+    websiteLabel: 'Open Transak',
+    websiteUrl: 'https://transak.com/buy',
+    steps: [
+      'Click Open checkout and complete sign-in on Transak.',
+      'Choose card payment, enter the amount, and confirm your crypto purchase.',
+      'Set the destination wallet to your selected Trinity funding wallet address.',
+      'Complete the purchase and save your receipt/order reference.',
+      'Return here and submit proof if requested so admin can approve your funding faster.',
+    ],
+  },
+  ramp: {
+    title: 'How to buy with Ramp Network',
+    websiteLabel: 'Open Ramp Network',
+    websiteUrl: 'https://rampnetwork.com/buy-crypto',
+    steps: [
+      'Click Open checkout and complete sign-in on Ramp.',
+      'Select card as payment method and enter your purchase amount.',
+      'Send crypto to the funding wallet address shown on this page.',
+      'Finish payment and keep the transaction confirmation/receipt.',
+      'Return to Trinity and submit proof if requested for admin review.',
+    ],
+  },
+}
 
 const sourceLabel: Record<string, string> = {
   funding_deposit: 'Account funding',
@@ -149,7 +175,8 @@ export default function AccountFundPageClient({
   const [txid, setTxid] = useState('')
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [copiedAddress, setCopiedAddress] = useState(false)
-  const [launchingProvider, setLaunchingProvider] = useState<(typeof CARD_PROVIDERS)[number]['id'] | null>(null)
+  const [launchingProvider, setLaunchingProvider] = useState<CardProviderId | null>(null)
+  const [openGuideProvider, setOpenGuideProvider] = useState<CardProviderId | null>(null)
   const [status, setStatus] = useState<{ type: 'idle' | 'error' | 'success'; message: string }>({
     type: 'idle',
     message: '',
@@ -172,7 +199,7 @@ export default function AccountFundPageClient({
     setTimeout(() => setCopiedAddress(false), 1500)
   }
 
-  const launchCardCheckout = async (providerId: (typeof CARD_PROVIDERS)[number]['id']) => {
+  const launchCardCheckout = async (providerId: CardProviderId) => {
     if (fundingLocked) {
       setStatus({ type: 'error', message: 'Funding is frozen for this account.' })
       return
@@ -221,6 +248,7 @@ export default function AccountFundPageClient({
       const payload = await response.json().catch(() => null)
       const checkoutUrl =
         payload && typeof payload.checkoutUrl === 'string' ? payload.checkoutUrl : ''
+      const requestId = payload && typeof payload.requestId === 'string' ? payload.requestId : ''
       if (!response.ok || !isValidExternalCheckoutUrl(checkoutUrl)) {
         throw new Error(payload?.error || 'Unable to launch card checkout.')
       }
@@ -228,7 +256,9 @@ export default function AccountFundPageClient({
       popup.location.replace(checkoutUrl)
       setStatus({
         type: 'success',
-        message: 'Card checkout opened in a new tab. Complete payment, then return to submit proof if needed.',
+        message: requestId
+          ? `Checkout opened. Funding request ${requestId} is now pending admin review.`
+          : 'Card checkout opened in a new tab. Complete payment, then return to submit proof if needed.',
       })
     } catch (error) {
       popup.document.open()
@@ -437,8 +467,7 @@ export default function AccountFundPageClient({
         {fundingMethod === 'card_provider' && (
           <div className="rounded-2xl border border-white/10 p-4 space-y-3">
             <p className="text-sm text-white/80">
-              Card checkout is optional. You can use any provider below, then return and submit funding proof
-              for review.
+              Card checkout is optional. Starting checkout creates a pending funding request for admin review.
             </p>
             {status.type !== 'idle' && (
               <div className={`text-sm ${status.type === 'error' ? 'text-red-300' : 'text-emerald-300'}`}>
@@ -450,6 +479,13 @@ export default function AccountFundPageClient({
                 <div key={provider.id} className="rounded-xl border border-white/10 p-3">
                   <div className="text-sm font-semibold text-white">{provider.name}</div>
                   <p className="text-xs text-white/65 mt-1">{provider.description}</p>
+                  <button
+                    type="button"
+                    onClick={() => setOpenGuideProvider(provider.id)}
+                    className="mt-2 text-xs font-semibold text-blue-200 hover:text-blue-100 underline underline-offset-4"
+                  >
+                    Guide instructions
+                  </button>
                   <LoadingButton
                     onClick={() => launchCardCheckout(provider.id)}
                     isLoading={launchingProvider === provider.id}
@@ -697,6 +733,44 @@ export default function AccountFundPageClient({
           You currently have {pendingFunding.length} funding request(s) awaiting review.
         </div>
       )}
+
+      {openGuideProvider ? (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/70 px-4">
+          <div
+            className="w-full max-w-xl rounded-2xl p-5 space-y-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(10, 16, 30, 0.95))',
+              border: '1px solid rgba(148, 163, 184, 0.35)',
+            }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <h3 className="text-lg font-semibold text-white">
+                {CARD_PROVIDER_GUIDES[openGuideProvider].title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setOpenGuideProvider(null)}
+                className="text-sm text-white/70 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+            <ol className="space-y-2 text-sm text-white/80 list-decimal pl-5">
+              {CARD_PROVIDER_GUIDES[openGuideProvider].steps.map(step => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            <a
+              href={CARD_PROVIDER_GUIDES[openGuideProvider].websiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block text-sm font-semibold text-blue-200 hover:text-blue-100 underline underline-offset-4"
+            >
+              {CARD_PROVIDER_GUIDES[openGuideProvider].websiteLabel}
+            </a>
+          </div>
+        </div>
+      ) : null}
 
     </div>
   )
