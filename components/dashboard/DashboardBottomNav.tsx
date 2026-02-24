@@ -64,9 +64,13 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
           background: 'linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.94) 58%, rgba(0, 0, 0, 1))',
         }}
       />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-black"
+      />
       <div className="relative mx-auto w-full max-w-[520px] px-2 pb-[max(env(safe-area-inset-bottom),0px)]">
         <nav
-          className="mb-2 rounded-full px-2.5 py-2"
+          className="mb-[2px] rounded-full px-2.5 py-2"
           style={{
             background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04))',
             border: '1px solid rgba(255, 255, 255, 0.22)',
