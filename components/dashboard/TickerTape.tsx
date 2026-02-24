@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useDashboardChromeHidden } from './DashboardChromeContext'
 
 export default function TickerTape() {
   const containerRef = useRef<HTMLDivElement>(null)
+  const isTopChromeHidden = useDashboardChromeHidden()
 
   useEffect(() => {
     const container = containerRef.current
@@ -54,7 +56,11 @@ export default function TickerTape() {
 
   return (
     <div
-      className="sticky top-0 z-20 w-full overflow-hidden no-theme-invert"
+      className={`sticky top-0 z-20 w-full overflow-hidden no-theme-invert transition-all duration-300 ${
+        isTopChromeHidden
+          ? 'max-h-0 -translate-y-6 opacity-0 pointer-events-none'
+          : 'max-h-24 translate-y-0 opacity-100'
+      }`}
       style={{
         background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
         backdropFilter: 'blur(28px)',

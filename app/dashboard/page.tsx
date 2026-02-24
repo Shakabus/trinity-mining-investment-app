@@ -23,6 +23,7 @@ import {
   resolvePlanDurationHours,
 } from '@/lib/mining-chart'
 import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
+import OverviewAccountCard, { type OverviewAccountMetric, type OverviewWalletFlowMetric } from '@/components/dashboard/OverviewAccountCard'
 import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
 import type { TradingEarning } from '@prisma/client'
 import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
@@ -335,6 +336,25 @@ export default async function DashboardPage() {
   const realEstateTotalAllocationUsd = realEstateData.summary.portfolioAllocationUsd
   const realEstateApprovedCount = realEstateData.summary.approvedCount
   const realEstatePendingCount = realEstateData.summary.pendingCount
+  const accountDetailMetrics: OverviewAccountMetric[] = [
+    { label: 'Total Deposits', value: formatMoney(totalDepositedUsd), tone: 'emerald' },
+    { label: 'Total Invested', value: formatMoney(totalInvestedUsd), tone: 'blue' },
+    { label: 'Total Withdrawn', value: formatMoney(totalWithdrawnUsd), tone: 'rose' },
+    { label: 'Total Earned Credited', value: formatMoney(accountBalanceSummary.earnedCreditsUsd), tone: 'violet' },
+    { label: 'Principal Balance', value: formatMoney(accountBalanceSummary.principalBalanceUsd), tone: 'cyan' },
+    { label: 'Earnings Balance', value: formatMoney(accountBalanceSummary.earningsBalanceUsd), tone: 'stone' },
+    { label: 'Pending Withdrawals', value: formatMoney(accountBalanceSummary.pendingWithdrawalsUsd), tone: 'blue' },
+  ]
+  const walletFlowMetrics: OverviewWalletFlowMetric[] = TRACKED_ASSET_COINS.map(coin => {
+    const coinSummary = accountAssetSummary.byCoin[coin]
+    return {
+      coin,
+      netCrypto: `${formatCoinAmount(coinSummary.netCrypto)} ${coin}`,
+      netUsd: formatMoney(coinSummary.netUsd),
+      totalInCrypto: `${formatCoinAmount(coinSummary.totalInCrypto)} ${coin}`,
+      totalOutCrypto: `${formatCoinAmount(coinSummary.totalOutCrypto)} ${coin}`,
+    }
+  })
   const completedMiningAvailable = transferReady.miningReadyUsd > 0
   const completedTradingAvailable = transferReady.tradingReadyUsd > 0
   const showPlanProceedsAlert =
@@ -466,69 +486,67 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white">Account Balance</h2>
-            <div className="text-xs text-white/65 mt-1">Combined wallet asset value (live crypto conversion)</div>
-            <div
-              className="text-3xl md:text-4xl font-semibold text-emerald-300 mt-2"
-              title={formatMoney(accountAssetSummary.combinedAssetUsd)}
-            >
-              {formatMoney(accountAssetSummary.combinedAssetUsd)}
-            </div>
-            <div className="text-xs text-white/70 mt-2">
-              Available for plans (deposits + withdrawable earnings): {formatMoney(accountBalanceSummary.availableForPurchasesUsd)}
-            </div>
-            <div className="text-xs text-white/70 mt-1">
-              Withdrawable earnings: {formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
-            </div>
-            {accountBalanceSummary.pendingCreditsUsd > 0 && (
-              <div className="text-xs text-emerald-100/80 mt-2">
-                Pending credits: {formatMoney(accountBalanceSummary.pendingCreditsUsd)}
-              </div>
-            )}
-            {accountBalanceSummary.pendingPurchaseDebitsUsd > 0 && (
-              <div className="text-xs text-amber-100/80 mt-1">
-                Pending purchase debits: {formatMoney(accountBalanceSummary.pendingPurchaseDebitsUsd)}
-              </div>
-            )}
-            {accountBalanceSummary.pendingWithdrawalsUsd > 0 && (
-              <div className="text-xs text-rose-100/80 mt-1">
-                Pending external withdrawals: {formatMoney(accountBalanceSummary.pendingWithdrawalsUsd)}
-              </div>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/dashboard/account/fund"
-              className="inline-block px-5 py-2.5 rounded-full font-semibold text-sm md:text-base"
-              style={{
-                background: 'linear-gradient(135deg, #10b981, #047857)',
-                color: '#ffffff',
-              }}
-            >
-              Fund Account
-            </Link>
-            <Link
-              href="/dashboard/account/withdraw"
-              className="inline-block px-5 py-2.5 rounded-full font-semibold text-sm md:text-base"
-              style={{
-                background: 'linear-gradient(135deg, #ef4444, #b91c1c)',
-                color: '#ffffff',
-              }}
-            >
-              Withdraw Funds
-            </Link>
+        <OverviewAccountCard
+          accountBalance={formatMoney(accountAssetSummary.combinedAssetUsd)}
+          availableForPlans={formatMoney(accountBalanceSummary.availableForPurchasesUsd)}
+          withdrawableEarnings={formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
+          pendingCredits={
+            accountBalanceSummary.pendingCreditsUsd > 0
+              ? formatMoney(accountBalanceSummary.pendingCreditsUsd)
+              : null
+          }
+          pendingPurchaseDebits={
+            accountBalanceSummary.pendingPurchaseDebitsUsd > 0
+              ? formatMoney(accountBalanceSummary.pendingPurchaseDebitsUsd)
+              : null
+          }
+          pendingWithdrawals={
+            accountBalanceSummary.pendingWithdrawalsUsd > 0
+              ? formatMoney(accountBalanceSummary.pendingWithdrawalsUsd)
+              : null
+          }
+          detailMetrics={accountDetailMetrics}
+          walletFlowMetrics={walletFlowMetrics}
+        />
+
+        <div
+          className="p-4 rounded-2xl h-full"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03))',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+          }}
+        >
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="text-xs text-white/70">Last 5 Account Transactions</div>
             <Link
               href="/dashboard/account/history"
-              className="inline-block px-5 py-2.5 rounded-full font-semibold text-sm md:text-base"
+              className="inline-block px-3 py-1 rounded-full text-xs font-semibold text-white"
               style={{
                 background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                color: '#ffffff',
               }}
             >
-              Account History
+              Full history
             </Link>
+          </div>
+          <div className="space-y-2">
+            {recentBalanceTransactions.length > 0 ? (
+              recentBalanceTransactions.map(entry => (
+                <div key={entry.id} className="flex items-start justify-between gap-2 text-xs">
+                  <div className="min-w-0">
+                    <div className="truncate text-white/75">{formatAccountBalanceSource(entry.source)}</div>
+                    <div className="text-[11px] text-white/45">
+                      {entry.createdAt.toLocaleDateString()} - {entry.status}
+                    </div>
+                  </div>
+                  <span className={`shrink-0 ${entry.direction === 'credit' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    {entry.direction === 'credit' ? '+' : '-'}
+                    {formatMoney(entry.amountUsd)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-white/50">No account transactions yet.</div>
+            )}
           </div>
         </div>
 
@@ -584,178 +602,6 @@ export default async function DashboardPage() {
             </div>
           </div>
         )}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,360px)_1fr] gap-3">
-          <div className="flex flex-col gap-3">
-            <div
-              className="p-4 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.05))',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-              }}
-            >
-              <div className="text-xs text-emerald-100/80 mb-1">Total Deposits</div>
-              <div className="text-base md:text-xl font-semibold text-emerald-200" title={formatMoney(totalDepositedUsd)}>
-                {formatMoney(totalDepositedUsd)}
-              </div>
-            </div>
-            <div
-              className="p-4 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0.05))',
-                border: '1px solid rgba(59, 130, 246, 0.35)',
-              }}
-            >
-              <div className="text-xs text-blue-100/80 mb-1">Total Invested</div>
-              <div className="text-base md:text-xl font-semibold text-blue-200" title={formatMoney(totalInvestedUsd)}>
-                {formatMoney(totalInvestedUsd)}
-              </div>
-            </div>
-            <div
-              className="p-4 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(239, 68, 68, 0.05))',
-                border: '1px solid rgba(239, 68, 68, 0.35)',
-              }}
-            >
-              <div className="text-xs text-rose-100/80 mb-1">Total Withdrawn</div>
-              <div className="text-base md:text-xl font-semibold text-rose-200" title={formatMoney(totalWithdrawnUsd)}>
-                {formatMoney(totalWithdrawnUsd)}
-              </div>
-            </div>
-          </div>
-          <div
-            className="p-4 rounded-2xl h-full"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03))',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-            }}
-          >
-            <div className="text-xs text-white/70 mb-1">Last 5 Account Transactions</div>
-            <div className="space-y-2">
-              {recentBalanceTransactions.length > 0 ? (
-                recentBalanceTransactions.map(entry => (
-                  <div key={entry.id} className="flex items-start justify-between gap-2 text-xs">
-                    <div className="min-w-0">
-                      <div className="truncate text-white/75">{formatAccountBalanceSource(entry.source)}</div>
-                      <div className="text-[11px] text-white/45">
-                        {entry.createdAt.toLocaleDateString()} - {entry.status}
-                      </div>
-                    </div>
-                    <span className={`shrink-0 ${entry.direction === 'credit' ? 'text-emerald-300' : 'text-rose-300'}`}>
-                      {entry.direction === 'credit' ? '+' : '-'}
-                      {formatMoney(entry.amountUsd)}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-xs text-white/50">No account transactions yet.</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
-              border: '1px solid rgba(88, 45, 255, 0.35)',
-            }}
-          >
-            <div className="text-xs text-violet-100/80 mb-1">Total Earned Credited</div>
-            <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.earnedCreditsUsd)}>
-              {formatMoney(accountBalanceSummary.earnedCreditsUsd)}
-            </div>
-          </div>
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.16), rgba(168, 85, 247, 0.05))',
-              border: '1px solid rgba(168, 85, 247, 0.35)',
-            }}
-          >
-            <div className="text-xs text-violet-100/80 mb-1">Withdrawable Earnings</div>
-            <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}>
-              {formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
-            </div>
-          </div>
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(14, 116, 144, 0.16), rgba(14, 116, 144, 0.05))',
-              border: '1px solid rgba(14, 116, 144, 0.35)',
-            }}
-          >
-            <div className="text-xs text-cyan-100/80 mb-1">Available for Plans</div>
-            <div className="text-base md:text-xl font-semibold text-cyan-200" title={formatMoney(accountBalanceSummary.availableForPurchasesUsd)}>
-              {formatMoney(accountBalanceSummary.availableForPurchasesUsd)}
-            </div>
-          </div>
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(88, 45, 255, 0.16), rgba(88, 45, 255, 0.05))',
-              border: '1px solid rgba(88, 45, 255, 0.35)',
-            }}
-          >
-            <div className="text-xs text-violet-100/80 mb-1">Principal Balance</div>
-            <div className="text-base md:text-xl font-semibold text-violet-200" title={formatMoney(accountBalanceSummary.principalBalanceUsd)}>
-              {formatMoney(accountBalanceSummary.principalBalanceUsd)}
-            </div>
-          </div>
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(120, 113, 108, 0.16), rgba(120, 113, 108, 0.05))',
-              border: '1px solid rgba(120, 113, 108, 0.35)',
-            }}
-          >
-            <div className="text-xs text-stone-100/80 mb-1">Earnings Balance</div>
-            <div className="text-base md:text-xl font-semibold text-stone-200" title={formatMoney(accountBalanceSummary.earningsBalanceUsd)}>
-              {formatMoney(accountBalanceSummary.earningsBalanceUsd)}
-            </div>
-          </div>
-          <div
-            className="p-4 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(59, 130, 246, 0.05))',
-              border: '1px solid rgba(59, 130, 246, 0.35)',
-            }}
-          >
-            <div className="text-xs text-blue-100/80 mb-1">Pending Withdrawals</div>
-            <div className="text-base md:text-xl font-semibold text-blue-200" title={formatMoney(accountBalanceSummary.pendingWithdrawalsUsd)}>
-              {formatMoney(accountBalanceSummary.pendingWithdrawalsUsd)}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-          {TRACKED_ASSET_COINS.map(coin => {
-            const coinSummary = accountAssetSummary.byCoin[coin]
-            return (
-              <div
-                key={coin}
-                className="p-4 rounded-2xl"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03))',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                }}
-              >
-                <div className="text-xs text-white/70 mb-1">{coin} Wallet Flow</div>
-                <div className="text-base font-semibold text-white" title={`${formatCoinAmount(coinSummary.netCrypto)} ${coin}`}>
-                  {formatCoinAmount(coinSummary.netCrypto)} {coin}
-                </div>
-                <div className="text-xs text-white/65 mt-1">Value: {formatMoney(coinSummary.netUsd)}</div>
-                <div className="text-[11px] text-emerald-300/90 mt-2">
-                  In: +{formatCoinAmount(coinSummary.totalInCrypto)} {coin}
-                </div>
-                <div className="text-[11px] text-rose-300/90">
-                  Out: -{formatCoinAmount(coinSummary.totalOutCrypto)} {coin}
-                </div>
-              </div>
-            )
-          })}
-        </div>
 
         {/* Account Status Card */}
         <div
