@@ -53,18 +53,25 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
 
   return (
     <div
-      className={`fixed bottom-2 left-0 right-0 z-40 transition-all duration-300 lg:hidden ${
+      className={`fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 lg:hidden ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
       }`}
     >
-      <div className="mx-auto w-full max-w-[520px] px-2 pb-[max(env(safe-area-inset-bottom),0px)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-12"
+        style={{
+          background: 'linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.94) 58%, rgba(0, 0, 0, 1))',
+        }}
+      />
+      <div className="relative mx-auto w-full max-w-[520px] px-2 pb-[max(env(safe-area-inset-bottom),0px)]">
         <nav
-          className="rounded-t-3xl border-x border-t px-2.5 py-2"
+          className="mb-2 rounded-full px-2.5 py-2"
           style={{
-            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.74))',
-            borderColor: 'rgba(148, 163, 184, 0.32)',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04))',
+            border: '1px solid rgba(255, 255, 255, 0.22)',
             backdropFilter: 'blur(20px)',
-            boxShadow: '0 -10px 28px rgba(2, 6, 23, 0.45)',
+            boxShadow: '0 12px 28px rgba(2, 6, 23, 0.45)',
           }}
         >
           <ul
