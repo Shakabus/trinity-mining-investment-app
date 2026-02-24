@@ -77,6 +77,8 @@ export default function DashboardLayoutClient({
       const currentScrollTop = scrollNode.scrollTop
       const hidden = isTopChromeHiddenRef.current
       const delta = currentScrollTop - lastScrollTopRef.current
+      const downTriggerPx = 26
+      const upTriggerPx = 6
 
       if (currentScrollTop <= 32) {
         if (hidden) {
@@ -89,7 +91,7 @@ export default function DashboardLayoutClient({
         return
       }
 
-      if (Math.abs(delta) < 1) {
+      if (Math.abs(delta) < 1.25) {
         lastScrollTopRef.current = currentScrollTop
         return
       }
@@ -102,13 +104,13 @@ export default function DashboardLayoutClient({
         accumulatedDownRef.current = 0
       }
 
-      // Hide quickly on intentional down scroll, reveal immediately on up scroll.
-      if (!hidden && accumulatedDownRef.current >= 10) {
+      // Require clear downward intent before hiding to avoid jitter on tiny scroll nudges.
+      if (!hidden && accumulatedDownRef.current >= downTriggerPx) {
         setIsTopChromeHidden(true)
         isTopChromeHiddenRef.current = true
         accumulatedDownRef.current = 0
         accumulatedUpRef.current = 0
-      } else if (hidden && accumulatedUpRef.current >= 4) {
+      } else if (hidden && accumulatedUpRef.current >= upTriggerPx) {
         setIsTopChromeHidden(false)
         isTopChromeHiddenRef.current = false
         accumulatedDownRef.current = 0
