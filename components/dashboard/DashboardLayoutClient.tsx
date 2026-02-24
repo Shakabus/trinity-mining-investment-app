@@ -76,6 +76,10 @@ export default function DashboardLayoutClient({
     const onScroll = () => {
       const currentScrollTop = scrollNode.scrollTop
       const hidden = isTopChromeHiddenRef.current
+      const delta = currentScrollTop - lastScrollTopRef.current
+      const now = Date.now()
+      const minToggleIntervalMs = 120
+      const canToggle = now - lastToggleAtRef.current >= minToggleIntervalMs
 
       if (currentScrollTop <= 32) {
         if (hidden) {
@@ -87,25 +91,26 @@ export default function DashboardLayoutClient({
         return
       }
 
-      const delta = currentScrollTop - lastScrollTopRef.current
+      // Reveal immediately once user scrolls upward, while still debouncing tiny jitter.
+      if (hidden && delta <= -2 && canToggle) {
+        setIsTopChromeHidden(false)
+        isTopChromeHiddenRef.current = false
+        scrollAnchorRef.current = currentScrollTop
+        lastToggleAtRef.current = now
+        lastScrollTopRef.current = currentScrollTop
+        return
+      }
+
       if (Math.abs(delta) < 4) {
         lastScrollTopRef.current = currentScrollTop
         return
       }
 
       const distanceFromAnchor = currentScrollTop - scrollAnchorRef.current
-      const now = Date.now()
-      const minToggleIntervalMs = 180
-      const canToggle = now - lastToggleAtRef.current >= minToggleIntervalMs
 
       if (!hidden && distanceFromAnchor >= 56 && canToggle) {
         setIsTopChromeHidden(true)
         isTopChromeHiddenRef.current = true
-        scrollAnchorRef.current = currentScrollTop
-        lastToggleAtRef.current = now
-      } else if (hidden && distanceFromAnchor <= -36 && canToggle) {
-        setIsTopChromeHidden(false)
-        isTopChromeHiddenRef.current = false
         scrollAnchorRef.current = currentScrollTop
         lastToggleAtRef.current = now
       }
