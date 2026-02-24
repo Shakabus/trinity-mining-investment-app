@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       amountUsd: amountLabel,
       source: 'funding_deposit',
       referenceId: requestId,
-      note: `${providerLabel} card checkout initiated. Awaiting admin review.`,
+      note: `${providerLabel} card checkout initiated. Awaiting system review.`,
       metadata: {
         coinType,
         walletAddress,

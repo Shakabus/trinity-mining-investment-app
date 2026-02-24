@@ -81,7 +81,8 @@ const CARD_PROVIDER_GUIDES: Record<
       'Choose card payment, enter the amount, and confirm your crypto purchase.',
       'Set the destination wallet to your selected Trinity funding wallet address.',
       'Complete the purchase and save your receipt/order reference.',
-      'Return here and submit proof if requested so admin can approve your funding faster.',
+      'If checkout does not open, refresh your browser page and try again.',
+      'Return here and submit proof if requested so the system can review your funding faster.',
     ],
   },
   ramp: {
@@ -93,7 +94,8 @@ const CARD_PROVIDER_GUIDES: Record<
       'Select card as payment method and enter your purchase amount.',
       'Send crypto to the funding wallet address shown on this page.',
       'Finish payment and keep the transaction confirmation/receipt.',
-      'Return to Trinity and submit proof if requested for admin review.',
+      'If checkout does not open, refresh your browser page and try again.',
+      'Return to Trinity and submit proof if requested for system review.',
     ],
   },
 }
@@ -257,7 +259,7 @@ export default function AccountFundPageClient({
       setStatus({
         type: 'success',
         message: requestId
-          ? `Checkout opened. Funding request ${requestId} is now pending admin review.`
+          ? `Checkout opened. Funding request ${requestId} is now pending system review.`
           : 'Card checkout opened in a new tab. Complete payment, then return to submit proof if needed.',
       })
     } catch (error) {
@@ -467,7 +469,7 @@ export default function AccountFundPageClient({
         {fundingMethod === 'card_provider' && (
           <div className="rounded-2xl border border-white/10 p-4 space-y-3">
             <p className="text-sm text-white/80">
-              Card checkout is optional. Starting checkout creates a pending funding request for admin review.
+              Card checkout is optional. Starting checkout creates a pending funding request for system review.
             </p>
             {status.type !== 'idle' && (
               <div className={`text-sm ${status.type === 'error' ? 'text-red-300' : 'text-emerald-300'}`}>
