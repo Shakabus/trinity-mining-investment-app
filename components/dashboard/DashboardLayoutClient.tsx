@@ -39,8 +39,8 @@ export default function DashboardLayoutClient({
   const [isTopChromeHidden, setIsTopChromeHidden] = useState(false)
   const mainScrollRef = useRef<HTMLElement | null>(null)
   const lastScrollTopRef = useRef(0)
-  const scrollAnchorRef = useRef(0)
-  const lastToggleAtRef = useRef(0)
+  const accumulatedDownRef = useRef(0)
+  const accumulatedUpRef = useRef(0)
   const isTopChromeHiddenRef = useRef(false)
   const displayUser = user
     ? { ...user, accountStatus: accountStatusOverride ?? user.accountStatus }
@@ -70,49 +70,49 @@ export default function DashboardLayoutClient({
     }
 
     lastScrollTopRef.current = scrollNode.scrollTop
-    scrollAnchorRef.current = scrollNode.scrollTop
-    lastToggleAtRef.current = 0
+    accumulatedDownRef.current = 0
+    accumulatedUpRef.current = 0
 
     const onScroll = () => {
       const currentScrollTop = scrollNode.scrollTop
       const hidden = isTopChromeHiddenRef.current
       const delta = currentScrollTop - lastScrollTopRef.current
-      const now = Date.now()
-      const minToggleIntervalMs = 120
-      const canToggle = now - lastToggleAtRef.current >= minToggleIntervalMs
 
       if (currentScrollTop <= 32) {
         if (hidden) {
           setIsTopChromeHidden(false)
           isTopChromeHiddenRef.current = false
         }
-        scrollAnchorRef.current = currentScrollTop
+        accumulatedDownRef.current = 0
+        accumulatedUpRef.current = 0
         lastScrollTopRef.current = currentScrollTop
         return
       }
 
-      // Reveal immediately once user scrolls upward, while still debouncing tiny jitter.
-      if (hidden && delta <= -2 && canToggle) {
-        setIsTopChromeHidden(false)
-        isTopChromeHiddenRef.current = false
-        scrollAnchorRef.current = currentScrollTop
-        lastToggleAtRef.current = now
+      if (Math.abs(delta) < 1) {
         lastScrollTopRef.current = currentScrollTop
         return
       }
 
-      if (Math.abs(delta) < 4) {
-        lastScrollTopRef.current = currentScrollTop
-        return
+      if (delta > 0) {
+        accumulatedDownRef.current += delta
+        accumulatedUpRef.current = 0
+      } else {
+        accumulatedUpRef.current += Math.abs(delta)
+        accumulatedDownRef.current = 0
       }
 
-      const distanceFromAnchor = currentScrollTop - scrollAnchorRef.current
-
-      if (!hidden && distanceFromAnchor >= 56 && canToggle) {
+      // Hide quickly on intentional down scroll, reveal immediately on up scroll.
+      if (!hidden && accumulatedDownRef.current >= 10) {
         setIsTopChromeHidden(true)
         isTopChromeHiddenRef.current = true
-        scrollAnchorRef.current = currentScrollTop
-        lastToggleAtRef.current = now
+        accumulatedDownRef.current = 0
+        accumulatedUpRef.current = 0
+      } else if (hidden && accumulatedUpRef.current >= 4) {
+        setIsTopChromeHidden(false)
+        isTopChromeHiddenRef.current = false
+        accumulatedDownRef.current = 0
+        accumulatedUpRef.current = 0
       }
 
       lastScrollTopRef.current = currentScrollTop
