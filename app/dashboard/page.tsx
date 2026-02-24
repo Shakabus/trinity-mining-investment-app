@@ -30,7 +30,6 @@ import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
 import { formatPlanDurationLabel } from '@/lib/mining-duration'
 import { isPaymentReminderVisible } from '@/lib/payment-reminder'
 
-import TickerTape from '@/components/dashboard/TickerTape'
 import AdvancedChart from '@/components/dashboard/AdvancedChart'
 import NewsTimeline from '@/components/dashboard/NewsTimeline'
 import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
@@ -469,8 +468,7 @@ export default async function DashboardPage() {
   return (
     <div className="w-full">
       <DashboardAutoRefresh intervalMs={10000} />
-      {/* Sticky Ticker Tape (must remain inside Overview content) */}
-      <TickerTape />
+      {/* TradingView ticker tape temporarily disabled */}
 
       {/* All other content gets the page padding (so ticker has no gap and spans full width) */}
       <div className="p-4 md:p-6 lg:p-8 space-y-6">

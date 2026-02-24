@@ -53,7 +53,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 lg:hidden ${
+      className={`fixed bottom-2 left-0 right-0 z-40 transition-all duration-300 lg:hidden ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
       }`}
     >
@@ -86,7 +86,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
             const Icon = item.icon
             const isPrimary = Boolean(item.primary)
             const isSwipeActive = swipeIndex === index
-            const isHighlighted = isActive || isSwipeActive
+            const isHighlighted = swipeIndex === null ? isActive : isSwipeActive
 
             if (isPrimary) {
               return (
@@ -97,9 +97,13 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                       isHighlighted ? '-translate-y-1.5 scale-110' : 'scale-100'
                     }`}
                     style={{
-                      background: 'linear-gradient(135deg, #582dff, #3a137a)',
-                      border: '1px solid rgba(255, 255, 255, 0.35)',
-                      boxShadow: '0 10px 24px rgba(88, 45, 255, 0.45)',
+                      background: isHighlighted
+                        ? 'linear-gradient(135deg, #582dff, #3a137a)'
+                        : 'linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.06))',
+                      border: isHighlighted
+                        ? '1px solid rgba(196, 181, 253, 0.85)'
+                        : '1px solid rgba(148, 163, 184, 0.3)',
+                      boxShadow: isHighlighted ? '0 10px 24px rgba(88, 45, 255, 0.45)' : 'none',
                     }}
                     aria-label={item.label}
                     title={item.label}
