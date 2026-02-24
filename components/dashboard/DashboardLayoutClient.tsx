@@ -41,6 +41,7 @@ export default function DashboardLayoutClient({
   const lastScrollTopRef = useRef(0)
   const accumulatedDownRef = useRef(0)
   const accumulatedUpRef = useRef(0)
+  const lastToggleAtRef = useRef(0)
   const isTopChromeHiddenRef = useRef(false)
   const displayUser = user
     ? { ...user, accountStatus: accountStatusOverride ?? user.accountStatus }
@@ -72,6 +73,7 @@ export default function DashboardLayoutClient({
     lastScrollTopRef.current = scrollNode.scrollTop
     accumulatedDownRef.current = 0
     accumulatedUpRef.current = 0
+    lastToggleAtRef.current = 0
 
     const onScroll = () => {
       const currentScrollTop = scrollNode.scrollTop
@@ -79,11 +81,14 @@ export default function DashboardLayoutClient({
       const delta = currentScrollTop - lastScrollTopRef.current
       const downTriggerPx = 26
       const upTriggerPx = 6
+      const now = Date.now()
+      const canToggle = now - lastToggleAtRef.current >= 180
 
       if (currentScrollTop <= 32) {
         if (hidden) {
           setIsTopChromeHidden(false)
           isTopChromeHiddenRef.current = false
+          lastToggleAtRef.current = now
         }
         accumulatedDownRef.current = 0
         accumulatedUpRef.current = 0
@@ -105,14 +110,16 @@ export default function DashboardLayoutClient({
       }
 
       // Require clear downward intent before hiding to avoid jitter on tiny scroll nudges.
-      if (!hidden && accumulatedDownRef.current >= downTriggerPx) {
+      if (!hidden && accumulatedDownRef.current >= downTriggerPx && canToggle) {
         setIsTopChromeHidden(true)
         isTopChromeHiddenRef.current = true
+        lastToggleAtRef.current = now
         accumulatedDownRef.current = 0
         accumulatedUpRef.current = 0
-      } else if (hidden && accumulatedUpRef.current >= upTriggerPx) {
+      } else if (hidden && accumulatedUpRef.current >= upTriggerPx && canToggle) {
         setIsTopChromeHidden(false)
         isTopChromeHiddenRef.current = false
+        lastToggleAtRef.current = now
         accumulatedDownRef.current = 0
         accumulatedUpRef.current = 0
       }

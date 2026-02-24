@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import type { ComponentType } from 'react'
+import { useRef, useState, type ComponentType } from 'react'
 import {
   Building2,
   Home,
@@ -38,27 +38,55 @@ function isItemActive(pathname: string | null, href: string) {
 
 export default function DashboardBottomNav({ visible }: DashboardBottomNavProps) {
   const pathname = usePathname()
+  const [swipeIndex, setSwipeIndex] = useState<number | null>(null)
+  const navListRef = useRef<HTMLUListElement | null>(null)
+
+  const resolveSwipeIndex = (clientX: number) => {
+    const list = navListRef.current
+    if (!list) return null
+    const bounds = list.getBoundingClientRect()
+    if (clientX < bounds.left || clientX > bounds.right) return null
+    const relative = (clientX - bounds.left) / bounds.width
+    const rawIndex = Math.floor(relative * navItems.length)
+    return Math.max(0, Math.min(navItems.length - 1, rawIndex))
+  }
 
   return (
     <div
-      className={`fixed bottom-4 left-1/2 z-40 w-[min(92vw,420px)] -translate-x-1/2 transition-all duration-300 lg:hidden ${
+      className={`fixed bottom-0 left-0 right-0 z-40 transition-all duration-300 lg:hidden ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'
       }`}
     >
-      <nav
-        className="rounded-full px-2.5 py-1.5"
-        style={{
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.78), rgba(30, 41, 59, 0.62))',
-          border: '1px solid rgba(148, 163, 184, 0.35)',
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 14px 34px rgba(2, 6, 23, 0.5)',
-        }}
-      >
-        <ul className="grid grid-cols-5 items-center gap-1.5">
-          {navItems.map(item => {
+      <div className="mx-auto w-full max-w-[520px] px-2 pb-[max(env(safe-area-inset-bottom),0px)]">
+        <nav
+          className="rounded-t-3xl border-x border-t px-2.5 py-2"
+          style={{
+            background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.74))',
+            borderColor: 'rgba(148, 163, 184, 0.32)',
+            backdropFilter: 'blur(20px)',
+            boxShadow: '0 -10px 28px rgba(2, 6, 23, 0.45)',
+          }}
+        >
+          <ul
+            ref={navListRef}
+            className="grid grid-cols-5 items-end gap-1"
+            onTouchStart={event => {
+              const index = resolveSwipeIndex(event.touches[0].clientX)
+              setSwipeIndex(index)
+            }}
+            onTouchMove={event => {
+              const index = resolveSwipeIndex(event.touches[0].clientX)
+              setSwipeIndex(index)
+            }}
+            onTouchEnd={() => setSwipeIndex(null)}
+            onTouchCancel={() => setSwipeIndex(null)}
+          >
+            {navItems.map((item, index) => {
             const isActive = isItemActive(pathname, item.href)
             const Icon = item.icon
             const isPrimary = Boolean(item.primary)
+            const isSwipeActive = swipeIndex === index
+            const isHighlighted = isActive || isSwipeActive
 
             if (isPrimary) {
               return (
@@ -66,7 +94,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                   <Link
                     href={item.href}
                     className={`flex h-14 w-14 items-center justify-center rounded-full text-white transition duration-200 active:scale-110 ${
-                      isActive ? '-translate-y-1.5 scale-110' : 'scale-100'
+                      isHighlighted ? '-translate-y-1.5 scale-110' : 'scale-100'
                     }`}
                     style={{
                       background: 'linear-gradient(135deg, #582dff, #3a137a)',
@@ -76,7 +104,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                     aria-label={item.label}
                     title={item.label}
                   >
-                    <Icon size={24} />
+                      <Icon size={24} />
                   </Link>
                 </li>
               )
@@ -86,14 +114,17 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
               <li key={item.href} className="flex justify-center">
                 <Link
                   href={item.href}
-                  className={`flex h-[52px] w-[52px] items-center justify-center rounded-full text-white/85 transition duration-200 active:scale-110 ${
-                    isActive ? '-translate-y-0.5 scale-110 text-white' : 'scale-100'
+                  className={`flex h-[50px] w-[50px] items-center justify-center rounded-full text-white/85 transition duration-200 active:scale-110 ${
+                    isHighlighted ? '-translate-y-1 scale-[1.12] text-white' : 'scale-100'
                   }`}
                   style={{
-                    background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.06))',
-                    border: isActive
-                      ? '1px solid rgba(226, 232, 240, 0.7)'
+                    background: isHighlighted
+                      ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.95), rgba(58, 19, 122, 0.9))'
+                      : 'linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.06))',
+                    border: isHighlighted
+                      ? '1px solid rgba(196, 181, 253, 0.85)'
                       : '1px solid rgba(148, 163, 184, 0.3)',
+                    boxShadow: isHighlighted ? '0 10px 20px rgba(88, 45, 255, 0.35)' : 'none',
                   }}
                   aria-label={item.label}
                   title={item.label}
@@ -103,8 +134,9 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
               </li>
             )
           })}
-        </ul>
-      </nav>
+          </ul>
+        </nav>
+      </div>
     </div>
   )
 }
