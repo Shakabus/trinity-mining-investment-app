@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ComponentType } from 'react'
 import {
-  ArrowUpFromLine,
-  Gem,
-  LayoutDashboard,
-  LifeBuoy,
+  Building2,
+  Home,
+  MessageCircle,
   Pickaxe,
+  TrendingUp,
 } from 'lucide-react'
 
 interface DashboardBottomNavProps {
@@ -23,11 +23,11 @@ interface DashboardBottomNavItem {
 }
 
 const navItems: DashboardBottomNavItem[] = [
-  { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/dashboard/plans', label: 'Plans', icon: Gem },
-  { href: '/dashboard/mining', label: 'Mining', icon: Pickaxe, primary: true },
-  { href: '/dashboard/account/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
-  { href: '/dashboard/support', label: 'Support', icon: LifeBuoy },
+  { href: '/dashboard/real-estate', label: 'Real Estate', icon: Building2 },
+  { href: '/dashboard/mining', label: 'Mining', icon: Pickaxe },
+  { href: '/dashboard', label: 'Home', icon: Home, primary: true },
+  { href: '/dashboard/investment-trading', label: 'Trading', icon: TrendingUp },
+  { href: '/dashboard/support', label: 'Support', icon: MessageCircle },
 ]
 
 function isItemActive(pathname: string | null, href: string) {
@@ -69,9 +69,7 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                       isActive ? '-translate-y-1.5 scale-110' : 'scale-100'
                     }`}
                     style={{
-                      background: isActive
-                        ? 'linear-gradient(135deg, #10b981, #047857)'
-                        : 'linear-gradient(135deg, #582dff, #3a137a)',
+                      background: 'linear-gradient(135deg, #582dff, #3a137a)',
                       border: '1px solid rgba(255, 255, 255, 0.35)',
                       boxShadow: '0 10px 24px rgba(88, 45, 255, 0.45)',
                     }}
@@ -92,11 +90,9 @@ export default function DashboardBottomNav({ visible }: DashboardBottomNavProps)
                     isActive ? '-translate-y-0.5 scale-110 text-white' : 'scale-100'
                   }`}
                   style={{
-                    background: isActive
-                      ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.45), rgba(29, 78, 216, 0.35))'
-                      : 'linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.06))',
+                    background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.06))',
                     border: isActive
-                      ? '1px solid rgba(191, 219, 254, 0.6)'
+                      ? '1px solid rgba(226, 232, 240, 0.7)'
                       : '1px solid rgba(148, 163, 184, 0.3)',
                   }}
                   aria-label={item.label}
