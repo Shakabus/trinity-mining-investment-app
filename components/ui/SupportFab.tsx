@@ -8,7 +8,7 @@ export default function SupportFab() {
   const pathname = usePathname()
   const isUserDashboard = pathname?.startsWith('/dashboard')
   const supportHref = isUserDashboard ? '/dashboard/support' : '/contact'
-  const dashboardDisplayClass = isUserDashboard ? 'hidden lg:flex' : 'flex'
+  const displayClass = isUserDashboard ? 'hidden lg:inline-flex' : 'inline-flex'
   const glassClass = isUserDashboard
     ? 'border-white/20'
     : 'border-white/35 bg-white/[0.10] supports-[backdrop-filter]:bg-white/[0.08]'
@@ -19,8 +19,9 @@ export default function SupportFab() {
       href={supportHref}
       aria-label="Contact support"
       title="Contact support"
-      className={`fixed bottom-5 right-5 z-[90] h-14 w-14 items-center justify-center rounded-full border text-white shadow-2xl backdrop-blur-xl transition hover:scale-105 ${glassClass} ${dashboardDisplayClass} relative isolate overflow-hidden`}
+      className={`fixed right-5 z-[26000] h-14 w-14 items-center justify-center rounded-full border text-white shadow-2xl backdrop-blur-xl transition hover:scale-105 ${glassClass} ${displayClass} relative isolate overflow-hidden`}
       style={{
+        bottom: 'calc(env(safe-area-inset-bottom) + 14px)',
         background: isUserDashboard
           ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.95), rgba(12, 116, 255, 0.92))'
           : 'linear-gradient(145deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04) 44%, rgba(95, 70, 255, 0.36))',
