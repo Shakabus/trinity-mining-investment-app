@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 
 const LOGIN_EMAIL_SENT_PREFIX = 'LoginAlertEmailSent:'
 const LOGIN_EMAIL_DISPATCHING_PREFIX = 'LoginAlertEmailDispatching:'
+const LOGIN_ALERT_NOTIFICATIONS_ENABLED = false
 
 type SendLoginAlertEmailOnceInput = {
   userId: number
@@ -35,6 +36,10 @@ export async function sendLoginAlertEmailOnce({
   ipMasked,
   device,
 }: SendLoginAlertEmailOnceInput) {
+  if (!LOGIN_ALERT_NOTIFICATIONS_ENABLED) {
+    return { sent: false, reason: 'disabled' as const }
+  }
+
   const destination = email?.trim().toLowerCase()
   if (!destination) {
     return { sent: false, reason: 'missing_email' as const }
