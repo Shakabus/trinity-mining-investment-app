@@ -10,8 +10,7 @@ export default function SupportFab() {
   const isUserDashboard = pathname?.startsWith('/dashboard')
   const supportHref = isUserDashboard ? '/dashboard/support' : '/contact'
   const [isDesktopViewport, setIsDesktopViewport] = useState(true)
-  const [scrollLiftPx, setScrollLiftPx] = useState(0)
-  const lastScrollYRef = useRef(0)
+  const [isScrollActive, setIsScrollActive] = useState(false)
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -27,16 +26,9 @@ export default function SupportFab() {
 
   useEffect(() => {
     const onScroll = () => {
-      const currentY = window.scrollY || 0
-      const delta = currentY - lastScrollYRef.current
-      lastScrollYRef.current = currentY
-
-      // Lift while user scrolls, then settle back to the corner position.
-      if (Math.abs(delta) > 1) {
-        setScrollLiftPx(delta > 0 ? 8 : 4)
-        if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
-        scrollTimerRef.current = setTimeout(() => setScrollLiftPx(0), 180)
-      }
+      setIsScrollActive(true)
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+      scrollTimerRef.current = setTimeout(() => setIsScrollActive(false), 170)
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -60,8 +52,8 @@ export default function SupportFab() {
       className={`fixed right-5 z-[26000] h-14 w-14 items-center justify-center rounded-full border text-white shadow-2xl backdrop-blur-xl transition hover:scale-105 ${glassClass} relative isolate overflow-hidden`}
       style={{
         display: shouldShow ? 'flex' : 'none',
-        right: 'max(16px, calc(env(safe-area-inset-right) + 12px))',
-        bottom: 'max(16px, calc(env(safe-area-inset-bottom) + 12px))',
+        right: 'calc(env(safe-area-inset-right) + 14px)',
+        bottom: 'calc(env(safe-area-inset-bottom) + 10px)',
         background: isUserDashboard
           ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.95), rgba(12, 116, 255, 0.92))'
           : 'linear-gradient(145deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04) 44%, rgba(95, 70, 255, 0.36))',
@@ -69,8 +61,12 @@ export default function SupportFab() {
           ? '0 18px 36px rgba(0, 0, 0, 0.45)'
           : '0 18px 34px rgba(3, 8, 28, 0.55), 0 2px 0 rgba(255, 255, 255, 0.28) inset, 0 -10px 20px rgba(35, 45, 90, 0.25) inset',
         transform: isUserDashboard
-          ? `translateY(-${scrollLiftPx}px)`
-          : `perspective(600px) translateZ(0) translateY(-${scrollLiftPx}px)`,
+          ? isScrollActive
+            ? 'translateY(-2px) scale(1.03)'
+            : 'translateY(0) scale(1)'
+          : isScrollActive
+            ? 'perspective(600px) translateZ(0) translateY(-2px) scale(1.03)'
+            : 'perspective(600px) translateZ(0) translateY(0) scale(1)',
       }}
     >
       {!isUserDashboard ? (
