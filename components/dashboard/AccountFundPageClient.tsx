@@ -65,6 +65,16 @@ const CARD_PROVIDERS = [
     name: 'Ramp Network',
     description: 'Buy crypto with card on Ramp, then complete your funding review.',
   },
+  {
+    id: 'moonpay',
+    name: 'MoonPay',
+    description: 'Buy crypto with card on MoonPay, then complete your funding review.',
+  },
+  {
+    id: 'banxa',
+    name: 'Banxa',
+    description: 'Buy crypto with card on Banxa, then complete your funding review.',
+  },
 ] as const
 type CardProviderId = (typeof CARD_PROVIDERS)[number]['id']
 
@@ -98,6 +108,32 @@ const CARD_PROVIDER_GUIDES: Record<
       'Return to Trinity and submit proof if requested for system review.',
     ],
   },
+  moonpay: {
+    title: 'How to buy with MoonPay',
+    websiteLabel: 'Open MoonPay',
+    websiteUrl: 'https://www.moonpay.com/buy',
+    steps: [
+      'Click Open checkout and complete sign-in on MoonPay.',
+      'Choose card payment and set the purchase amount.',
+      'Set the destination wallet to the Trinity funding wallet shown on this page.',
+      'Complete checkout and save your order reference/receipt.',
+      'If checkout does not open, refresh your browser page and try again.',
+      'Return here and submit proof if requested for faster system review.',
+    ],
+  },
+  banxa: {
+    title: 'How to buy with Banxa',
+    websiteLabel: 'Open Banxa',
+    websiteUrl: 'https://onramp.banxa.com',
+    steps: [
+      'Click Open checkout and complete sign-in on Banxa.',
+      'Select card payment, choose the amount, and confirm the quote.',
+      'Use the Trinity funding wallet address for your selected coin as destination.',
+      'Finish payment and keep the transaction confirmation details.',
+      'If checkout does not open, refresh your browser page and try again.',
+      'Return to Trinity and submit proof if requested so the system can complete review.',
+    ],
+  },
 }
 
 const sourceLabel: Record<string, string> = {
@@ -121,6 +157,8 @@ const CARD_CHECKOUT_TIMEOUT_MS = 15000
 const CARD_PROVIDER_URLS: Record<CardProviderId, string> = {
   transak: 'https://transak.com/buy',
   ramp: 'https://rampnetwork.com/buy-crypto',
+  moonpay: 'https://www.moonpay.com/buy',
+  banxa: 'https://onramp.banxa.com',
 }
 
 const applyFrozenStyle = (base: CSSProperties, frozen: boolean): CSSProperties => {

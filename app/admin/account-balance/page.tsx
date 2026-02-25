@@ -268,6 +268,10 @@ export default async function AdminAccountBalancePage() {
         ? 'Transak'
         : cardProviderRaw === 'ramp'
         ? 'Ramp Network'
+        : cardProviderRaw === 'moonpay'
+        ? 'MoonPay'
+        : cardProviderRaw === 'banxa'
+        ? 'Banxa'
         : null
 
     let subtitle = 'Pending account-balance operation.'

@@ -12,12 +12,31 @@ import {
 } from '@/lib/transactional-email'
 
 const CHECKOUT_ALLOWED_FIELDS = ['provider', 'amountUsd', 'coinType'] as const
-const SUPPORTED_PROVIDERS = ['transak', 'ramp'] as const
+const SUPPORTED_PROVIDERS = ['transak', 'ramp', 'moonpay', 'banxa'] as const
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 type CardProvider = (typeof SUPPORTED_PROVIDERS)[number]
+
+const PROVIDER_CONFIG: Record<CardProvider, { label: string; checkoutUrl: string }> = {
+  transak: {
+    label: 'Transak',
+    checkoutUrl: 'https://transak.com/buy',
+  },
+  ramp: {
+    label: 'Ramp Network',
+    checkoutUrl: 'https://rampnetwork.com/buy-crypto',
+  },
+  moonpay: {
+    label: 'MoonPay',
+    checkoutUrl: 'https://www.moonpay.com/buy',
+  },
+  banxa: {
+    label: 'Banxa',
+    checkoutUrl: 'https://onramp.banxa.com',
+  },
+}
 
 function isValidCheckoutUrl(value: string) {
   const trimmed = value.trim()
@@ -69,13 +88,8 @@ export async function POST(request: Request) {
     const walletAddress = SYSTEM_FUNDING_WALLETS[coinType]
     const amountLabel = Number(amountUsd.toFixed(2))
 
-    let checkoutUrl = ''
-
-    if (provider === 'transak') {
-      checkoutUrl = 'https://transak.com/buy'
-    } else {
-      checkoutUrl = 'https://rampnetwork.com/buy-crypto'
-    }
+    const providerConfig = PROVIDER_CONFIG[provider]
+    const checkoutUrl = providerConfig.checkoutUrl
 
     if (!isValidCheckoutUrl(checkoutUrl)) {
       return NextResponse.json(
@@ -87,7 +101,7 @@ export async function POST(request: Request) {
     }
 
     const requestId = `fund-card-${randomUUID()}`
-    const providerLabel = provider === 'transak' ? 'Transak' : 'Ramp Network'
+    const providerLabel = providerConfig.label
 
     await createAccountBalanceEntry({
       userId: user.id,
