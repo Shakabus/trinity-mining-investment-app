@@ -34,7 +34,7 @@ const PROVIDER_CONFIG: Record<CardProvider, { label: string; checkoutUrl: string
   },
   mercuryo: {
     label: 'Mercuryo',
-    checkoutUrl: 'https://exchange.mercuryo.io/?widget_id=89960d1a8db7-49e5-8823-4c5e01c1cea2',
+    checkoutUrl: 'https://www.mercuryo.io/',
   },
 }
 

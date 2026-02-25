@@ -124,7 +124,7 @@ const CARD_PROVIDER_GUIDES: Record<
   mercuryo: {
     title: 'How to buy with Mercuryo',
     websiteLabel: 'Open Mercuryo',
-    websiteUrl: 'https://exchange.mercuryo.io/?widget_id=89960d1a8db7-49e5-8823-4c5e01c1cea2',
+    websiteUrl: 'https://www.mercuryo.io/',
     steps: [
       'Click Open checkout and complete sign-in on Mercuryo.',
       'Select card payment, choose the amount, and confirm the quote.',
@@ -158,7 +158,7 @@ const CARD_PROVIDER_URLS: Record<CardProviderId, string> = {
   transak: 'https://transak.com/buy',
   ramp: 'https://rampnetwork.com/buy-crypto',
   moonpay: 'https://www.moonpay.com/buy',
-  mercuryo: 'https://exchange.mercuryo.io/?widget_id=89960d1a8db7-49e5-8823-4c5e01c1cea2',
+  mercuryo: 'https://www.mercuryo.io/',
 }
 
 const applyFrozenStyle = (base: CSSProperties, frozen: boolean): CSSProperties => {
