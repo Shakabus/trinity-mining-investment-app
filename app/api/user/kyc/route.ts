@@ -45,12 +45,38 @@ const KYC_ALLOWED_FIELDS = [
   'proofOfAddressDocument',
 ] as const
 
+const KYC_ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'heic', 'heif'] as const
+
 class HttpError extends Error {
   status: number
 
   constructor(status: number, message: string) {
     super(message)
     this.status = status
+  }
+}
+
+function extractFileExtension(fileName: string) {
+  const parts = fileName.split('.')
+  if (parts.length < 2) return ''
+  return parts[parts.length - 1].trim().toLowerCase()
+}
+
+function isAllowedKycFileType(file: File) {
+  const mime = (file.type || '').trim().toLowerCase()
+  const extension = extractFileExtension(file.name)
+
+  if (mime && KYC_ALLOWED_FILE_TYPES.map(type => type.toLowerCase()).includes(mime)) {
+    return true
+  }
+
+  // Some mobile browsers can omit MIME for HEIC/HEIF uploads; allow by file extension fallback.
+  return KYC_ALLOWED_EXTENSIONS.includes(extension as (typeof KYC_ALLOWED_EXTENSIONS)[number])
+}
+
+function assertAllowedKycFileType(file: File, field: string) {
+  if (!isAllowedKycFileType(file)) {
+    throw new HttpError(400, `${field} has an unsupported file type.`)
   }
 }
 
@@ -233,21 +259,22 @@ export async function POST(req: Request) {
     const idDocumentFront = readFormFile(formData, 'idDocumentFront', {
       required: !existing?.idDocumentFrontUrl,
       maxBytes: KYC_MAX_FILE_SIZE,
-      allowedTypes: [...KYC_ALLOWED_FILE_TYPES],
     })
     const idDocumentBack = readFormFile(formData, 'idDocumentBack', {
       maxBytes: KYC_MAX_FILE_SIZE,
-      allowedTypes: [...KYC_ALLOWED_FILE_TYPES],
     })
     const selfieDocument = readFormFile(formData, 'selfieDocument', {
       required: !existing?.selfieUrl,
       maxBytes: KYC_MAX_FILE_SIZE,
-      allowedTypes: [...KYC_ALLOWED_FILE_TYPES],
     })
     const proofOfAddressDocument = readFormFile(formData, 'proofOfAddressDocument', {
       maxBytes: KYC_MAX_FILE_SIZE,
-      allowedTypes: [...KYC_ALLOWED_FILE_TYPES],
     })
+
+    if (idDocumentFront) assertAllowedKycFileType(idDocumentFront, 'idDocumentFront')
+    if (idDocumentBack) assertAllowedKycFileType(idDocumentBack, 'idDocumentBack')
+    if (selfieDocument) assertAllowedKycFileType(selfieDocument, 'selfieDocument')
+    if (proofOfAddressDocument) assertAllowedKycFileType(proofOfAddressDocument, 'proofOfAddressDocument')
 
     const idDocumentFrontUrl =
       idDocumentFront ? await uploadKycFile(user.id, idDocumentFront, 'id_front') : existing?.idDocumentFrontUrl

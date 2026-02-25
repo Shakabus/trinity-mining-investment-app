@@ -197,7 +197,7 @@ export default function KycVerificationForm({ initialData }: Props) {
 
         <h2 className="text-xl font-semibold text-white pt-2">Document Uploads</h2>
         <p className="text-xs text-white/60">
-          Accepted formats: JPG, PNG, WEBP, PDF. Maximum file size per file: 6MB.
+          Accepted formats: JPG, PNG, WEBP, HEIC/HEIF, PDF. Maximum file size per file: 10MB.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FileField label="ID Front (required)" onChange={setIdDocumentFront} existingUrl={form.idDocumentFrontUrl} />

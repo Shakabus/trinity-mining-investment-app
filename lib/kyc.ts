@@ -6,12 +6,17 @@ export type KycIdType = (typeof KYC_ID_TYPES)[number]
 
 export const KYC_ALLOWED_FILE_TYPES = [
   'image/jpeg',
+  'image/jpg',
   'image/png',
   'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/heic-sequence',
+  'image/heif-sequence',
   'application/pdf',
 ] as const
 
-export const KYC_MAX_FILE_SIZE = 6 * 1024 * 1024
+export const KYC_MAX_FILE_SIZE = 10 * 1024 * 1024
 
 export function formatKycStatus(status: string) {
   if (status === 'approved') return 'Approved'
