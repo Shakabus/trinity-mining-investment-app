@@ -551,7 +551,7 @@ async function applyMiningPlanReview(params: {
         }
       }
     }
-  }, { maxWait: 5_000, timeout: 30_000 })
+  }, { maxWait: 15_000, timeout: 30_000 })
 
   if (params.notifyUser) {
     await logUserActivity({
@@ -811,7 +811,7 @@ async function applyTradingPlanReview(params: {
         `
       )
     }
-  }, { maxWait: 5_000, timeout: 30_000 })
+  }, { maxWait: 15_000, timeout: 30_000 })
 
   if (params.notifyUser) {
     await logUserActivity({

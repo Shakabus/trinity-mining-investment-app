@@ -294,7 +294,7 @@ export async function POST(req: Request) {
               },
             }))
       },
-      { maxWait: 5_000, timeout: 20_000 }
+      { maxWait: 15_000, timeout: 20_000 }
     )
 
     await logUserActivity({

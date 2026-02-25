@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { sendWelcomeEmail } from '@/lib/transactional-email'
+import { Prisma } from '@prisma/client'
 
 const WELCOME_EMAIL_SENT_ACTION = 'WelcomeEmailSent'
 const WELCOME_EMAIL_DISPATCHING_ACTION = 'WelcomeEmailDispatching'
@@ -23,37 +24,48 @@ export async function sendWelcomeEmailOnce({
   }
 
   let dispatchLogId: number | null = null
+  const isTxStartTimeout = (error: unknown) =>
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2028'
 
-  const claimed = await prisma.$transaction(
-    async tx => {
-      await tx.$executeRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
+  let claimed = false
+  try {
+    claimed = await prisma.$transaction(
+      async tx => {
+        await tx.$executeRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
 
-      const existing = await tx.userActivityLog.findFirst({
-        where: {
-          userId,
-          action: {
-            in: [WELCOME_EMAIL_SENT_ACTION, WELCOME_EMAIL_DISPATCHING_ACTION],
+        const existing = await tx.userActivityLog.findFirst({
+          where: {
+            userId,
+            action: {
+              in: [WELCOME_EMAIL_SENT_ACTION, WELCOME_EMAIL_DISPATCHING_ACTION],
+            },
           },
-        },
-        select: { id: true, action: true },
-        orderBy: { createdAt: 'desc' },
-      })
+          select: { id: true, action: true },
+          orderBy: { createdAt: 'desc' },
+        })
 
-      if (existing) return false
+        if (existing) return false
 
-      const dispatchLog = await tx.userActivityLog.create({
-        data: {
-          userId,
-          action: WELCOME_EMAIL_DISPATCHING_ACTION,
-          detail: `Welcome email dispatch started via ${source}.`,
-        },
-        select: { id: true },
-      })
-      dispatchLogId = dispatchLog.id
-      return true
-    },
-    { timeout: 20_000, maxWait: 5_000 }
-  )
+        const dispatchLog = await tx.userActivityLog.create({
+          data: {
+            userId,
+            action: WELCOME_EMAIL_DISPATCHING_ACTION,
+            detail: `Welcome email dispatch started via ${source}.`,
+          },
+          select: { id: true },
+        })
+        dispatchLogId = dispatchLog.id
+        return true
+      },
+      { timeout: 30_000, maxWait: 15_000 }
+    )
+  } catch (error) {
+    if (isTxStartTimeout(error)) {
+      console.warn('[welcome-email] transaction start timeout', { userId, source })
+      return { sent: false, reason: 'db_busy' as const }
+    }
+    throw error
+  }
 
   if (!claimed || !dispatchLogId) {
     return { sent: false, reason: 'already_sent' as const }

@@ -138,7 +138,7 @@ export async function POST(req: Request) {
           data: { accountStatus: hasActiveMining > 0 || hasActiveTrading > 0 ? 'active' : 'inactive' },
         })
       },
-      { maxWait: 5_000, timeout: 15_000 }
+      { maxWait: 15_000, timeout: 15_000 }
     )
 
     await logUserActivity({

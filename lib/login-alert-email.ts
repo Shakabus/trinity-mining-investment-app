@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { sendLoginAlertEmail } from '@/lib/transactional-email'
+import { Prisma } from '@prisma/client'
 
 const LOGIN_EMAIL_SENT_PREFIX = 'LoginAlertEmailSent:'
 const LOGIN_EMAIL_DISPATCHING_PREFIX = 'LoginAlertEmailDispatching:'
@@ -47,36 +48,47 @@ export async function sendLoginAlertEmailOnce({
   const sentAction = `${LOGIN_EMAIL_SENT_PREFIX}${safeSessionId}`
   const dispatchAction = `${LOGIN_EMAIL_DISPATCHING_PREFIX}${safeSessionId}`
   let dispatchLogId: number | null = null
+  const isTxStartTimeout = (error: unknown) =>
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2028'
 
-  const claimed = await prisma.$transaction(
-    async tx => {
-      await tx.$executeRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
+  let claimed = false
+  try {
+    claimed = await prisma.$transaction(
+      async tx => {
+        await tx.$executeRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`
 
-      const existing = await tx.userActivityLog.findFirst({
-        where: {
-          userId,
-          action: {
-            in: [sentAction, dispatchAction],
+        const existing = await tx.userActivityLog.findFirst({
+          where: {
+            userId,
+            action: {
+              in: [sentAction, dispatchAction],
+            },
           },
-        },
-        select: { id: true },
-      })
+          select: { id: true },
+        })
 
-      if (existing) return false
+        if (existing) return false
 
-      const dispatchLog = await tx.userActivityLog.create({
-        data: {
-          userId,
-          action: dispatchAction,
-          detail: `Login alert dispatch started via ${source}.`,
-        },
-        select: { id: true },
-      })
-      dispatchLogId = dispatchLog.id
-      return true
-    },
-    { timeout: 20_000, maxWait: 5_000 }
-  )
+        const dispatchLog = await tx.userActivityLog.create({
+          data: {
+            userId,
+            action: dispatchAction,
+            detail: `Login alert dispatch started via ${source}.`,
+          },
+          select: { id: true },
+        })
+        dispatchLogId = dispatchLog.id
+        return true
+      },
+      { timeout: 30_000, maxWait: 15_000 }
+    )
+  } catch (error) {
+    if (isTxStartTimeout(error)) {
+      console.warn('[login-alert-email] transaction start timeout', { userId, source })
+      return { sent: false, reason: 'db_busy' as const }
+    }
+    throw error
+  }
 
   if (!claimed || !dispatchLogId) {
     return { sent: false, reason: 'already_sent' as const }

@@ -114,12 +114,19 @@ export default async function DashboardLayout({
   }
 
   if (user?.email) {
-    await sendWelcomeEmailOnce({
-      userId: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      source: 'dashboard_layout',
-    })
+    try {
+      await sendWelcomeEmailOnce({
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        source: 'dashboard_layout',
+      })
+    } catch (error) {
+      console.error('[dashboard] welcome email flow failed', {
+        userId: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
   }
 
   if (user) {

@@ -107,17 +107,25 @@ export async function POST(req: Request) {
       }
 
       if (sessionId) {
-        await sendLoginAlertEmailOnce({
-          userId: user.id,
-          sessionId,
-          email: user.email,
-          fullName: user.fullName,
-          signedInAt: sessionStartedAt ?? now,
-          source: 'presence_heartbeat',
-          location: hasApproxLocationData(snapshot) ? formatLocationLabel(snapshot) : null,
-          ipMasked: snapshot.ipMasked,
-          device: snapshot.userAgent,
-        })
+        try {
+          await sendLoginAlertEmailOnce({
+            userId: user.id,
+            sessionId,
+            email: user.email,
+            fullName: user.fullName,
+            signedInAt: sessionStartedAt ?? now,
+            source: 'presence_heartbeat',
+            location: hasApproxLocationData(snapshot) ? formatLocationLabel(snapshot) : null,
+            ipMasked: snapshot.ipMasked,
+            device: snapshot.userAgent,
+          })
+        } catch (error) {
+          console.error('Presence heartbeat login-alert email flow failed:', {
+            userId: user.id,
+            sessionId,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
       }
     }
 
