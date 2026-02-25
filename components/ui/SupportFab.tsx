@@ -3,12 +3,26 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { MessageCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export default function SupportFab() {
   const pathname = usePathname()
   const isUserDashboard = pathname?.startsWith('/dashboard')
   const supportHref = isUserDashboard ? '/dashboard/support' : '/contact'
-  const displayClass = isUserDashboard ? 'hidden lg:inline-flex' : 'inline-flex'
+  const [isDesktopViewport, setIsDesktopViewport] = useState(true)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)')
+    const applyViewport = (event?: MediaQueryListEvent) => {
+      setIsDesktopViewport(event ? event.matches : mediaQuery.matches)
+    }
+
+    applyViewport()
+    mediaQuery.addEventListener('change', applyViewport)
+    return () => mediaQuery.removeEventListener('change', applyViewport)
+  }, [])
+
+  const shouldShow = !isUserDashboard || isDesktopViewport
   const glassClass = isUserDashboard
     ? 'border-white/20'
     : 'border-white/35 bg-white/[0.10] supports-[backdrop-filter]:bg-white/[0.08]'
@@ -19,8 +33,9 @@ export default function SupportFab() {
       href={supportHref}
       aria-label="Contact support"
       title="Contact support"
-      className={`fixed right-5 z-[26000] h-14 w-14 items-center justify-center rounded-full border text-white shadow-2xl backdrop-blur-xl transition hover:scale-105 ${glassClass} ${displayClass} relative isolate overflow-hidden`}
+      className={`fixed right-5 z-[26000] h-14 w-14 items-center justify-center rounded-full border text-white shadow-2xl backdrop-blur-xl transition hover:scale-105 ${glassClass} relative isolate overflow-hidden`}
       style={{
+        display: shouldShow ? 'flex' : 'none',
         bottom: 'calc(env(safe-area-inset-bottom) + 14px)',
         background: isUserDashboard
           ? 'linear-gradient(135deg, rgba(88, 45, 255, 0.95), rgba(12, 116, 255, 0.92))'
