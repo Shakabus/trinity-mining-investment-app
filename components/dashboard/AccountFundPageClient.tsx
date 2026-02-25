@@ -71,9 +71,9 @@ const CARD_PROVIDERS = [
     description: 'Buy crypto with card on MoonPay, then complete your funding review.',
   },
   {
-    id: 'banxa',
-    name: 'Banxa',
-    description: 'Buy crypto with card on Banxa, then complete your funding review.',
+    id: 'mercuryo',
+    name: 'Mercuryo',
+    description: 'Buy crypto with card on Mercuryo, then complete your funding review.',
   },
 ] as const
 type CardProviderId = (typeof CARD_PROVIDERS)[number]['id']
@@ -121,12 +121,12 @@ const CARD_PROVIDER_GUIDES: Record<
       'Return here and submit proof if requested for faster system review.',
     ],
   },
-  banxa: {
-    title: 'How to buy with Banxa',
-    websiteLabel: 'Open Banxa',
-    websiteUrl: 'https://onramp.banxa.com',
+  mercuryo: {
+    title: 'How to buy with Mercuryo',
+    websiteLabel: 'Open Mercuryo',
+    websiteUrl: 'https://exchange.mercuryo.io/?widget_id=89960d1a8db7-49e5-8823-4c5e01c1cea2',
     steps: [
-      'Click Open checkout and complete sign-in on Banxa.',
+      'Click Open checkout and complete sign-in on Mercuryo.',
       'Select card payment, choose the amount, and confirm the quote.',
       'Use the Trinity funding wallet address for your selected coin as destination.',
       'Finish payment and keep the transaction confirmation details.',
@@ -158,7 +158,7 @@ const CARD_PROVIDER_URLS: Record<CardProviderId, string> = {
   transak: 'https://transak.com/buy',
   ramp: 'https://rampnetwork.com/buy-crypto',
   moonpay: 'https://www.moonpay.com/buy',
-  banxa: 'https://onramp.banxa.com',
+  mercuryo: 'https://exchange.mercuryo.io/?widget_id=89960d1a8db7-49e5-8823-4c5e01c1cea2',
 }
 
 const applyFrozenStyle = (base: CSSProperties, frozen: boolean): CSSProperties => {

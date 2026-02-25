@@ -270,8 +270,8 @@ export default async function AdminAccountBalancePage() {
         ? 'Ramp Network'
         : cardProviderRaw === 'moonpay'
         ? 'MoonPay'
-        : cardProviderRaw === 'banxa'
-        ? 'Banxa'
+        : cardProviderRaw === 'mercuryo'
+        ? 'Mercuryo'
         : null
 
     let subtitle = 'Pending account-balance operation.'

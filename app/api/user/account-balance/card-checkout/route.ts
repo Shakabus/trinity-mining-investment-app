@@ -12,7 +12,7 @@ import {
 } from '@/lib/transactional-email'
 
 const CHECKOUT_ALLOWED_FIELDS = ['provider', 'amountUsd', 'coinType'] as const
-const SUPPORTED_PROVIDERS = ['transak', 'ramp', 'moonpay', 'banxa'] as const
+const SUPPORTED_PROVIDERS = ['transak', 'ramp', 'moonpay', 'mercuryo'] as const
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -32,9 +32,9 @@ const PROVIDER_CONFIG: Record<CardProvider, { label: string; checkoutUrl: string
     label: 'MoonPay',
     checkoutUrl: 'https://www.moonpay.com/buy',
   },
-  banxa: {
-    label: 'Banxa',
-    checkoutUrl: 'https://onramp.banxa.com',
+  mercuryo: {
+    label: 'Mercuryo',
+    checkoutUrl: 'https://exchange.mercuryo.io/?widget_id=89960d1a8db7-49e5-8823-4c5e01c1cea2',
   },
 }
 
