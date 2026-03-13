@@ -25,15 +25,22 @@ export default async function RootLayout({
 }) {
   const cookieStore = await cookies()
   const initialLanguage = readLanguageFromCookie(cookieStore.get(LANGUAGE_COOKIE_KEY)?.value) || 'en'
-
-  return (
-    <ClerkProvider
-      allowedRedirectOrigins={[
+  const allowedRedirectOrigins = Array.from(
+    new Set(
+      [
         'https://trinityin1investments.com',
         'https://www.trinityin1investments.com',
         'https://trinity-mining-investment-app.vercel.app',
         'https://trinity-mining-investment-app-remyremified-gits-projects.vercel.app',
-      ]}
+        process.env.NEXT_PUBLIC_APP_URL?.trim(),
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+      ].filter((value): value is string => Boolean(value))
+    )
+  )
+
+  return (
+    <ClerkProvider
+      allowedRedirectOrigins={allowedRedirectOrigins}
     >
       <html lang={initialLanguage} suppressHydrationWarning>
         <body suppressHydrationWarning className="antialiased">
