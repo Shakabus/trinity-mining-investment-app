@@ -1,4 +1,6 @@
-import { SignUp } from '@clerk/nextjs'
+'use client'
+
+import { ClerkLoaded, ClerkLoading, SignUp } from '@clerk/nextjs'
 import '../../clerk-custom.css'
 
 const hasClerkClientKey = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim())
@@ -19,20 +21,27 @@ export default function SignUpPage() {
       className="flex min-h-screen items-center justify-center px-4"
       style={{ background: '#000000' }}
     >
-      <div className="w-full max-w-md">
-      <SignUp
-        routing="path"
-        path="/sign-up"
-        signInUrl="/sign-in"
-        forceRedirectUrl="/dashboard"
-        appearance={{
-          elements: {
-            rootBox: 'mx-auto w-full',
-            card: 'shadow-2xl',
-          }
-        }}
-      />
-      </div>
+      <ClerkLoading>
+        <div className="w-full max-w-md rounded-2xl border border-white/15 bg-white/5 p-6 text-white/80">
+          Loading sign-up...
+        </div>
+      </ClerkLoading>
+      <ClerkLoaded>
+        <div className="w-full max-w-md">
+          <SignUp
+            routing="path"
+            path="/sign-up"
+            signInUrl="/sign-in"
+            forceRedirectUrl="/dashboard"
+            appearance={{
+              elements: {
+                rootBox: 'mx-auto w-full',
+                card: 'shadow-2xl',
+              }
+            }}
+          />
+        </div>
+      </ClerkLoaded>
     </div>
   )
 }
