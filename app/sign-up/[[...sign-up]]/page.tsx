@@ -1,7 +1,7 @@
 'use client'
 
 import { ClerkLoaded, ClerkLoading, SignUp } from '@clerk/nextjs'
-import '../../clerk-custom.css'
+import '../clerk-custom.css'
 
 const hasClerkClientKey = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim())
 
