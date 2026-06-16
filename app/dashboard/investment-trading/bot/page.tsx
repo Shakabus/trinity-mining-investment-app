@@ -1,0 +1,119 @@
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/db'
+import TradingBotCharts from '@/components/trading/TradingBotCharts'
+import EmptyState from '@/components/ui/EmptyState'
+import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+
+export const dynamic = 'force-dynamic'
+
+export default async function TradingBotPage() {
+  const { userId } = await auth()
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { clerkUserId: userId },
+    include: {
+      tradingPlans: {
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      },
+      tradingStats: {
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  })
+
+  const rates = await getFxRates()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user?.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
+
+  const activePlan = user?.tradingPlans.find(plan => plan.status === 'active') ?? null
+  const activeStats = user?.tradingStats.find(stat => stat.isActive) ?? null
+  const seed = (user?.id || 1) * 17
+
+  return (
+    <div className="p-4 md:p-6 lg:p-8 space-y-8">
+      <div>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t('tradingPortfolioTitle')}</h1>
+        <p className="text-white/70">
+          Managed portfolio signals, liquidity flow, and risk-adjusted performance snapshots.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div
+          className="p-4 rounded-2xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <div className="text-xs text-white/60">Primary Strategy</div>
+          <div className="text-lg font-semibold text-white mt-2">{activeStats?.strategy ?? 'Portfolio Balance'}</div>
+        </div>
+        <div
+          className="p-4 rounded-2xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <div className="text-xs text-white/60">Risk Profile</div>
+          <div className="text-lg font-semibold text-white mt-2">{activeStats?.riskLevel ?? 'Balanced'}</div>
+        </div>
+        <div
+          className="p-4 rounded-2xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <div className="text-xs text-white/60">Active Plan</div>
+          <div className="text-lg font-semibold text-white mt-2">{activePlan?.plan.name ?? 'No active plan'}</div>
+        </div>
+      </div>
+
+      {activePlan ? (
+        <TradingBotCharts
+          seed={seed}
+          investmentUsd={Number(activePlan.investmentUsd)}
+          expectedReturnUsd={Number(activePlan.expectedReturnUsd)}
+          durationHours={activePlan.durationHours}
+          startDateIso={activePlan.startDate?.toISOString() ?? activePlan.createdAt.toISOString()}
+        />
+      ) : (
+        <EmptyState
+          title={t('tradingBotEmptyTitle')}
+          description={t('tradingBotEmptyDescription')}
+          action={
+            <Link
+              href="/dashboard/investment-trading#plans"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                color: '#ffffff',
+              }}
+            >
+              {t('activatePlan')}
+              <ArrowUpRight size={14} />
+            </Link>
+          }
+        />
+      )}
+    </div>
+  )
+}

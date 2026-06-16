@@ -1,0 +1,457 @@
+.page {
+  position: relative;
+  overflow: hidden;
+}
+
+.glowA,
+.glowB {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: 0.35;
+  z-index: 0;
+}
+
+.glowA {
+  width: 520px;
+  height: 520px;
+  top: 120px;
+  left: -220px;
+  background: radial-gradient(circle, rgba(30, 120, 180, 0.75), rgba(30, 120, 180, 0));
+  animation: floatA 12s ease-in-out infinite;
+}
+
+.glowB {
+  width: 480px;
+  height: 480px;
+  top: 620px;
+  right: -170px;
+  background: radial-gradient(circle, rgba(160, 200, 220, 0.45), rgba(160, 200, 220, 0));
+  animation: floatB 14s ease-in-out infinite;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+.headerLayer {
+  position: relative;
+  z-index: 5;
+}
+
+.hero {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.04)
+  );
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+  padding: 42px 34px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.68);
+  font-weight: 600;
+}
+
+.title {
+  margin-top: 12px;
+  font-size: clamp(2rem, 4.4vw, 3.8rem);
+  line-height: 1.05;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin-top: 16px;
+  max-width: 860px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(0.96rem, 1.8vw, 1.1rem);
+  line-height: 1.75;
+}
+
+.badgeRow {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.badge {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.section {
+  margin-top: 30px;
+}
+
+.sectionTitle {
+  font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+  font-weight: 700;
+}
+
+.sectionText {
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.7;
+}
+
+.gridThree {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.gridTwo {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.featureCard {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.03)
+  );
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+  padding: 18px 16px 16px;
+  transform: translateY(18px);
+  opacity: 0;
+  animation: riseIn 0.7s ease forwards;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38);
+}
+
+.featureCard h3 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.featureCard p {
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 9px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(210, 236, 250, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.23);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.compareWrap {
+  margin-top: 16px;
+  border-radius: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.compareTable {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+}
+
+.compareTable th,
+.compareTable td {
+  text-align: left;
+  padding: 13px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  vertical-align: top;
+}
+
+.compareTable th {
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.compareTable td {
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+.statsRow {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.realEstateStrip {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.realEstateMetric {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  padding: 12px 12px 13px;
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  animation: metricPulse 5s ease-in-out infinite;
+}
+
+.realEstateMetric:nth-child(2) {
+  animation-delay: 0.9s;
+}
+
+.realEstateMetric:nth-child(3) {
+  animation-delay: 1.8s;
+}
+
+.realEstateMetric p {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 650;
+  color: rgba(232, 247, 255, 0.96);
+}
+
+.realEstateMetric span {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.statCard {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 14px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: left;
+}
+
+.statValue {
+  font-size: clamp(1.1rem, 2vw, 1.7rem);
+  font-weight: 700;
+  color: rgba(230, 246, 255, 0.98);
+}
+
+.statLabel {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.63);
+}
+
+.cta {
+  margin-top: 30px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 24px 22px;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.03)
+  );
+  backdrop-filter: blur(16px);
+}
+
+.ctaTitle {
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  font-weight: 700;
+}
+
+.ctaText {
+  margin-top: 9px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.7;
+}
+
+.ctaRow {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btnPrimary,
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.btnPrimary {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.24),
+    rgba(255, 255, 255, 0.1)
+  );
+  color: #fff;
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
+}
+
+.btnSecondary {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.btnSecondary:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.delay1 {
+  animation-delay: 0.04s;
+}
+
+.delay2 {
+  animation-delay: 0.09s;
+}
+
+.delay3 {
+  animation-delay: 0.14s;
+}
+
+.delay4 {
+  animation-delay: 0.2s;
+}
+
+.delay5 {
+  animation-delay: 0.26s;
+}
+
+.delay6 {
+  animation-delay: 0.32s;
+}
+
+.delay7 {
+  animation-delay: 0.38s;
+}
+
+.delay8 {
+  animation-delay: 0.44s;
+}
+
+@keyframes riseIn {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes floatA {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-38px) translateX(28px);
+  }
+}
+
+@keyframes floatB {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(34px) translateX(-26px);
+  }
+}
+
+@keyframes metricPulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+  50% {
+    transform: translateY(-3px);
+    border-color: rgba(200, 235, 255, 0.34);
+  }
+}
+
+@media (max-width: 1080px) {
+  .gridThree {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .statsRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .realEstateStrip {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero {
+    padding: 30px 20px;
+    border-radius: 22px;
+  }
+
+  .gridThree,
+  .gridTwo {
+    grid-template-columns: 1fr;
+  }
+
+  .compareTable th,
+  .compareTable td {
+    padding: 11px 10px;
+    font-size: 0.84rem;
+  }
+
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .cta {
+    padding: 20px 16px;
+  }
+}

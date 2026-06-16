@@ -1,0 +1,152 @@
+/* Remove default Clerk backgrounds completely */
+.cl-rootBox,
+.cl-card,
+.cl-main,
+.cl-footer {
+  background: transparent !important;
+}
+
+/* Main card glassmorphism - stronger override */
+.cl-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.02)
+  ) !important;
+  -webkit-backdrop-filter: blur(28px) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 30px !important;
+  padding: 2rem !important;
+}
+
+/* Remove any inner backgrounds */
+.cl-internal-b3fm6y {
+  background: transparent !important;
+}
+
+/* Header area */
+.cl-header {
+  background: transparent !important;
+}
+
+/* Input fields glassmorphism */
+.cl-formFieldInput,
+.cl-input {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+  color: #ffffff !important;
+}
+
+.cl-formFieldInput::placeholder,
+.cl-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.cl-formFieldInput:focus,
+.cl-input:focus {
+  border-color: rgba(88, 45, 255, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(88, 45, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Button styling */
+.cl-formButtonPrimary,
+.cl-button {
+  background: linear-gradient(135deg, #582dff, #3a137a) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+}
+
+.cl-formButtonPrimary:hover,
+.cl-button:hover {
+  background: linear-gradient(135deg, #6d3fff, #4a1a8a) !important;
+}
+
+/* Social buttons if you enable them later */
+.cl-socialButtonsBlockButton {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+  color: #ffffff !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Text colors for better visibility */
+.cl-headerTitle,
+.cl-headerSubtitle,
+.cl-formFieldLabel,
+.cl-formFieldLabelRow,
+.cl-footerActionText,
+.cl-dividerText,
+.cl-identityPreviewText,
+.cl-text {
+  color: #ffffff !important;
+}
+
+/* Footer area */
+.cl-footer,
+.cl-footerAction {
+  background: transparent !important;
+}
+
+/* Links */
+.cl-footerActionLink {
+  color: #a78bfa !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.cl-footerActionLink:hover {
+  color: #c4b5fd !important;
+}
+
+/* Divider */
+.cl-dividerLine {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Error messages */
+.cl-formFieldErrorText,
+.cl-error {
+  color: #fca5a5 !important;
+}
+
+/* Success messages */
+.cl-formFieldSuccessText {
+  color: #86efac !important;
+}
+
+/* Remove any white/default backgrounds from containers */
+div[class*="cl-"] {
+  background-color: transparent;
+}
+
+/* Specific override for footer that might show default styles */
+.cl-footerPages {
+  background: transparent !important;
+}
+
+/* Alternative methods section */
+.cl-alternativeMethods,
+.cl-otherMethodsBlockButton {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+}
+
+/* Loading spinner */
+.cl-spinner {
+  color: #a78bfa !important;
+}

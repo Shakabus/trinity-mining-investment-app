@@ -1,0 +1,1135 @@
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/db'
+import Link from 'next/link'
+import { Gem, Pickaxe, DollarSign, Settings, TrendingUp } from 'lucide-react'
+import { autoUpdateEarnings } from '@/lib/earnings'
+import { simulateTradingProgress } from '@/lib/trading'
+import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
+import {
+  formatAccountBalanceSource,
+  getAccountBalanceAssetSummary,
+  getAccountBalanceEntries,
+  getAccountBalanceSummary,
+} from '@/lib/account-balance'
+import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
+import {
+  buildChartSampleOffsets,
+  buildCycleSegments,
+  formatChartWindowLabel,
+  formatCycleProgressLabel,
+  resolveChartWindowHours,
+  resolveElapsedPlanHours,
+  resolvePlanDurationHours,
+} from '@/lib/mining-chart'
+import OverviewAnalytics from '@/components/dashboard/OverviewAnalytics'
+import OverviewAccountCard, { type OverviewAccountMetric, type OverviewWalletFlowMetric } from '@/components/dashboard/OverviewAccountCard'
+import { convertUsd, formatCurrency, getFxRates, isSupportedCurrency, type CurrencyCode } from '@/lib/forex'
+import type { TradingEarning } from '@prisma/client'
+import { translate, languageFromCurrency, type LanguageCode } from '@/lib/i18n'
+import { formatPlanDurationLabel } from '@/lib/mining-duration'
+import { isPaymentReminderVisible } from '@/lib/payment-reminder'
+
+import AdvancedChart from '@/components/dashboard/AdvancedChart'
+import NewsTimeline from '@/components/dashboard/NewsTimeline'
+import DashboardAutoRefresh from '@/components/dashboard/DashboardAutoRefresh'
+import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClient'
+import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
+import { getUserTransferReadySummary } from '@/lib/transfer-ready'
+import { getPlanProceedsAlertState } from '@/lib/plan-proceeds-alert'
+
+export default async function DashboardPage() {
+  const { userId } = await auth()
+
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  try {
+  const userBase = await prisma.user.findUnique({
+    where: { clerkUserId: userId },
+    select: { id: true },
+  })
+  if (!userBase) {
+    redirect('/sign-in')
+  }
+
+  await reconcileRejectedTradingPendingPlans(userBase.id)
+
+  const user = await prisma.user.findUnique({
+    where: { id: userBase.id },
+    include: {
+      userPlans: {
+        where: {
+          status: { in: ['active', 'awaiting_payment', 'selected'] },
+        },
+        include: {
+          plan: true,
+          payments: {
+            where: { status: 'pending' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 1,
+      },
+      earnings: {
+        where: { isActive: true },
+        include: {
+          userPlan: {
+            include: {
+              plan: true,
+              multiAssetAllocations: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      },
+      miningStats: {
+        orderBy: { createdAt: 'desc' },
+      },
+      tradingPlans: {
+        where: {
+          status: { in: ['active', 'awaiting_payment', 'selected'] },
+        },
+        include: {
+          plan: true,
+          payments: {
+            where: { status: 'pending' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 1,
+      },
+      withdrawals: {
+        select: {
+          amountUsd: true,
+          status: true,
+        },
+      },
+      tradingWithdrawals: {
+        select: {
+          amountUsd: true,
+          status: true,
+        },
+      },
+      referralBonuses: {
+        select: {
+          amountUsd: true,
+          status: true,
+        },
+      },
+      referralWithdrawals: {
+        select: {
+          amountUsd: true,
+          status: true,
+        },
+      },
+    },
+  })
+
+  const tradingEarnings = user ? await prisma.tradingEarning.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+  }) : []
+
+  const currentPlan = user?.userPlans[0]
+  const tradingPlan = user?.tradingPlans?.[0] ?? null
+  const activeMiningPlan = user
+    ? await prisma.userPlan.findFirst({
+        where: { userId: user.id, status: 'active' },
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    : null
+  const activeTradingPlan = user
+    ? await prisma.tradingUserPlan.findFirst({
+        where: { userId: user.id, status: 'active' },
+        include: { plan: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    : null
+  const hasMiningSelected = currentPlan?.status === 'selected'
+  const hasTradingSelected = tradingPlan?.status === 'selected'
+  const activeMining = user?.miningStats?.find(stat => stat.isActive) ?? user?.miningStats?.[0] ?? null
+  const now = new Date()
+  const miningReminderAnchor = currentPlan?.payments?.[0]?.createdAt ?? currentPlan?.createdAt ?? null
+  const tradingReminderAnchor = tradingPlan?.payments?.[0]?.createdAt ?? tradingPlan?.createdAt ?? null
+  const showMiningPaymentReminder =
+    (currentPlan?.status === 'selected' || currentPlan?.status === 'awaiting_payment') &&
+    isPaymentReminderVisible(miningReminderAnchor, now)
+  const showTradingPaymentReminder =
+    (tradingPlan?.status === 'selected' || tradingPlan?.status === 'awaiting_payment') &&
+    isPaymentReminderVisible(tradingReminderAnchor, now)
+  const activeTradingEarning = activeTradingPlan
+    ? (tradingEarnings.find(
+        earning => earning.tradingUserPlanId === activeTradingPlan.id && earning.isActive
+      ) ??
+      tradingEarnings.find(earning => earning.tradingUserPlanId === activeTradingPlan.id) ??
+      null)
+    : null
+
+  const rates = await getFxRates()
+  const trackedCryptoPrices = await getTrackedCryptoPricesUsd()
+  const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
+    ? (user?.preferredCurrency as CurrencyCode)
+    : 'USD'
+  const formatMoney = (amountUsd: number) =>
+    formatCurrency(convertUsd(amountUsd, rates, preferredCurrency), preferredCurrency)
+  const preferredLanguage: LanguageCode = user?.preferredLanguage
+    ? (user.preferredLanguage as LanguageCode)
+    : languageFromCurrency(preferredCurrency)
+  const t = (key: string) => translate(key, preferredLanguage)
+
+  const updatedEarnings = user
+    ? await autoUpdateEarnings({
+        userId: user.id,
+        earnings: user.earnings,
+        miningStats: activeMining
+          ? {
+              assignedHashrate: activeMining.assignedHashrate,
+              hashrateUnit: activeMining.hashrateUnit,
+              isActive: activeMining.isActive,
+            }
+          : null,
+        now,
+      })
+    : []
+
+  const miningEarnedUsd = updatedEarnings.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
+  const pendingReleaseUsd = updatedEarnings.reduce(
+    (sum, record) => sum + (record.isWithdrawable ? 0 : Number(record.totalEarnedUsd || 0)),
+    0
+  )
+  const estimatedDailyUsd = updatedEarnings.reduce(
+    (sum, record) => sum + (record.isHistorical ? 0 : Number(record.dailyEstimateUsd || 0)),
+    0
+  )
+  type TradingEarningComputed = Omit<TradingEarning, 'totalEarnedUsd' | 'dailyEstimateUsd'> & {
+    totalEarnedUsd: number
+    dailyEstimateUsd: number
+  }
+  let tradingEarningsComputed: TradingEarningComputed[] = tradingEarnings.map(record => ({
+    ...record,
+    totalEarnedUsd: Number(record.totalEarnedUsd || 0),
+    dailyEstimateUsd: Number(record.dailyEstimateUsd || 0),
+  }))
+  if (user && activeTradingPlan && activeTradingEarning && !activeTradingEarning.isAdminOverride) {
+    const startDate = activeTradingPlan.startDate ?? activeTradingPlan.createdAt ?? now
+    const seed = user.id * 13 + activeTradingPlan.id * 7
+    const snapshot = simulateTradingProgress({
+      investmentUsd: Number(activeTradingPlan.investmentUsd),
+      expectedReturnUsd: Number(activeTradingPlan.expectedReturnUsd),
+      durationHours: activeTradingPlan.durationHours,
+      startDate,
+      now,
+      seed,
+    })
+    await prisma.tradingEarning.update({
+      where: { id: activeTradingEarning.id },
+      data: {
+        totalEarnedUsd: snapshot.earnedUsd,
+        dailyEstimateUsd: snapshot.dailyEstimateUsd,
+        lastCalculatedAt: now,
+      },
+    })
+    tradingEarningsComputed = tradingEarningsComputed.map(record =>
+      record.id === activeTradingEarning.id
+        ? {
+            ...record,
+            totalEarnedUsd: snapshot.earnedUsd,
+            dailyEstimateUsd: snapshot.dailyEstimateUsd,
+          }
+        : record
+    )
+  }
+
+  const tradingTotalUsd = tradingEarningsComputed
+    ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
+    : 0
+  const realEstateData = await getRealEstateDashboardData(userId)
+  const accountBalanceSummary = user
+    ? await getAccountBalanceSummary(user.id)
+      : {
+        balanceUsd: 0,
+        availableToSpendUsd: 0,
+        availableForPurchasesUsd: 0,
+        withdrawableEarningsUsd: 0,
+        principalBalanceUsd: 0,
+        earningsBalanceUsd: 0,
+        pendingCreditsUsd: 0,
+        pendingDebitsUsd: 0,
+        pendingPurchaseDebitsUsd: 0,
+        pendingWithdrawalsUsd: 0,
+        totalCreditsUsd: 0,
+        totalDebitsUsd: 0,
+        totalDepositedUsd: 0,
+        totalInvestedUsd: 0,
+        totalWithdrawnUsd: 0,
+        earnedCreditsUsd: 0,
+      }
+  const accountBalanceEntries = user ? await getAccountBalanceEntries(user.id, { limit: 800 }) : []
+  const accountAssetSummary = user
+    ? await getAccountBalanceAssetSummary(user.id, trackedCryptoPrices)
+    : {
+        byCoin: {
+          BTC: { coinType: 'BTC', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+          ETH: { coinType: 'ETH', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+          SOL: { coinType: 'SOL', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+          USDT: { coinType: 'USDT', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+        },
+        combinedAssetUsd: 0,
+      }
+
+  const transferReady = user
+    ? await getUserTransferReadySummary({
+        userId: user.id,
+        clerkUserId: userId,
+      })
+    : {
+        miningReadyUsd: 0,
+        tradingReadyUsd: 0,
+        referralReadyUsd: 0,
+        realEstateReadyUsd: 0,
+        totalReadyUsd: 0,
+      }
+  const planProceedsAlert = user
+    ? await getPlanProceedsAlertState(user.id)
+    : { marker: null, visible: false as const }
+
+  const latestEntriesByReference = accountBalanceEntries.reduce<Map<string, (typeof accountBalanceEntries)[number]>>(
+    (map, entry) => {
+      const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
+      const existing = map.get(key)
+      if (!existing || existing.createdAt.getTime() < entry.createdAt.getTime()) {
+        map.set(key, entry)
+      }
+      return map
+    },
+    new Map()
+  )
+
+  const latestAccountBalanceEntries = [...latestEntriesByReference.values()]
+
+  const totalDepositedUsd = accountBalanceSummary.totalDepositedUsd
+  const totalInvestedUsd = accountBalanceSummary.totalInvestedUsd
+  const totalWithdrawnUsd = accountBalanceSummary.totalWithdrawnUsd
+
+  const recentBalanceTransactions = latestAccountBalanceEntries
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 5)
+  const formatCoinAmount = (amount: number) => Number(amount.toFixed(8)).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 8,
+  })
+  const realEstateMonthlyRealizedUsd = realEstateData.summary.thisMonthRealizedUsd
+  const totalEarnedUsd = miningEarnedUsd + tradingTotalUsd
+  const totalEarnedOverviewUsd = totalEarnedUsd + realEstateMonthlyRealizedUsd
+  const realEstateTotalAllocationUsd = realEstateData.summary.portfolioAllocationUsd
+  const realEstateApprovedCount = realEstateData.summary.approvedCount
+  const realEstatePendingCount = realEstateData.summary.pendingCount
+  const accountDetailMetrics: OverviewAccountMetric[] = [
+    { label: 'Total Deposits', value: formatMoney(totalDepositedUsd), tone: 'emerald' },
+    { label: 'Total Invested', value: formatMoney(totalInvestedUsd), tone: 'blue' },
+    { label: 'Total Withdrawn', value: formatMoney(totalWithdrawnUsd), tone: 'rose' },
+    { label: 'Total Earned Credited', value: formatMoney(accountBalanceSummary.earnedCreditsUsd), tone: 'violet' },
+    { label: 'Principal Balance', value: formatMoney(accountBalanceSummary.principalBalanceUsd), tone: 'cyan' },
+    { label: 'Earnings Balance', value: formatMoney(accountBalanceSummary.earningsBalanceUsd), tone: 'stone' },
+    { label: 'Pending Withdrawals', value: formatMoney(accountBalanceSummary.pendingWithdrawalsUsd), tone: 'blue' },
+  ]
+  const walletFlowMetrics: OverviewWalletFlowMetric[] = TRACKED_ASSET_COINS.map(coin => {
+    const coinSummary = accountAssetSummary.byCoin[coin]
+    return {
+      coin,
+      netCrypto: `${formatCoinAmount(coinSummary.netCrypto)} ${coin}`,
+      netUsd: formatMoney(coinSummary.netUsd),
+      totalInCrypto: `${formatCoinAmount(coinSummary.totalInCrypto)} ${coin}`,
+      totalOutCrypto: `${formatCoinAmount(coinSummary.totalOutCrypto)} ${coin}`,
+    }
+  })
+  const completedMiningAvailable = transferReady.miningReadyUsd > 0
+  const completedTradingAvailable = transferReady.tradingReadyUsd > 0
+  const showPlanProceedsAlert =
+    planProceedsAlert.visible && (completedMiningAvailable || completedTradingAvailable)
+  const dismissProceedsAlertHref = (nextPath: string) => {
+    if (!planProceedsAlert.marker) return nextPath
+    return `/api/user/plan-proceeds-alert/dismiss?next=${encodeURIComponent(nextPath)}&marker=${encodeURIComponent(planProceedsAlert.marker)}`
+  }
+  const hasActivePlans = Boolean(activeMiningPlan || activeTradingPlan)
+  const effectiveAccountStatus = hasActivePlans ? 'active' : (user?.accountStatus ?? 'inactive')
+  const daysActiveDates = [
+    activeMiningPlan?.startDate ?? activeMiningPlan?.createdAt ?? null,
+    activeMining?.createdAt ?? null,
+    activeTradingPlan?.startDate ?? activeTradingPlan?.createdAt ?? null,
+  ].filter(Boolean) as Date[]
+  const daysActiveStart = daysActiveDates.length
+    ? new Date(Math.min(...daysActiveDates.map(date => date.getTime())))
+    : null
+  const daysActive =
+    effectiveAccountStatus === 'active' && daysActiveStart
+      ? Math.max(1, Math.floor((now.getTime() - new Date(daysActiveStart).getTime()) / (1000 * 60 * 60 * 24)) + 1)
+      : 0
+  const computeDailyRunRate = (totalUsd: number, startDate: Date | null | undefined, fallbackDate: Date | null | undefined) => {
+    const startedAt = startDate ?? fallbackDate ?? now
+    const elapsedDays = Math.max(1, Math.floor((now.getTime() - startedAt.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+    return totalUsd / elapsedDays
+  }
+
+  const miningActualDailyUsd = updatedEarnings
+    .filter(record => !record.isHistorical)
+    .reduce((sum, record) => {
+      const totalUsd = Number(record.totalEarnedUsd || 0)
+      const startDate = record.userPlan?.startDate ?? null
+      const fallbackDate = record.userPlan?.createdAt ?? null
+      return sum + computeDailyRunRate(totalUsd, startDate, fallbackDate)
+    }, 0)
+
+  const tradingActualDailyUsd = tradingEarningsComputed
+    .filter(record => record.isActive)
+    .reduce((sum, record) => {
+      const totalUsd = Number(record.totalEarnedUsd || 0)
+      const startDate = activeTradingPlan?.startDate ?? null
+      const fallbackDate = activeTradingPlan?.createdAt ?? record.createdAt ?? null
+      return sum + computeDailyRunRate(totalUsd, startDate, fallbackDate)
+    }, 0)
+
+  const earningsSeries = Array.from({ length: 24 }, (_, index) => {
+    const hoursAgo = 23 - index
+    const combinedEstimatedDaily =
+      estimatedDailyUsd +
+      (tradingEarningsComputed.length > 0
+        ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0)
+        : 0)
+    const value = Math.max(0, totalEarnedUsd - (combinedEstimatedDaily / 24) * hoursAgo)
+    const converted = convertUsd(value, rates, preferredCurrency)
+    return { time: `${new Date(now.getTime() - hoursAgo * 3600 * 1000).getHours()}:00`, value: Math.round(converted * 100) / 100 }
+  })
+
+  const hashrateBase = activeMining ? Number(activeMining.assignedHashrate) : 0
+  const hashrateDisplay = activeMining
+    ? `${Number(activeMining.assignedHashrate).toLocaleString()} ${activeMining.hashrateUnit}`
+    : '0 TH/s'
+  const miningDurationHours = resolvePlanDurationHours(activeMiningPlan?.selectedDurationDays ?? null)
+  const miningCycleStart = activeMiningPlan?.startDate ?? activeMining?.createdAt ?? now
+  const miningElapsedHours = resolveElapsedPlanHours(miningCycleStart, now)
+  const miningChartWindowHours = activeMining
+    ? resolveChartWindowHours(miningDurationHours, miningElapsedHours)
+    : 24
+  const miningWindowLabel = formatChartWindowLabel(miningChartWindowHours)
+
+  const hashrateSeries = buildChartSampleOffsets(miningChartWindowHours, 24).map(offset => {
+    const hoursAgo = miningChartWindowHours - offset
+    const seed = (user?.id || 1) * 97 + Math.round(hoursAgo * 13)
+    const noise = Math.sin(seed) * 0.04
+    const value = Math.max(0, hashrateBase * (0.96 + noise))
+    const elapsedAtSample = Math.max(0, miningElapsedHours - hoursAgo)
+    return {
+      time: formatCycleProgressLabel(elapsedAtSample, miningDurationHours),
+      value: Math.round(value * 100) / 100,
+    }
+  })
+
+  const totalShares = activeMining ? Number(activeMining.lastCounterValue || 0) : 0
+  const sharesSeries = buildCycleSegments(miningChartWindowHours, 7).map(segment => {
+    const elapsedAtSegmentEnd = Math.max(
+      0,
+      Math.min(miningDurationHours, miningElapsedHours - (miningChartWindowHours - segment.endHour))
+    )
+    const segmentRatio = miningChartWindowHours > 0 ? (segment.endHour - segment.startHour) / miningChartWindowHours : 0
+    return {
+      day: formatCycleProgressLabel(elapsedAtSegmentEnd, miningDurationHours),
+      value: Math.max(0, Math.round(totalShares * segmentRatio)),
+    }
+  })
+
+  const combinedEstimatedDaily =
+    estimatedDailyUsd +
+    (tradingEarningsComputed.length > 0
+      ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.dailyEstimateUsd || 0), 0)
+      : 0)
+  const combinedActualDaily = miningActualDailyUsd + tradingActualDailyUsd
+  const convertedEstimatedDaily = convertUsd(combinedEstimatedDaily, rates, preferredCurrency)
+  const convertedActualDaily = convertUsd(combinedActualDaily, rates, preferredCurrency)
+  const estimatedVsActual = [
+    {
+      label: '24h Run Rate',
+      estimated: Math.round(convertedEstimatedDaily * 100) / 100,
+      actual: Math.round(convertedActualDaily * 100) / 100,
+    },
+  ]
+
+  return (
+    <div className="w-full">
+      <DashboardAutoRefresh intervalMs={10000} />
+      {/* TradingView ticker tape temporarily disabled */}
+
+      {/* All other content gets the page padding (so ticker has no gap and spans full width) */}
+      <div className="p-4 md:p-6 lg:p-8 space-y-6">
+        {/* Welcome Section */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              {t('welcomeBack')}, {user?.fullName || 'there'}! 👋
+            </h1>
+            <p className="text-sm md:text-base text-white/70">
+              {t('overviewSubtitle')}
+            </p>
+          </div>
+        </div>
+
+        <OverviewAccountCard
+          accountBalance={formatMoney(accountAssetSummary.combinedAssetUsd)}
+          availableForPlans={formatMoney(accountBalanceSummary.availableForPurchasesUsd)}
+          withdrawableEarnings={formatMoney(accountBalanceSummary.withdrawableEarningsUsd)}
+          pendingCredits={
+            accountBalanceSummary.pendingCreditsUsd > 0
+              ? formatMoney(accountBalanceSummary.pendingCreditsUsd)
+              : null
+          }
+          pendingPurchaseDebits={
+            accountBalanceSummary.pendingPurchaseDebitsUsd > 0
+              ? formatMoney(accountBalanceSummary.pendingPurchaseDebitsUsd)
+              : null
+          }
+          pendingWithdrawals={
+            accountBalanceSummary.pendingWithdrawalsUsd > 0
+              ? formatMoney(accountBalanceSummary.pendingWithdrawalsUsd)
+              : null
+          }
+          detailMetrics={accountDetailMetrics}
+          walletFlowMetrics={walletFlowMetrics}
+        />
+
+        <div
+          className="p-4 rounded-2xl h-full"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03))',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+          }}
+        >
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="text-xs text-white/70">Last 5 Account Transactions</div>
+            <Link
+              href="/dashboard/account/history"
+              className="inline-block px-3 py-1 rounded-full text-xs font-semibold text-white"
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+              }}
+            >
+              Full history
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {recentBalanceTransactions.length > 0 ? (
+              recentBalanceTransactions.map(entry => (
+                <div key={entry.id} className="flex items-start justify-between gap-2 text-xs">
+                  <div className="min-w-0">
+                    <div className="truncate text-white/75">{formatAccountBalanceSource(entry.source)}</div>
+                    <div className="text-[11px] text-white/45">
+                      {entry.createdAt.toLocaleDateString()} - {entry.status}
+                    </div>
+                  </div>
+                  <span className={`shrink-0 ${entry.direction === 'credit' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    {entry.direction === 'credit' ? '+' : '-'}
+                    {formatMoney(entry.amountUsd)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-white/50">No account transactions yet.</div>
+            )}
+          </div>
+        </div>
+
+        {showPlanProceedsAlert && (
+          <div
+            className="p-4 rounded-2xl"
+            style={{
+              background: 'rgba(16, 185, 129, 0.12)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+            }}
+          >
+            <div className="text-sm text-emerald-100">
+              Withdrawal alert: one or more plans reached completion and payout proceeds are ready.
+            </div>
+            <div className="flex flex-wrap gap-3 mt-3">
+              {completedMiningAvailable && (
+                <Link
+                  href={dismissProceedsAlertHref('/dashboard/earnings')}
+                  className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#d1fae5',
+                  }}
+                >
+                  Move Mining Proceeds {'>'}
+                </Link>
+              )}
+              {completedTradingAvailable && (
+                <Link
+                  href={dismissProceedsAlertHref('/dashboard/investment-trading/withdrawals')}
+                  className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#d1fae5',
+                  }}
+                >
+                  Move Trading Proceeds {'>'}
+                </Link>
+              )}
+              <Link
+                href={dismissProceedsAlertHref('/dashboard/account/withdraw')}
+                className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                style={{
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: '#fecaca',
+                }}
+              >
+                Open Withdraw Funds {'>'}
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Account Status Card */}
+        <div
+          className="p-4 md:p-6 rounded-3xl min-w-0"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <h2 className="text-lg md:text-xl font-semibold text-white mb-4">{t('accountStatus')}</h2>
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="flex-1 min-w-0 space-y-4">
+            {effectiveAccountStatus === 'inactive' && !hasActivePlans && (
+            <div className="space-y-4">
+              <p className="text-sm md:text-base text-white/80">{t('accountReadyMessage')}</p>
+              <Link
+                href="/dashboard/plans"
+                className="inline-block px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all text-sm md:text-base"
+                style={{
+                  background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                  color: '#ffffff',
+                }}
+              >
+                {t('viewMiningPlans')} →
+              </Link>
+            </div>
+          )}
+
+          {!hasActivePlans && user?.accountStatus === 'pending' && (showMiningPaymentReminder || showTradingPaymentReminder) && (
+            <div className="space-y-4">
+              <p className="text-sm md:text-base text-white/80">
+                {t('paymentProcessingMessage')}
+              </p>
+              <Link
+                href="/dashboard/payment"
+                className="text-sm md:text-base text-purple-300 hover:text-purple-200 underline"
+              >
+                {t('viewPaymentInstructions')} →
+              </Link>
+            </div>
+          )}
+            </div>
+
+          {((hasMiningSelected && showMiningPaymentReminder) || (hasTradingSelected && showTradingPaymentReminder)) &&
+            user?.accountStatus !== 'pending' && (
+            <div className="w-full lg:w-80 xl:w-96 space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                {hasMiningSelected && showMiningPaymentReminder && (
+                  <span
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{
+                      background: 'rgba(234, 179, 8, 0.18)',
+                      border: '1px solid rgba(234, 179, 8, 0.4)',
+                      color: '#fde047',
+                    }}
+                  >
+                    {t('proofNotSubmittedMining')}
+                  </span>
+                )}
+                {hasTradingSelected && showTradingPaymentReminder && (
+                  <span
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{
+                      background: 'rgba(234, 179, 8, 0.18)',
+                      border: '1px solid rgba(234, 179, 8, 0.4)',
+                      color: '#fde047',
+                    }}
+                  >
+                    {t('proofNotSubmittedTrading')}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {hasMiningSelected && showMiningPaymentReminder && (
+                  <Link
+                    href="/dashboard/payment?verify=1"
+                    className="inline-block px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all text-sm md:text-base"
+                    style={{
+                      background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                      color: '#ffffff',
+                    }}
+                  >
+                    {t('uploadMiningProof')} {'>'}
+                  </Link>
+                )}
+                {hasTradingSelected && showTradingPaymentReminder && (
+                  <Link
+                    href="/dashboard/investment-trading/payment"
+                    className="inline-block px-4 md:px-6 py-2 md:py-3 rounded-full font-semibold transition-all text-sm md:text-base"
+                    style={{
+                      background: 'linear-gradient(135deg, #582dff, #3a137a)',
+                      color: '#ffffff',
+                    }}
+                  >
+                    {t('uploadTradingProof')} {'>'}
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          </div>
+
+          {(completedMiningAvailable || completedTradingAvailable) && (
+            <div
+              className="p-4 rounded-2xl mt-4"
+              style={{
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+              }}
+            >
+              <div className="text-sm text-emerald-100">
+                Completed plans are ready for withdrawal.
+                {!hasActivePlans && (
+                  <span className="text-emerald-200/80"> Account is inactive until a new plan starts.</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3 mt-3">
+                {completedMiningAvailable && (
+                  <Link
+                    href="/dashboard/earnings"
+                    className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      color: '#d1fae5',
+                    }}
+                  >
+                    Withdraw Mining to Account Balance {'>'}
+                  </Link>
+                )}
+                {completedTradingAvailable && (
+                  <Link
+                    href="/dashboard/investment-trading/withdrawals"
+                    className="inline-block px-4 py-2 rounded-full text-sm font-semibold"
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      color: '#d1fae5',
+                    }}
+                  >
+                    Withdraw Trading to Account Balance {'>'}
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(activeMiningPlan || activeTradingPlan) && (
+            <div className="mt-4 grid grid-cols-2 gap-4 md:gap-6">
+              <div>
+                <div className="text-xs md:text-sm text-white/60 mb-1">Active Plans</div>
+                <div className="text-base md:text-lg font-semibold text-white">
+                  {activeMiningPlan && activeTradingPlan
+                    ? `Mining: ${activeMiningPlan.plan.name} · Trading: ${activeTradingPlan.plan.name}`
+                    : activeMiningPlan
+                      ? `Mining: ${activeMiningPlan.plan.name}`
+                      : `Trading: ${activeTradingPlan?.plan.name ?? 'N/A'}`}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs md:text-sm text-white/60 mb-1">Account Status</div>
+                <div className="text-base md:text-lg font-semibold text-green-400">
+                  {activeMiningPlan && activeTradingPlan
+                    ? 'Mining + Trading Active'
+                    : activeMiningPlan
+                      ? 'Mining Active'
+                      : 'Trading Active'}
+                </div>
+              </div>
+              {activeMiningPlan && (
+                <>
+                  <div>
+                    <div className="text-xs md:text-sm text-white/60 mb-1">Hashrate</div>
+                    <div className="text-lg md:text-2xl font-bold text-white">
+                      {hashrateDisplay}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs md:text-sm text-white/60 mb-1">Duration</div>
+                    <div className="text-base md:text-lg font-semibold text-white">
+                      {formatPlanDurationLabel(activeMiningPlan.selectedDurationDays)}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
+          <div
+            className="p-4 md:p-6 rounded-3xl min-w-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-xs md:text-sm text-white/60 mb-2">Total Hashrate</div>
+            <div className="text-lg md:text-2xl font-bold text-white">
+              {user?.accountStatus === 'active' && activeMiningPlan
+                ? hashrateDisplay
+                : '0 TH/s'}
+            </div>
+          </div>
+
+          <div
+            className="p-4 md:p-6 rounded-3xl min-w-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-xs md:text-sm text-white/60 mb-2">Total Earned</div>
+            <div
+              className="text-lg md:text-2xl font-bold text-white truncate"
+              title={formatMoney(totalEarnedOverviewUsd)}
+            >
+              {formatMoney(totalEarnedOverviewUsd)}
+            </div>
+            {pendingReleaseUsd > 0 && (
+              <div
+                className="text-xs text-blue-200 mt-2 truncate"
+                title={`Pending system release: ${formatMoney(pendingReleaseUsd)}`}
+              >
+                Pending system release: {formatMoney(pendingReleaseUsd)}
+              </div>
+            )}
+            {realEstateMonthlyRealizedUsd > 0 && (
+              <div
+                className="text-xs text-emerald-200 mt-2 truncate"
+                title={`Includes this month's real-estate realized profit: ${formatMoney(realEstateMonthlyRealizedUsd)}`}
+              >
+                Real-estate realized this month: {formatMoney(realEstateMonthlyRealizedUsd)}
+              </div>
+            )}
+          </div>
+
+          <div
+            className="p-4 md:p-6 rounded-3xl min-w-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-xs md:text-sm text-white/60 mb-2">Mining Earned</div>
+            <div className="text-lg md:text-2xl font-bold text-white truncate" title={formatMoney(miningEarnedUsd)}>
+              {formatMoney(miningEarnedUsd)}
+            </div>
+          </div>
+
+          <div
+            className="p-4 md:p-6 rounded-3xl min-w-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-xs md:text-sm text-white/60 mb-2">Trading Earned</div>
+            <div className="text-lg md:text-2xl font-bold text-white truncate" title={formatMoney(tradingTotalUsd)}>
+              {formatMoney(tradingTotalUsd)}
+            </div>
+          </div>
+
+          <div
+            className="p-4 md:p-6 rounded-3xl min-w-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-xs md:text-sm text-white/60 mb-2">Days Active</div>
+            <div className="text-lg md:text-2xl font-bold text-white">
+              {daysActive}
+            </div>
+          </div>
+
+          <div
+            className="p-4 md:p-6 rounded-3xl min-w-0"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+            }}
+          >
+            <div className="text-xs md:text-sm text-white/60 mb-2">Network Status</div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+              <div className="text-base md:text-xl font-bold text-white">Online</div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="p-4 md:p-6 rounded-3xl min-w-0"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <h2 className="text-lg md:text-xl font-semibold text-white">Real Estate Snapshot</h2>
+              <p className="text-xs md:text-sm text-white/65 mt-1">
+                Portfolio signals pulled directly from your real-estate activity.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/real-estate"
+              className="inline-block px-3 py-1.5 rounded-full text-xs md:text-sm font-semibold text-white"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+              }}
+            >
+              Open Portfolio
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div className="text-xs text-white/60 mb-1">Approved Properties</div>
+              <div className="text-base md:text-xl font-bold text-white">{realEstateApprovedCount}</div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div className="text-xs text-white/60 mb-1">Pending Verification</div>
+              <div className="text-base md:text-xl font-bold text-white">{realEstatePendingCount}</div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div className="text-xs text-white/60 mb-1">Portfolio Allocation</div>
+              <div
+                className="text-base md:text-xl font-bold text-white truncate"
+                title={formatMoney(realEstateTotalAllocationUsd)}
+              >
+                {formatMoney(realEstateTotalAllocationUsd)}
+              </div>
+            </div>
+            <div
+              className="p-4 rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+              }}
+            >
+              <div className="text-xs text-white/60 mb-1">Available To Withdraw</div>
+              <div
+                className="text-base md:text-xl font-bold text-white truncate"
+                title={formatMoney(realEstateData.availableWithdrawalUsd)}
+              >
+                {formatMoney(realEstateData.availableWithdrawalUsd)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div
+          className="p-4 md:p-6 rounded-3xl min-w-0"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+          }}
+        >
+          <h2 className="text-lg md:text-xl font-semibold text-white mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <Link
+              href="/dashboard/plans"
+              className="p-4 rounded-2xl text-center transition-all hover:scale-[1.02]"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="mb-2 flex justify-center">
+                <Gem size={28} className="text-white float-soft" />
+              </div>
+              <div className="text-xs md:text-sm text-white/80">View Plans</div>
+            </Link>
+            <Link
+              href="/dashboard/mining"
+              className="p-4 rounded-2xl text-center transition-all hover:scale-[1.02]"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="mb-2 flex justify-center">
+                <Pickaxe size={28} className="text-white float-soft" />
+              </div>
+              <div className="text-xs md:text-sm text-white/80">Mining</div>
+            </Link>
+            <Link
+              href="/dashboard/investment-trading"
+              className="p-4 rounded-2xl text-center transition-all hover:scale-[1.02]"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="mb-2 flex justify-center">
+                <TrendingUp size={28} className="text-white float-soft" />
+              </div>
+              <div className="text-xs md:text-sm text-white/80">Trading</div>
+            </Link>
+            <Link
+              href="/dashboard/earnings"
+              className="p-4 rounded-2xl text-center transition-all hover:scale-[1.02]"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="mb-2 flex justify-center">
+                <DollarSign size={28} className="text-white float-soft" />
+              </div>
+              <div className="text-xs md:text-sm text-white/80">Earnings</div>
+            </Link>
+            <Link
+              href="/dashboard/settings"
+              className="p-4 rounded-2xl text-center transition-all hover:scale-[1.02]"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              <div className="mb-2 flex justify-center">
+                <Settings size={28} className="text-white float-soft" />
+              </div>
+              <div className="text-xs md:text-sm text-white/80">Settings</div>
+            </Link>
+          </div>
+        </div>
+
+        {/* Market Overview Section */}
+        <div className="space-y-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">Market Overview</h2>
+
+          <div className="flex flex-col gap-6">
+            <div className="w-full h-[600px]">
+              <AdvancedChart />
+            </div>
+
+            <div className="w-full h-[600px]">
+              <NewsTimeline />
+            </div>
+          </div>
+        </div>
+
+        <OverviewAnalytics
+          earningsSeries={earningsSeries}
+          hashrateSeries={hashrateSeries}
+          sharesSeries={sharesSeries}
+          estimatedVsActual={estimatedVsActual}
+          miningWindowLabel={miningWindowLabel}
+        />
+
+        <LivePaymentsPageClient />
+      </div>
+    </div>
+  )
+  } catch (error) {
+    console.error('[dashboard] render error', {
+      userId,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+
+    return (
+      <div className="p-6 md:p-8">
+        <div
+          className="rounded-3xl p-6 md:p-8"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          <h1 className="text-xl md:text-2xl font-bold text-white">Dashboard temporarily unavailable</h1>
+          <p className="text-sm md:text-base text-white/75 mt-2">
+            We hit a server error while loading your account data. Please refresh this page in a moment.
+          </p>
+          <div className="mt-4">
+            <Link
+              href="/dashboard/settings"
+              className="inline-block px-4 py-2 rounded-full text-sm font-semibold text-white"
+              style={{
+                background: 'linear-gradient(135deg, #582dff, #3a137a)',
+              }}
+            >
+              Open Settings
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+
+
+
+

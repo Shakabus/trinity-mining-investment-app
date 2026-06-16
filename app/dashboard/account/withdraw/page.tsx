@@ -1,0 +1,136 @@
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/db'
+import AccountWithdrawPageClient from '@/components/dashboard/AccountWithdrawPageClient'
+import {
+  getAccountBalanceAssetSummary,
+  getAccountBalanceEntries,
+  getAccountBalanceSummary,
+} from '@/lib/account-balance'
+import {
+  buildAccountFreezeVisualState,
+  getAccountFreezeSettings,
+  logAccountFreezeTableMissing,
+} from '@/lib/account-freeze'
+import { getTrackedCryptoPricesUsd, TRACKED_ASSET_COINS } from '@/lib/crypto-prices'
+import { getLatestSolWalletAddress } from '@/lib/wallet-addresses'
+import { logKycTableMissing, runKycQuery } from '@/lib/kyc-db'
+import { getUserTransferReadySummary } from '@/lib/transfer-ready'
+import { getPlanProceedsAlertState } from '@/lib/plan-proceeds-alert'
+
+export const dynamic = 'force-dynamic'
+
+export default async function WithdrawAccountPage() {
+  const { userId } = await auth()
+  if (!userId) {
+    redirect('/sign-in')
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { clerkUserId: userId },
+    select: {
+      id: true,
+      btcWalletAddress: true,
+      ethWalletAddress: true,
+      walletAddress: true,
+    },
+  })
+
+  if (!user) {
+    redirect('/sign-in')
+  }
+
+  const prices = await getTrackedCryptoPricesUsd()
+  const [summary, entries, assetSummary, transferReady, freezeQuery, proceedsAlert] = await Promise.all([
+    getAccountBalanceSummary(user.id),
+    getAccountBalanceEntries(user.id, { limit: 800 }),
+    getAccountBalanceAssetSummary(user.id, prices),
+    getUserTransferReadySummary({
+      userId: user.id,
+      clerkUserId: userId,
+    }),
+    getAccountFreezeSettings(user.id),
+    getPlanProceedsAlertState(user.id),
+  ])
+  if (freezeQuery.tableMissing) {
+    logAccountFreezeTableMissing('dashboard/account/withdraw')
+  }
+  const solAddress = await getLatestSolWalletAddress(user.id)
+
+  const latestEntriesByReference = entries.reduce<Map<string, (typeof entries)[number]>>((map, entry) => {
+    const key = `${entry.source}:${entry.direction}:${entry.referenceId}`
+    const existing = map.get(key)
+    if (!existing || existing.createdAt.getTime() < entry.createdAt.getTime()) {
+      map.set(key, entry)
+    }
+    return map
+  }, new Map())
+
+  const latestEntries = [...latestEntriesByReference.values()]
+  const totalWithdrawnUsd = latestEntries
+    .filter(
+      entry =>
+        entry.direction === 'debit' &&
+        entry.status === 'settled' &&
+        entry.source === 'account_balance_withdrawal'
+    )
+    .reduce((sum, entry) => sum + entry.amountUsd, 0)
+
+  const withdrawalEntries = entries
+    .filter(entry => entry.source === 'account_balance_withdrawal')
+    .map(entry => ({
+      ...entry,
+      createdAt: entry.createdAt.toISOString(),
+    }))
+
+  const walletOptions = [
+    user.btcWalletAddress ? { coinType: 'BTC', address: user.btcWalletAddress } : null,
+    user.ethWalletAddress ? { coinType: 'ETH', address: user.ethWalletAddress } : null,
+    solAddress ? { coinType: 'SOL', address: solAddress } : null,
+    user.walletAddress ? { coinType: 'USDT', address: user.walletAddress } : null,
+  ].filter(
+    (
+      option
+    ): option is {
+      coinType: 'BTC' | 'ETH' | 'SOL' | 'USDT'
+      address: string
+    } => Boolean(option)
+  )
+  const kycProfileQuery = await runKycQuery(() =>
+    prisma.userKyc.findUnique({
+      where: { userId: user.id },
+      select: { status: true },
+    })
+  )
+  if (kycProfileQuery.tableMissing) {
+    logKycTableMissing('dashboard/account/withdraw')
+  }
+  const kycStatus = kycProfileQuery.tableMissing
+    ? 'system_unavailable'
+    : (kycProfileQuery.value?.status ?? 'not_submitted')
+
+  return (
+    <AccountWithdrawPageClient
+      spendableBalanceUsd={summary.availableToSpendUsd}
+      withdrawableEarningsUsd={summary.withdrawableEarningsUsd}
+      pendingCreditsUsd={summary.pendingCreditsUsd}
+      pendingDebitsUsd={summary.pendingDebitsUsd}
+      pendingWithdrawalsUsd={summary.pendingWithdrawalsUsd}
+      walletFlow={TRACKED_ASSET_COINS.map(coinType => assetSummary.byCoin[coinType])}
+      totalWithdrawnUsd={totalWithdrawnUsd}
+      totalDepositedUsd={summary.totalDepositedUsd}
+      totalInvestedUsd={summary.totalInvestedUsd}
+      totalEarnedUsd={summary.earnedCreditsUsd}
+      freezeState={buildAccountFreezeVisualState(freezeQuery.settings)}
+      showProceedsAlert={proceedsAlert.visible}
+      proceedsAlertMarker={proceedsAlert.marker}
+      miningReadyUsd={transferReady.miningReadyUsd}
+      tradingReadyUsd={transferReady.tradingReadyUsd}
+      referralReadyUsd={transferReady.referralReadyUsd}
+      realEstateReadyUsd={transferReady.realEstateReadyUsd}
+      walletOptions={walletOptions}
+      entries={withdrawalEntries}
+      kycStatus={kycStatus}
+    />
+  )
+}
