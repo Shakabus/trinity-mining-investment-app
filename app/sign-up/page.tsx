@@ -1,11 +1,11 @@
 'use client'
 
-import { ClerkLoaded, ClerkLoading, SignIn } from '@clerk/nextjs'
-import '../../clerk-custom.css'
+import { ClerkLoaded, ClerkLoading, SignUp } from '@clerk/nextjs'
+import '../clerk-custom.css'
 
 const hasClerkClientKey = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim())
 
-export default function SignInPage() {
+export default function SignUpPage() {
   if (!hasClerkClientKey) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4" style={{ background: '#000000' }}>
@@ -15,7 +15,7 @@ export default function SignInPage() {
       </div>
     )
   }
-  
+
   return (
     <div
       className="flex min-h-screen items-center justify-center px-4"
@@ -23,21 +23,21 @@ export default function SignInPage() {
     >
       <ClerkLoading>
         <div className="w-full max-w-md rounded-2xl border border-white/15 bg-white/5 p-6 text-white/80">
-          Loading sign-in...
+          Loading sign-up...
         </div>
       </ClerkLoading>
       <ClerkLoaded>
         <div className="w-full max-w-md">
-          <SignIn
+          <SignUp
             routing="path"
-            path="/sign-in"
-            signUpUrl="/sign-up"
+            path="/sign-up"
+            signInUrl="/sign-in"
             forceRedirectUrl="/dashboard"
             appearance={{
               elements: {
                 rootBox: 'mx-auto w-full',
                 card: 'shadow-2xl',
-              },
+              }
             }}
           />
         </div>

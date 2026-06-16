@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import styles from '@/components/marketing/TeamMemberShowcase.module.css'
 
@@ -585,7 +586,13 @@ export default function TeamMemberShowcase() {
             onClick={() => setOpenId(member.id)}
           >
             <div className={styles.imageWrap}>
-              <img src={member.image} alt={member.name} className={styles.image} loading="lazy" />
+              <Image
+                src={member.image}
+                alt={member.name}
+                fill
+                className={styles.image}
+                sizes="(max-width: 680px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              />
             </div>
             <div className={styles.cardBody}>
               <h3 className={styles.name}>{member.name}</h3>
@@ -602,7 +609,13 @@ export default function TeamMemberShowcase() {
               x
             </button>
             <div className={styles.modalTop}>
-              <img src={openMember.image} alt={openMember.name} className={styles.modalImage} />
+              <Image
+                src={openMember.image}
+                alt={openMember.name}
+                width={170}
+                height={130}
+                className={styles.modalImage}
+              />
               <div>
                 <h3 className={styles.modalName}>{openMember.name}</h3>
                 <p className={styles.modalRole}>{openMember.role}</p>

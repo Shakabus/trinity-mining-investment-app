@@ -1,5 +1,6 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap");
+@import "tailwindcss";
 
 :root {
   --background: #000000;
@@ -200,7 +201,6 @@ a[aria-disabled="true"],
   border: 2px solid rgba(255, 255, 255, 0.08);
 }
 
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap");
 
 .bitryx-header a,
 .bitryx-header a:visited,
