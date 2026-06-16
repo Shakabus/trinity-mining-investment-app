@@ -28,6 +28,8 @@ export default async function RootLayout({
   const allowedRedirectOrigins = Array.from(
     new Set(
       [
+        'https://www.trinityin1investment.com',
+        'https://trinityin1investment.com',
         'https://trinityin1investments.com',
         'https://www.trinityin1investments.com',
         'https://trinity-mining-investment-app.vercel.app',
