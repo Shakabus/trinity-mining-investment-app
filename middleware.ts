@@ -98,10 +98,6 @@ const getRateLimitProfile = (pathname: string, method: string): RateLimitProfile
   return isWriteMethod(method) ? DEFAULT_WRITE_LIMIT : DEFAULT_READ_LIMIT
 }
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect()
-  }
 
   const pathname = req.nextUrl.pathname
   if (pathname.startsWith('/api') && !pathname.startsWith('/api/webhooks') && !pathname.startsWith('/api/cron')) {
