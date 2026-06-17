@@ -28,6 +28,23 @@ const DEFAULT_WRITE_LIMIT: RateLimitProfile = {
   ipLimit: 60,
   userLimit: 120,
 }
+type RateLimitProfile = {
+  windowSec: number
+  ipLimit: number
+  userLimit: number
+}
+
+const DEFAULT_READ_LIMIT: RateLimitProfile = {
+  windowSec: 60,
+  ipLimit: 120,
+  userLimit: 240,
+}
+
+const DEFAULT_WRITE_LIMIT: RateLimitProfile = {
+  windowSec: 60,
+  ipLimit: 60,
+  userLimit: 120,
+}
 
 const STRICT_ACTION_LIMIT: RateLimitProfile = {
   windowSec: 60,
