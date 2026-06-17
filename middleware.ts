@@ -75,7 +75,6 @@ const SUPPORT_LIMIT: RateLimitProfile = {
   userLimit: 40,
 }
 
-const isWriteMethod = (method: string) => !['GET', 'HEAD', 'OPTIONS'].includes(method)
 
 const isStrictUserActionPath = (pathname: string) =>
   pathname.includes('withdraw') ||
@@ -167,7 +166,6 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   const response = NextResponse.next()
-  const referralCode = req.nextUrl.searchParams.get('ref')
   if (referralCode) {
     response.cookies.set('referral_code', referralCode, {
       path: '/',
@@ -177,12 +175,3 @@ export default clerkMiddleware(async (auth, req) => {
 
   return response
 })
-
-export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
-  ],
-}
