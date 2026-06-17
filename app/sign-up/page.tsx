@@ -3,10 +3,12 @@
 import { ClerkLoaded, ClerkLoading, SignUp } from '@clerk/nextjs'
 import '../clerk-custom.css'
 
-const hasClerkClientKey = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim())
+const hasClerkPublishableKey = Boolean(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()
+)
 
 export default function SignUpPage() {
-  if (!hasClerkClientKey) {
+  if (!hasClerkPublishableKey) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4" style={{ background: '#000000' }}>
         <div className="w-full max-w-md rounded-2xl border border-red-400/30 bg-red-500/10 p-6 text-red-200">

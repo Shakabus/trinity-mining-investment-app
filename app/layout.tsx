@@ -40,12 +40,15 @@ export default async function RootLayout({
     )
   )
 
+  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim() || undefined
+
   return (
-    <ClerkProvider
-      allowedRedirectOrigins={allowedRedirectOrigins}
-    >
-      <html lang={initialLanguage} suppressHydrationWarning>
-        <body suppressHydrationWarning className="antialiased">
+    <html lang={initialLanguage} suppressHydrationWarning>
+      <body suppressHydrationWarning className="antialiased">
+        <ClerkProvider
+          publishableKey={clerkPublishableKey}
+          allowedRedirectOrigins={allowedRedirectOrigins}
+        >
           <script
             dangerouslySetInnerHTML={{
               __html: `
@@ -79,8 +82,8 @@ export default async function RootLayout({
               <SupportFab />
             </ToastProvider>
           </SiteThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   )
 }
