@@ -142,7 +142,7 @@ export default function TradingPaymentInstructions({ plan, accountBalanceUsd }: 
           Back to Trading Dashboard
         </Link>
         <Link
-          href="/dashboard/investment-trading/select-plan"
+          href="/dashboard/investment-trading#plans"
           className="flex-1 py-4 rounded-full font-semibold text-center transition-all"
           style={{
             background: 'linear-gradient(135deg, #582dff, #3a137a)',

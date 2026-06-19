@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
@@ -39,7 +41,34 @@ import { getUserTransferReadySummary } from '@/lib/transfer-ready'
 import { getPlanProceedsAlertState } from '@/lib/plan-proceeds-alert'
 
 export default async function DashboardPage() {
-  const { userId } = await auth()
+  let userId: string | null = null
+  try {
+    const authResult = await auth()
+    userId = authResult.userId
+  } catch (error) {
+    console.error('[dashboard] auth error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+
+    return (
+      <div className="p-6 md:p-8">
+        <div
+          className="rounded-3xl p-6 md:p-8"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          <h1 className="text-xl md:text-2xl font-bold text-white">Dashboard temporarily unavailable</h1>
+          <p className="text-sm md:text-base text-white/75 mt-2">
+            We hit a server error while loading your dashboard. Please refresh the page or try again later.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (!userId) {
     redirect('/sign-in')
