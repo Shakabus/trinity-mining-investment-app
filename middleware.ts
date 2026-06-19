@@ -4,7 +4,6 @@ import { checkRateLimit, getClientIp, getRetryAfterSec } from '@/lib/rateLimit'
 
 // Define which routes require authentication
 const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)',
   '/admin(.*)',
 ])
 
