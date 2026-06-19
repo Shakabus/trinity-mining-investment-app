@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { auth, clerkClient, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { cookies, headers } from 'next/headers'
@@ -20,32 +22,77 @@ import {
 
 const SESSION_INACTIVITY_LIMIT_MS = 24 * 60 * 60 * 1000
 
+function renderDashboardFallback(text = 'We hit a server error while loading your dashboard. Please refresh the page or try again later.') {
+  return (
+    <div className="p-6 md:p-8">
+      <div
+        className="rounded-3xl p-6 md:p-8"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
+        <h1 className="text-xl md:text-2xl font-bold text-white">Dashboard temporarily unavailable</h1>
+        <p className="text-sm md:text-base text-white/75 mt-2">
+          {text}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { userId, sessionId } = await auth()
+  let userId: string | null = null
+  let sessionId: string | null = null
+
+  try {
+    const authResult = await auth()
+    userId = authResult.userId
+    sessionId = authResult.sessionId
+  } catch (error) {
+    console.error('[dashboard] auth error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+
+    return renderDashboardFallback()
+  }
+
   const requestTime = new Date()
   
   if (!userId) {
     redirect('/sign-in')
   }
 
-  // Get or create user in database
-  const clerkUser = await currentUser()
-  
-  const cookieStore = await cookies()
-  const requestHeaders = await headers()
-  const loginLocation = extractApproxLocation(requestHeaders)
-  const geoCountryName = resolveCountryNameFromCountry(loginLocation.country)
-  const geoDefaults = resolveLocaleDefaultsFromCountry(loginLocation.country)
-  const referralCookie = normalizeReferralCode(cookieStore.get('referral_code')?.value)
+  let user: Awaited<ReturnType<typeof prisma.user.findUnique>> | null = null
 
-  let user = await prisma.user.findUnique({
-    where: { clerkUserId: userId },
-  })
-  let createdNewUser = false
+  try {
+    // Get or create user in database
+    const clerkUser = await currentUser().catch(error => {
+      console.error('[dashboard] currentUser failed', {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      })
+      return null
+    })
+
+    const cookieStore = await cookies()
+    const requestHeaders = await headers()
+    const loginLocation = extractApproxLocation(requestHeaders)
+    const geoCountryName = resolveCountryNameFromCountry(loginLocation.country)
+    const geoDefaults = resolveLocaleDefaultsFromCountry(loginLocation.country)
+    const referralCookie = normalizeReferralCode(cookieStore.get('referral_code')?.value)
+
+    user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
+    })
+    let createdNewUser = false
 
   // If user doesn't exist in our database, attach by email or create.
   // This avoids crashes when a prior account row already exists with the same email.
@@ -130,32 +177,41 @@ export default async function DashboardLayout({
   }
 
   if (user) {
-    if (user.lastSeenAt) {
-      const inactiveForMs = requestTime.getTime() - user.lastSeenAt.getTime()
-      if (inactiveForMs > SESSION_INACTIVITY_LIMIT_MS) {
-        if (sessionId) {
-          try {
-            const clerk = await clerkClient()
-            await clerk.sessions.revokeSession(sessionId)
-          } catch (error) {
-            console.error('[dashboard] failed to revoke stale session', {
-              userId,
-              sessionId,
-              error: error instanceof Error ? error.message : String(error),
-            })
+    try {
+      if (user.lastSeenAt) {
+        const inactiveForMs = requestTime.getTime() - user.lastSeenAt.getTime()
+        if (inactiveForMs > SESSION_INACTIVITY_LIMIT_MS) {
+          if (sessionId) {
+            try {
+              const clerk = await clerkClient()
+              await clerk.sessions.revokeSession(sessionId)
+            } catch (error) {
+              console.error('[dashboard] failed to revoke stale session', {
+                userId,
+                sessionId,
+                error: error instanceof Error ? error.message : String(error),
+              })
+            }
           }
+
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              lastSeenAt: requestTime,
+              currentSessionStartedAt: null,
+            },
+          })
+
+          redirect('/sign-in?reason=session-timeout')
         }
-
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            lastSeenAt: requestTime,
-            currentSessionStartedAt: null,
-          },
-        })
-
-        redirect('/sign-in?reason=session-timeout')
       }
+    } catch (error) {
+      console.error('[dashboard] session expiry check failed', {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      })
+      return renderDashboardFallback('Unable to verify your dashboard session. Please try again.')
     }
 
     if (!user.countryOfOrigin && geoCountryName) {
@@ -199,6 +255,15 @@ export default async function DashboardLayout({
         user = { ...user, referredById: referrer.id }
       }
     }
+  }
+  } catch (error) {
+    console.error('[dashboard] layout initialization failed', {
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+
+    return renderDashboardFallback()
   }
 
   const rates = await getFxRates()
