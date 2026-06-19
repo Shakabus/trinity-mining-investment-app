@@ -6,6 +6,19 @@ import { prisma } from '@/lib/db'
 import Link from 'next/link'
 import { Gem, Pickaxe, DollarSign, Settings, TrendingUp } from 'lucide-react'
 import { autoUpdateEarnings } from '@/lib/earnings'
+
+// Helper to prevent operations from hanging indefinitely
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`[dashboard] ${label} timeout after ${timeoutMs}ms`)), timeoutMs)
+    ),
+  ]).catch(error => {
+    console.error(error instanceof Error ? error.message : String(error))
+    return fallback
+  })
+}
 import { simulateTradingProgress } from '@/lib/trading'
 import { getRealEstateDashboardData } from '@/lib/real-estate-dashboard'
 import {
@@ -39,6 +52,78 @@ import LivePaymentsPageClient from '@/components/marketing/LivePaymentsPageClien
 import { reconcileRejectedTradingPendingPlans } from '@/lib/trading-plan-reconciliation'
 import { getUserTransferReadySummary } from '@/lib/transfer-ready'
 import { getPlanProceedsAlertState } from '@/lib/plan-proceeds-alert'
+
+// Default fallback rates when forex service times out
+const DEFAULT_FX_RATES = {
+  USD: 1,
+  EUR: 0,
+  GBP: 0,
+  JPY: 0,
+  CAD: 0,
+  AUD: 0,
+  CHF: 0,
+  CNY: 0,
+  INR: 0,
+  BRL: 0,
+} as const
+
+// Default fallback for crypto prices when service times out
+const DEFAULT_CRYPTO_PRICES = {
+  BTC: 0,
+  ETH: 0,
+  SOL: 0,
+  USDT: 1,
+}
+
+// Default fallback for real estate dashboard data when service times out
+// Make arrays mutable and avoid readonly types so they match service return types
+const DEFAULT_REAL_ESTATE_DATA = {
+  positions: [] as any[],
+  payouts: [] as any[],
+  withdrawals: [] as any[],
+  summary: {
+    totalRealizedUsd: 0,
+    thisMonthRealizedUsd: 0,
+    monthlyRunRateUsd: 0,
+    avgYieldPerMonthPct: 0,
+    nextPayoutNetUsd: 0,
+    nextPayoutDate: null,
+    nextPayoutProperty: null,
+    upcomingPayoutsNetUsd: 0,
+    approvedCount: 0,
+    activeApprovedCount: 0,
+    pendingCount: 0,
+    portfolioAllocationUsd: 0,
+  },
+  availableWithdrawalUsd: 0,
+  canRequestWithdrawal: false,
+  nextWithdrawalEligibleAt: null,
+  canCreateNewBuyIn: false,
+}
+
+// Default fallback for account balance summary when service times out
+const DEFAULT_ACCOUNT_BALANCE_SUMMARY = {
+  totalCreditsUsd: 0,
+  totalDebitsUsd: 0,
+  pendingCreditsUsd: 0,
+  pendingDebitsUsd: 0,
+  balanceUsd: 0,
+  availableToSpendUsd: 0,
+  availableForPurchasesUsd: 0,
+  principalCreditsUsd: 0,
+  principalDebitsUsd: 0,
+  principalBalanceUsd: 0,
+  pendingPurchaseDebitsUsd: 0,
+  pendingPurchaseDebitsFromEarningsUsd: 0,
+  earnedCreditsUsd: 0,
+  earnedDebitsUsd: 0,
+  earningsBalanceUsd: 0,
+  pendingWithdrawalsUsd: 0,
+  withdrawableEarningsUsd: 0,
+  totalDepositedUsd: 0,
+  totalInvestedUsd: 0,
+  totalWithdrawnUsd: 0,
+}
 
 export default async function DashboardPage() {
   let userId: string | null = null
@@ -74,6 +159,40 @@ export default async function DashboardPage() {
     redirect('/sign-in')
   }
 
+  // Set 45-second overall timeout for dashboard rendering
+  try {
+    return await Promise.race([
+      renderDashboard(userId),
+      new Promise(() => {
+        // Never resolves - just ensures the race doesn't hang
+        setTimeout(() => {}, 45000)
+      }).then(() => {
+        throw new Error('[dashboard] page rendering timeout (45s)')
+      }),
+    ]) as React.ReactNode
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error))
+    return (
+      <div className="p-6 md:p-8">
+        <div
+          className="rounded-3xl p-6 md:p-8"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02))',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          <h1 className="text-xl md:text-2xl font-bold text-white">Dashboard temporarily unavailable</h1>
+          <p className="text-sm md:text-base text-white/75 mt-2">
+            We hit a server error while loading your dashboard. Please refresh the page or try again later.
+          </p>
+        </div>
+      </div>
+    )
+  }
+}
+
+async function renderDashboard(userId: string) {
   try {
   const userBase = await prisma.user.findUnique({
     where: { clerkUserId: userId },
@@ -205,8 +324,18 @@ export default async function DashboardPage() {
       null)
     : null
 
-  const rates = await getFxRates()
-  const trackedCryptoPrices = await getTrackedCryptoPricesUsd()
+  const rates = await withTimeout(
+    getFxRates(),
+    8000,
+    DEFAULT_FX_RATES,
+    'getFxRates'
+  )
+  const trackedCryptoPrices = await withTimeout(
+    getTrackedCryptoPricesUsd(),
+    8000,
+    DEFAULT_CRYPTO_PRICES,
+    'getTrackedCryptoPricesUsd'
+  )
   const preferredCurrency: CurrencyCode = isSupportedCurrency(user?.preferredCurrency || '')
     ? (user?.preferredCurrency as CurrencyCode)
     : 'USD'
@@ -283,30 +412,41 @@ export default async function DashboardPage() {
   const tradingTotalUsd = tradingEarningsComputed
     ? tradingEarningsComputed.reduce((sum, record) => sum + Number(record.totalEarnedUsd || 0), 0)
     : 0
-  const realEstateData = await getRealEstateDashboardData(userId)
+  const realEstateData = await withTimeout(
+    getRealEstateDashboardData(userId),
+    6000,
+    DEFAULT_REAL_ESTATE_DATA,
+    'getRealEstateDashboardData'
+  )
   const accountBalanceSummary = user
-    ? await getAccountBalanceSummary(user.id)
-      : {
-        balanceUsd: 0,
-        availableToSpendUsd: 0,
-        availableForPurchasesUsd: 0,
-        withdrawableEarningsUsd: 0,
-        principalBalanceUsd: 0,
-        earningsBalanceUsd: 0,
-        pendingCreditsUsd: 0,
-        pendingDebitsUsd: 0,
-        pendingPurchaseDebitsUsd: 0,
-        pendingWithdrawalsUsd: 0,
-        totalCreditsUsd: 0,
-        totalDebitsUsd: 0,
-        totalDepositedUsd: 0,
-        totalInvestedUsd: 0,
-        totalWithdrawnUsd: 0,
-        earnedCreditsUsd: 0,
-      }
-  const accountBalanceEntries = user ? await getAccountBalanceEntries(user.id, { limit: 800 }) : []
+    ? await withTimeout(
+        getAccountBalanceSummary(user.id),
+        6000,
+        DEFAULT_ACCOUNT_BALANCE_SUMMARY,
+        'getAccountBalanceSummary'
+      )
+    : { ...DEFAULT_ACCOUNT_BALANCE_SUMMARY }
+  const accountBalanceEntries = user ? await withTimeout(
+    getAccountBalanceEntries(user.id, { limit: 800 }),
+    6000,
+    [],
+    'getAccountBalanceEntries'
+  ) : []
   const accountAssetSummary = user
-    ? await getAccountBalanceAssetSummary(user.id, trackedCryptoPrices)
+    ? await withTimeout(
+        getAccountBalanceAssetSummary(user.id, trackedCryptoPrices),
+        6000,
+        {
+          byCoin: {
+            BTC: { coinType: 'BTC', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+            ETH: { coinType: 'ETH', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+            SOL: { coinType: 'SOL', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+            USDT: { coinType: 'USDT', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
+          },
+          combinedAssetUsd: 0,
+        },
+        'getAccountBalanceAssetSummary'
+      )
     : {
         byCoin: {
           BTC: { coinType: 'BTC', totalInCrypto: 0, totalOutCrypto: 0, netCrypto: 0, totalInUsd: 0, totalOutUsd: 0, netUsd: 0 },
@@ -318,10 +458,21 @@ export default async function DashboardPage() {
       }
 
   const transferReady = user
-    ? await getUserTransferReadySummary({
-        userId: user.id,
-        clerkUserId: userId,
-      })
+    ? await withTimeout(
+        getUserTransferReadySummary({
+          userId: user.id,
+          clerkUserId: userId,
+        }),
+        6000,
+        {
+          miningReadyUsd: 0,
+          tradingReadyUsd: 0,
+          referralReadyUsd: 0,
+          realEstateReadyUsd: 0,
+          totalReadyUsd: 0,
+        },
+        'getUserTransferReadySummary'
+      )
     : {
         miningReadyUsd: 0,
         tradingReadyUsd: 0,
@@ -330,7 +481,12 @@ export default async function DashboardPage() {
         totalReadyUsd: 0,
       }
   const planProceedsAlert = user
-    ? await getPlanProceedsAlertState(user.id)
+    ? await withTimeout(
+        getPlanProceedsAlertState(user.id),
+        5000,
+        { marker: null, visible: false as const },
+        'getPlanProceedsAlertState'
+      )
     : { marker: null, visible: false as const }
 
   const latestEntriesByReference = accountBalanceEntries.reduce<Map<string, (typeof accountBalanceEntries)[number]>>(
@@ -1119,7 +1275,7 @@ export default async function DashboardPage() {
         <LivePaymentsPageClient />
       </div>
     </div>
-  )
+    )
   } catch (error) {
     console.error('[dashboard] render error', {
       userId,
